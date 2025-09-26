@@ -15,7 +15,7 @@
     body {
       font-family: 'Arial', sans-serif;
       min-height: 100vh;
-      background: url('img/medical-background.png?v=1') center center / cover no-repeat;
+      background: url('../img/medical-background.png?v=1') center center / cover no-repeat;
       position: relative;
       overflow-x: hidden;
     }
@@ -662,7 +662,7 @@
 </head>
 <body>
   <header>
-    <button class="back-btn" id="backBtn" title="Volver">←</button>
+  <button class="back-btn" onclick="window.history.back()" title="Volver">←</button>
     <div class="icon" id="userIcon">👤 <span id="userName" style="font-weight:bold; margin-left:8px;"></span>
       <div id="userDropdown">
         <button id="logoutBtn">Cerrar sesión</button>

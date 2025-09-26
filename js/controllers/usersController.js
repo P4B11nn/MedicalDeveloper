@@ -73,51 +73,28 @@ function setupUserMenu() {
  */
 function setupSidebarNavigation() {
   const sidebarButtons = document.querySelectorAll('.sidebar-menu button');
-  const sections = document.querySelectorAll('.form-section');
+  const sections = document.querySelectorAll('.content-area .form-section');
   const defaultSection = document.getElementById('default-section');
-  
+
   sidebarButtons.forEach(button => {
-    button.addEventListener('click', function() {
-      const targetSection = this.getAttribute('data-section');
-      console.log(`Selected section: ${targetSection}`);
-      
-      // Remove active class from all buttons
+    button.addEventListener('click', () => {
+      const targetSectionId = button.getAttribute('data-section');
+
       sidebarButtons.forEach(btn => btn.classList.remove('active'));
-      // Add active class to clicked button
-      this.classList.add('active');
-      
-      // Hide default section
-      if (defaultSection) {
-        defaultSection.style.display = 'none';
-      }
-      
-      // Hide all sections
-      sections.forEach(section => {
-        section.classList.remove('active');
-        section.style.display = 'none';
-      });
-      
-      // Show selected section
-      const activeSection = document.getElementById(`${targetSection}-section`);
+      sections.forEach(sec => sec.classList.remove('active'));
+      if (defaultSection) defaultSection.style.display = 'none';
+
+      button.classList.add('active');
+      const activeSection = document.getElementById(`${targetSectionId}-section`);
       if (activeSection) {
         activeSection.classList.add('active');
-        activeSection.style.display = 'block';
-        
-        // Load specific content based on section
-        if (targetSection === 'staff') {
+
+        if (targetSectionId === 'personal') {
           loadUsersList();
-        } else if (targetSection === 'new-user') {
-          setupNewUserForm();
         }
       }
     });
   });
-  
-  // Activate staff list by default
-  const staffBtn = document.querySelector('[data-section="staff"]');
-  if (staffBtn) {
-    staffBtn.click();
-  }
 }
 
 /**

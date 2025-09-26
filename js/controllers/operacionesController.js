@@ -257,40 +257,25 @@ function mostrarRegistroActividad() {
 // Configuración de la navegación lateral
 function setupSidebarNavigation() {
   const sidebarButtons = document.querySelectorAll('.sidebar-menu button');
-  const sections = document.querySelectorAll('.form-section');
+  const sections = document.querySelectorAll('.content-area .form-section');
   const defaultSection = document.getElementById('default-section');
 
   sidebarButtons.forEach(button => {
-    button.addEventListener('click', function() {
-      const targetSection = this.getAttribute('data-section');
-      console.log(`Sección seleccionada: ${targetSection}`);
-      
-      // Remover clase active de todos los botones
+    button.addEventListener('click', () => {
+      const targetSectionId = button.getAttribute('data-section');
+
       sidebarButtons.forEach(btn => btn.classList.remove('active'));
-      // Agregar clase active al botón clickeado
-      this.classList.add('active');
-      
-      // Ocultar sección por defecto
-      if (defaultSection) {
-        defaultSection.style.display = 'none';
-      }
-      
-      // Ocultar todas las secciones
-      sections.forEach(section => {
-        section.classList.remove('active');
-        section.style.display = 'none';
-      });
-      
-      // Mostrar sección seleccionada
-      const activeSection = document.getElementById(`${targetSection}-section`);
+      sections.forEach(sec => sec.classList.remove('active'));
+      if (defaultSection) defaultSection.style.display = 'none';
+
+      button.classList.add('active');
+      const activeSection = document.getElementById(`${targetSectionId}-section`);
       if (activeSection) {
         activeSection.classList.add('active');
-        activeSection.style.display = 'block';
-        
-        // Cargar contenido específico según la sección
-        if (targetSection === 'registro-entradas-salidas') {
+
+        if (targetSectionId === 'registro-entradas-salidas') {
           cargarRegistroEntradasSalidas();
-        } else if (targetSection === 'mesas-salud') {
+        } else if (targetSectionId === 'mesas-salud') {
           cargarMesasSalud();
         }
       }

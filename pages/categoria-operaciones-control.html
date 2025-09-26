@@ -14,7 +14,7 @@
     body {
       font-family: 'Arial', sans-serif;
       min-height: 100vh;
-      background: url('img/medical-background.png?v=1') center center / cover no-repeat;
+      background: url('../img/medical-background.png?v=1') center center / cover no-repeat;
       position: relative;
       overflow-x: hidden;
     }
@@ -331,7 +331,7 @@
 </head>
 <body>
   <header>
-    <button class="back-btn" onclick="window.history.back()" title="Volver">←</button>
+  <button class="back-btn" onclick="window.history.back()" title="Volver">←</button>
     <div class="icon" id="userIcon">👤 <span id="userName" style="font-weight:bold; margin-left:8px;"></span>
       <div id="userDropdown" style="display:none; position:absolute; top:40px; right:0; background:white; color:#333; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:220px; z-index:10;">
         <button id="startServiceBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left;">Iniciar servicio</button>
@@ -502,14 +502,14 @@
   </style>
 
   <script type="module">
-    import { initOperationsController } from '../../../js/controllers/operacionesController.js';
-    import { initAllChecks } from '../../../js/utils/domCheck.js';
-    
+    import { initGlobalController } from '../js/controllers/globalController.js';
+    import { initOperationsController } from '../js/controllers/operacionesController.js';
+    import { initAllChecks } from '../js/utils/domCheck.js';
+
     document.addEventListener('DOMContentLoaded', () => {
-      // Inicializar controlador y utilidades de corrección
+      initGlobalController();
       initOperationsController();
       initAllChecks();
-      
       // Activar automáticamente la primera sección cuando se carga la página
       const firstButton = document.querySelector('.sidebar-menu button');
       if (firstButton) {
