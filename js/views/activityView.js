@@ -1,117 +1,189 @@
 // js/views/activityView.js
+// View for activity logging
+
 import { authModel } from '../models/storageModel.js';
+import { insertActivityStyles } from '../utils/domCheck.js';
 
-// Función para formatear la fecha y hora en un formato legible
-function formatDate(dateString) {
-  const date = new Date(dateString);
-  const options = { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric', 
-    hour: '2-digit', 
-    minute: '2-digit',
-    second: '2-digit'
-  };
-  return date.toLocaleDateString('es-ES', options);
-}
-
-export function renderActivityLog(containerId, filtro = {}) {
+/**
+ * Render the activity log in the specified container
+ * @param {string} containerId - The ID of the container element
+ */
+export function renderActivityLog(containerId) {
+  console.log('Rendering activity log in:', containerId);
+  
+  // Get activities from storage
+  const activities = authModel.getActividades();
+  console.log('Activities loaded:', activities.length);
+  
+  // Get container element
   const container = document.getElementById(containerId);
-  if (!container) return;
-  
-  const registros = authModel.obtenerRegistros(filtro);
-  const usuarios = authModel.getUsers();
-  
-  if (registros.length === 0) {
-    container.innerHTML = '<p class="text-muted">No hay registros de actividad.</p>';
+  if (!container) {
+    console.error('Container not found:', containerId);
     return;
   }
   
-  // Función para obtener el nombre del usuario
-  const getNombreUsuario = (usuarioId) => {
-    const user = usuarios.find(u => u.id === usuarioId);
-    return user ? `${user.nombre} (${user.matricula})` : usuarioId;
-  };
+  // Insert CSS styles for activity log
+  insertActivityStylesInternal();
   
-  // Generar la tabla HTML
+  // Handle empty activities list
+  if (!activities || activities.length === 0) {
+    container.innerHTML = `
+      <div class="info-message" style="background-color:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:20px; text-align:center; color:#6b7280;">
+        No hay actividades para mostrar.
+      </div>
+    `;
+    return;
+  }
+  
+  // Create HTML for activities table
   let html = `
-    <div style="max-height: 400px; overflow-y: auto;">
-      <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+    <div class="table-container" style="width:100%; overflow-x:auto; margin-bottom:20px;">
+      <table class="activities-table" style="width:100%; border-collapse:collapse; margin-bottom:20px; background-color:white; box-shadow:0 4px 8px rgba(0,0,0,0.1); border-radius:8px; overflow:hidden;">
         <thead>
-          <tr style="background: #f5f5f5; font-weight: bold; text-align: left;">
-            <th style="padding: 10px; border-bottom: 1px solid #ddd;">Usuario</th>
-            <th style="padding: 10px; border-bottom: 1px solid #ddd;">Acción</th>
-            <th style="padding: 10px; border-bottom: 1px solid #ddd;">Fecha y Hora</th>
-            <th style="padding: 10px; border-bottom: 1px solid #ddd;">Detalles</th>
+          <tr>
+            <th style="padding:12px 15px; text-align:left; border-bottom:1px solid #e5e7eb; background-color:#f9fafb; color:#374151; font-weight:600;">Usuario</th>
+            <th style="padding:12px 15px; text-align:left; border-bottom:1px solid #e5e7eb; background-color:#f9fafb; color:#374151; font-weight:600;">Acción</th>
+            <th style="padding:12px 15px; text-align:left; border-bottom:1px solid #e5e7eb; background-color:#f9fafb; color:#374151; font-weight:600;">Fecha y Hora</th>
+            <th style="padding:12px 15px; text-align:left; border-bottom:1px solid #e5e7eb; background-color:#f9fafb; color:#374151; font-weight:600;">Detalles</th>
           </tr>
         </thead>
         <tbody>
   `;
   
-  registros.forEach(reg => {
-    const tipoIcon = reg.tipo === 'entrada' ? '🟢' : '🔴';
-    const tipoText = reg.tipo === 'entrada' ? 'Entrada' : 'Salida';
+  // Add activities in reverse order (newest first)
+  activities.slice().reverse().forEach(act => {
+    // Format date properly
+    let formattedDate = 'Fecha no disponible';
+    try {
+      if (act.fecha) {
+        const date = new Date(act.fecha);
+        if (!isNaN(date.getTime())) {
+          formattedDate = date.toLocaleString('es-MX');
+        }
+      }
+    } catch (e) {
+      console.error('Error formatting date:', e);
+    }
     
+    // Determine CSS class for action
+    let actionClass = '';
+    switch (act.accion ? act.accion.toLowerCase() : '') {
+      case 'login':
+        actionClass = 'action-login';
+        break;
+      case 'logout':
+        actionClass = 'action-logout';
+        break;
+      case 'create':
+      case 'crear':
+        actionClass = 'action-create';
+        break;
+      case 'update':
+      case 'actualizar':
+        actionClass = 'action-update';
+        break;
+      case 'delete':
+      case 'eliminar':
+        actionClass = 'action-delete';
+        break;
+      case 'view':
+      case 'ver':
+        actionClass = 'action-view';
+        break;
+      case 'menu':
+        actionClass = 'action-menu';
+        break;
+      case 'navigate':
+      case 'navegar':
+        actionClass = 'action-navigate';
+        break;
+      default:
+        actionClass = 'action-default';
+    }
+    
+    // Create row with activity information
     html += `
-      <tr>
-        <td style="padding: 10px; border-bottom: 1px solid #eee;">${getNombreUsuario(reg.usuarioId)}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #eee;">${tipoIcon} ${tipoText}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #eee;">${formatDate(reg.timestamp)}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #eee;">${reg.detalles || '-'}</td>
+      <tr style="border-bottom:1px solid #e5e7eb;">
+        <td style="padding:12px 15px; text-align:left; border-bottom:1px solid #e5e7eb;">${act.usuario || 'Sistema'}</td>
+        <td style="padding:12px 15px; text-align:left; border-bottom:1px solid #e5e7eb;">
+          <span style="display:inline-block; padding:5px 10px; border-radius:15px; font-size:0.8rem; font-weight:600;" 
+                class="${actionClass}">${act.accion || 'acción'}</span>
+        </td>
+        <td style="padding:12px 15px; text-align:left; border-bottom:1px solid #e5e7eb;">${formattedDate}</td>
+        <td style="padding:12px 15px; text-align:left; border-bottom:1px solid #e5e7eb;">${act.descripcion || '-'}</td>
       </tr>
     `;
   });
   
+  // Close HTML table
   html += `
         </tbody>
       </table>
     </div>
-    <div style="margin-top: 15px;">
-      <button id="btnExportarRegistro" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">
-        Exportar a CSV
-      </button>
-    </div>
   `;
   
+  // Insert HTML into container
   container.innerHTML = html;
-  
-  // Configurar el botón de exportación
-  const btnExportar = document.getElementById('btnExportarRegistro');
-  if (btnExportar) {
-    btnExportar.addEventListener('click', () => {
-      exportToCSV(registros, usuarios);
-    });
-  }
 }
 
-// Función para exportar a CSV
-function exportToCSV(registros, usuarios) {
-  // Cabeceras CSV
-  let csv = 'Usuario,Matrícula,Acción,Fecha y Hora,Detalles\n';
+/**
+ * Insert dynamic CSS styles for activity log
+ */
+function insertActivityStylesInternal() {
+  // If styles already exist, don't add again
+  if (document.getElementById('activity-styles')) {
+    return;
+  }
   
-  // Datos
-  registros.forEach(reg => {
-    const user = usuarios.find(u => u.id === reg.usuarioId) || { nombre: 'Desconocido', matricula: 'N/A' };
-    const fecha = formatDate(reg.timestamp);
-    const tipo = reg.tipo === 'entrada' ? 'Entrada' : 'Salida';
-    const detalles = reg.detalles || '';
+  const style = document.createElement('style');
+  style.id = 'activity-styles';
+  style.innerHTML = `
+    /* Activity log styles */
+    .action-login {
+      background-color: #c7d2fe;
+      color: #4338ca;
+    }
+
+    .action-logout {
+      background-color: #e5e7eb;
+      color: #4b5563;
+    }
+
+    .action-create {
+      background-color: #a7f3d0;
+      color: #047857;
+    }
+
+    .action-update {
+      background-color: #bae6fd;
+      color: #0369a1;
+    }
+
+    .action-delete {
+      background-color: #fecaca;
+      color: #b91c1c;
+    }
     
-    // Escapar las comas en los campos
-    const escaparComa = (texto) => `"${texto.replace(/"/g, '""')}"`;
+    .action-view {
+      background-color: #ddd6fe;
+      color: #5b21b6;
+    }
+
+    .action-navigate {
+      background-color: #fde68a;
+      color: #92400e;
+    }
     
-    csv += `${escaparComa(user.nombre)},${escaparComa(user.matricula)},${tipo},${fecha},${escaparComa(detalles)}\n`;
-  });
+    .action-menu {
+      background-color: #c4b5fd;
+      color: #6d28d9;
+    }
+
+    .action-default {
+      background-color: #e5e7eb;
+      color: #4b5563;
+    }
+  `;
   
-  // Crear y descargar el archivo
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  
-  link.setAttribute('href', url);
-  link.setAttribute('download', `registro_actividad_${new Date().toISOString().slice(0, 10)}.csv`);
-  link.style.visibility = 'hidden';
-  
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  document.head.appendChild(style);
 }

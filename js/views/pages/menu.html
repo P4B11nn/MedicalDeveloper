@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menú de Inicio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f6f8fa;
+    }
+
+    header {
+      background: #2a94db;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      position: relative;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    header .icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .container {
+      background: white;
+      border-radius: 15px 15px 0 0;
+      margin-top: -20px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .menu button {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      padding: 15px;
+      font-size: 16px;
+      background: #e0ebf0;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .menu button:hover {
+      background: #cfe4ec;
+    }
+
+    .menu button span {
+      flex: 1;
+      text-align: left;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .buttons {
+      margin-top: 15px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .buttons button {
+      background: #007bce;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .buttons button:hover {
+      background: #005fa3;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="icon" id="userIcon" style="cursor:pointer;">👤 <span id="userName" style="font-weight:bold; margin-left:8px;"></span>
+      <div id="userDropdown" style="display:none; position:absolute; top:40px; right:0; background:white; color:#333; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:180px; z-index:10;">
+        <button id="startServiceBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left; display:flex; align-items:center;">
+          <span style="margin-right:10px;">🟢</span> Iniciar servicio
+        </button>
+        <button id="verPerfilBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left; display:flex; align-items:center;">
+          <span style="margin-right:10px;">👤</span> Ver perfil
+        </button>
+        <button id="logoutBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left; display:flex; align-items:center;">
+          <span style="margin-right:10px;">🚪</span> Cerrar sesión
+        </button>
+      </div>
+    </div>
+    <h1>Medical Developer</h1>
+  </header>
+
+  <div class="container">
+    <h2>Bienvenido <span id="rolText"></span></h2>
+
+    <div class="menu" id="menuOptions">
+      <!-- Botones de navegación para todas las categorías -->
+      <button data-category="pacientes">
+        <span style="margin-right:10px;">👥</span>
+        <span>Gestión de Pacientes</span>
+        <span style="margin-left:auto;">➔</span>
+      </button>
+      
+      <button data-category="operaciones-control">
+        <span style="margin-right:10px;">📋</span>
+        <span>Operaciones y Control</span>
+        <span style="margin-left:auto;">➔</span>
+      </button>
+      
+      <button data-category="reportes">
+        <span style="margin-right:10px;">📊</span>
+        <span>Reportes y Estadísticas</span>
+        <span style="margin-left:auto;">➔</span>
+      </button>
+      
+      <button data-category="usuarios-personal">
+        <span style="margin-right:10px;">👤</span>
+        <span>Usuarios y Personal</span>
+        <span style="margin-left:auto;">➔</span>
+      </button>
+      
+      <!-- Botón para registro de actividad -->
+      <button id="btnRegistroES">
+        <span style="margin-right:10px;">🕒</span>
+        <span>Registro de Actividad</span>
+        <span style="margin-left:auto;">➔</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modales -->
+  <div id="modalRegistroES" class="modal" style="display:none; position:fixed; z-index:1; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.4);">
+    <div class="modal-content" style="background-color:#fefefe; margin:10% auto; padding:20px; border:1px solid #888; width:80%; max-width:600px; border-radius:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h2 style="margin:0;">Registro de Actividad</h2>
+        <span id="cerrarRegistroES" style="cursor:pointer; font-size:22px;">&times;</span>
+      </div>
+      <div id="registroESLista" style="max-height:350px; overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación -->
+  <div id="modalConfirmacion" class="modal" style="display:none; position:fixed; z-index:1; left:0; top:0; width:100%; height:100%; overflow:auto; background-color:rgba(0,0,0,0.4);">
+    <div class="modal-content" style="background-color:#fefefe; margin:15% auto; padding:20px; border:1px solid #888; width:80%; max-width:400px; border-radius:10px;">
+      <h2 id="tituloConfirmacion" style="margin-top:0;">Confirmación</h2>
+      <p id="mensajeConfirmacion">¿Está seguro de realizar esta acción?</p>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button id="btnCancelarConfirmacion" style="padding:8px 15px; background:#f2f2f2; border:none; border-radius:5px; cursor:pointer;">Cancelar</button>
+        <button id="btnAceptarConfirmacion" style="padding:8px 15px; background:#007bce; color:white; border:none; border-radius:5px; cursor:pointer;">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

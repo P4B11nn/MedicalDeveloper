@@ -4,86 +4,213 @@
   <meta charset="UTF-8">
   <title>Medical Developer</title>
   <style>
-    body {
-      background: #f0f0f0;
-      min-height: 100vh;
+    * {
       margin: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .contenedor {
-      background: #ffffff;
-      padding: 50px 200px;
-      border-radius: 12px;
-      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
-      width: 100%;
-      max-width: 400px;
-    }
-    form label {
-      display: block;
-      margin-bottom: 12px;
-    }
-    form input, form select {
-      width: 100%;
-      padding: 6px;
-      margin-top: 4px;
+      padding: 0;
       box-sizing: border-box;
     }
-    button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 16px;
-      background: #1976d2;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
+    
+    body {
+      font-family: 'Arial', sans-serif;
+      min-height: 100vh;
+      background: url('img/medical-background.png?v=1') center center / cover no-repeat;
+      position: relative;
+      overflow-x: hidden; /* Permitir scroll vertical */
     }
-    button:hover {
-      background: #1565c0;
+    
+    /* Overlay para mejorar la legibilidad */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(126, 211, 252, 0.1);
+      z-index: -1;
     }
-    .login-row {
+    
+    .container {
+      min-height: 100vh;
       display: flex;
-      flex-direction: row-reverse;
+      flex-direction: column;
       align-items: center;
-      margin-bottom: 16px;
-      gap: 12px;
+      justify-content: center;
+      padding: 20px;
     }
-    .login-row label {
-      min-width: 90px;
-      text-align: right;
-      margin: 0;
+    
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 40px;
+      gap: 30px;
     }
-    .login-row input {
-      flex: 1;
-      margin: 0;
+    
+    .logo {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      border-radius: 0;
+    }
+    
+    /* Estilo específico para el logo UAT para evitar que se vea aplanado */
+    .logo:first-child {
+      width: 130px;
+      height: 120px;
+    }
+    
+    /* Estilo específico para el logo Medical Developer (remover fondo blanco) */
+    .logo:last-child {
+      mix-blend-mode: multiply;
+      filter: contrast(1.1) brightness(1.1);
+    }
+    
+    .title {
+      font-size: 3.5rem;
+      font-weight: 300;
+      color: #1f2937;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      letter-spacing: 2px;
+    }
+    
+    .login-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 40px 50px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      max-width: 400px;
+      width: 100%;
+    }
+    
+    .form-group {
+      margin-bottom: 30px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 1.3rem;
+      font-weight: 500;
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 18px 24px;
+      border: 2px solid #e5e7eb;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      background: rgba(255, 255, 255, 0.9);
+      transition: all 0.3s ease;
+      outline: none;
+    }
+    
+    .form-group input:focus {
+      border-color: #06b6d4;
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+      background: white;
+    }
+    
+    .btn-login {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      color: #1f2937;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .btn-login:hover {
+      background: linear-gradient(135deg, #38bdf8, #fbbf24);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(125, 211, 252, 0.4);
+    }
+    
+    .btn-login:active {
+      transform: translateY(0);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .title {
+        font-size: 3.0rem;
+      }
+      
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+      }
+      
+      .logo:first-child {
+        width: 85px;
+        height: 80px;
+      }
+      
+      .login-container {
+        padding: 25px 30px;
+        margin: 0 15px;
+        max-width: 320px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="contenedor">
-    <div id="loginHeader" style="display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-  <img src="img/uat-logo-2023.png" alt="Logo izquierdo" style="width: 150px; height: 128px; margin-right: 64px; border-radius: 6px;">
-  <h2 style="margin: 0; font-size: 2.5em; font-weight: 350; color: #66aaee; white-space: nowrap;">Medical Developer</h2>
-  <img src="img/Logo Medical Developer.jpg" alt="Logo derecho" style="width: 130px; height: 128px; margin-left: 64px; border-radius: 6px;">
+  <div class="container">
+    <div class="header">
+      <img src="img/uat-logo-2023.png?v=2" alt="Logo UAT" class="logo">
+      <h1 class="title">Medical Developer</h1>
+      <img src="img/logo-medical-developer.jpg?v=2" alt="Logo Medical Developer" class="logo">
     </div>
-    <form id="loginForm">
-      <div class="login-row">
-        <input type="text" name="matricula" required placeholder="Matrícula" id="matriculaInput">
-        <label for="matricula" id="matriculaLabel">Matrícula:</label>
-      </div>
-      <div class="login-row">
-        <input type="password" name="contrasena" required placeholder="Contraseña">
-        <label for="contrasena">Contraseña:</label>
-      </div>
-      <button type="submit">Iniciar Sesión</button>
-      <!--  boton para crear un usuario desde el login
-      <button type="button" id="crearUsuario" style="background:#e29c33; margin-top:8px;">Crear Nuevo Usuario</button>
-      -->
-    </form>
+    
+    <div class="login-container">
+      <form id="loginForm" onsubmit="return false;">
+        <div class="form-group">
+          <label for="matriculaInput">Matrícula:</label>
+          <input type="text" name="matricula" id="matriculaInput" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="contrasenaInput">Contraseña:</label>
+          <input type="password" name="contrasena" id="contrasenaInput" required>
+        </div>
+        
+        <button type="button" id="btnLogin" class="btn-login">Inicio de sesión</button>
+      </form>
+    </div>
   </div>
-  <script type="module" src="js/controllers/authController.js"></script>
+  
+  <div id="app">
+    <!-- No es necesario cargar templates vía router -->
+  </div>
+  
+  <script type="module">
+    import { initAuthController } from "./js/controllers/authController.js";
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("Inicializando controlador de autenticación directamente");
+      initAuthController();
+    });
+  </script>
 </body>
 </html>
