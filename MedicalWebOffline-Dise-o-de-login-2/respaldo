@@ -1,0 +1,51 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Formulario</title>
+</head>
+<body>
+  <form id="Formulario">
+    <label>Matrícula: <input type="text" name="matricula" required></label><br>
+    <label>Nombre: <input type="text" name="nombre" required></label><br>
+    <label>Apellidos: <input type="text" name="apellidos" required></label><br>
+    <label>Edad: <input type="number" name="edad" required></label><br>
+    <label>Sexo:
+      <select name="sexo" required>
+        <option value="">Seleccione</option>
+        <option value="Masculino">Masculino</option>
+        <option value="Femenino">Femenino</option>
+      </select>
+    </label><br>
+    <label>Peso (kg): <input type="number" name="peso" step="0.01" required></label><br>
+    <label>Altura (cm): <input type="number" name="altura" step="0.01" required></label><br>
+    <label>Indice de Masa Corporal (IMC): <input type="number" name="imc" step="0.01" required></label><br>
+    <label>Presión Arterial: <input type="number" name="presion" required></label><br>
+    <button type="submit">Guardar Datos</button>
+  </form>
+  <script src="Formulario.js"></script>
+</body>
+</html>
+adfa
+dsadas
+
+
+alturaInput.addEventListener('input', calcularIMC);
+
+formulario.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const datos = {
+        matricula: this.matricula.value,
+        nombre: this.nombre.value,
+        apellidos: this.apellidos.value,
+        edad: this.edad.value,
+        sexo: this.sexo.value,
+        peso: this.peso.value,
+        altura: this.altura.value,
+        imc: this.imc.value,
+        presion: this.presion.value
+    };
+    console.log(datos);
+    alert('Datos guardados correctamente');
+});

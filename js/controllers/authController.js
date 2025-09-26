@@ -87,11 +87,10 @@ function handleLogin() {
     console.log('Usuario guardado en localStorage:', usuarioGuardado);
     
     // Redireccionar al menú principal usando redirección directa
-    console.log('Redirigiendo a menu.html');
-    
+    console.log('Redirigiendo a /menuInicio.html');
     try {
       // Redirigir directamente usando window.location
-      window.location.href = 'menu.html';
+      window.location.href = '/menuInicio.html';
     } catch (error) {
       console.error('Error al redirigir:', error);
       alert('Error al redirigir al menú. Por favor intente de nuevo.');

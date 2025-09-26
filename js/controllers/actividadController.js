@@ -2,7 +2,7 @@
 // Controlador para el registro de actividades
 
 import { authModel } from '../models/storageModel.js';
-import { renderActividades } from '../views/actividadView.js';
+import { renderActividades } from '../views/activityView.js';
 
 // Función para mostrar actividades del sistema
 export function mostrarActividades(container, filtro = {}) {

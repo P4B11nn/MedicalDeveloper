@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Medical Developer</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Arial', sans-serif;
+      min-height: 100vh;
+      background: url('img/medical-background.png?v=1') center center / cover no-repeat;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Overlay para mejorar la legibilidad */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(126, 211, 252, 0.1);
+      z-index: -1;
+    }
+    
+    .container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 40px;
+      gap: 30px;
+    }
+    
+    .logo {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      border-radius: 0;
+    }
+    
+    /* Estilo específico para el logo UAT para evitar que se vea aplanado */
+    .logo:first-child {
+      width: 130px;
+      height: 120px;
+    }
+    
+    /* Estilo específico para el logo Medical Developer (remover fondo blanco) */
+    .logo:last-child {
+      mix-blend-mode: multiply;
+      filter: contrast(1.1) brightness(1.1);
+    }
+    
+    .title {
+      font-size: 4rem;
+      font-weight: 300;
+      color: #1f2937;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      letter-spacing: 2px;
+    }
+    
+    .login-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 50px 60px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      max-width: 500px;
+      width: 100%;
+    }
+    
+    .form-group {
+      margin-bottom: 30px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 1.3rem;
+      font-weight: 500;
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 18px 24px;
+      border: 2px solid #e5e7eb;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      background: rgba(255, 255, 255, 0.9);
+      transition: all 0.3s ease;
+      outline: none;
+    }
+    
+    .form-group input:focus {
+      border-color: #06b6d4;
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+      background: white;
+    }
+    
+    .btn-login {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      color: #1f2937;
+      border: none;
+      border-radius: 50px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .btn-login:hover {
+      background: linear-gradient(135deg, #38bdf8, #fbbf24);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(125, 211, 252, 0.4);
+    }
+    
+    .btn-login:active {
+      transform: translateY(0);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        gap: 20px;
+      }
+      
+      .title {
+        font-size: 3.0rem;
+      }
+      
+      .logo {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+      }
+      
+      .logo:first-child {
+        width: 85px;
+        height: 80px;
+      }
+      
+      .login-container {
+        padding: 30px 40px;
+        margin: 0 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="img/uat-logo-2023.png" alt="Logo UAT" class="logo">
+      <h1 class="title">Medical Developer</h1>
+      <img src="img/Logo Medical Developer.jpg" alt="Logo Medical Developer" class="logo">
+    </div>
+    
+    <div class="login-container">
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="matriculaInput">Matrícula:</label>
+          <input type="text" name="matricula" id="matriculaInput" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="contrasenaInput">Contraseña:</label>
+          <input type="password" name="contrasena" id="contrasenaInput" required>
+        </div>
+        
+        <button type="submit" class="btn-login">Inicio de sesión</button>
+      </form>
+    </div>
+  </div>
+  
+  <script src="InicioSesion.js"></script>
+</body>
+</html>

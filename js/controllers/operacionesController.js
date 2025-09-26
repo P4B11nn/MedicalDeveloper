@@ -9,7 +9,7 @@ import { renderActivities } from '../views/activityView.js';
 import { crearModal, mostrarModal } from '../utils/modalUtil.js';
 
 // Función de inicialización
-export function initOperacionesController() {
+export function initOperationsController() {
   // Verificar restricciones de acceso
   const usuarioActual = getUsuarioActual();
   if (!usuarioActual || usuarioActual.rol !== 'admin') {

@@ -6,25 +6,36 @@
   <title>Menú de Inicio</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
       margin: 0;
-      background: #f6f8fa;
+      min-height: 100vh;
+      background: url('img/medical-background.png?v=1') center center / cover no-repeat;
+      position: relative;
+      overflow-x: hidden;
     }
-
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(126, 211, 252, 0.1);
+      z-index: -1;
+    }
     header {
-      background: #2a94db;
-      color: white;
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      color: #1f2937;
       text-align: center;
       padding: 20px;
       position: relative;
+      box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
     }
-
     header h1 {
       margin: 0;
       font-size: 28px;
       font-weight: bold;
     }
-
     header .icon {
       position: absolute;
       top: 20px;
@@ -32,72 +43,87 @@
       font-size: 20px;
       cursor: pointer;
     }
-
     .container {
-      background: white;
-      border-radius: 15px 15px 0 0;
-      margin-top: -20px;
-      padding: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      margin: 20px;
+      padding: 20px 30px;
       text-align: center;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: -10px;
     }
-
     h2 {
+      margin-top: 10px;
       margin-bottom: 20px;
+      font-size: 1.8rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #7dd3fc, #fbbf24);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-
     .menu {
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
-
     .menu button {
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      gap: 10px;
-      padding: 15px;
+      gap: 15px;
+      padding: 18px 24px;
       font-size: 16px;
-      background: #e0ebf0;
-      border: none;
-      border-radius: 10px;
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(5px);
+      border: 2px solid rgba(125, 211, 252, 0.3);
+      border-radius: 15px;
       cursor: pointer;
-      transition: 0.2s;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
-
     .menu button:hover {
-      background: #cfe4ec;
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(125, 211, 252, 0.3);
+      border-color: rgba(125, 211, 252, 0.5);
     }
-
     .menu button span {
       flex: 1;
       text-align: left;
     }
-
     .footer {
       margin-top: 20px;
       font-size: 14px;
       color: #555;
     }
-
     .buttons {
       margin-top: 15px;
       display: flex;
       justify-content: space-around;
     }
-
     .buttons button {
-      background: #007bce;
-      color: white;
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      color: #1f2937;
       border: none;
-      border-radius: 8px;
-      padding: 12px 18px;
+      border-radius: 25px;
+      padding: 12px 24px;
       font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(125, 211, 252, 0.2);
     }
-
     .buttons button:hover {
-      background: #005fa3;
+      background: linear-gradient(135deg, #38bdf8, #fbbf24);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(125, 211, 252, 0.3);
     }
   </style>
 </head>
@@ -123,39 +149,12 @@
   <div class="container">
     <h2>Bienvenido <span id="rolText"></span></h2>
 
-    <div class="menu" id="menuOptions">
-      <!-- Botones de navegación para todas las categorías -->
-      <button data-category="pacientes">
-        <span style="margin-right:10px;">👥</span>
-        <span>Gestión de Pacientes</span>
-        <span style="margin-left:auto;">➔</span>
-      </button>
-      
-      <button data-category="operaciones-control">
-        <span style="margin-right:10px;">📋</span>
-        <span>Operaciones y Control</span>
-        <span style="margin-left:auto;">➔</span>
-      </button>
-      
-      <button data-category="reportes">
-        <span style="margin-right:10px;">📊</span>
-        <span>Reportes y Estadísticas</span>
-        <span style="margin-left:auto;">➔</span>
-      </button>
-      
-      <button data-category="usuarios-personal">
-        <span style="margin-right:10px;">👤</span>
-        <span>Usuarios y Personal</span>
-        <span style="margin-left:auto;">➔</span>
-      </button>
-      
-      <!-- Botón para registro de actividad -->
-      <button id="btnRegistroES">
-        <span style="margin-right:10px;">🕒</span>
-        <span>Registro de Actividad</span>
-        <span style="margin-left:auto;">➔</span>
-      </button>
-    </div>
+  <div class="menu">
+    <button data-category="pacientes">👥 <span>Pacientes</span></button>
+    <button data-category="usuarios-personal">👤 <span>Usuarios y Personal</span></button>
+    <button data-category="operaciones-control">⚙️ <span>Operaciones / Control</span></button>
+    <button data-category="reportes">📊 <span>Reportes</span></button>
+  </div>
   </div>
 
   <!-- Modales -->
@@ -181,6 +180,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/main.js"></script>
+  <script src="js/views/MenuInicio.js"></script>
 </body>
 </html>

@@ -715,20 +715,12 @@
     </div>
   </div>
 
-    <script type="module">
-    import { initPatientsController } from './js/controllers/patientsController.js';
-    import { initAllChecks } from './js/utils/domCheck.js';
-    
+  <script type="module">
+    import { initGlobalController } from '../js/controllers/globalController.js';
+    import { initPacienteController } from '../js/controllers/pacienteController.js';
     document.addEventListener('DOMContentLoaded', () => {
-      // Inicializar controlador y utilidades de corrección
-      initPatientsController();
-      initAllChecks();
-      
-      // Activar automáticamente la primera sección cuando se carga la página
-      const firstButton = document.querySelector('.sidebar-menu button');
-      if (firstButton) {
-        firstButton.click();
-      }
+      initGlobalController();
+      initPacienteController();
     });
   </script>
 </body>

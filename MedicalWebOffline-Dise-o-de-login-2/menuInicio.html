@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menú de Inicio</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      background: url('img/medical-background.png?v=1') center center / cover no-repeat;
+      position: relative;
+      overflow-x: hidden;
+    }
+    
+    /* Overlay para mejorar la legibilidad */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(126, 211, 252, 0.1);
+      z-index: -1;
+    }
+
+    header {
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      color: #1f2937;
+      text-align: center;
+      padding: 20px;
+      position: relative;
+      box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    header .icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      margin: 20px;
+      padding: 20px 30px;
+      text-align: center;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: -10px;
+    }
+
+    h2 {
+      margin-top: 10px;
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #7dd3fc, #fbbf24);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .menu button {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 15px;
+      padding: 18px 24px;
+      font-size: 16px;
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(5px);
+      border: 2px solid rgba(125, 211, 252, 0.3);
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .menu button:hover {
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(125, 211, 252, 0.3);
+      border-color: rgba(125, 211, 252, 0.5);
+    }
+
+    .menu button span {
+      flex: 1;
+      text-align: left;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .buttons {
+      margin-top: 15px;
+      display: flex;
+      justify-content: space-around;
+    }
+
+    .buttons button {
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      color: #1f2937;
+      border: none;
+      border-radius: 25px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(125, 211, 252, 0.2);
+    }
+
+    .buttons button:hover {
+      background: linear-gradient(135deg, #38bdf8, #fbbf24);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(125, 211, 252, 0.3);
+    }
+
+    /* Estilos para el modal Nuevo Usuario */
+    #modalUsuario input:focus,
+    #modalUsuario select:focus {
+      border-color: #06b6d4 !important;
+      box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.2) !important;
+    }
+
+    #cancelarUsuario:hover {
+      background: linear-gradient(135deg, #ef4444, #f87171) !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 12px 35px rgba(248, 113, 113, 0.4) !important;
+    }
+
+    #modalUsuario button[type="submit"]:hover {
+      background: linear-gradient(135deg, #38bdf8, #fbbf24) !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 12px 35px rgba(125, 211, 252, 0.4) !important;
+    }
+
+    /* Estilos para el modal de confirmación */
+    #btnAceptarConfirmacion:hover {
+      background: linear-gradient(135deg, #38bdf8, #fbbf24) !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 25px rgba(125, 211, 252, 0.4) !important;
+    }
+
+    /* Estilos para el modal de Personal */
+    #cerrarPersonal:hover {
+      background: linear-gradient(135deg, #38bdf8, #fbbf24) !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 6px 20px rgba(125, 211, 252, 0.3) !important;
+    }
+
+    /* Estilos para los elementos de personal */
+    .personal-item {
+      background: rgba(255, 255, 255, 0.9) !important;
+      backdrop-filter: blur(5px) !important;
+      border: 2px solid rgba(125, 211, 252, 0.3) !important;
+      border-radius: 15px !important;
+      padding: 20px !important;
+      margin-bottom: 15px !important;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+      transition: all 0.3s ease !important;
+    }
+
+    .personal-item:hover {
+      background: rgba(125, 211, 252, 0.1) !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 25px rgba(125, 211, 252, 0.2) !important;
+      border-color: rgba(125, 211, 252, 0.5) !important;
+    }
+
+    .personal-item h4 {
+      margin: 0 0 10px 0 !important;
+      color: #1f2937 !important;
+      font-size: 1.2rem !important;
+      font-weight: 600 !important;
+    }
+
+    .personal-item p {
+      margin: 5px 0 !important;
+      color: #374151 !important;
+      font-size: 0.95rem !important;
+    }
+
+    .personal-item strong {
+      background: linear-gradient(135deg, #06b6d4, #0891b2) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      background-clip: text !important;
+      font-weight: 600 !important;
+    }
+
+    .personal-buttons {
+      margin-top: 15px !important;
+      display: flex !important;
+      gap: 10px !important;
+      justify-content: center !important;
+    }
+
+    .personal-buttons button {
+      border: none !important;
+      border-radius: 20px !important;
+      padding: 8px 20px !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      cursor: pointer !important;
+      transition: all 0.3s ease !important;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .personal-buttons button:first-child {
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7) !important;
+      color: #1f2937 !important;
+    }
+
+    .personal-buttons button:first-child:hover {
+      background: linear-gradient(135deg, #38bdf8, #fbbf24) !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3) !important;
+    }
+
+    .personal-buttons button:last-child {
+      background: linear-gradient(135deg, #f87171, #fca5a5) !important;
+      color: white !important;
+    }
+
+    .personal-buttons button:last-child:hover {
+      background: linear-gradient(135deg, #ef4444, #f87171) !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 15px rgba(248, 113, 113, 0.3) !important;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="icon" id="userIcon">👤 <span id="userName" style="font-weight:bold; margin-left:8px;"></span>
+      <div id="userDropdown" style="display:none; position:absolute; top:40px; right:0; background:white; color:#333; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:180px; z-index:10;">
+        <button id="startServiceBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left;">Iniciar servicio</button>
+        <button id="logoutBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left;">Cerrar sesión</button>
+      </div>
+    </div>
+    <h1>Medical Developer</h1>
+  </header>
+
+  <div class="container">
+    <h2>Bienvenido</h2>
+
+    <div class="menu">
+        <button data-category="pacientes">👥 <span>Pacientes</span></button>
+        <button data-category="usuarios-personal">👤 <span>Usuarios y Personal</span></button>
+        <button data-category="operaciones-control">⚙️ <span>Operaciones / Control</span></button>
+        <button data-category="reportes">� <span>Reportes</span></button>
+    </div>
+  </div>
+  <!-- Modal para registro de entradas/salidas -->
+  <div id="modalRegistroES" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:3000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:30px 20px; border-radius:12px; min-width:350px; max-width:95vw; box-shadow:0 2px 12px rgba(0,0,0,0.2); position:relative;">
+      <h3>Registro de Entradas/Salidas</h3>
+      <div id="registroESLista"></div>
+      <div style="margin-top:15px; text-align:right;">
+        <button type="button" id="cerrarRegistroES">Cerrar</button>
+      </div>
+    </div>
+  </div>
+  <!-- Modal para registrar nuevo usuario -->
+  <div id="modalUsuario" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background: linear-gradient(135deg, rgba(125, 211, 252, 0.8), rgba(254, 243, 199, 0.8)), url('img/medical-background.png?v=1') center center / cover no-repeat; z-index:1000; justify-content:center; align-items:center;">
+    
+    <div style="background: rgba(255, 255, 255, 0.98); padding: 25px; border-radius: 20px; min-width: 400px; max-width: 85vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3); border: 2px solid rgba(125, 211, 252, 0.4); position: relative; margin: 15px;">
+      
+      <!-- Título -->
+      <h3 style="margin: 0 0 25px 0; font-size: 1.8rem; font-weight: 700; text-align: center; color: transparent; background: linear-gradient(135deg, #06b6d4, #f59e0b); -webkit-background-clip: text; background-clip: text;">
+        Nuevo Usuario
+      </h3>
+      
+      <form id="formUsuario">
+        
+        <!-- ID -->
+        <div style="margin-bottom: 15px;">
+          <label for="id" style="display: block; font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: transparent; background: linear-gradient(135deg, #06b6d4, #0891b2); -webkit-background-clip: text; background-clip: text;">ID:</label>
+          <input type="text" id="id" name="id" required style="width: 100%; padding: 12px 16px; border: 2px solid #7dd3fc; border-radius: 25px; font-size: 1rem; background: white; transition: all 0.3s ease; outline: none; box-sizing: border-box;">
+        </div>
+        
+        <!-- Nombre -->
+        <div style="margin-bottom: 15px;">
+          <label for="nombre" style="display: block; font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: transparent; background: linear-gradient(135deg, #06b6d4, #0891b2); -webkit-background-clip: text; background-clip: text;">Nombre:</label>
+          <input type="text" id="nombre" name="nombre" required style="width: 100%; padding: 12px 16px; border: 2px solid #7dd3fc; border-radius: 25px; font-size: 1rem; background: white; transition: all 0.3s ease; outline: none; box-sizing: border-box;">
+        </div>
+        
+        <!-- Apellidos -->
+        <div style="margin-bottom: 15px;">
+          <label for="apellidos" style="display: block; font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: transparent; background: linear-gradient(135deg, #06b6d4, #0891b2); -webkit-background-clip: text; background-clip: text;">Apellidos:</label>
+          <input type="text" id="apellidos" name="apellidos" required style="width: 100%; padding: 12px 16px; border: 2px solid #7dd3fc; border-radius: 25px; font-size: 1rem; background: white; transition: all 0.3s ease; outline: none; box-sizing: border-box;">
+        </div>
+        
+        <!-- Edad -->
+        <div style="margin-bottom: 15px;">
+          <label for="edad" style="display: block; font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: transparent; background: linear-gradient(135deg, #06b6d4, #0891b2); -webkit-background-clip: text; background-clip: text;">Edad:</label>
+          <input type="number" id="edad" name="edad" required min="0" style="width: 100%; padding: 12px 16px; border: 2px solid #7dd3fc; border-radius: 25px; font-size: 1rem; background: white; transition: all 0.3s ease; outline: none; box-sizing: border-box;">
+        </div>
+        
+        <!-- Sexo -->
+        <div style="margin-bottom: 15px;">
+          <label for="sexo" style="display: block; font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: transparent; background: linear-gradient(135deg, #06b6d4, #0891b2); -webkit-background-clip: text; background-clip: text;">Sexo:</label>
+          <select id="sexo" name="sexo" required style="width: 100%; padding: 12px 16px; border: 2px solid #7dd3fc; border-radius: 25px; font-size: 1rem; background: white; transition: all 0.3s ease; outline: none; cursor: pointer; box-sizing: border-box;">
+            <option value="">Selecciona</option>
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+          </select>
+        </div>
+        
+        <!-- Matrícula -->
+        <div style="margin-bottom: 15px;">
+          <label for="matricula" style="display: block; font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: transparent; background: linear-gradient(135deg, #06b6d4, #0891b2); -webkit-background-clip: text; background-clip: text;">Matrícula:</label>
+          <input type="text" id="matricula" name="matricula" required style="width: 100%; padding: 12px 16px; border: 2px solid #7dd3fc; border-radius: 25px; font-size: 1rem; background: white; transition: all 0.3s ease; outline: none; box-sizing: border-box;">
+        </div>
+        
+        <!-- Contraseña -->
+        <div style="margin-bottom: 15px;">
+          <label for="contrasena" style="display: block; font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: transparent; background: linear-gradient(135deg, #06b6d4, #0891b2); -webkit-background-clip: text; background-clip: text;">Contraseña:</label>
+          <input type="password" id="contrasena" name="contrasena" required style="width: 100%; padding: 12px 16px; border: 2px solid #7dd3fc; border-radius: 25px; font-size: 1rem; background: white; transition: all 0.3s ease; outline: none; box-sizing: border-box;">
+        </div>
+        
+        <!-- Mesa de salud -->
+        <div style="margin-bottom: 15px;">
+          <label for="mesa" style="display: block; font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: transparent; background: linear-gradient(135deg, #06b6d4, #0891b2); -webkit-background-clip: text; background-clip: text;">Número de mesa de salud:</label>
+          <input type="number" id="mesa" name="mesa" required min="1" style="width: 100%; padding: 12px 16px; border: 2px solid #7dd3fc; border-radius: 25px; font-size: 1rem; background: white; transition: all 0.3s ease; outline: none; box-sizing: border-box;">
+        </div>
+        
+        <!-- Rol -->
+        <div style="margin-bottom: 20px;">
+          <label for="rol" style="display: block; font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: transparent; background: linear-gradient(135deg, #06b6d4, #0891b2); -webkit-background-clip: text; background-clip: text;">Rol:</label>
+          <select id="rol" name="rol" required style="width: 100%; padding: 12px 16px; border: 2px solid #7dd3fc; border-radius: 25px; font-size: 1rem; background: white; transition: all 0.3s ease; outline: none; cursor: pointer; box-sizing: border-box;">
+            <option value="admin">Administrador</option>
+            <option value="practicante">Practicante</option>
+          </select>
+        </div>
+        
+        <!-- Botones -->
+        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+          <button type="button" id="cancelarUsuario" style="background: linear-gradient(135deg, #f87171, #fca5a5); color: white; border: none; border-radius: 25px; padding: 12px 28px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 6px 20px rgba(248, 113, 113, 0.3);">
+            Cancelar
+          </button>
+          <button type="submit" style="background: linear-gradient(135deg, #7dd3fc, #fef3c7); color: #1f2937; border: none; border-radius: 25px; padding: 12px 28px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 6px 20px rgba(125, 211, 252, 0.3);">
+            Registrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal para mostrar usuarios del personal -->
+  <div id="modalPersonal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background: linear-gradient(135deg, rgba(125, 211, 252, 0.8), rgba(254, 243, 199, 0.8)), url('img/medical-background.png?v=1') center center / cover no-repeat; z-index:2000; justify-content:center; align-items:center;">
+    
+    <div style="background: rgba(255, 255, 255, 0.98); padding: 30px; border-radius: 20px; min-width: 450px; max-width: 90vw; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3); border: 2px solid rgba(125, 211, 252, 0.4); position: relative; margin: 20px;">
+      
+      <!-- Título con degradado -->
+      <h3 style="margin: 0 0 25px 0; font-size: 1.8rem; font-weight: 700; text-align: center; color: transparent; background: linear-gradient(135deg, #06b6d4, #f59e0b); -webkit-background-clip: text; background-clip: text;">
+        Personal Registrado
+      </h3>
+      
+      <!-- Lista de personal -->
+      <div id="personalLista" style="margin-bottom: 25px;"></div>
+      
+      <!-- Botón de cerrar con estilo moderno -->
+      <div style="text-align: center;">
+        <button type="button" id="cerrarPersonal" style="background: linear-gradient(135deg, #7dd3fc, #fef3c7); color: #1f2937; border: none; border-radius: 25px; padding: 12px 30px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(125, 211, 252, 0.2);">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación personalizado -->
+  <div id="modalConfirmacion" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background: linear-gradient(135deg, rgba(125, 211, 252, 0.9), rgba(254, 243, 199, 0.9)), url('img/medical-background.png?v=1') center center / cover no-repeat; z-index:9999; justify-content:center; align-items:center;">
+    
+    <div style="background: rgba(255, 255, 255, 0.98); padding: 30px; border-radius: 20px; min-width: 350px; max-width: 500px; text-align: center; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3); border: 2px solid rgba(125, 211, 252, 0.4); position: relative; margin: 20px;">
+      
+      <!-- Ícono de éxito -->
+      <div style="margin-bottom: 20px; font-size: 3rem;">✅</div>
+      
+      <!-- Título -->
+      <h3 id="tituloConfirmacion" style="margin: 0 0 15px 0; font-size: 1.5rem; font-weight: 700; color: transparent; background: linear-gradient(135deg, #06b6d4, #10b981); -webkit-background-clip: text; background-clip: text;">
+        ¡Éxito!
+      </h3>
+      
+      <!-- Mensaje -->
+      <p id="mensajeConfirmacion" style="margin: 0 0 25px 0; font-size: 1.1rem; color: #374151; line-height: 1.5;">
+        Usuario registrado correctamente
+      </p>
+      
+      <!-- Botón -->
+      <button id="btnAceptarConfirmacion" style="background: linear-gradient(135deg, #7dd3fc, #fef3c7); color: #1f2937; border: none; border-radius: 25px; padding: 12px 30px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 6px 20px rgba(125, 211, 252, 0.3);">
+        Aceptar
+      </button>
+    </div>
+  </div>
+
+  <!-- Aquí se cargarán los modales dinámicamente -->
+  <script src="MenuInicio.js"></script>
+  <script src="Servicio.js"></script>
+  <script src="RegistroEntradasSalidas.js"></script>
+  <script src="Personal.js"></script>
+</body>
+</html>

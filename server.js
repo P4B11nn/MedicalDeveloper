@@ -85,5 +85,5 @@ http.createServer((req, res) => {
   
 }).listen(PORT);
 
-console.log(`Servidor ejecut�ndose en http://localhost:${PORT}`);
+console.log(`Servidor ejecutandose en http://localhost:${PORT}`);
 console.log("Para detener el servidor: presiona Ctrl + C");

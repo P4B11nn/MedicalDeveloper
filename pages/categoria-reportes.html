@@ -372,13 +372,11 @@
   </div>
 
   <script type="module">
-    import { initReportsController } from './js/controllers/reportsController.js';
-    import { initAllChecks } from './js/utils/domCheck.js';
-    
-    // Iniciar el controlador cuando el DOM esté completamente cargado
+    import { initGlobalController } from '../js/controllers/globalController.js';
+    import { initReporteController } from '../js/controllers/reporteController.js';
     document.addEventListener('DOMContentLoaded', () => {
-      initReportsController();
-      initAllChecks();
+      initGlobalController();
+      initReporteController();
     });
   </script>
 </body>
