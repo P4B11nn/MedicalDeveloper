@@ -118,6 +118,21 @@ export function getCurrentUserRole() {
  * Log out the current user
  */
 export function logout() {
+  console.log('AuthController: Iniciando proceso de logout');
+  
+  const usuario = authModel.getCurrentUser();
+  if (usuario) {
+    authModel.registrarActividad({
+      accion: 'logout',
+      descripcion: 'Cierre de sesión desde authController'
+    });
+  }
+  
   authModel.logout();
+  
+  // Limpiar cualquier redirección pendiente
+  sessionStorage.removeItem('redirectAfterLogin');
+  
+  // Redirigir a la página de login
   window.location.href = 'index.html';
 }

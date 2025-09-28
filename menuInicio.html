@@ -180,6 +180,28 @@
     </div>
   </div>
 
-  <script src="js/views/MenuInicio.js"></script>
+  <script type="module">
+    import { AuthGuard } from './js/middleware/authGuard.js';
+    import { initGlobalController } from './js/controllers/globalController.js';
+    import './js/views/MenuInicio.js';
+    import './js/utils/eventBusManager.js';      // Event Bus monitoring
+    import './js/utils/performanceMonitor.js';   // Performance monitoring
+    import './js/utils/architectureValidator.js'; // Architecture validation
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('MenuInicio: Página cargada con herramientas de desarrollo habilitadas');
+      
+      if (AuthGuard.validateSession()) {
+        console.log('MenuInicio: Sesión válida, navegación habilitada');
+        console.log('Debug commands: EventBusDebug, PerformanceDebug, ArchitectureDebug');
+        
+        // Initialize global controller for user display and logout
+        initGlobalController();
+        
+      } else {
+        console.error('MenuInicio: Sesión inválida');
+      }
+    });
+  </script>
 </body>
 </html>

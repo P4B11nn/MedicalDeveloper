@@ -716,11 +716,18 @@
   </div>
 
   <script type="module">
+    import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initPacienteController } from '../js/controllers/pacienteController.js';
+    import '../js/utils/eventBusManager.js';      // Event Bus monitoring
+    import '../js/utils/performanceMonitor.js';   // Performance monitoring
+    import '../js/utils/architectureValidator.js'; // Architecture validation
+    
     document.addEventListener('DOMContentLoaded', () => {
-      initGlobalController();
-      initPacienteController();
+      if (AuthGuard.validateSession()) {
+        initGlobalController();
+        initPacienteController();
+      }
     });
   </script>
 </body>

@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Usuarios y Personal - Medical Developer</title>
+  <!-- Font Awesome para iconos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * {
       margin: 0;
@@ -388,7 +390,7 @@
 </head>
 <body>
   <header>
-  <button class="back-btn" onclick="window.history.back()" title="Volver">←</button>
+    <button class="back-btn" onclick="window.location.href='../menuInicio.html'" title="Volver al Menú">←</button>
     <div class="icon" id="userIcon">👤 <span id="userName" style="font-weight:bold; margin-left:8px;"></span>
       <div id="userDropdown" style="display:none; position:absolute; top:40px; right:0; background:white; color:#333; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:180px; z-index:10;">
         <button id="startServiceBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left;">Iniciar servicio</button>
@@ -504,11 +506,14 @@
   </div>
 
   <script type="module">
+    import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initUsersController } from '../js/controllers/usersController.js';
     document.addEventListener('DOMContentLoaded', () => {
-      initGlobalController();
-      initUsersController();
+      if (AuthGuard.validateSession()) {
+        initGlobalController();
+        initUsersController();
+      }
     });
   </script>
 </body>

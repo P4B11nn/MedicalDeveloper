@@ -1,152 +1,242 @@
 // js/controllers/operacionesController.js
-import { getRegistroEntradasSalidas, getMesasSalud } from '../models/operacionesModel.js';
+import { getRegistroEntradasSalidas, getMesasSalud, exportarDatosCSV, limpiarRegistros } from '../models/operacionesModel.js';
 import { renderRegistroEntradasSalidas, renderMesasSalud } from '../views/operacionesView.js';
+import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
 
-/**
- * Función principal para inicializar la página de Operaciones y Control.
- */
 export function initOperationsController() {
+  console.log('OperationsController: Inicializando controlador de operaciones');
+  
+  // Limpiar registros por defecto al cargar
+  console.log('OperationsController: Limpiando registros por defecto...');
+  
+  // Suscribirse a eventos del Event Bus
+  setupEventListeners();
+  
   setupSidebarNavigation();
-  setupFiltersAndExports(); // Nueva función para manejar los controles
+  setupSimpleExport();
 
-  const firstButton = document.querySelector('.sidebar-menu button');
-  if (firstButton) {
-    firstButton.click();
-  }
+  // Activar la primera sección por defecto
+  setTimeout(() => {
+    const firstButton = document.querySelector('.sidebar-menu button[data-section]');
+    if (firstButton) {
+      console.log('Activando primera sección:', firstButton.getAttribute('data-section'));
+      firstButton.click();
+    } else {
+      console.error('No se encontró el primer botón del menú lateral');
+    }
+    
+    // Mostrar todos los registros sin filtros
+    mostrarTodosLosRegistros();
+  }, 100);
+
+  // Hacer disponibles funciones de debug
+  window.OperationsDebug = {
+    limpiarRegistros: () => {
+      const confirmacion = confirm('¿Estás seguro de que deseas limpiar TODOS los registros?\n\nEsta acción no se puede deshacer.');
+      if (confirmacion) {
+        limpiarRegistros();
+        mostrarTodosLosRegistros();
+        console.log('OperationsDebug: Registros limpiados');
+        alert('Registros limpiados exitosamente');
+      }
+    },
+    mostrarRegistros: () => {
+      console.table(getRegistroEntradasSalidas());
+    }
+  };
+  
+  console.log('OperationsDebug: Comandos disponibles - OperationsDebug.limpiarRegistros(), OperationsDebug.mostrarRegistros()');
 }
 
 /**
- * Configura los eventos de clic para el menú lateral de navegación.
+ * Configurar listeners de eventos del Event Bus
  */
-function setupSidebarNavigation() {
-  const sidebarButtons = document.querySelectorAll('.sidebar-menu button');
-  const sections = document.querySelectorAll('.content-area .form-section');
-  const defaultSection = document.getElementById('default-section');
-
-  sidebarButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const targetSectionId = button.getAttribute('data-section');
-
-      sidebarButtons.forEach(btn => btn.classList.remove('active'));
-      sections.forEach(sec => sec.classList.remove('active'));
-      if (defaultSection) defaultSection.style.display = 'none';
-
-      button.classList.add('active');
-      const activeSection = document.getElementById(`${targetSectionId}-section`);
-      if (activeSection) {
-        activeSection.classList.add('active');
-        // Limpia el contenido antes de renderizar
-        if (targetSectionId === 'registro-entradas-salidas') {
-          // Si no existen los filtros, muestra mensaje
-          const container = document.getElementById('registroESLista');
-          if (!container) {
-            activeSection.innerHTML = '<div style="text-align:center;color:#ef4444;padding:20px;">No se encontró el contenedor de registros.</div>';
-            return;
-          }
-          aplicarFiltros();
-        } else if (targetSectionId === 'mesas-salud') {
-          cargarMesasSalud();
-        }
-      }
-    });
+function setupEventListeners() {
+  console.log('OperationsController: Configurando Event Bus listeners');
+  
+  // REMOVIDO: El listener que causaba el bucle infinito
+  // eventBus.on(EVENT_NAMES.FILTER_CHANGED, (data) => {
+  //   console.log('OperationsController: Filtro cambiado', data);
+  //   aplicarFiltros();  // <-- ESTO CAUSABA EL BUCLE INFINITO
+  // });
+  
+  // Escuchar eventos de exportación
+  eventBus.on(EVENT_NAMES.EXPORT_REQUESTED, (data) => {
+    console.log('OperationsController: Exportación solicitada', data);
+    handleExportRequest(data);
+  });
+  
+  // Escuchar eventos de datos cargados
+  eventBus.on(EVENT_NAMES.DATA_LOADED, (data) => {
+    console.log('OperationsController: Datos cargados', data);
+    if (data.type === 'registro') {
+      refreshRegistroView();
+    } else if (data.type === 'mesas') {
+      refreshMesasView();
+    }
   });
 }
 
-/**
- * Configura los eventos para los filtros y botones de exportación.
- */
-function setupFiltersAndExports() {
-  const buscarRegistroInput = document.getElementById('buscarRegistro');
-  const filtroRolSelect = document.getElementById('filtroRol');
-  const btnExportarTodo = document.getElementById('btnExportarTodo');
+function setupSidebarNavigation() {
+  const sidebarButtons = document.querySelectorAll('.sidebar-menu button[data-section]');
+  const sections = document.querySelectorAll('.content-area .form-section');
 
-  if (buscarRegistroInput) {
-    buscarRegistroInput.addEventListener('input', aplicarFiltros);
-  }
-  if (filtroRolSelect) {
-    filtroRolSelect.addEventListener('change', aplicarFiltros);
-  }
-  if (btnExportarTodo) {
-    btnExportarTodo.addEventListener('click', () => {
-      const historialCompleto = getRegistroEntradasSalidas();
-      exportarRegistros(historialCompleto, 'registro_completo');
+  console.log(`Configurando navegación lateral: ${sidebarButtons.length} botones, ${sections.length} secciones`);
+
+  sidebarButtons.forEach((button, index) => {
+    button.addEventListener('click', () => {
+      const targetSectionId = button.getAttribute('data-section');
+      console.log(`Clic en sección: ${targetSectionId}`);
+      
+      // Limpiar estados activos
+      sidebarButtons.forEach(btn => btn.classList.remove('active'));
+      sections.forEach(sec => sec.classList.remove('active'));
+      
+      // Activar botón y sección
+      button.classList.add('active');
+      const activeSection = document.getElementById(`${targetSectionId}-section`);
+      
+      if (activeSection) {
+        activeSection.classList.add('active');
+        console.log(`Sección activada: ${targetSectionId}`);
+        
+        // Renderizar contenido según la sección
+        if (targetSectionId === 'registro-entradas-salidas') {
+          mostrarTodosLosRegistros();
+        } else if (targetSectionId === 'mesas-salud') {
+          cargarMesasSalud();
+        }
+      } else {
+        console.error(`No se encontró la sección: ${targetSectionId}-section`);
+      }
     });
+  });
+
+  if (sidebarButtons.length === 0) {
+    console.error('No se encontraron botones del menú lateral con data-section');
   }
 }
 
-/**
- * Aplica los filtros actuales y vuelve a renderizar la lista de registros.
- */
-function aplicarFiltros() {
-  const container = document.getElementById('registroESLista');
-  if (!container) return;
-  const buscarInput = document.getElementById('buscarRegistro');
-  const filtroRolSelect = document.getElementById('filtroRol');
-  const buscarValor = buscarInput ? buscarInput.value.toLowerCase() : '';
-  const rolValor = filtroRolSelect ? filtroRolSelect.value : '';
-
-  let historial = getRegistroEntradasSalidas();
-  if (!Array.isArray(historial)) historial = [];
-
-  if (buscarValor) {
-    historial = historial.filter(item =>
-      (item.nombre && item.nombre.toLowerCase().includes(buscarValor)) ||
-      (item.matricula && item.matricula.toLowerCase().includes(buscarValor))
-    );
-  }
-
-  if (rolValor) {
-    historial = historial.filter(item => item.rol === rolValor);
-  }
-
-  renderRegistroEntradasSalidas(historial, container);
+function setupSimpleExport() {
+    console.log('Configurando exportación simplificada (sin filtros)...');
+    
+    // Ocultar controles de filtro si existen
+    const buscarInput = document.getElementById('buscarRegistro');
+    const rolSelect = document.getElementById('filtroRol');
+    
+    if (buscarInput) {
+        buscarInput.style.display = 'none';
+        console.log('Input de búsqueda ocultado');
+    }
+    
+    if (rolSelect) {
+        rolSelect.style.display = 'none';
+        console.log('Select de filtro ocultado');
+    }
+    
+    // Configurar solo exportación
+    const exportarBtn = document.getElementById('btnExportarTodo');
+    if (exportarBtn) {
+        exportarBtn.addEventListener('click', () => {
+            console.log('Iniciando exportación CSV...');
+            const historial = getRegistroEntradasSalidas();
+            if (historial.length > 0) {
+                eventBus.emit(EVENT_NAMES.EXPORT_REQUESTED, {
+                    type: 'csv',
+                    data: historial,
+                    filename: 'registro_completo'
+                });
+                exportarDatosCSV(historial, 'registro_completo');
+                console.log(`Exportando ${historial.length} registros`);
+            } else {
+                console.warn('No hay datos para exportar');
+                alert('No hay datos para exportar.');
+            }
+        });
+        console.log('Botón de exportar CSV configurado');
+    } else {
+        console.error('No se encontró el botón btnExportarTodo');
+    }
+    
+    console.log('Configuración de exportación simplificada completada');
 }
 
+function mostrarTodosLosRegistros() {
+    console.log('Mostrando todos los registros de entradas/salidas...');
+    const container = document.getElementById('registroESLista');
+    
+    if (!container) {
+        console.error('No se encontró el contenedor registroESLista');
+        return;
+    }
+    
+    // Obtener todos los registros reales de actividad
+    const historial = getRegistroEntradasSalidas();
+    console.log(`Registros obtenidos: ${historial.length}`);
+    
+    // Renderizar todos los registros sin filtros
+    renderRegistroEntradasSalidas(historial, container);
+    
+    console.log('Todos los registros mostrados exitosamente');
+}
 
-/**
- * Carga y renderiza el estado de las mesas de salud.
- */
 function cargarMesasSalud() {
   const container = document.getElementById('mesasGrid');
   if (container) {
     const mesas = getMesasSalud();
+    eventBus.emit(EVENT_NAMES.DATA_LOADED, { 
+      type: 'mesas', 
+      count: mesas.length 
+    });
     renderMesasSalud(mesas, container);
   }
 }
 
 /**
- * Exporta un conjunto de datos a un archivo CSV.
- * @param {Array} datos - Los datos a exportar.
- * @param {string} nombreArchivo - El nombre base para el archivo.
+ * Manejar solicitudes de exportación desde el Event Bus
  */
-function exportarRegistros(datos, nombreArchivo) {
-  if (!datos || datos.length === 0) {
-    alert('No hay datos para exportar.');
-    return;
+function handleExportRequest(data) {
+  console.log('OperationsController: Manejando solicitud de exportación', data);
+  
+  if (data.type === 'csv' && data.data && data.filename) {
+    try {
+      exportarDatosCSV(data.data, data.filename);
+      eventBus.emit(EVENT_NAMES.REPORTE_EXPORTED, {
+        type: 'csv',
+        filename: data.filename,
+        recordCount: data.data.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error en exportación:', error);
+      eventBus.emit(EVENT_NAMES.DATA_ERROR, {
+        operation: 'export',
+        error: error.message
+      });
+    }
   }
+}
 
-  const headers = ['Usuario', 'Matrícula', 'Mesa', 'Rol', 'Entrada', 'Salida'];
-  let csvContent = headers.join(',') + '\n';
+/**
+ * Refrescar vista de registro
+ */
+function refreshRegistroView() {
+  const container = document.getElementById('registroESLista');
+  if (container) {
+    const historial = getRegistroEntradasSalidas();
+    renderRegistroEntradasSalidas(historial, container);
+    console.log('OperationsController: Vista de registro refrescada');
+  }
+}
 
-  datos.forEach(reg => {
-    const row = [
-      `"${reg.nombre || ''}"`,
-      `"${reg.matricula || ''}"`,
-      `"${reg.mesa || ''}"`,
-      `"${reg.rol || ''}"`,
-      `"${reg.entrada || ''}"`,
-      `"${reg.salida || ''}"`
-    ];
-    csvContent += row.join(',') + '\n';
-  });
-
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  link.setAttribute('href', url);
-  link.setAttribute('download', `${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.csv`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+/**
+ * Refrescar vista de mesas
+ */
+function refreshMesasView() {
+  const container = document.getElementById('mesasGrid');
+  if (container) {
+    const mesas = getMesasSalud();
+    renderMesasSalud(mesas, container);
+    console.log('OperationsController: Vista de mesas refrescada');
+  }
 }
