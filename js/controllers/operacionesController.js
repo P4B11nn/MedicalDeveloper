@@ -1,6 +1,7 @@
 // js/controllers/operacionesController.js
-import { getRegistroEntradasSalidas, getMesasSalud, exportarDatosCSV, limpiarRegistros } from '../models/operacionesModel.js';
-import { renderRegistroEntradasSalidas, renderMesasSalud } from '../views/operacionesView.js';
+import { getRegistroEntradasSalidas, exportarDatosCSV, limpiarRegistros } from '../models/operacionesModel.js';
+import { renderRegistroEntradasSalidas, renderModulos } from '../views/operacionesView.js';
+import { gestionModel } from '../models/gestionModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
 
 export function initOperationsController() {
@@ -183,12 +184,12 @@ function mostrarTodosLosRegistros() {
 function cargarMesasSalud() {
   const container = document.getElementById('mesasGrid');
   if (container) {
-    const mesas = getMesasSalud();
+    const modulos = gestionModel.getModulos();
     eventBus.emit(EVENT_NAMES.DATA_LOADED, { 
-      type: 'mesas', 
-      count: mesas.length 
+      type: 'modulos', 
+      count: modulos.length 
     });
-    renderMesasSalud(mesas, container);
+    renderModulos(modulos, container);
   }
 }
 
@@ -230,13 +231,13 @@ function refreshRegistroView() {
 }
 
 /**
- * Refrescar vista de mesas
+ * Refrescar vista de módulos
  */
 function refreshMesasView() {
   const container = document.getElementById('mesasGrid');
   if (container) {
-    const mesas = getMesasSalud();
-    renderMesasSalud(mesas, container);
-    console.log('OperationsController: Vista de mesas refrescada');
+    const modulos = gestionModel.getModulos();
+    renderModulos(modulos, container);
+    console.log('OperationsController: Vista de módulos refrescada');
   }
 }

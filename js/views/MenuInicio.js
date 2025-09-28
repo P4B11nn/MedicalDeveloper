@@ -9,7 +9,8 @@ const CATEGORY_PERMISSIONS = {
   'pacientes': ['admin', 'practicante'],
   'usuarios-personal': ['admin'], // Solo administradores
   'operaciones-control': ['admin', 'practicante'],
-  'reportes': ['admin', 'practicante']
+  'reportes': ['admin', 'practicante'],
+  'gestion': ['admin'] // Solo administradores pueden acceder a Gestión Administrativa
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,6 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   console.log(`MenuInicio: Usuario actual - ${usuario.nombre} (${usuario.rol})`);
+  
+  // Mostrar el botón de Gestión Administrativa solo para administradores
+  const btnGestion = document.getElementById('btnGestion');
+  if (btnGestion && usuario.rol === 'admin') {
+    btnGestion.style.display = 'flex';
+    console.log('MenuInicio: Botón de Gestión Administrativa habilitado para administrador');
+  }
   
   // Configurar botones de navegación
   document.querySelectorAll('.menu button[data-category]').forEach(btn => {
@@ -64,6 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
             break;
           case 'reportes':
             url = 'pages/categoria-reportes.html';
+            break;
+          case 'gestion':
+            url = 'pages/categoria-gestion.html';
             break;
           default:
             url = 'index.html';

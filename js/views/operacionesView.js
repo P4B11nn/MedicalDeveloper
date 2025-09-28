@@ -243,43 +243,44 @@ export function renderRegistroEntradasSalidas(historial, container) {
 }
 
 /**
- * Renderiza las tarjetas con el estado de las mesas de salud.
- * @param {Array} mesas - Los datos de las mesas a mostrar.
+ * Renderiza las tarjetas con el estado de los módulos de salud.
+ * @param {Array} modulos - Los datos de los módulos a mostrar.
  * @param {HTMLElement} container - El elemento <div> donde se insertarán las tarjetas.
  */
-export function renderMesasSalud(mesas, container) {
+export function renderModulos(modulos, container) {
   if (!container) return;
 
-  if (!mesas || mesas.length === 0) {
-    container.innerHTML = `<p class="welcome-message">No hay mesas configuradas.</p>`;
+  if (!modulos || modulos.length === 0) {
+    container.innerHTML = `<p class="welcome-message">No hay módulos configurados.</p>`;
     return;
   }
 
-  container.innerHTML = mesas.map(mesa => {
-    let statusClass = mesa.estado;
-    let statusText = '';
+  // Importamos gestionModel para poder obtener información de grupos
+  import('../models/gestionModel.js').then(({ gestionModel }) => {
+    container.innerHTML = modulos.map(modulo => {
+      let statusClass = modulo.estado.toLowerCase().replace(' ', '-');
+      let grupoAsignado = null;
+      
+      // Buscar información del grupo asignado, si existe
+      if (modulo.grupoAsignadoId) {
+        grupoAsignado = gestionModel.getGrupoById(modulo.grupoAsignadoId);
+      }
 
-    switch (mesa.estado) {
-      case 'en-servicio': statusText = 'En Servicio'; break;
-      case 'ocupada': statusText = 'Ocupada'; break;
-      case 'fuera-servicio': statusText = 'Fuera de servicio'; break;
-      default: statusText = 'Desconocido';
-    }
-
-    return `
-      <div class="mesa-item">
-        <div class="mesa-numero">Mesa ${mesa.numero}</div>
-        <div class="mesa-status ${statusClass}">${statusText}</div>
-        <div class="mesa-info">
-          ${mesa.asignado ? `
-            <p><strong>Asignado a:</strong> ${mesa.asignado.nombre} ${mesa.asignado.apellidos || ''}</p>
-            <p><strong>Rol:</strong> ${mesa.asignado.rol === 'admin' ? 'Administrador' : 'Practicante'}</p>
-          ` : '<p><strong>Sin asignar</strong></p>'}
-          ${mesa.ultimaActividad ? `
-            <p><strong>Última actividad:</strong> ${mesa.ultimaActividad}</p>
-          ` : ''}
+      return `
+        <div class="modulo-item">
+          <div class="modulo-nombre">${modulo.nombre}</div>
+          <div class="modulo-ubicacion">${modulo.ubicacion}</div>
+          <div class="modulo-status ${statusClass}">${modulo.estado}</div>
+          <div class="modulo-info">
+            ${grupoAsignado ? `
+              <p><strong>Grupo Asignado:</strong> ${grupoAsignado.nombre}</p>
+              <p><strong>Turno:</strong> ${grupoAsignado.turno}</p>
+              <p><strong>Horario:</strong> ${grupoAsignado.horario}</p>
+              <p><strong>Miembros:</strong> ${grupoAsignado.miembros.length}</p>
+            ` : '<p><strong>Sin grupo asignado</strong></p>'}
+          </div>
         </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('');
+  });
 }

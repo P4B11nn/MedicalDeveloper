@@ -2,12 +2,16 @@ import { authModel } from '../models/storageModel.js';
 import { AuthGuard } from '../middleware/authGuard.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
 import { registrarEntrada, registrarSalida } from '../models/operacionesModel.js';
+import { setupEventLogging } from '../utils/eventLogger.js';
 
 /**
  * Inicializa la lógica global común para todas las páginas (excepto login)
  */
 export function initGlobalController() {
   console.log('GlobalController: Inicializando controlador global');
+  
+  // Inicializar el sistema de registro de eventos
+  setupEventLogging();
   
   // El AuthGuard ya maneja la verificación de autenticación
   const usuarioActual = authModel.getCurrentUser();
@@ -174,44 +178,141 @@ function setupLogoutButton() {
     logoutBtn.addEventListener('click', () => {
       console.log('GlobalController: Solicitud de logout');
       
-      if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-        const usuarioActual = authModel.getCurrentUser();
-        
-        // Registrar salida automáticamente
-        if (usuarioActual) {
-          const salidaRegistrada = registrarSalida(usuarioActual.matricula);
-          if (salidaRegistrada) {
-            console.log('GlobalController: Salida registrada automáticamente');
-            
-            // Emitir evento de salida
-            eventBus.emit(EVENT_NAMES.OPERACION_UPDATED, {
-              type: 'salida',
-              usuario: usuarioActual,
-              timestamp: new Date().toISOString()
-            });
-          }
-        }
-        
-        // Emitir evento antes del logout
-        eventBus.emit(EVENT_NAMES.USER_LOGOUT, { source: 'logout_button' });
-        
-        // Limpiar sesión
-        authModel.logout();
-        
-        // Redirigir al login
-        const currentPath = window.location.pathname;
-        const isInPagesFolder = currentPath.includes('/pages/');
-        const loginPath = isInPagesFolder ? '../index.html' : 'index.html';
-        
-        console.log('GlobalController: Redirigiendo a login:', loginPath);
-        window.location.href = loginPath;
-      }
+      // Crear modal de confirmación elegante en lugar del confirm nativo
+      showLogoutConfirmModal();
     });
     
     console.log('GlobalController: Botón de logout configurado');
   } else {
     console.warn('GlobalController: Botón de logout no encontrado');
   }
+}
+
+/**
+ * Muestra un modal de confirmación elegante para cerrar sesión
+ */
+function showLogoutConfirmModal() {
+  // Crea el overlay del modal
+  const modalOverlay = document.createElement('div');
+  modalOverlay.className = 'modal-overlay';
+  modalOverlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+  
+  modalOverlay.innerHTML = `
+    <div style="
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(125, 211, 252, 0.3);
+      border-radius: 20px;
+      padding: 30px;
+      text-align: center;
+      box-shadow: 0 8px 25px rgba(125, 211, 252, 0.2);
+      max-width: 400px;
+      width: 90%;
+    ">
+      <h3 style="
+        margin: 0 0 20px 0;
+        color: #1f2937;
+        font-size: 1.4rem;
+        font-weight: 600;
+      ">Cerrar Sesión</h3>
+      
+      <p style="
+        margin: 0 0 25px 0;
+        color: #4b5563;
+        font-size: 1rem;
+        line-height: 1.5;
+      ">¿Estás seguro de que deseas cerrar la sesión?</p>
+      
+      <div style="
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+      ">
+        <button id="btn-cancel-logout" style="
+          background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+          border: none;
+          border-radius: 20px;
+          padding: 12px 25px;
+          color: #374151;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        ">Cancelar</button>
+        
+        <button id="btn-confirm-logout" style="
+          background: linear-gradient(135deg, #f87171, #fca5a5);
+          border: none;
+          border-radius: 20px;
+          padding: 12px 25px;
+          color: white;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        ">Cerrar Sesión</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modalOverlay);
+  
+  // Configurar botones
+  const cerrarModal = () => document.body.removeChild(modalOverlay);
+  
+  modalOverlay.querySelector('#btn-cancel-logout').addEventListener('click', cerrarModal);
+  
+  modalOverlay.querySelector('#btn-confirm-logout').addEventListener('click', () => {
+    cerrarModal();
+    
+    const usuarioActual = authModel.getCurrentUser();
+    
+    // Registrar salida automáticamente
+    if (usuarioActual) {
+      const salidaRegistrada = registrarSalida(usuarioActual.matricula);
+      if (salidaRegistrada) {
+        console.log('GlobalController: Salida registrada automáticamente');
+        
+        // Emitir evento de salida
+        eventBus.emit(EVENT_NAMES.OPERACION_UPDATED, {
+          type: 'salida',
+          usuario: usuarioActual,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+    
+    // Emitir evento antes del logout
+    eventBus.emit(EVENT_NAMES.USER_LOGOUT, { source: 'logout_button' });
+    
+    // Limpiar sesión
+    authModel.logout();
+    
+    // Redirigir al login
+    const currentPath = window.location.pathname;
+    const isInPagesFolder = currentPath.includes('/pages/');
+    const loginPath = isInPagesFolder ? '../index.html' : 'index.html';
+    
+    console.log('GlobalController: Redirigiendo a login:', loginPath);
+    window.location.href = loginPath;
+  });
+  
+  // Cerrar al hacer clic fuera
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) {
+      cerrarModal();
+    }
+  });
 }
 
 /**

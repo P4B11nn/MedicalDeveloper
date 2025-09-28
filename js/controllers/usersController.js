@@ -2,6 +2,7 @@
 import { authModel } from '../models/storageModel.js';
 import { init as initUserView, mostrarUsuarios } from '../views/userView.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
+import { gestionModel } from '../models/gestionModel.js';
 
 /**
  * Función principal para inicializar la página de Usuarios y Personal.
@@ -108,12 +109,20 @@ function setupNewUserForm() {
   
   const formUsuario = document.getElementById('formUsuario');
   if (formUsuario) {
+    // Cargar los grupos disponibles en el selector
+    cargarGruposEnFormulario();
+    
     formUsuario.addEventListener('submit', function(e) {
       e.preventDefault();
       console.log('UsersController: Procesando envío de formulario');
       
       const formData = new FormData(formUsuario);
       const userData = Object.fromEntries(formData.entries());
+      
+      // Procesar campos especiales
+      if (!userData.grupoId) {
+        delete userData.grupoId; // Eliminar si no se seleccionó ningún grupo
+      }
       
       console.log('UsersController: Datos del usuario:', userData);
 
@@ -127,6 +136,11 @@ function setupNewUserForm() {
           user: userData,
           timestamp: new Date().toISOString()
         });
+        
+        // Si el usuario se asignó a un grupo, actualizar el grupo también
+        if (userData.grupoId) {
+          gestionModel.asignarUsuarioAGrupo(userData.grupoId, userData.id);
+        }
         
         alert('¡Usuario Registrado! El usuario ha sido registrado correctamente.');
         formUsuario.reset();
@@ -145,8 +159,45 @@ function setupNewUserForm() {
       }
     });
     
+    // Suscribirse a eventos de actualización de grupos
+    eventBus.on('gestion-grupo-updated', () => {
+      cargarGruposEnFormulario();
+    });
+    
     console.log('UsersController: Formulario configurado correctamente');
   } else {
     console.error('UsersController: Formulario de usuario no encontrado');
+  }
+}
+
+/**
+ * Carga la lista de grupos disponibles en el formulario
+ */
+function cargarGruposEnFormulario() {
+  const grupoSelect = document.getElementById('grupoId');
+  if (!grupoSelect) return;
+  
+  // Obtener lista de grupos
+  const grupos = gestionModel.getGrupos();
+  
+  // Guardar el valor seleccionado actualmente
+  const valorSeleccionado = grupoSelect.value;
+  
+  // Limpiar opciones existentes excepto la primera
+  while (grupoSelect.options.length > 1) {
+    grupoSelect.remove(1);
+  }
+  
+  // Agregar los grupos como opciones
+  grupos.forEach(grupo => {
+    const option = document.createElement('option');
+    option.value = grupo.id;
+    option.textContent = `${grupo.nombre} (${grupo.turno})`;
+    grupoSelect.appendChild(option);
+  });
+  
+  // Restaurar el valor seleccionado si todavía existe
+  if (valorSeleccionado) {
+    grupoSelect.value = valorSeleccionado;
   }
 }

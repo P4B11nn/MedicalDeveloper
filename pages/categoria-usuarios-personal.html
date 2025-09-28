@@ -186,90 +186,67 @@
       display: block;
     }
 
-    /* Lista de personal */
+     /* Estilos para la lista de personal */
     .personal-lista {
       margin-bottom: 25px;
     }
 
     .personal-item {
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(5px);
-      border: 2px solid rgba(125, 211, 252, 0.3);
-      border-radius: 15px;
-      padding: 20px;
-      margin-bottom: 15px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
-    }
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(125, 211, 252, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(125, 211, 252, 0.2);
+            transition: all 0.3s ease;
+        }
+        .personal-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(125, 211, 252, 0.3);
+        }
+        .user-info-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-grow: 1;
+        }
+        .user-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(125, 211, 252, 0.5);
+            font-size: 1.2rem;
+        }
+        .user-info-container h4 { margin: 0 0 5px 0; color: #1f2937; font-size: 1.1rem; }
+        .user-info-container p { margin: 0; color: #6b7280; font-size: 0.9rem; }
+        .badge-container { margin-top: 5px; }
+        .badge-admin, .badge-practicante { color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 500; }
+        .badge-admin { background: #dc2626; }
+        .badge-practicante { background: #059669; }
+        .user-actions-container { display: flex; gap: 10px; }
+        .user-actions-container button { border: none; border-radius: 10px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; }
+        .btn-edit-user { background: linear-gradient(135deg, #7dd3fc, #fef3c7); color: #1f2937; }
+        .btn-delete-user { background: linear-gradient(135deg, #f87171, #fca5a5); color: white; }
+        .user-actions-container button:hover { transform: scale(1.1); }
 
-    .personal-item:hover {
-      background: rgba(125, 211, 252, 0.1);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(125, 211, 252, 0.2);
-      border-color: rgba(125, 211, 252, 0.5);
-    }
-
-    .personal-item h4 {
-      margin: 0 0 10px 0;
-      color: #1f2937;
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-
-    .personal-item p {
-      margin: 5px 0;
-      color: #374151;
-      font-size: 0.95rem;
-    }
-
-    .personal-item strong {
-      background: linear-gradient(135deg, #06b6d4, #0891b2);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      font-weight: 600;
-    }
-
-    .personal-buttons {
-      margin-top: 15px;
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-    }
-
-    .personal-buttons button {
-      border: none;
-      border-radius: 20px;
-      padding: 8px 20px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .personal-buttons button:first-child {
-      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
-      color: #1f2937;
-    }
-
-    .personal-buttons button:first-child:hover {
-      background: linear-gradient(135deg, #38bdf8, #fbbf24);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
-    }
-
-    .personal-buttons button:last-child {
-      background: linear-gradient(135deg, #f87171, #fca5a5);
-      color: white;
-    }
-
-    .personal-buttons button:last-child:hover {
-      background: linear-gradient(135deg, #ef4444, #f87171);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(248, 113, 113, 0.3);
-    }
-
+        /* Estilos para Modales */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content-confirm, .modal-content-edit { background: white; padding: 30px; border-radius: 15px; max-width: 450px; width: 90%; box-shadow: 0 5px 25px rgba(0,0,0,0.2); }
+        .modal-content-edit { max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .modal-content-confirm h3 { margin-top: 0; font-size: 1.4rem; color: #1f2937; text-align: center; }
+        .modal-content-confirm p { margin: 15px 0; color: #6b7280; line-height: 1.5; text-align: center; }
+        .confirm-actions { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .confirm-actions button, .form-actions button { padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-cancel { background-color: #e5e7eb; }
+        .btn-confirm-delete { background-color: #ef4444; color: white; }
+        .btn-save { background-color: #06b6d4; color: white; }
     /* Formulario */
     .form-grid {
       display: grid;
@@ -392,7 +369,7 @@
   <header>
     <button class="back-btn" onclick="window.location.href='../menuInicio.html'" title="Volver al Menú">←</button>
     <div class="icon" id="userIcon">👤 <span id="userName" style="font-weight:bold; margin-left:8px;"></span>
-      <div id="userDropdown" style="display:none; position:absolute; top:40px; right:0; background:white; color:#333; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:180px; z-index:10;">
+      <div id="userDropdown" style="display:none; position:fixed; top:40px; right:0; background:white; color:#333; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:180px; z-index:1000;">
         <button id="startServiceBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left;">Iniciar servicio</button>
         <button id="logoutBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left;">Cerrar sesión</button>
       </div>
@@ -482,8 +459,11 @@
               </div>
               
               <div class="form-group">
-                <label for="mesa">Número de mesa de salud:</label>
-                <input type="number" id="mesa" name="mesa" required min="1">
+                <label for="grupoId">Grupo de trabajo:</label>
+                <select id="grupoId" name="grupoId">
+                  <option value="">Sin grupo asignado</option>
+                  <!-- Los grupos se cargarán dinámicamente -->
+                </select>
               </div>
               
               <div class="form-group full-width">
