@@ -1,152 +1,120 @@
-# Medical Developer Web# Medical Developer Web - Documentación Técnica Completa
+# Medical Developer Web - Documentación Técnica Completa
 
+## 📋 Descripción General
+Sistema web offline de gestión médica implementado con **arquitectura MVC estricta**, **Event Bus pattern** y **middleware de autenticación robusto**. Incluye mejoras visuales significativas y optimizaciones en la experiencia de usuario.
 
+## 🚀 Guía de Instalación y Ejecución
 
-## 📋 Descripción## 📋 Descripción General
-
-Sistema de gestión médica offline que permite administrar pacientes, operaciones, reportes y personal médico utilizando almacenamiento local del navegador.Sistema web offline de gestión médica implementado con **arquitectura MVC estricta**, **Event Bus pattern** y **middleware de autenticación robusto**. Incluye mejoras visuales significativas y optimizaciones en la experiencia de usuario.
-
-
-
-## 🛠️ Características Principales## 🏗️ Arquitectura MVC Implementada
-
-- Gestión completa de pacientes
-
-- Control de operaciones y mesas de salud### **Modelos (Models)** - `js/models/`
-
-- Sistema de reportes y estadísticas- **`storageModel.js`** - Gestión de usuarios, autenticación y actividades
-
-- Gestión de personal y usuarios con roles- **`operacionesModel.js`** - Registro de entradas/salidas y mesas de salud
-
-- Almacenamiento local (no requiere base de datos)- **`pacienteModel.js`** - Gestión de datos de pacientes
-
-- **`reporteModel.js`** - Generación de reportes y estadísticas
-
-## 📦 Requisitos- **`gestionModel.js`** - Gestión de módulos y grupos
-
+### Requisitos Previos
 - [Node.js](https://nodejs.org/) (versión 12.0.0 o superior)
+- Navegador moderno (Chrome, Firefox, Edge o Safari)
 
-- Navegador web moderno (Chrome, Firefox, Edge, Safari)**Responsabilidades:**
+### Pasos para Instalar y Ejecutar
+1. **Descargar el código fuente**
+   - Descargar el proyecto como ZIP y descomprimirlo
+   - O clonar el repositorio si se encuentra en un sistema de control de versiones
 
-- Gestión de datos en localStorage
+2. **Iniciar el servidor**
+   - Abrir una terminal en la carpeta raíz del proyecto
+   - Ejecutar el comando:
+     ```
+     node server.js
+     ```
+   - El servidor se iniciará en http://localhost:3001
 
-## 🚀 Instalación y Ejecución- Validación de datos
+3. **Acceder a la aplicación**
+   - Abrir tu navegador y navegar a:
+     ```
+     http://localhost:3001
+     ```
+   - Ingresar con las credenciales por defecto:
+     - **Administrador**: usuario `admin` / contraseña `admin123`
+     - **Practicante**: usuario `pract` / contraseña `pract123`
 
-- Funciones de exportación (CSV)
+### Solución de Problemas Comunes
 
-### 1. Descargar e Instalar Node.js- Lógica de negocio
+| Problema | Solución |
+|----------|----------|
+| "Puerto en uso" | Modificar la constante `PORT` en `server.js` |
+| Archivos no encontrados | Verificar la estructura de archivos y que todos los archivos estén presentes |
+| Error de CORS | La aplicación debe ejecutarse desde el servidor, no abrir directamente los HTML |
+| Módulos no cargados | Verificar que se esté accediendo a través del servidor y no con archivo local |
 
-Si no tienes Node.js instalado, descárgalo e instálalo desde [nodejs.org](https://nodejs.org/)
+### Notas Importantes
+- La aplicación utiliza `localStorage` para almacenar datos, por lo que no requiere base de datos externa
+- Los datos persisten en el navegador donde se utilizó la aplicación
+- Para un entorno de desarrollo completo, pueden utilizarse herramientas como Chrome DevTools para inspeccionar los datos almacenados
 
-### **Vistas (Views)** - `js/views/`
+## 🏗️ Arquitectura MVC Implementada
 
-### 2. Iniciar el Servidor- **`MenuInicio.js`** - Navegación principal con validación de permisos
-
-Abre una terminal (Command Prompt o PowerShell en Windows, Terminal en macOS/Linux) y navega a la carpeta del proyecto:- **`operacionesView.js`** - Renderizado de tablas y tarjetas
-
-- **`pacienteView.js`** - Interfaz de gestión de pacientes
-
-```- **`reporteView.js`** - Visualización de reportes
-
-cd ruta/a/MedicalWebOffline- **`userView.js`** - Gestión de usuarios y personal
-
-```- **`gestionView.js`** - Vista de gestión de módulos
-
-- **`menuView.js`** - Vista del menú
-
-Ejecuta el servidor:
+### **Modelos (Models)** - `js/models/`
+- **`storageModel.js`** - Gestión de usuarios, autenticación y actividades
+- **`operacionesModel.js`** - Registro de entradas/salidas y mesas de salud
+- **`pacienteModel.js`** - Gestión de datos de pacientes
+- **`reporteModel.js`** - Generación de reportes y estadísticas
+- **`gestionModel.js`** - Gestión de módulos y grupos
 
 **Responsabilidades:**
+- Gestión de datos en localStorage
+- Validación de datos
+- Funciones de exportación (CSV)
+- Lógica de negocio
 
-```- Renderizado de elementos DOM
+### **Vistas (Views)** - `js/views/`
+- **`MenuInicio.js`** - Navegación principal con validación de permisos
+- **`operacionesView.js`** - Renderizado de tablas y tarjetas
+- **`pacienteView.js`** - Interfaz de gestión de pacientes
+- **`reporteView.js`** - Visualización de reportes
+- **`userView.js`** - Gestión de usuarios y personal
+- **`gestionView.js`** - Vista de gestión de módulos
+- **`menuView.js`** - Vista del menú
 
-node server.js- Actualización de interfaces
+**Responsabilidades:**
+- Renderizado de elementos DOM
+- Actualización de interfaces
+- Manejo de templates HTML
 
-```- Manejo de templates HTML
-
-
-
-Deberías ver un mensaje: `Servidor ejecutandose en http://localhost:3001`### **Controladores (Controllers)** - `js/controllers/`
-
+### **Controladores (Controllers)** - `js/controllers/`
 - **`authController.js`** - Autenticación y login
-
-### 3. Acceder a la Aplicación- **`globalController.js`** - Lógica común (logout, navegación)
-
-Abre tu navegador y navega a:- **`operacionesController.js`** - Control de operaciones y filtros
-
-```- **`pacienteController.js`** - Control de gestión de pacientes
-
-http://localhost:3001- **`reporteController.js`** - Control de reportes
-
-```- **`usersController.js`** - Control de usuarios y personal
-
+- **`globalController.js`** - Lógica común (logout, navegación)
+- **`operacionesController.js`** - Control de operaciones y filtros
+- **`pacienteController.js`** - Control de gestión de pacientes
+- **`reporteController.js`** - Control de reportes
+- **`usersController.js`** - Control de usuarios y personal
 - **`gestionController.js`** - Control de módulos y grupos
+- **`menuController.js`** - Control de navegación del menú
 
-## 👥 Usuarios Predeterminados- **`menuController.js`** - Control de navegación del menú
-
-
-
-| Usuario | Contraseña | Rol |**Responsabilidades:**
-
-|---------|------------|-----|- Coordinación entre modelos y vistas
-
-| admin | admin123 | Administrador |- Manejo de eventos de usuario
-
-| pract | pract123 | Practicante |- Lógica de aplicación
-
+**Responsabilidades:**
+- Coordinación entre modelos y vistas
+- Manejo de eventos de usuario
+- Lógica de aplicación
 - Validación de permisos
 
-## 🔍 Estructura del Proyecto
+## 🔐 Sistema de Autenticación y Middleware
 
-Para información detallada sobre la arquitectura y estructura técnica del proyecto, consulta [Descripcion_Tecnica.md](./Descripcion_Tecnica.md)## 🔐 Sistema de Autenticación y Middleware
-
-
-
-## 🛑 Detener el Servidor### **AuthGuard Middleware** - `js/middleware/authGuard.js`
-
-Para detener el servidor, presiona `Ctrl + C` en la terminal donde se está ejecutando.```javascript
-
+### **AuthGuard Middleware** - `js/middleware/authGuard.js`
+```javascript
 // Protección por rutas y roles
-
-## 📱 Acceso en Red LocalPROTECTED_ROUTES = {
-
-Para permitir que otros dispositivos en la misma red accedan a la aplicación, deberán usar la dirección IP de tu computadora en lugar de localhost:    'categoria-usuarios-personal.html': ['admin'],
-
+PROTECTED_ROUTES = {
+    'categoria-usuarios-personal.html': ['admin'],
     'categoria-reportes.html': ['admin', 'practicante'],
-
-```    'categoria-operaciones-control.html': ['admin', 'practicante'],
-
-http://[tu-direccion-ip]:3001    'categoria-pacientes.html': ['admin', 'practicante']
-
-```}
-
+    'categoria-operaciones-control.html': ['admin', 'practicante'],
+    'categoria-pacientes.html': ['admin', 'practicante']
+}
 ```
 
-Puedes encontrar tu dirección IP ejecutando:
-
-- En Windows: `ipconfig` en CMD o PowerShell**Características:**
-
-- En macOS/Linux: `ifconfig` o `ip addr show` en Terminal- ✅ Verificación automática de sesiones
-
+**Características:**
+- ✅ Verificación automática de sesiones
 - ✅ Protección por roles (admin/practicante)
+- ✅ Redirección inteligente post-login
+- ✅ Detección de logout en otras pestañas
+- ✅ Validación periódica (cada 30 segundos)
 
-## ❓ Soporte- ✅ Redirección inteligente post-login
+## 🚌 Event Bus Pattern
 
-Si encuentras problemas al instalar o ejecutar la aplicación, verifica:- ✅ Detección de logout en otras pestañas
-
-- Que Node.js esté correctamente instalado (`node -v` en terminal)- ✅ Validación periódica (cada 30 segundos)
-
-- Que todos los archivos estén presentes en la carpeta del proyecto
-
-- Que no haya otro servicio usando el puerto 3001## 🚌 Event Bus Pattern
-
-
-
----### **Event Bus Core** - `js/utils/eventBus.js`
-
+### **Event Bus Core** - `js/utils/eventBus.js`
 Sistema centralizado de comunicación entre componentes:
 
-Medical Developer Web © 2023 - Desarrollado para UAT
 ```javascript
 // Eventos estándar definidos
 EVENT_NAMES = {
