@@ -864,12 +864,13 @@ function mostrarModalAsignarGrupo(moduloId) {
         left: 0;
         width: 100%;
         height: 100%;
-        background: linear-gradient(135deg, rgba(125, 211, 252, 0.8), rgba(254, 243, 199, 0.8)), url('img/medical-background.png?v=1') center center / cover no-repeat;
+        background: rgba(0, 0, 0, 0.5);
         z-index: 1000;
         display: flex;
         justify-content: center;
         align-items: center;
         overflow-y: auto;
+        backdrop-filter: blur(5px);
     `;
     
     // Encontrar el grupo actualmente asignado
@@ -878,46 +879,134 @@ function mostrarModalAsignarGrupo(moduloId) {
     
     modalContainer.innerHTML = `
         <div class="modal-dialog" style="
-            background: white;
-            max-width: 500px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            max-width: 550px;
             width: 90%;
             margin: 40px auto;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            overflow: hidden;
+            animation: modalFadeIn 0.3s ease-out;
         ">
+            <style>
+                @keyframes modalFadeIn {
+                    from { opacity: 0; transform: translateY(-20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                
+                #select-grupo-asignar:focus {
+                    border-color: #3b82f6;
+                    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+                    outline: none;
+                }
+                
+                .btn-asignacion-cancel:hover {
+                    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+                    transform: translateY(-2px);
+                }
+                
+                .btn-asignacion-save:hover {
+                    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+                    transform: translateY(-2px);
+                }
+            </style>
+            
             <div class="modal-header" style="
-                padding: 15px 20px;
-                border-bottom: 1px solid #e5e7eb;
+                padding: 20px 25px;
+                border-bottom: 2px solid rgba(203, 213, 225, 0.5);
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                background: linear-gradient(135deg, #0ea5e9, #0284c7);
+                background: linear-gradient(135deg, #1e40af, #3b82f6);
                 color: white;
-                border-radius: 12px 12px 0 0;
             ">
-                <h3 style="margin: 0; font-weight: 600;">Asignar Grupo al Módulo "${modulo.nombre}"</h3>
+                <h3 style="
+                    margin: 0; 
+                    font-weight: 600;
+                    font-size: 1.5rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                ">
+                    <i class="fas fa-link" style="color: #93c5fd;"></i>
+                    Asignar Grupo al Módulo
+                </h3>
                 <button id="btnCerrarAsignacion" style="
-                    background: none;
+                    background: rgba(255, 255, 255, 0.2);
                     border: none;
-                    font-size: 24px;
+                    border-radius: 50%;
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 20px;
                     cursor: pointer;
                     color: white;
-                ">×</button>
+                    transition: all 0.2s ease;
+                " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">×</button>
             </div>
             
-            <div class="modal-body" style="padding: 20px;">
-                <p style="margin-bottom: 20px; font-size: 1rem;">Selecciona el grupo que se encargará de este módulo:</p>
+            <div class="modal-body" style="padding: 25px 30px;">
+                <div style="
+                    margin-bottom: 25px;
+                    background: linear-gradient(135deg, #dbeafe, #eff6ff);
+                    border-radius: 12px;
+                    padding: 15px;
+                    border-left: 4px solid #3b82f6;
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                ">
+                    <div style="
+                        background: rgba(59, 130, 246, 0.1);
+                        width: 50px;
+                        height: 50px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">
+                        <i class="fas fa-hospital" style="font-size: 20px; color: #3b82f6;"></i>
+                    </div>
+                    <div>
+                        <h4 style="
+                            margin: 0 0 5px 0;
+                            color: #1e40af;
+                            font-size: 1.2rem;
+                        ">${modulo.nombre}</h4>
+                        <p style="
+                            margin: 0;
+                            color: #334155;
+                            font-size: 0.95rem;
+                        ">${modulo.ubicacion || 'Sin ubicación'}</p>
+                    </div>
+                </div>
                 
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label for="select-grupo-asignar" style="display: block; margin-bottom: 8px; font-weight: 500;">Grupo:</label>
+                <p style="
+                    margin-bottom: 15px;
+                    font-size: 1.05rem;
+                    color: #334155;
+                    font-weight: 500;
+                ">Selecciona el grupo que se encargará de este módulo:</p>
+                
+                <div class="form-group" style="margin-bottom: 25px;">
+                    <label for="select-grupo-asignar" style="
+                        display: block; 
+                        margin-bottom: 10px; 
+                        font-weight: 500;
+                        color: #334155;
+                    ">Grupo:</label>
                     <select id="select-grupo-asignar" style="
                         width: 100%;
-                        padding: 10px 12px;
-                        border: 1px solid #d1d5db;
-                        border-radius: 8px;
-                        background-color: #f9fafb;
+                        padding: 12px 15px;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 10px;
+                        background-color: white;
                         font-size: 16px;
+                        transition: all 0.2s ease;
                     ">
                         <option value="">-- Seleccionar Grupo --</option>
                         ${grupos.map(grupo => `
@@ -932,17 +1021,30 @@ function mostrarModalAsignarGrupo(moduloId) {
                 </div>
                 
                 <div class="form-group" style="
-                    margin-bottom: 20px; 
-                    padding: 15px; 
-                    background-color: #f0f9ff; 
-                    border-radius: 8px; 
-                    border-left: 4px solid #0ea5e9;
+                    margin-bottom: 25px; 
+                    padding: 16px 20px; 
+                    background-color: ${grupoAsignado ? '#f0f9ff' : '#f1f5f9'}; 
+                    border-radius: 10px; 
+                    border-left: 4px solid ${grupoAsignado ? '#60a5fa' : '#94a3b8'};
                 ">
-                    <p style="margin: 0;">
-                        <strong>Grupo actual:</strong> 
-                        ${grupoAsignado ? 
-                            `${grupoAsignado.nombre} (${grupoAsignado.turno}) - ${grupoAsignado.horario}` : 
-                            '<span style="color: #6b7280;">Sin asignación</span>'
+                    <h5 style="
+                        margin: 0 0 10px 0;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        color: ${grupoAsignado ? '#1e40af' : '#475569'};
+                    ">
+                        <i class="fas ${grupoAsignado ? 'fa-users' : 'fa-user-slash'}"></i>
+                        Asignación actual
+                    </h5>
+                    <p style="margin: 0; font-size: 0.95rem; color: #334155;">
+                        ${grupoAsignado ? `
+                            <span style="font-weight: 500;">${grupoAsignado.nombre}</span><br>
+                            <span style="color: #475569; font-size: 0.9rem;">
+                                <i class="fas fa-clock" style="margin-right: 5px;"></i> ${grupoAsignado.turno} - ${grupoAsignado.horario}
+                            </span>
+                        ` : 
+                        '<span style="color: #64748b;">Este módulo no tiene grupo asignado actualmente</span>'
                         }
                     </p>
                 </div>
@@ -950,30 +1052,31 @@ function mostrarModalAsignarGrupo(moduloId) {
                 <div class="form-buttons" style="
                     display: flex;
                     justify-content: flex-end;
-                    gap: 12px;
-                    margin-top: 25px;
+                    gap: 15px;
+                    margin-top: 30px;
                 ">
-                    <button type="button" id="btnCancelarAsignacion" style="
-                        background: linear-gradient(135deg, #7dd3fc, #fef3c7);
-                        color: #1f2937;
-                        border: none;
-                        border-radius: 25px;
+                    <button type="button" id="btnCancelarAsignacion" class="btn-asignacion-cancel" style="
+                        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+                        color: #475569;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 10px;
                         padding: 12px 24px;
                         font-size: 16px;
-                        font-weight: 600;
+                        font-weight: 500;
                         cursor: pointer;
                         transition: all 0.3s ease;
                     ">Cancelar</button>
-                    <button type="button" id="btnGuardarAsignacion" style="
-                        background: linear-gradient(135deg, #0ea5e9, #0284c7);
+                    <button type="button" id="btnGuardarAsignacion" class="btn-asignacion-save" style="
+                        background: linear-gradient(135deg, #3b82f6, #2563eb);
                         color: white;
                         border: none;
-                        border-radius: 25px;
+                        border-radius: 10px;
                         padding: 12px 24px;
                         font-size: 16px;
-                        font-weight: 600;
+                        font-weight: 500;
                         cursor: pointer;
                         transition: all 0.3s ease;
+                        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
                     ">Guardar</button>
                 </div>
             </div>

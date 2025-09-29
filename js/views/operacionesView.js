@@ -251,36 +251,234 @@ export function renderModulos(modulos, container) {
   if (!container) return;
 
   if (!modulos || modulos.length === 0) {
-    container.innerHTML = `<p class="welcome-message">No hay módulos configurados.</p>`;
+    container.innerHTML = `
+      <div style="
+        text-align: center; 
+        padding: 30px; 
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      ">
+        <i class="fas fa-heartbeat" style="font-size: 3rem; color: #94a3b8; margin-bottom: 15px;"></i>
+        <p style="font-size: 1.2rem; color: #64748b; margin: 0;">No hay módulos de salud configurados</p>
+      </div>
+    `;
     return;
   }
 
   // Importamos gestionModel para poder obtener información de grupos
   import('../models/gestionModel.js').then(({ gestionModel }) => {
-    container.innerHTML = modulos.map(modulo => {
-      let statusClass = modulo.estado.toLowerCase().replace(' ', '-');
-      let grupoAsignado = null;
-      
-      // Buscar información del grupo asignado, si existe
-      if (modulo.grupoAsignadoId) {
-        grupoAsignado = gestionModel.getGrupoById(modulo.grupoAsignadoId);
-      }
+    // Creamos un contenedor con estilo de cuadrícula para los módulos
+    container.innerHTML = `
+      <div style="
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+        padding: 10px 0;
+      ">
+        ${modulos.map(modulo => {
+          let statusClass = modulo.estado.toLowerCase().replace(' ', '-');
+          let grupoAsignado = null;
+          
+          // Definir colores según el estado
+          let statusColor = '#10b981'; // Verde por defecto (activo)
+          let statusBgColor = 'rgba(16, 185, 129, 0.1)';
+          let statusIcon = 'fa-check-circle';
+          
+          if (statusClass.includes('inactivo')) {
+            statusColor = '#f59e0b'; // Naranja
+            statusBgColor = 'rgba(245, 158, 11, 0.1)';
+            statusIcon = 'fa-exclamation-triangle';
+          } else if (statusClass.includes('mantenimiento')) {
+            statusColor = '#6366f1'; // Indigo
+            statusBgColor = 'rgba(99, 102, 241, 0.1)';
+            statusIcon = 'fa-tools';
+          } else if (statusClass.includes('emergencia')) {
+            statusColor = '#ef4444'; // Rojo
+            statusBgColor = 'rgba(239, 68, 68, 0.1)';
+            statusIcon = 'fa-exclamation-circle';
+          }
+          
+          // Buscar información del grupo asignado, si existe
+          if (modulo.grupoAsignadoId) {
+            grupoAsignado = gestionModel.getGrupoById(modulo.grupoAsignadoId);
+          }
 
-      return `
-        <div class="modulo-item">
-          <div class="modulo-nombre">${modulo.nombre}</div>
-          <div class="modulo-ubicacion">${modulo.ubicacion}</div>
-          <div class="modulo-status ${statusClass}">${modulo.estado}</div>
-          <div class="modulo-info">
-            ${grupoAsignado ? `
-              <p><strong>Grupo Asignado:</strong> ${grupoAsignado.nombre}</p>
-              <p><strong>Turno:</strong> ${grupoAsignado.turno}</p>
-              <p><strong>Horario:</strong> ${grupoAsignado.horario}</p>
-              <p><strong>Miembros:</strong> ${grupoAsignado.miembros.length}</p>
-            ` : '<p><strong>Sin grupo asignado</strong></p>'}
-          </div>
-        </div>
-      `;
-    }).join('');
+          return `
+            <div style="
+              background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+              border-radius: 16px;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+              padding: 20px;
+              transition: all 0.3s ease;
+              border: 1px solid rgba(226, 232, 240, 0.6);
+              overflow: hidden;
+              position: relative;
+            " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 25px rgba(0,0,0,0.1)';" 
+               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.05)';">
+              
+              ${modulo.tipo ? `
+                <div style="
+                  position: absolute;
+                  top: 12px;
+                  right: 12px;
+                  background: #e2e8f0;
+                  color: #475569;
+                  font-size: 0.7rem;
+                  padding: 3px 8px;
+                  border-radius: 30px;
+                  font-weight: 500;
+                ">
+                  ${modulo.tipo}
+                </div>
+              ` : ''}
+              
+              <h3 style="
+                margin-top: 0;
+                margin-bottom: 15px;
+                color: #1e40af;
+                font-size: 1.5rem;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+              ">
+                <i class="fas fa-hospital-alt" style="color: #60a5fa;"></i>
+                ${modulo.nombre}
+              </h3>
+              
+              <div style="
+                display: flex;
+                align-items: center;
+                margin-bottom: 15px;
+              ">
+                <i class="fas fa-map-marker-alt" style="
+                  color: #64748b;
+                  margin-right: 8px;
+                "></i>
+                <span style="
+                  color: #334155;
+                  font-weight: 500;
+                ">${modulo.ubicacion}</span>
+              </div>
+              
+              <div style="
+                display: inline-flex;
+                align-items: center;
+                padding: 6px 12px;
+                border-radius: 30px;
+                font-weight: 500;
+                font-size: 0.9rem;
+                margin-bottom: 20px;
+                color: ${statusColor};
+                background-color: ${statusBgColor};
+              ">
+                <i class="fas ${statusIcon}" style="margin-right: 8px;"></i>
+                ${modulo.estado}
+              </div>
+              
+              <div style="
+                background: ${grupoAsignado ? 'rgba(96, 165, 250, 0.08)' : 'rgba(226, 232, 240, 0.5)'};
+                border-radius: 12px;
+                padding: 15px;
+                margin-top: 10px;
+              ">
+                <h4 style="
+                  margin-top: 0;
+                  margin-bottom: 12px;
+                  color: #334155;
+                  font-size: 1.1rem;
+                  border-bottom: 1px solid rgba(203, 213, 225, 0.5);
+                  padding-bottom: 8px;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                ">
+                  <i class="fas fa-users" style="color: #60a5fa;"></i>
+                  Equipo Asignado
+                </h4>
+                
+                ${grupoAsignado ? `
+                  <div style="font-size: 0.95rem;">
+                    <div style="
+                      display: flex;
+                      align-items: center;
+                      margin-bottom: 8px;
+                    ">
+                      <div style="
+                        width: 24px;
+                        color: #60a5fa;
+                      "><i class="fas fa-user-friends"></i></div>
+                      <div style="
+                        color: #334155;
+                        font-weight: 500;
+                      ">${grupoAsignado.nombre}</div>
+                    </div>
+                    
+                    <div style="
+                      display: flex;
+                      align-items: center;
+                      margin-bottom: 8px;
+                    ">
+                      <div style="
+                        width: 24px;
+                        color: #60a5fa;
+                      "><i class="fas fa-clock"></i></div>
+                      <div style="
+                        color: #334155;
+                      ">Turno: <strong>${grupoAsignado.turno}</strong></div>
+                    </div>
+                    
+                    <div style="
+                      display: flex;
+                      align-items: center;
+                      margin-bottom: 8px;
+                    ">
+                      <div style="
+                        width: 24px;
+                        color: #60a5fa;
+                      "><i class="fas fa-calendar-alt"></i></div>
+                      <div style="
+                        color: #334155;
+                      ">Horario: <strong>${grupoAsignado.horario}</strong></div>
+                    </div>
+                    
+                    <div style="
+                      display: flex;
+                      align-items: center;
+                    ">
+                      <div style="
+                        width: 24px;
+                        color: #60a5fa;
+                      "><i class="fas fa-user-md"></i></div>
+                      <div style="
+                        color: #334155;
+                      ">Miembros: <strong>${grupoAsignado.miembros.length}</strong></div>
+                    </div>
+                  </div>
+                ` : `
+                  <div style="
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    padding: 10px;
+                  ">
+                    <i class="fas fa-user-slash" style="
+                      font-size: 1.5rem;
+                      color: #94a3b8;
+                      margin-bottom: 8px;
+                    "></i>
+                    <p style="
+                      color: #64748b;
+                      margin: 0;
+                      text-align: center;
+                    ">Sin grupo asignado</p>
+                  </div>
+                `}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
   });
 }

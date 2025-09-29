@@ -160,27 +160,167 @@ function abrirModalEdicion(userIndex) {
     const modalOverlay = document.createElement('div');
     modalOverlay.className = 'modal-overlay';
     modalOverlay.innerHTML = `
-        <div class="modal-content-edit">
-            <h3>Editar Usuario</h3>
+        <div class="modal-content-edit" style="
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 5px 10px rgba(0,0,0,0.05);
+            padding: 25px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        ">
+            <h3 style="
+                color: #1e40af;
+                margin-top: 0;
+                margin-bottom: 20px;
+                text-align: center;
+                font-size: 1.5rem;
+                border-bottom: 2px solid #60a5fa;
+                padding-bottom: 10px;
+            ">Editar Usuario</h3>
             <form id="form-editar-usuario">
-                <div class="form-grid">
-                    <div><label>Nombre:</label><input type="text" id="edit-nombre" value="${usuario.nombre || ''}" required></div>
-                    <div><label>Apellidos:</label><input type="text" id="edit-apellidos" value="${usuario.apellidos || ''}" required></div>
-                    <div><label>Edad:</label><input type="number" id="edit-edad" value="${usuario.edad || ''}"></div>
-                    <div><label>Sexo:</label><select id="edit-sexo"><option value="M" ${usuario.sexo === 'M' ? 'selected' : ''}>Masculino</option><option value="F" ${usuario.sexo === 'F' ? 'selected' : ''}>Femenino</option></select></div>
-                    <div><label>Matrícula:</label><input type="text" id="edit-matricula" value="${usuario.matricula || ''}" required></div>
-                    <div><label>Grupo:</label>
-                        <select id="edit-grupoId">
+                <div class="form-grid" style="
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 15px;
+                    margin-bottom: 15px;
+                ">
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Nombre:</label>
+                        <input type="text" id="edit-nombre" value="${usuario.nombre || ''}" required style="
+                            width: 100%;
+                            padding: 10px;
+                            border-radius: 8px;
+                            border: 1px solid #cbd5e1;
+                            background-color: white;
+                            transition: border-color 0.2s;
+                            outline: none;
+                        " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Apellidos:</label>
+                        <input type="text" id="edit-apellidos" value="${usuario.apellidos || ''}" required style="
+                            width: 100%;
+                            padding: 10px;
+                            border-radius: 8px;
+                            border: 1px solid #cbd5e1;
+                            background-color: white;
+                            transition: border-color 0.2s;
+                            outline: none;
+                        " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Edad:</label>
+                        <input type="number" id="edit-edad" value="${usuario.edad || ''}" style="
+                            width: 100%;
+                            padding: 10px;
+                            border-radius: 8px;
+                            border: 1px solid #cbd5e1;
+                            background-color: white;
+                            transition: border-color 0.2s;
+                            outline: none;
+                        " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Sexo:</label>
+                        <select id="edit-sexo" style="
+                            width: 100%;
+                            padding: 10px;
+                            border-radius: 8px;
+                            border: 1px solid #cbd5e1;
+                            background-color: white;
+                            transition: border-color 0.2s;
+                            outline: none;
+                            cursor: pointer;
+                        " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                            <option value="M" ${usuario.sexo === 'M' ? 'selected' : ''}>Masculino</option>
+                            <option value="F" ${usuario.sexo === 'F' ? 'selected' : ''}>Femenino</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Matrícula:</label>
+                        <input type="text" id="edit-matricula" value="${usuario.matricula || ''}" required style="
+                            width: 100%;
+                            padding: 10px;
+                            border-radius: 8px;
+                            border: 1px solid #cbd5e1;
+                            background-color: white;
+                            transition: border-color 0.2s;
+                            outline: none;
+                        " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Grupo:</label>
+                        <select id="edit-grupoId" style="
+                            width: 100%;
+                            padding: 10px;
+                            border-radius: 8px;
+                            border: 1px solid #cbd5e1;
+                            background-color: white;
+                            transition: border-color 0.2s;
+                            outline: none;
+                            cursor: pointer;
+                        " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
                             <option value="">Sin Grupo</option>
                             ${gestionModel.getGrupos().map(g => `<option value="${g.id}" ${usuario.grupoId === g.id ? 'selected' : ''}>${g.nombre}</option>`).join('')}
                         </select>
                     </div>
                 </div>
-                <div class="form-full-width"><label>Rol:</label><select id="edit-rol" required><option value="admin" ${usuario.rol === 'admin' ? 'selected' : ''}>Administrador</option><option value="practicante" ${usuario.rol === 'practicante' ? 'selected' : ''}>Practicante</option></select></div>
-                <div class="form-full-width"><label>Nueva Contraseña (opcional):</label><input type="password" id="edit-contrasena" placeholder="Dejar en blanco para no cambiar"></div>
-                <div class="form-actions">
-                    <button type="button" class="btn-cancel">Cancelar</button>
-                    <button type="submit" class="btn-save">Guardar Cambios</button>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Rol:</label>
+                    <select id="edit-rol" required style="
+                        width: 100%;
+                        padding: 10px;
+                        border-radius: 8px;
+                        border: 1px solid #cbd5e1;
+                        background-color: white;
+                        transition: border-color 0.2s;
+                        outline: none;
+                        cursor: pointer;
+                    " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                        <option value="admin" ${usuario.rol === 'admin' ? 'selected' : ''}>Administrador</option>
+                        <option value="practicante" ${usuario.rol === 'practicante' ? 'selected' : ''}>Practicante</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Nueva Contraseña (opcional):</label>
+                    <input type="password" id="edit-contrasena" placeholder="Dejar en blanco para no cambiar" style="
+                        width: 100%;
+                        padding: 10px;
+                        border-radius: 8px;
+                        border: 1px solid #cbd5e1;
+                        background-color: white;
+                        transition: border-color 0.2s;
+                        outline: none;
+                    " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                </div>
+                <div style="
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 15px;
+                ">
+                    <button type="button" class="btn-cancel" style="
+                        padding: 10px 20px;
+                        border-radius: 8px;
+                        border: 1px solid #cbd5e1;
+                        background-color: #f1f5f9;
+                        color: #64748b;
+                        cursor: pointer;
+                        font-weight: 500;
+                        transition: all 0.2s;
+                    " onMouseOver="this.style.backgroundColor='#e2e8f0'" onMouseOut="this.style.backgroundColor='#f1f5f9'">Cancelar</button>
+                    <button type="submit" class="btn-save" style="
+                        padding: 10px 20px;
+                        border-radius: 8px;
+                        border: none;
+                        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                        color: white;
+                        cursor: pointer;
+                        font-weight: 500;
+                        transition: all 0.2s;
+                        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.1);
+                    " onMouseOver="this.style.transform='translateY(-2px)'" onMouseOut="this.style.transform='translateY(0)'">Guardar Cambios</button>
                 </div>
             </form>
         </div>`;

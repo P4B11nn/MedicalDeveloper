@@ -23,7 +23,7 @@ export function crearModal(id, titulo, contenido) {
       width: 100%;
       height: 100%;
       background: linear-gradient(135deg, rgba(125, 211, 252, 0.8), rgba(254, 243, 199, 0.8)), url('img/medical-background.png?v=1') center center / cover no-repeat;
-      z-index: 1000;
+      z-index: 9999;
       overflow-y: auto;
     `;
     
@@ -34,8 +34,9 @@ export function crearModal(id, titulo, contenido) {
         max-width: 800px;
         margin: 40px auto;
         border-radius: 12px;
-        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         position: relative;
+        z-index: 10000;
       ">
         <div class="modal-header" style="
           padding: 15px 20px;
