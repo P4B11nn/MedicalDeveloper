@@ -1,6 +1,11 @@
 // js/views/gestionView.js
 import { gestionModel } from '../models/gestionModel.js';
-import eventBus from '../utils/eventBus.js';
+import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
+import * as modalUtil from '../utils/modalUtil.js'; // Importamos modalUtil estáticamente
+
+// Variables globales para mantener referencias a los contenedores
+let modulosContainer = null;
+let gruposContainer = null;
 
 // Datos de ejemplo para inicializar el sistema si no existen datos
 const datosIniciales = {
@@ -16,6 +21,75 @@ const datosIniciales = {
         { nombre: "Grupo C", turno: "Nocturno", horario: "20:00 - 8:00", miembros: [] }
     ]
 };
+
+/**
+ * Inicializa la vista de gestión, similar a como se hace en userView.js
+ * Esta función se ejecuta UNA SOLA VEZ al cargar la página
+ */
+export function init() {
+    console.log('GestionView: Inicializando vista de gestión');
+    
+    // Obtener referencias a los contenedores
+    modulosContainer = document.getElementById('modulos-section');
+    gruposContainer = document.getElementById('grupos-section');
+    
+    if (!modulosContainer || !gruposContainer) {
+        console.error('GestionView: Contenedores no encontrados. La vista no puede funcionar correctamente.');
+        return;
+    }
+    
+    // Escuchar eventos para actualizar la vista
+    eventBus.on(EVENT_NAMES.MODULE_CREATED, () => {
+        if (modulosContainer.classList.contains('active')) {
+            renderGestionModulos(modulosContainer);
+        }
+    });
+    
+    eventBus.on(EVENT_NAMES.MODULE_UPDATED, () => {
+        if (modulosContainer.classList.contains('active')) {
+            renderGestionModulos(modulosContainer);
+        }
+    });
+    
+    eventBus.on(EVENT_NAMES.MODULE_DELETED, () => {
+        if (modulosContainer.classList.contains('active')) {
+            renderGestionModulos(modulosContainer);
+        }
+    });
+    
+    eventBus.on(EVENT_NAMES.GROUP_CREATED, () => {
+        if (gruposContainer.classList.contains('active')) {
+            renderGestionGrupos(gruposContainer);
+        }
+    });
+    
+    eventBus.on(EVENT_NAMES.GROUP_UPDATED, () => {
+        if (gruposContainer.classList.contains('active')) {
+            renderGestionGrupos(gruposContainer);
+        }
+    });
+    
+    eventBus.on(EVENT_NAMES.GROUP_DELETED, () => {
+        if (gruposContainer.classList.contains('active')) {
+            renderGestionGrupos(gruposContainer);
+        }
+    });
+    
+    // También mantener compatibilidad con eventos antiguos
+    eventBus.on('gestion-modulo-updated', () => {
+        if (modulosContainer.classList.contains('active')) {
+            renderGestionModulos(modulosContainer);
+        }
+    });
+    
+    eventBus.on('gestion-grupo-updated', () => {
+        if (gruposContainer.classList.contains('active')) {
+            renderGestionGrupos(gruposContainer);
+        }
+    });
+    
+    console.log('GestionView: Vista de gestión inicializada correctamente');
+}
 
 // Función para inicializar datos de ejemplo si no existen
 export function inicializarDatosGestion() {
@@ -67,6 +141,66 @@ export function renderGestionModulos(container) {
             }
         </div>
     `;
+    
+    // Configurar evento para nuevo módulo - solo configurarlo una vez después de renderizar
+    const btnNuevoModulo = container.querySelector('#btnNuevoModulo');
+    if (btnNuevoModulo) {
+        // Eliminar eventos anteriores
+        const nuevoBtn = btnNuevoModulo.cloneNode(true);
+        btnNuevoModulo.parentNode.replaceChild(nuevoBtn, btnNuevoModulo);
+        
+        // Añadir nuevo evento
+        nuevoBtn.addEventListener('click', () => {
+            console.log('GestionView: Solicitando formulario para nuevo módulo');
+            // Renderizar directamente sin modificar el controlador
+            renderFormModulo();
+        });
+    }
+    
+    // Configurar delegación de eventos para la tabla
+    const tablaModulos = container.querySelector('.data-table');
+    if (tablaModulos) {
+        // Eliminar eventos anteriores
+        const nuevaTabla = tablaModulos.cloneNode(true);
+        tablaModulos.parentNode.replaceChild(nuevaTabla, tablaModulos);
+        
+        // Añadir nuevo evento con delegación
+        nuevaTabla.addEventListener('click', (e) => {
+            const target = e.target.closest('button');
+            if (!target) return;
+            
+            if (target.classList.contains('edit-modulo')) {
+                const moduloId = target.dataset.id;
+                console.log('GestionView: Solicitando edición de módulo', moduloId);
+                const modulo = gestionModel.getModuloById(moduloId);
+                renderFormModulo(modulo);
+            }
+            else if (target.classList.contains('delete-modulo')) {
+                const moduloId = target.dataset.id;
+                const modulo = gestionModel.getModuloById(moduloId);
+                console.log('GestionView: Solicitando eliminación de módulo', moduloId);
+                
+                modalUtil.confirmarAccion({
+                    title: 'Eliminar Módulo',
+                    message: `¿Estás seguro de eliminar el módulo "${modulo.nombre}"? Esta acción no se puede deshacer.`,
+                    onConfirm: () => {
+                        const moduloEliminado = gestionModel.getModuloById(moduloId);
+                        gestionModel.deleteModulo(moduloId);
+                        
+                        // Emitir eventos
+                        eventBus.emit(EVENT_NAMES.MODULE_DELETED, { module: moduloEliminado });
+                        eventBus.emit('gestion-modulo-updated', { action: 'delete', id: moduloId });
+                    }
+                });
+            }
+            else if (target.classList.contains('assign-grupo')) {
+                const moduloId = target.dataset.moduloid;
+                console.log('GestionView: Solicitando asignación de grupo para módulo', moduloId);
+                // Implementar la asignación directamente en la vista
+                mostrarModalAsignarGrupo(moduloId);
+            }
+        });
+    }
 }
 
 /**
@@ -145,6 +279,60 @@ export function renderGestionGrupos(container) {
             }
         </div>
     `;
+    
+    // Configurar evento para nuevo grupo
+    const btnNuevoGrupo = container.querySelector('#btnNuevoGrupo');
+    if (btnNuevoGrupo) {
+        // Eliminar eventos anteriores
+        const nuevoBtn = btnNuevoGrupo.cloneNode(true);
+        btnNuevoGrupo.parentNode.replaceChild(nuevoBtn, btnNuevoGrupo);
+        
+        // Añadir nuevo evento
+        nuevoBtn.addEventListener('click', () => {
+            console.log('GestionView: Solicitando formulario para nuevo grupo');
+            // Renderizar directamente sin modificar el controlador
+            renderFormGrupo();
+        });
+    }
+    
+    // Configurar delegación de eventos para la tabla
+    const tablaGrupos = container.querySelector('.data-table');
+    if (tablaGrupos) {
+        // Eliminar eventos anteriores
+        const nuevaTabla = tablaGrupos.cloneNode(true);
+        tablaGrupos.parentNode.replaceChild(nuevaTabla, tablaGrupos);
+        
+        // Añadir nuevo evento con delegación
+        nuevaTabla.addEventListener('click', (e) => {
+            const target = e.target.closest('button');
+            if (!target) return;
+            
+            if (target.classList.contains('edit-grupo')) {
+                const grupoId = target.dataset.id;
+                console.log('GestionView: Solicitando edición de grupo', grupoId);
+                const grupo = gestionModel.getGrupoById(grupoId);
+                renderFormGrupo(grupo);
+            }
+            else if (target.classList.contains('delete-grupo')) {
+                const grupoId = target.dataset.id;
+                const grupo = gestionModel.getGrupoById(grupoId);
+                console.log('GestionView: Solicitando eliminación de grupo', grupoId);
+                
+                modalUtil.confirmarAccion({
+                    title: 'Eliminar Grupo',
+                    message: `¿Estás seguro de eliminar el grupo "${grupo.nombre}"? Esta acción no se puede deshacer.`,
+                    onConfirm: () => {
+                        const grupoEliminado = gestionModel.getGrupoById(grupoId);
+                        gestionModel.deleteGrupo(grupoId);
+                        
+                        // Emitir eventos
+                        eventBus.emit(EVENT_NAMES.GROUP_DELETED, { group: grupoEliminado });
+                        eventBus.emit('gestion-grupo-updated', { action: 'delete', id: grupoId });
+                    }
+                });
+            }
+        });
+    }
 }
 
 /**
@@ -187,7 +375,7 @@ function renderTablaGrupos(grupos) {
 }
 
 /**
- * Renderiza el formulario de módulo
+ * Renderiza el formulario de módulo y configura sus eventos
  */
 export function renderFormModulo(modulo = null) {
     // Eliminar formulario anterior si existe
@@ -195,95 +383,215 @@ export function renderFormModulo(modulo = null) {
     
     const formContainer = document.createElement('div');
     formContainer.id = 'modulo-form-container';
-    formContainer.style.position = 'fixed';
-    formContainer.style.top = '0';
-    formContainer.style.left = '0';
-    formContainer.style.width = '100%';
-    formContainer.style.height = '100%';
-    formContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    formContainer.style.display = 'flex';
-    formContainer.style.justifyContent = 'center';
-    formContainer.style.alignItems = 'center';
-    formContainer.style.zIndex = '1000';
-    
-    const formContent = document.createElement('div');
-    formContent.style.backgroundColor = '#fff';
-    formContent.style.padding = '20px';
-    formContent.style.borderRadius = '8px';
-    formContent.style.width = '500px';
-    formContent.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
-    
-    formContent.innerHTML = `
-        <h3>${modulo ? 'Editar Módulo' : 'Nuevo Módulo'}</h3>
-        <form id="form-modulo">
-            <div class="form-group">
-                <label for="modulo-nombre">Nombre:</label>
-                <input type="text" id="modulo-nombre" required value="${modulo?.nombre || ''}">
-            </div>
-            <div class="form-group">
-                <label for="modulo-ubicacion">Ubicación:</label>
-                <input type="text" id="modulo-ubicacion" required value="${modulo?.ubicacion || ''}">
-            </div>
-            <div class="form-group">
-                <label for="modulo-estado">Estado:</label>
-                <select id="modulo-estado">
-                    <option value="Activo" ${modulo?.estado === 'Activo' ? 'selected' : ''}>Activo</option>
-                    <option value="Inactivo" ${modulo?.estado === 'Inactivo' ? 'selected' : ''}>Inactivo</option>
-                    <option value="En mantenimiento" ${modulo?.estado === 'En mantenimiento' ? 'selected' : ''}>En mantenimiento</option>
-                </select>
-            </div>
-            <div class="form-buttons">
-                <button type="button" id="btnCancelarModulo" class="btn-secondary">Cancelar</button>
-                <button type="button" id="btnGuardarModulo" class="btn-primary">Guardar</button>
-            </div>
-        </form>
+    formContainer.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(125, 211, 252, 0.8), rgba(254, 243, 199, 0.8)), url('img/medical-background.png?v=1') center center / cover no-repeat;
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow-y: auto;
     `;
     
-    formContainer.appendChild(formContent);
+    formContainer.innerHTML = `
+        <div class="modal-dialog" style="
+            background: white;
+            max-width: 500px;
+            width: 90%;
+            margin: 40px auto;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+        ">
+            <div class="modal-header" style="
+                padding: 15px 20px;
+                border-bottom: 1px solid #e5e7eb;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: linear-gradient(135deg, #0ea5e9, #0284c7);
+                color: white;
+                border-radius: 12px 12px 0 0;
+            ">
+                <h3 style="margin: 0; font-weight: 600;">${modulo ? 'Editar Módulo' : 'Nuevo Módulo'}</h3>
+                <button id="btnCerrarModuloX" style="
+                    background: none;
+                    border: none;
+                    font-size: 24px;
+                    cursor: pointer;
+                    color: white;
+                ">×</button>
+            </div>
+            
+            <div class="modal-body" style="padding: 20px;">
+                <form id="form-modulo">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="modulo-nombre" style="display: block; margin-bottom: 8px; font-weight: 500;">Nombre:</label>
+                        <input type="text" id="modulo-nombre" required value="${modulo?.nombre || ''}" style="
+                            width: 100%;
+                            padding: 10px 12px;
+                            border: 1px solid #d1d5db;
+                            border-radius: 8px;
+                            background-color: #f9fafb;
+                            font-size: 16px;
+                            box-sizing: border-box;
+                        ">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="modulo-ubicacion" style="display: block; margin-bottom: 8px; font-weight: 500;">Ubicación:</label>
+                        <input type="text" id="modulo-ubicacion" required value="${modulo?.ubicacion || ''}" style="
+                            width: 100%;
+                            padding: 10px 12px;
+                            border: 1px solid #d1d5db;
+                            border-radius: 8px;
+                            background-color: #f9fafb;
+                            font-size: 16px;
+                            box-sizing: border-box;
+                        ">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="modulo-estado" style="display: block; margin-bottom: 8px; font-weight: 500;">Estado:</label>
+                        <select id="modulo-estado" style="
+                            width: 100%;
+                            padding: 10px 12px;
+                            border: 1px solid #d1d5db;
+                            border-radius: 8px;
+                            background-color: #f9fafb;
+                            font-size: 16px;
+                            box-sizing: border-box;
+                        ">
+                            <option value="Activo" ${modulo?.estado === 'Activo' ? 'selected' : ''}>Activo</option>
+                            <option value="Inactivo" ${modulo?.estado === 'Inactivo' ? 'selected' : ''}>Inactivo</option>
+                            <option value="En mantenimiento" ${modulo?.estado === 'En mantenimiento' ? 'selected' : ''}>En mantenimiento</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-buttons" style="
+                        display: flex;
+                        justify-content: flex-end;
+                        gap: 12px;
+                        margin-top: 25px;
+                    ">
+                        <button type="button" id="btnCancelarModulo" style="
+                            background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+                            color: #1f2937;
+                            border: none;
+                            border-radius: 25px;
+                            padding: 12px 24px;
+                            font-size: 16px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                        ">Cancelar</button>
+                        <button type="button" id="btnGuardarModulo" style="
+                            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+                            color: white;
+                            border: none;
+                            border-radius: 25px;
+                            padding: 12px 24px;
+                            font-size: 16px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                        ">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
     document.body.appendChild(formContainer);
     
-    // Añadir estilos para el formulario
-    const style = document.createElement('style');
-    if (!document.head.querySelector('#form-styles')) {
-        style.id = 'form-styles';
-        style.innerHTML = `
-            .form-group {
-                margin-bottom: 15px;
+    // Configurar eventos del formulario
+    const cerrarBtn = document.getElementById('btnCerrarModuloX');
+    const cancelarBtn = document.getElementById('btnCancelarModulo');
+    const guardarBtn = document.getElementById('btnGuardarModulo');
+    
+    // Eventos para cerrar/cancelar
+    cerrarBtn.addEventListener('click', () => {
+        formContainer.remove();
+    });
+    
+    cancelarBtn.addEventListener('click', () => {
+        formContainer.remove();
+    });
+    
+    // Cerrar al hacer clic fuera del modal
+    formContainer.addEventListener('click', (e) => {
+        if (e.target === formContainer) {
+            formContainer.remove();
+        }
+    });
+    
+    // Evento para guardar
+    guardarBtn.addEventListener('click', () => {
+        const formModulo = document.getElementById('form-modulo');
+        if (!formModulo) return;
+        
+        const nombre = formModulo.querySelector('#modulo-nombre').value.trim();
+        const ubicacion = formModulo.querySelector('#modulo-ubicacion').value.trim();
+        const estado = formModulo.querySelector('#modulo-estado').value;
+        
+        // Validar datos
+        if (!nombre || !ubicacion) {
+            modalUtil.mostrarAlerta({
+                title: 'Campos incompletos',
+                message: 'Nombre y ubicación son campos obligatorios',
+                type: 'warning'
+            });
+            return;
+        }
+        
+        // Datos a guardar
+        const moduloData = {
+            nombre,
+            ubicacion,
+            estado
+        };
+        
+        let resultado;
+        
+        if (modulo) {
+            // Actualizar módulo existente
+            resultado = gestionModel.updateModulo(modulo.id, moduloData);
+            if (resultado) {
+                eventBus.emit(EVENT_NAMES.MODULE_UPDATED, { module: resultado });
+                eventBus.emit('gestion-modulo-updated', { action: 'update', id: modulo.id });
             }
-            .form-group label {
-                display: block;
-                margin-bottom: 5px;
-                font-weight: 500;
+        } else {
+            // Crear nuevo módulo
+            resultado = gestionModel.createModulo(moduloData);
+            if (resultado) {
+                eventBus.emit(EVENT_NAMES.MODULE_CREATED, { module: resultado });
+                eventBus.emit('gestion-modulo-updated', { action: 'create', id: resultado.id });
             }
-            .form-group input, .form-group select {
-                width: 100%;
-                padding: 8px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                box-sizing: border-box;
-            }
-            .form-buttons {
-                display: flex;
-                justify-content: flex-end;
-                gap: 10px;
-                margin-top: 20px;
-            }
-            .btn-secondary {
-                background-color: #e2e8f0;
-                border: none;
-                border-radius: 8px;
-                padding: 10px 20px;
-                color: #1f2937;
-                font-weight: 500;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-            .btn-secondary:hover {
-                background-color: #cbd5e1;
-            }
-        `;
-        document.head.appendChild(style);
-    }
+        }
+        
+        if (resultado) {
+            formContainer.remove();
+            
+            // Mostrar notificación de éxito
+            modalUtil.mostrarAlerta({
+                title: 'Módulo Guardado',
+                message: modulo ? 
+                    'El módulo se ha actualizado correctamente.' : 
+                    'El módulo se ha creado correctamente.',
+                type: 'success'
+            });
+        } else {
+            modalUtil.mostrarAlerta({
+                title: 'Error',
+                message: 'Hubo un problema al guardar el módulo. Por favor intenta de nuevo.',
+                type: 'error'
+            });
+        }
+    });
     
     // Enfocar el primer campo
     setTimeout(() => {
@@ -292,7 +600,7 @@ export function renderFormModulo(modulo = null) {
 }
 
 /**
- * Renderiza el formulario de grupo
+ * Renderiza el formulario de grupo y configura sus eventos
  */
 export function renderFormGrupo(grupo = null) {
     // Eliminar formulario anterior si existe
@@ -300,53 +608,216 @@ export function renderFormGrupo(grupo = null) {
     
     const formContainer = document.createElement('div');
     formContainer.id = 'grupo-form-container';
-    formContainer.style.position = 'fixed';
-    formContainer.style.top = '0';
-    formContainer.style.left = '0';
-    formContainer.style.width = '100%';
-    formContainer.style.height = '100%';
-    formContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    formContainer.style.display = 'flex';
-    formContainer.style.justifyContent = 'center';
-    formContainer.style.alignItems = 'center';
-    formContainer.style.zIndex = '1000';
-    
-    const formContent = document.createElement('div');
-    formContent.style.backgroundColor = '#fff';
-    formContent.style.padding = '20px';
-    formContent.style.borderRadius = '8px';
-    formContent.style.width = '500px';
-    formContent.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
-    
-    formContent.innerHTML = `
-        <h3>${grupo ? 'Editar Grupo' : 'Nuevo Grupo'}</h3>
-        <form id="form-grupo">
-            <div class="form-group">
-                <label for="grupo-nombre">Nombre:</label>
-                <input type="text" id="grupo-nombre" required value="${grupo?.nombre || ''}">
-            </div>
-            <div class="form-group">
-                <label for="grupo-turno">Turno:</label>
-                <select id="grupo-turno">
-                    <option value="Matutino" ${grupo?.turno === 'Matutino' ? 'selected' : ''}>Matutino</option>
-                    <option value="Vespertino" ${grupo?.turno === 'Vespertino' ? 'selected' : ''}>Vespertino</option>
-                    <option value="Nocturno" ${grupo?.turno === 'Nocturno' ? 'selected' : ''}>Nocturno</option>
-                    <option value="Mixto" ${grupo?.turno === 'Mixto' ? 'selected' : ''}>Mixto</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="grupo-horario">Horario:</label>
-                <input type="text" id="grupo-horario" required placeholder="ej. 8:00 - 14:00" value="${grupo?.horario || ''}">
-            </div>
-            <div class="form-buttons">
-                <button type="button" id="btnCancelarGrupo" class="btn-secondary">Cancelar</button>
-                <button type="button" id="btnGuardarGrupo" class="btn-primary">Guardar</button>
-            </div>
-        </form>
+    formContainer.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(125, 211, 252, 0.8), rgba(254, 243, 199, 0.8)), url('img/medical-background.png?v=1') center center / cover no-repeat;
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow-y: auto;
     `;
     
-    formContainer.appendChild(formContent);
+    formContainer.innerHTML = `
+        <div class="modal-dialog" style="
+            background: white;
+            max-width: 500px;
+            width: 90%;
+            margin: 40px auto;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+        ">
+            <div class="modal-header" style="
+                padding: 15px 20px;
+                border-bottom: 1px solid #e5e7eb;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: linear-gradient(135deg, #0ea5e9, #0284c7);
+                color: white;
+                border-radius: 12px 12px 0 0;
+            ">
+                <h3 style="margin: 0; font-weight: 600;">${grupo ? 'Editar Grupo' : 'Nuevo Grupo'}</h3>
+                <button id="btnCerrarGrupoX" style="
+                    background: none;
+                    border: none;
+                    font-size: 24px;
+                    cursor: pointer;
+                    color: white;
+                ">×</button>
+            </div>
+            
+            <div class="modal-body" style="padding: 20px;">
+                <form id="form-grupo">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="grupo-nombre" style="display: block; margin-bottom: 8px; font-weight: 500;">Nombre:</label>
+                        <input type="text" id="grupo-nombre" required value="${grupo?.nombre || ''}" style="
+                            width: 100%;
+                            padding: 10px 12px;
+                            border: 1px solid #d1d5db;
+                            border-radius: 8px;
+                            background-color: #f9fafb;
+                            font-size: 16px;
+                            box-sizing: border-box;
+                        ">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="grupo-turno" style="display: block; margin-bottom: 8px; font-weight: 500;">Turno:</label>
+                        <select id="grupo-turno" style="
+                            width: 100%;
+                            padding: 10px 12px;
+                            border: 1px solid #d1d5db;
+                            border-radius: 8px;
+                            background-color: #f9fafb;
+                            font-size: 16px;
+                            box-sizing: border-box;
+                        ">
+                            <option value="Matutino" ${grupo?.turno === 'Matutino' ? 'selected' : ''}>Matutino</option>
+                            <option value="Vespertino" ${grupo?.turno === 'Vespertino' ? 'selected' : ''}>Vespertino</option>
+                            <option value="Nocturno" ${grupo?.turno === 'Nocturno' ? 'selected' : ''}>Nocturno</option>
+                            <option value="Mixto" ${grupo?.turno === 'Mixto' ? 'selected' : ''}>Mixto</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="grupo-horario" style="display: block; margin-bottom: 8px; font-weight: 500;">Horario:</label>
+                        <input type="text" id="grupo-horario" required placeholder="ej. 8:00 - 14:00" value="${grupo?.horario || ''}" style="
+                            width: 100%;
+                            padding: 10px 12px;
+                            border: 1px solid #d1d5db;
+                            border-radius: 8px;
+                            background-color: #f9fafb;
+                            font-size: 16px;
+                            box-sizing: border-box;
+                        ">
+                    </div>
+                    
+                    <div class="form-buttons" style="
+                        display: flex;
+                        justify-content: flex-end;
+                        gap: 12px;
+                        margin-top: 25px;
+                    ">
+                        <button type="button" id="btnCancelarGrupo" style="
+                            background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+                            color: #1f2937;
+                            border: none;
+                            border-radius: 25px;
+                            padding: 12px 24px;
+                            font-size: 16px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                        ">Cancelar</button>
+                        <button type="button" id="btnGuardarGrupo" style="
+                            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+                            color: white;
+                            border: none;
+                            border-radius: 25px;
+                            padding: 12px 24px;
+                            font-size: 16px;
+                            font-weight: 600;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                        ">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
     document.body.appendChild(formContainer);
+    
+    // Configurar eventos del formulario
+    const cerrarBtn = document.getElementById('btnCerrarGrupoX');
+    const cancelarBtn = document.getElementById('btnCancelarGrupo');
+    const guardarBtn = document.getElementById('btnGuardarGrupo');
+    
+    // Eventos para cerrar/cancelar
+    cerrarBtn.addEventListener('click', () => {
+        formContainer.remove();
+    });
+    
+    cancelarBtn.addEventListener('click', () => {
+        formContainer.remove();
+    });
+    
+    // Cerrar al hacer clic fuera del modal
+    formContainer.addEventListener('click', (e) => {
+        if (e.target === formContainer) {
+            formContainer.remove();
+        }
+    });
+    
+    // Evento para guardar
+    guardarBtn.addEventListener('click', () => {
+        const formGrupo = document.getElementById('form-grupo');
+        if (!formGrupo) return;
+        
+        const nombre = formGrupo.querySelector('#grupo-nombre').value.trim();
+        const turno = formGrupo.querySelector('#grupo-turno').value.trim();
+        const horario = formGrupo.querySelector('#grupo-horario').value.trim();
+        
+        // Validar datos
+        if (!nombre || !turno || !horario) {
+            modalUtil.mostrarAlerta({
+                title: 'Campos incompletos',
+                message: 'Todos los campos son obligatorios',
+                type: 'warning'
+            });
+            return;
+        }
+        
+        // Datos a guardar
+        const grupoData = {
+            nombre,
+            turno,
+            horario
+        };
+        
+        let resultado;
+        
+        if (grupo) {
+            // Actualizar grupo existente
+            resultado = gestionModel.updateGrupo(grupo.id, grupoData);
+            if (resultado) {
+                eventBus.emit(EVENT_NAMES.GROUP_UPDATED, { group: resultado });
+                eventBus.emit('gestion-grupo-updated', { action: 'update', id: grupo.id });
+            }
+        } else {
+            // Crear nuevo grupo
+            resultado = gestionModel.createGrupo(grupoData);
+            if (resultado) {
+                eventBus.emit(EVENT_NAMES.GROUP_CREATED, { group: resultado });
+                eventBus.emit('gestion-grupo-updated', { action: 'create', id: resultado.id });
+            }
+        }
+        
+        if (resultado) {
+            formContainer.remove();
+            
+            // Mostrar notificación de éxito
+            modalUtil.mostrarAlerta({
+                title: 'Grupo Guardado',
+                message: grupo ? 
+                    'El grupo se ha actualizado correctamente.' : 
+                    'El grupo se ha creado correctamente.',
+                type: 'success'
+            });
+        } else {
+            modalUtil.mostrarAlerta({
+                title: 'Error',
+                message: 'Hubo un problema al guardar el grupo. Por favor intenta de nuevo.',
+                type: 'error'
+            });
+        }
+    });
     
     // Enfocar el primer campo
     setTimeout(() => {
@@ -368,4 +839,211 @@ function getEstadoClass(estado) {
         default:
             return 'badge-gray';
     }
+}
+
+/**
+ * Muestra un modal para asignar un grupo a un módulo
+ */
+function mostrarModalAsignarGrupo(moduloId) {
+    const modulo = gestionModel.getModuloById(moduloId);
+    const grupos = gestionModel.getGrupos();
+    
+    if (!modulo) {
+        console.error('GestionView: No se encontró el módulo', moduloId);
+        return;
+    }
+    
+    // Eliminar modal anterior si existe
+    document.getElementById('asignar-grupo-modal')?.remove();
+    
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'asignar-grupo-modal';
+    modalContainer.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(125, 211, 252, 0.8), rgba(254, 243, 199, 0.8)), url('img/medical-background.png?v=1') center center / cover no-repeat;
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow-y: auto;
+    `;
+    
+    // Encontrar el grupo actualmente asignado
+    const grupoAsignado = modulo.grupoAsignadoId ? 
+        grupos.find(g => g.id === modulo.grupoAsignadoId) : null;
+    
+    modalContainer.innerHTML = `
+        <div class="modal-dialog" style="
+            background: white;
+            max-width: 500px;
+            width: 90%;
+            margin: 40px auto;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+        ">
+            <div class="modal-header" style="
+                padding: 15px 20px;
+                border-bottom: 1px solid #e5e7eb;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: linear-gradient(135deg, #0ea5e9, #0284c7);
+                color: white;
+                border-radius: 12px 12px 0 0;
+            ">
+                <h3 style="margin: 0; font-weight: 600;">Asignar Grupo al Módulo "${modulo.nombre}"</h3>
+                <button id="btnCerrarAsignacion" style="
+                    background: none;
+                    border: none;
+                    font-size: 24px;
+                    cursor: pointer;
+                    color: white;
+                ">×</button>
+            </div>
+            
+            <div class="modal-body" style="padding: 20px;">
+                <p style="margin-bottom: 20px; font-size: 1rem;">Selecciona el grupo que se encargará de este módulo:</p>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="select-grupo-asignar" style="display: block; margin-bottom: 8px; font-weight: 500;">Grupo:</label>
+                    <select id="select-grupo-asignar" style="
+                        width: 100%;
+                        padding: 10px 12px;
+                        border: 1px solid #d1d5db;
+                        border-radius: 8px;
+                        background-color: #f9fafb;
+                        font-size: 16px;
+                    ">
+                        <option value="">-- Seleccionar Grupo --</option>
+                        ${grupos.map(grupo => `
+                            <option value="${grupo.id}" ${modulo.grupoAsignadoId === grupo.id ? 'selected' : ''}>
+                                ${grupo.nombre} (${grupo.turno}) - ${grupo.horario}
+                            </option>
+                        `).join('')}
+                        <option value="null" ${!modulo.grupoAsignadoId ? 'selected' : ''}>
+                            Quitar asignación actual
+                        </option>
+                    </select>
+                </div>
+                
+                <div class="form-group" style="
+                    margin-bottom: 20px; 
+                    padding: 15px; 
+                    background-color: #f0f9ff; 
+                    border-radius: 8px; 
+                    border-left: 4px solid #0ea5e9;
+                ">
+                    <p style="margin: 0;">
+                        <strong>Grupo actual:</strong> 
+                        ${grupoAsignado ? 
+                            `${grupoAsignado.nombre} (${grupoAsignado.turno}) - ${grupoAsignado.horario}` : 
+                            '<span style="color: #6b7280;">Sin asignación</span>'
+                        }
+                    </p>
+                </div>
+                
+                <div class="form-buttons" style="
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 12px;
+                    margin-top: 25px;
+                ">
+                    <button type="button" id="btnCancelarAsignacion" style="
+                        background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+                        color: #1f2937;
+                        border: none;
+                        border-radius: 25px;
+                        padding: 12px 24px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    ">Cancelar</button>
+                    <button type="button" id="btnGuardarAsignacion" style="
+                        background: linear-gradient(135deg, #0ea5e9, #0284c7);
+                        color: white;
+                        border: none;
+                        border-radius: 25px;
+                        padding: 12px 24px;
+                        font-size: 16px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    ">Guardar</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modalContainer);
+    
+    // Configurar eventos
+    const cerrarBtn = document.getElementById('btnCerrarAsignacion');
+    const cancelarBtn = document.getElementById('btnCancelarAsignacion');
+    const guardarBtn = document.getElementById('btnGuardarAsignacion');
+    
+    // Eventos para cerrar/cancelar
+    cerrarBtn.addEventListener('click', () => {
+        modalContainer.remove();
+    });
+    
+    cancelarBtn.addEventListener('click', () => {
+        modalContainer.remove();
+    });
+    
+    // Cerrar al hacer clic fuera del modal
+    modalContainer.addEventListener('click', (e) => {
+        if (e.target === modalContainer) {
+            modalContainer.remove();
+        }
+    });
+    
+    // Evento para guardar
+    guardarBtn.addEventListener('click', () => {
+        const selectGrupo = document.getElementById('select-grupo-asignar');
+        if (!selectGrupo) return;
+        
+        const grupoId = selectGrupo.value === 'null' ? null : selectGrupo.value;
+        const grupoAnteriorId = modulo.grupoAsignadoId;
+        
+        // Actualizar el módulo con el nuevo grupo
+        const resultado = gestionModel.asignarGrupoAModulo(moduloId, grupoId);
+        
+        if (resultado) {
+            eventBus.emit(EVENT_NAMES.GROUP_ASSIGNED, { 
+                module: resultado, 
+                groupId: grupoId, 
+                previousGroupId: grupoAnteriorId 
+            });
+            eventBus.emit('gestion-modulo-updated', { 
+                action: 'assign-group', 
+                id: moduloId 
+            });
+            
+            modalContainer.remove();
+            
+            // Mostrar notificación de éxito
+            modalUtil.mostrarAlerta({
+                title: 'Grupo Asignado',
+                message: grupoId ? 
+                    'El grupo ha sido asignado correctamente al módulo.' : 
+                    'Se ha quitado la asignación de grupo del módulo.',
+                type: 'success'
+            });
+            
+            // Actualizar la vista
+            renderGestionModulos(modulosContainer);
+        } else {
+            modalUtil.mostrarAlerta({
+                title: 'Error',
+                message: 'Hubo un problema al asignar el grupo. Por favor intenta de nuevo.',
+                type: 'error'
+            });
+        }
+    });
 }

@@ -320,6 +320,7 @@
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initGestionController } from '../js/controllers/gestionController.js';
+    import { init as initGestionView } from '../js/views/gestionView.js';
     import '../js/utils/eventBusManager.js';
     
     document.addEventListener('DOMContentLoaded', () => {
@@ -332,6 +333,11 @@
         
         // Inicializar controladores
         initGlobalController();
+        
+        // Inicializar vista primero (importante para el event binding)
+        initGestionView();
+        
+        // Luego inicializar controlador
         initGestionController();        
       }
     });
