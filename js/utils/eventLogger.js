@@ -56,6 +56,59 @@ export function setupEventLogging() {
         }
     });
 
+    // --- NUEVO BLOQUE PARA EVENTOS DE GESTIÓN ---
+    // Eventos de Gestión Administrativa
+    eventBus.on(EVENT_NAMES.MODULE_CREATED, (data) => {
+        console.group('🏗️ Módulo Creado');
+        console.log('Datos del Módulo:', data.module);
+        console.log('Hora:', new Date().toLocaleTimeString());
+        console.groupEnd();
+    });
+
+    eventBus.on(EVENT_NAMES.MODULE_UPDATED, (data) => {
+        console.group('🔄 Módulo Actualizado');
+        console.log('Datos del Módulo:', data.module);
+        console.log('Hora:', new Date().toLocaleTimeString());
+        console.groupEnd();
+    });
+
+    eventBus.on(EVENT_NAMES.MODULE_DELETED, (data) => {
+        console.group('🗑️ Módulo Eliminado');
+        console.log('Módulo:', data.module);
+        console.log('Hora:', new Date().toLocaleTimeString());
+        console.groupEnd();
+    });
+
+    eventBus.on(EVENT_NAMES.GROUP_CREATED, (data) => {
+        console.group('👥 Grupo Creado');
+        console.log('Datos del Grupo:', data.group);
+        console.log('Hora:', new Date().toLocaleTimeString());
+        console.groupEnd();
+    });
+    
+    eventBus.on(EVENT_NAMES.GROUP_UPDATED, (data) => {
+        console.group('🔄 Grupo Actualizado');
+        console.log('Datos del Grupo:', data.group);
+        console.log('Hora:', new Date().toLocaleTimeString());
+        console.groupEnd();
+    });
+
+    eventBus.on(EVENT_NAMES.GROUP_DELETED, (data) => {
+        console.group('🗑️ Grupo Eliminado');
+        console.log('Grupo:', data.group);
+        console.log('Hora:', new Date().toLocaleTimeString());
+        console.groupEnd();
+    });
+    
+    eventBus.on(EVENT_NAMES.GROUP_ASSIGNED, (data) => {
+        console.group('🔗 Grupo Asignado a Módulo');
+        console.log('Módulo ID:', data.moduloId);
+        console.log('Grupo ID:', data.grupoId);
+        console.log('Hora:', new Date().toLocaleTimeString());
+        console.groupEnd();
+    });
+    // --- FIN DEL NUEVO BLOQUE ---
+
     // Más eventos pueden agregarse aquí según sea necesario
     
     console.log('🔄 Sistema de registro de eventos inicializado');

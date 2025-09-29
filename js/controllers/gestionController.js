@@ -1,7 +1,8 @@
 // js/controllers/gestionController.js
 import { renderGestionModulos, renderGestionGrupos, renderFormModulo, renderFormGrupo, inicializarDatosGestion } from '../views/gestionView.js';
 import { gestionModel } from '../models/gestionModel.js';
-import eventBus from '../utils/eventBus.js';
+import eventBus, { EVENT_NAMES } from '../utils/eventBus.js'; // Importa EVENT_NAMES
+import * as modalUtil from '../utils/modalUtil.js'; // SOLUCIÓN LAG: Importación estática
 
 let moduloSeleccionado = null;
 let grupoSeleccionado = null;
@@ -78,17 +79,18 @@ function setupEventHandlers() {
             const moduloId = event.target.dataset.id;
             const modulo = gestionModel.getModuloById(moduloId);
             
-            // Importar dinámicamente la utilidad de modal
-            import('../utils/modalUtil.js').then(modalUtil => {
-                modalUtil.confirmarAccion({
-                    title: 'Eliminar Módulo',
-                    message: `¿Estás seguro de eliminar el módulo "${modulo.nombre}"? Esta acción no se puede deshacer.`,
-                    onConfirm: () => {
-                        gestionModel.deleteModulo(moduloId);
-                        renderGestionModulos(document.getElementById('modulos-section'));
-                        eventBus.emit('gestion-modulo-updated', { action: 'delete', id: moduloId });
-                    }
-                });
+            // Ya no se usa la importación dinámica
+            modalUtil.confirmarAccion({
+                title: 'Eliminar Módulo',
+                message: `¿Estás seguro de eliminar el módulo "${modulo.nombre}"? Esta acción no se puede deshacer.`,
+                onConfirm: () => {
+                    const moduloEliminado = gestionModel.getModuloById(moduloId); // Captura los datos antes de borrar
+                    gestionModel.deleteModulo(moduloId);
+                    renderGestionModulos(document.getElementById('modulos-section'));
+                    // SOLUCIÓN EVENT BUS: Emite el evento específico
+                    eventBus.emit(EVENT_NAMES.MODULE_DELETED, { module: moduloEliminado });
+                    eventBus.emit('gestion-modulo-updated', { action: 'delete', id: moduloId }); // Mantener compatibilidad
+                }
             });
         }
         
@@ -112,17 +114,18 @@ function setupEventHandlers() {
             const grupoId = event.target.dataset.id;
             const grupo = gestionModel.getGrupoById(grupoId);
             
-            // Importar dinámicamente la utilidad de modal
-            import('../utils/modalUtil.js').then(modalUtil => {
-                modalUtil.confirmarAccion({
-                    title: 'Eliminar Grupo',
-                    message: `¿Estás seguro de eliminar el grupo "${grupo.nombre}"? Esta acción no se puede deshacer.`,
-                    onConfirm: () => {
-                        gestionModel.deleteGrupo(grupoId);
-                        renderGestionGrupos(document.getElementById('grupos-section'));
-                        eventBus.emit('gestion-grupo-updated', { action: 'delete', id: grupoId });
-                    }
-                });
+            // Ya no se usa la importación dinámica
+            modalUtil.confirmarAccion({
+                title: 'Eliminar Grupo',
+                message: `¿Estás seguro de eliminar el grupo "${grupo.nombre}"? Esta acción no se puede deshacer.`,
+                onConfirm: () => {
+                    const grupoEliminado = gestionModel.getGrupoById(grupoId); // Captura los datos antes de borrar
+                    gestionModel.deleteGrupo(grupoId);
+                    renderGestionGrupos(document.getElementById('grupos-section'));
+                    // SOLUCIÓN EVENT BUS: Emite el evento específico
+                    eventBus.emit(EVENT_NAMES.GROUP_DELETED, { group: grupoEliminado });
+                    eventBus.emit('gestion-grupo-updated', { action: 'delete', id: grupoId }); // Mantener compatibilidad
+                }
             });
         }
         else if (event.target.classList.contains('assign-grupo')) {
@@ -159,13 +162,17 @@ function guardarModulo() {
         // Actualizar módulo existente
         resultado = gestionModel.updateModulo(moduloSeleccionado.id, moduloData);
         if (resultado) {
-            eventBus.emit('gestion-modulo-updated', { action: 'update', id: moduloSeleccionado.id });
+            // SOLUCIÓN EVENT BUS: Emite el evento específico
+            eventBus.emit(EVENT_NAMES.MODULE_UPDATED, { module: resultado });
+            eventBus.emit('gestion-modulo-updated', { action: 'update', id: moduloSeleccionado.id }); // Mantener compatibilidad
         }
     } else {
         // Crear nuevo módulo
         resultado = gestionModel.createModulo(moduloData);
         if (resultado) {
-            eventBus.emit('gestion-modulo-updated', { action: 'create', id: resultado.id });
+            // SOLUCIÓN EVENT BUS: Emite el evento específico
+            eventBus.emit(EVENT_NAMES.MODULE_CREATED, { module: resultado });
+            eventBus.emit('gestion-modulo-updated', { action: 'create', id: resultado.id }); // Mantener compatibilidad
         }
     }
     
@@ -173,23 +180,20 @@ function guardarModulo() {
         document.getElementById('modulo-form-container').remove();
         renderGestionModulos(document.getElementById('modulos-section'));
         
-        // Mostrar notificación de éxito
-        import('../utils/modalUtil.js').then(modalUtil => {
-            modalUtil.mostrarAlerta({
-                title: 'Módulo Guardado',
-                message: moduloSeleccionado ? 
-                    'El módulo se ha actualizado correctamente.' : 
-                    'El módulo se ha creado correctamente.',
-                type: 'success'
-            });
+        // Mostrar notificación de éxito - Sin importación dinámica
+        modalUtil.mostrarAlerta({
+            title: 'Módulo Guardado',
+            message: moduloSeleccionado ? 
+                'El módulo se ha actualizado correctamente.' : 
+                'El módulo se ha creado correctamente.',
+            type: 'success'
         });
     } else {
-        import('../utils/modalUtil.js').then(modalUtil => {
-            modalUtil.mostrarAlerta({
-                title: 'Error',
-                message: 'Hubo un problema al guardar el módulo. Por favor intenta de nuevo.',
-                type: 'error'
-            });
+        // Sin importación dinámica
+        modalUtil.mostrarAlerta({
+            title: 'Error',
+            message: 'Hubo un problema al guardar el módulo. Por favor intenta de nuevo.',
+            type: 'error'
         });
     }
 }
@@ -221,13 +225,17 @@ function guardarGrupo() {
         // Actualizar grupo existente
         resultado = gestionModel.updateGrupo(grupoSeleccionado.id, grupoData);
         if (resultado) {
-            eventBus.emit('gestion-grupo-updated', { action: 'update', id: grupoSeleccionado.id });
+            // SOLUCIÓN EVENT BUS: Emite el evento específico
+            eventBus.emit(EVENT_NAMES.GROUP_UPDATED, { group: resultado });
+            eventBus.emit('gestion-grupo-updated', { action: 'update', id: grupoSeleccionado.id }); // Mantener compatibilidad
         }
     } else {
         // Crear nuevo grupo
         resultado = gestionModel.createGrupo(grupoData);
         if (resultado) {
-            eventBus.emit('gestion-grupo-updated', { action: 'create', id: resultado.id });
+            // SOLUCIÓN EVENT BUS: Emite el evento específico
+            eventBus.emit(EVENT_NAMES.GROUP_CREATED, { group: resultado });
+            eventBus.emit('gestion-grupo-updated', { action: 'create', id: resultado.id }); // Mantener compatibilidad
         }
     }
     
@@ -235,23 +243,20 @@ function guardarGrupo() {
         document.getElementById('grupo-form-container').remove();
         renderGestionGrupos(document.getElementById('grupos-section'));
         
-        // Mostrar notificación de éxito
-        import('../utils/modalUtil.js').then(modalUtil => {
-            modalUtil.mostrarAlerta({
-                title: 'Grupo Guardado',
-                message: grupoSeleccionado ? 
-                    'El grupo se ha actualizado correctamente.' : 
-                    'El grupo se ha creado correctamente.',
-                type: 'success'
-            });
+        // Mostrar notificación de éxito - Sin importación dinámica
+        modalUtil.mostrarAlerta({
+            title: 'Grupo Guardado',
+            message: grupoSeleccionado ? 
+                'El grupo se ha actualizado correctamente.' : 
+                'El grupo se ha creado correctamente.',
+            type: 'success'
         });
     } else {
-        import('../utils/modalUtil.js').then(modalUtil => {
-            modalUtil.mostrarAlerta({
-                title: 'Error',
-                message: 'Hubo un problema al guardar el grupo. Por favor intenta de nuevo.',
-                type: 'error'
-            });
+        // Sin importación dinámica
+        modalUtil.mostrarAlerta({
+            title: 'Error',
+            message: 'Hubo un problema al guardar el grupo. Por favor intenta de nuevo.',
+            type: 'error'
         });
     }
 }
@@ -319,32 +324,33 @@ function asignarGrupo(moduloId) {
         const resultado = gestionModel.asignarGrupoAModulo(moduloId, grupoId);
         
         if (resultado) {
+            // SOLUCIÓN EVENT BUS: Emite el evento específico
+            eventBus.emit(EVENT_NAMES.GROUP_ASSIGNED, { 
+                moduloId,
+                grupoId
+            });
             eventBus.emit('gestion-modulo-updated', { 
                 action: 'assign-grupo', 
                 moduloId,
                 grupoId
-            });
+            }); // Mantener compatibilidad
             modalContainer.remove();
             renderGestionModulos(document.getElementById('modulos-section'));
             
-            // Mostrar mensaje de éxito
-            import('../utils/modalUtil.js').then(modalUtil => {
-                modalUtil.mostrarAlerta({
-                    title: 'Asignación Exitosa',
-                    message: grupoId ? 
-                        'El grupo ha sido asignado correctamente al módulo.' : 
-                        'Se ha removido la asignación de grupo del módulo.',
-                    type: 'success'
-                });
+            // Mostrar mensaje de éxito - Sin importación dinámica
+            modalUtil.mostrarAlerta({
+                title: 'Asignación Exitosa',
+                message: grupoId ? 
+                    'El grupo ha sido asignado correctamente al módulo.' : 
+                    'Se ha removido la asignación de grupo del módulo.',
+                type: 'success'
             });
         } else {
-            // Mostrar mensaje de error
-            import('../utils/modalUtil.js').then(modalUtil => {
-                modalUtil.mostrarAlerta({
-                    title: 'Error en la Asignación',
-                    message: 'No se pudo completar la asignación del grupo al módulo.',
-                    type: 'error'
-                });
+            // Mostrar mensaje de error - Sin importación dinámica
+            modalUtil.mostrarAlerta({
+                title: 'Error en la Asignación',
+                message: 'No se pudo completar la asignación del grupo al módulo.',
+                type: 'error'
             });
         }
     });

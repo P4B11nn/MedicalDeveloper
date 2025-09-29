@@ -233,7 +233,16 @@ export const EVENT_NAMES = {
     OPERACION_DELETED: 'operacion:deleted',
 
     REPORTE_GENERATED: 'reporte:generated',
-    REPORTE_EXPORTED: 'reporte:exported'
+    REPORTE_EXPORTED: 'reporte:exported',
+
+    // --- NUEVOS EVENTOS PARA GESTIÓN ---
+    MODULE_CREATED: 'module:created',
+    MODULE_UPDATED: 'module:updated',
+    MODULE_DELETED: 'module:deleted',
+    GROUP_CREATED: 'group:created',
+    GROUP_UPDATED: 'group:updated',
+    GROUP_DELETED: 'group:deleted',
+    GROUP_ASSIGNED: 'group:assigned'
 };
 
 export default eventBus;
