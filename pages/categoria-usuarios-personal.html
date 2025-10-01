@@ -88,6 +88,7 @@
     .sidebar {
       width: 280px;
       background: rgba(255, 255, 255, 0.95);
+      -webkit-backdrop-filter: blur(10px);
       backdrop-filter: blur(10px);
       border-right: 1px solid rgba(125, 211, 252, 0.3);
       padding: 20px;
@@ -152,6 +153,7 @@
 
     .content-area {
       background: rgba(255, 255, 255, 0.95);
+      -webkit-backdrop-filter: blur(10px);
       backdrop-filter: blur(10px);
       border-radius: 20px;
       padding: 30px;
@@ -238,7 +240,7 @@
         .user-actions-container button:hover { transform: scale(1.1); }
 
         /* Estilos para Modales */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
         .modal-content-confirm, .modal-content-edit { background: white; padding: 30px; border-radius: 15px; max-width: 450px; width: 90%; box-shadow: 0 5px 25px rgba(0,0,0,0.2); }
         .modal-content-edit { max-width: 600px; max-height: 90vh; overflow-y: auto; }
         .modal-content-confirm h3 { margin-top: 0; font-size: 1.4rem; color: #1f2937; text-align: center; }
@@ -364,15 +366,50 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* Estilos para elementos con inline styles */
+    #userName {
+      font-weight: bold;
+      margin-left: 8px;
+    }
+    
+    #userDropdown {
+      display: none;
+      position: fixed;
+      top: 40px;
+      right: 0;
+      background: white;
+      color: #333;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      min-width: 180px;
+      z-index: 1000;
+    }
+    
+    #startServiceBtn, #logoutBtn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      text-align: left;
+    }
+    
+    .empty-state {
+      text-align: center;
+      color: #6b7280;
+      font-size: 1.1rem;
+      padding: 20px;
+    }
   </style>
 </head>
 <body>
   <header>
     <button class="back-btn" onclick="window.location.href='../menuInicio.html'" title="Volver al Menú">←</button>
-    <div class="icon" id="userIcon"><span id="userName" style="font-weight:bold; margin-left:8px;"></span>
-      <div id="userDropdown" style="display:none; position:fixed; top:40px; right:0; background:white; color:#333; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:180px; z-index:1000;">
-        <button id="startServiceBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left;">Iniciar servicio</button>
-        <button id="logoutBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left;">Cerrar sesión</button>
+    <div class="icon" id="userIcon"><span id="userName"></span>
+      <div id="userDropdown">
+        <button id="startServiceBtn">Iniciar servicio</button>
+        <button id="logoutBtn">Cerrar sesión</button>
       </div>
     </div>
     <h1>Medical Developer - Usuarios y Personal</h1>
@@ -409,7 +446,7 @@
         <div id="personal-section" class="form-section">
           <h2 class="content-title">Personal Registrado</h2>
           <div class="personal-lista" id="personalLista">
-            <div style="text-align: center; color: #6b7280; font-size: 1.1rem; padding: 20px;">
+            <div class="empty-state">
               No hay usuarios registrados en el sistema.
             </div>
           </div>

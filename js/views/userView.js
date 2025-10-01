@@ -161,166 +161,252 @@ function abrirModalEdicion(userIndex) {
     modalOverlay.className = 'modal-overlay';
     modalOverlay.innerHTML = `
         <div class="modal-content-edit" style="
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 5px 10px rgba(0,0,0,0.05);
-            padding: 25px;
+            background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 30px;
             max-width: 600px;
             width: 90%;
             position: relative;
-            border: 1px solid rgba(226, 232, 240, 0.8);
         ">
             <h3 style="
-                color: #1e40af;
                 margin-top: 0;
-                margin-bottom: 20px;
+                margin-bottom: 25px;
+                font-size: 1.8rem;
+                font-weight: 600;
+                color: #1f2937;
                 text-align: center;
-                font-size: 1.5rem;
-                border-bottom: 2px solid #60a5fa;
-                padding-bottom: 10px;
+                padding-bottom: 15px;
+                border-bottom: 2px solid rgba(125, 211, 252, 0.3);
             ">Editar Usuario</h3>
             <form id="form-editar-usuario">
                 <div class="form-grid" style="
                     display: grid;
                     grid-template-columns: repeat(2, 1fr);
-                    gap: 15px;
-                    margin-bottom: 15px;
+                    gap: 20px;
+                    margin-bottom: 20px;
                 ">
-                    <div style="margin-bottom: 10px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Nombre:</label>
+                    <div style="margin-bottom: 15px;">
+                        <label style="
+                            display: block; 
+                            margin-bottom: 8px; 
+                            font-weight: 600;
+                            font-size: 1rem;
+                            color: #1f2937;
+                        ">Nombre:</label>
                         <input type="text" id="edit-nombre" value="${usuario.nombre || ''}" required style="
                             width: 100%;
-                            padding: 10px;
-                            border-radius: 8px;
-                            border: 1px solid #cbd5e1;
-                            background-color: white;
-                            transition: border-color 0.2s;
+                            padding: 12px 16px;
+                            border-radius: 15px;
+                            border: 2px solid rgba(125, 211, 252, 0.3);
+                            background: rgba(255, 255, 255, 0.8);
+                            -webkit-backdrop-filter: blur(5px);
+                            backdrop-filter: blur(5px);
+                            transition: all 0.3s ease;
                             outline: none;
-                        " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                            font-size: 1rem;
+                            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                        " onFocus="this.style.borderColor='rgba(125, 211, 252, 0.5)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(125, 211, 252, 0.3)'" onBlur="this.style.borderColor='rgba(125, 211, 252, 0.3)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.1)'">
                     </div>
-                    <div style="margin-bottom: 10px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Apellidos:</label>
+                    <div style="margin-bottom: 15px;">
+                        <label style="
+                            display: block; 
+                            margin-bottom: 8px; 
+                            font-weight: 600;
+                            font-size: 1rem;
+                            color: #1f2937;
+                        ">Apellidos:</label>
                         <input type="text" id="edit-apellidos" value="${usuario.apellidos || ''}" required style="
                             width: 100%;
-                            padding: 10px;
-                            border-radius: 8px;
-                            border: 1px solid #cbd5e1;
-                            background-color: white;
-                            transition: border-color 0.2s;
+                            padding: 12px 16px;
+                            border-radius: 15px;
+                            border: 2px solid rgba(125, 211, 252, 0.3);
+                            background: rgba(255, 255, 255, 0.8);
+                            -webkit-backdrop-filter: blur(5px);
+                            backdrop-filter: blur(5px);
+                            transition: all 0.3s ease;
                             outline: none;
-                        " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                            font-size: 1rem;
+                            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                        " onFocus="this.style.borderColor='rgba(125, 211, 252, 0.5)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(125, 211, 252, 0.3)'" onBlur="this.style.borderColor='rgba(125, 211, 252, 0.3)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.1)'">
                     </div>
-                    <div style="margin-bottom: 10px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Edad:</label>
+                    <div style="margin-bottom: 15px;">
+                        <label style="
+                            display: block; 
+                            margin-bottom: 8px; 
+                            font-weight: 600;
+                            font-size: 1rem;
+                            color: #1f2937;
+                        ">Edad:</label>
                         <input type="number" id="edit-edad" value="${usuario.edad || ''}" style="
                             width: 100%;
-                            padding: 10px;
-                            border-radius: 8px;
-                            border: 1px solid #cbd5e1;
-                            background-color: white;
-                            transition: border-color 0.2s;
+                            padding: 12px 16px;
+                            border-radius: 15px;
+                            border: 2px solid rgba(125, 211, 252, 0.3);
+                            background: rgba(255, 255, 255, 0.8);
+                            -webkit-backdrop-filter: blur(5px);
+                            backdrop-filter: blur(5px);
+                            transition: all 0.3s ease;
                             outline: none;
-                        " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                            font-size: 1rem;
+                            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                        " onFocus="this.style.borderColor='rgba(125, 211, 252, 0.5)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(125, 211, 252, 0.3)'" onBlur="this.style.borderColor='rgba(125, 211, 252, 0.3)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.1)'">
                     </div>
-                    <div style="margin-bottom: 10px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Sexo:</label>
+                    <div style="margin-bottom: 15px;">
+                        <label style="
+                            display: block; 
+                            margin-bottom: 8px; 
+                            font-weight: 600;
+                            font-size: 1rem;
+                            color: #1f2937;
+                        ">Sexo:</label>
                         <select id="edit-sexo" style="
                             width: 100%;
-                            padding: 10px;
-                            border-radius: 8px;
-                            border: 1px solid #cbd5e1;
-                            background-color: white;
-                            transition: border-color 0.2s;
+                            padding: 12px 16px;
+                            border-radius: 15px;
+                            border: 2px solid rgba(125, 211, 252, 0.3);
+                            background: rgba(255, 255, 255, 0.8);
+                            -webkit-backdrop-filter: blur(5px);
+                            backdrop-filter: blur(5px);
+                            transition: all 0.3s ease;
                             outline: none;
+                            font-size: 1rem;
+                            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
                             cursor: pointer;
-                        " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                        " onFocus="this.style.borderColor='rgba(125, 211, 252, 0.5)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(125, 211, 252, 0.3)'" onBlur="this.style.borderColor='rgba(125, 211, 252, 0.3)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.1)'">
                             <option value="M" ${usuario.sexo === 'M' ? 'selected' : ''}>Masculino</option>
                             <option value="F" ${usuario.sexo === 'F' ? 'selected' : ''}>Femenino</option>
                         </select>
                     </div>
-                    <div style="margin-bottom: 10px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Matrícula:</label>
+                    <div style="margin-bottom: 15px;">
+                        <label style="
+                            display: block; 
+                            margin-bottom: 8px; 
+                            font-weight: 600;
+                            font-size: 1rem;
+                            color: #1f2937;
+                        ">Matrícula:</label>
                         <input type="text" id="edit-matricula" value="${usuario.matricula || ''}" required style="
                             width: 100%;
-                            padding: 10px;
-                            border-radius: 8px;
-                            border: 1px solid #cbd5e1;
-                            background-color: white;
-                            transition: border-color 0.2s;
+                            padding: 12px 16px;
+                            border-radius: 15px;
+                            border: 2px solid rgba(125, 211, 252, 0.3);
+                            background: rgba(255, 255, 255, 0.8);
+                            -webkit-backdrop-filter: blur(5px);
+                            backdrop-filter: blur(5px);
+                            transition: all 0.3s ease;
                             outline: none;
-                        " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                            font-size: 1rem;
+                            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                        " onFocus="this.style.borderColor='rgba(125, 211, 252, 0.5)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(125, 211, 252, 0.3)'" onBlur="this.style.borderColor='rgba(125, 211, 252, 0.3)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.1)'">
                     </div>
-                    <div style="margin-bottom: 10px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Grupo:</label>
+                    <div style="margin-bottom: 15px;">
+                        <label style="
+                            display: block; 
+                            margin-bottom: 8px; 
+                            font-weight: 600;
+                            font-size: 1rem;
+                            color: #1f2937;
+                        ">Grupo:</label>
                         <select id="edit-grupoId" style="
                             width: 100%;
-                            padding: 10px;
-                            border-radius: 8px;
-                            border: 1px solid #cbd5e1;
-                            background-color: white;
-                            transition: border-color 0.2s;
+                            padding: 12px 16px;
+                            border-radius: 15px;
+                            border: 2px solid rgba(125, 211, 252, 0.3);
+                            background: rgba(255, 255, 255, 0.8);
+                            -webkit-backdrop-filter: blur(5px);
+                            backdrop-filter: blur(5px);
+                            transition: all 0.3s ease;
                             outline: none;
+                            font-size: 1rem;
+                            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
                             cursor: pointer;
-                        " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                        " onFocus="this.style.borderColor='rgba(125, 211, 252, 0.5)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(125, 211, 252, 0.3)'" onBlur="this.style.borderColor='rgba(125, 211, 252, 0.3)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.1)'">
                             <option value="">Sin Grupo</option>
                             ${gestionModel.getGrupos().map(g => `<option value="${g.id}" ${usuario.grupoId === g.id ? 'selected' : ''}>${g.nombre}</option>`).join('')}
                         </select>
                     </div>
                 </div>
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Rol:</label>
+                <div style="margin-bottom: 20px;">
+                    <label style="
+                        display: block; 
+                        margin-bottom: 8px; 
+                        font-weight: 600;
+                        font-size: 1rem;
+                        color: #1f2937;
+                    ">Rol:</label>
                     <select id="edit-rol" required style="
                         width: 100%;
-                        padding: 10px;
-                        border-radius: 8px;
-                        border: 1px solid #cbd5e1;
-                        background-color: white;
-                        transition: border-color 0.2s;
+                        padding: 12px 16px;
+                        border-radius: 15px;
+                        border: 2px solid rgba(125, 211, 252, 0.3);
+                        background: rgba(255, 255, 255, 0.8);
+                        -webkit-backdrop-filter: blur(5px);
+                        backdrop-filter: blur(5px);
+                        transition: all 0.3s ease;
                         outline: none;
+                        font-size: 1rem;
+                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
                         cursor: pointer;
-                    " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                    " onFocus="this.style.borderColor='rgba(125, 211, 252, 0.5)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(125, 211, 252, 0.3)'" onBlur="this.style.borderColor='rgba(125, 211, 252, 0.3)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.1)'">
                         <option value="admin" ${usuario.rol === 'admin' ? 'selected' : ''}>Administrador</option>
                         <option value="practicante" ${usuario.rol === 'practicante' ? 'selected' : ''}>Practicante</option>
                     </select>
                 </div>
-                <div style="margin-bottom: 25px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #334155;">Nueva Contraseña (opcional):</label>
+                <div style="margin-bottom: 30px;">
+                    <label style="
+                        display: block; 
+                        margin-bottom: 8px; 
+                        font-weight: 600;
+                        font-size: 1rem;
+                        color: #1f2937;
+                    ">Nueva Contraseña (opcional):</label>
                     <input type="password" id="edit-contrasena" placeholder="Dejar en blanco para no cambiar" style="
                         width: 100%;
-                        padding: 10px;
-                        border-radius: 8px;
-                        border: 1px solid #cbd5e1;
-                        background-color: white;
-                        transition: border-color 0.2s;
+                        padding: 12px 16px;
+                        border-radius: 15px;
+                        border: 2px solid rgba(125, 211, 252, 0.3);
+                        background: rgba(255, 255, 255, 0.8);
+                        -webkit-backdrop-filter: blur(5px);
+                        backdrop-filter: blur(5px);
+                        transition: all 0.3s ease;
                         outline: none;
-                    " onFocus="this.style.borderColor='#3b82f6'" onBlur="this.style.borderColor='#cbd5e1'">
+                        font-size: 1rem;
+                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                    " onFocus="this.style.borderColor='rgba(125, 211, 252, 0.5)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(125, 211, 252, 0.3)'" onBlur="this.style.borderColor='rgba(125, 211, 252, 0.3)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.1)'">
                 </div>
                 <div style="
                     display: flex;
-                    justify-content: flex-end;
-                    gap: 15px;
+                    justify-content: center;
+                    gap: 20px;
                 ">
                     <button type="button" class="btn-cancel" style="
-                        padding: 10px 20px;
-                        border-radius: 8px;
-                        border: 1px solid #cbd5e1;
-                        background-color: #f1f5f9;
-                        color: #64748b;
-                        cursor: pointer;
-                        font-weight: 500;
-                        transition: all 0.2s;
-                    " onMouseOver="this.style.backgroundColor='#e2e8f0'" onMouseOut="this.style.backgroundColor='#f1f5f9'">Cancelar</button>
-                    <button type="submit" class="btn-save" style="
-                        padding: 10px 20px;
-                        border-radius: 8px;
+                        padding: 12px 24px;
+                        border-radius: 25px;
                         border: none;
-                        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                        color: white;
+                        background: linear-gradient(135deg, #e5e7eb, #f3f4f6);
+                        color: #1f2937;
                         cursor: pointer;
-                        font-weight: 500;
-                        transition: all 0.2s;
-                        box-shadow: 0 4px 6px rgba(37, 99, 235, 0.1);
-                    " onMouseOver="this.style.transform='translateY(-2px)'" onMouseOut="this.style.transform='translateY(0)'">Guardar Cambios</button>
+                        font-weight: 600;
+                        font-size: 14px;
+                        transition: all 0.3s ease;
+                        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                    " onMouseOver="this.style.background='linear-gradient(135deg, #d1d5db, #e5e7eb)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(0, 0, 0, 0.15)'" onMouseOut="this.style.background='linear-gradient(135deg, #e5e7eb, #f3f4f6)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.1)'">Cancelar</button>
+                    <button type="submit" class="btn-save" style="
+                        padding: 12px 24px;
+                        border-radius: 25px;
+                        border: none;
+                        background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+                        color: #1f2937;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 14px;
+                        transition: all 0.3s ease;
+                        box-shadow: 0 4px 15px rgba(125, 211, 252, 0.2);
+                    " onMouseOver="this.style.background='linear-gradient(135deg, #38bdf8, #fbbf24)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 20px rgba(125, 211, 252, 0.3)'" onMouseOut="this.style.background='linear-gradient(135deg, #7dd3fc, #fef3c7)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(125, 211, 252, 0.2)'">Guardar Cambios</button>
                 </div>
             </form>
         </div>`;
