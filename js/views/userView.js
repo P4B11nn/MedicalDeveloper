@@ -426,7 +426,6 @@ function abrirModalEdicion(userIndex) {
             sexo: document.getElementById('edit-sexo').value,
             matricula: document.getElementById('edit-matricula').value,
             grupoId: document.getElementById('edit-grupoId').value,
-            mesa: document.getElementById('edit-mesa').value,
             rol: document.getElementById('edit-rol').value
         };
         const nuevaContrasena = document.getElementById('edit-contrasena').value;

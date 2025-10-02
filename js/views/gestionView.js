@@ -1,5 +1,6 @@
 // js/views/gestionView.js
 import { gestionModel } from '../models/gestionModel.js';
+import { authModel } from '../models/storageModel.js'; // Para obtener usuarios
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
 import * as modalUtil from '../utils/modalUtil.js'; // Importamos modalUtil estáticamente
 
@@ -307,7 +308,12 @@ export function renderGestionGrupos(container) {
             const target = e.target.closest('button');
             if (!target) return;
             
-            if (target.classList.contains('edit-grupo')) {
+            if (target.classList.contains('assign-practicantes')) {
+                const grupoId = target.dataset.grupoId;
+                console.log('GestionView: Solicitando asignación de practicantes al grupo', grupoId);
+                mostrarModalAsignarPracticantes(grupoId);
+            }
+            else if (target.classList.contains('edit-grupo')) {
                 const grupoId = target.dataset.id;
                 console.log('GestionView: Solicitando edición de grupo', grupoId);
                 const grupo = gestionModel.getGrupoById(grupoId);
@@ -339,6 +345,13 @@ export function renderGestionGrupos(container) {
  * Renderiza la tabla de grupos
  */
 function renderTablaGrupos(grupos) {
+    // Verificar si el usuario actual es admin
+    const currentUser = authModel.getCurrentUser();
+    const isAdmin = currentUser && currentUser.rol === 'admin';
+
+    // Obtener todos los usuarios para contar miembros reales
+    const todosLosUsuarios = authModel.getAllUsers();
+
     return `
         <table class="data-table">
             <thead>
@@ -352,23 +365,37 @@ function renderTablaGrupos(grupos) {
                 </tr>
             </thead>
             <tbody>
-                ${grupos.map(grupo => `
-                    <tr>
-                        <td>${grupo.id}</td>
-                        <td>${grupo.nombre}</td>
-                        <td>${grupo.turno}</td>
-                        <td>${grupo.horario}</td>
-                        <td>${grupo.miembros.length} miembro(s)</td>
-                        <td class="actions">
-                            <button class="btn-icon edit-grupo" title="Editar" data-id="${grupo.id}">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn-icon delete-grupo" title="Eliminar" data-id="${grupo.id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `).join('')}
+                ${grupos.map(grupo => {
+                    // Contar miembros reales del grupo
+                    const miembrosReales = todosLosUsuarios.filter(u => 
+                        u.rol === 'practicante' && 
+                        u.activo !== false && 
+                        u.grupoId === grupo.id
+                    ).length;
+
+                    return `
+                        <tr>
+                            <td>${grupo.id}</td>
+                            <td>${grupo.nombre}</td>
+                            <td>${grupo.turno}</td>
+                            <td>${grupo.horario}</td>
+                            <td>${miembrosReales} miembro(s)</td>
+                            <td class="actions">
+                                ${isAdmin ? `
+                                    <button class="btn-icon assign-practicantes" title="Asignar practicantes" data-grupo-id="${grupo.id}">
+                                        <i class="fas fa-user-plus"></i>
+                                    </button>
+                                ` : ''}
+                                <button class="btn-icon edit-grupo" title="Editar" data-id="${grupo.id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-icon delete-grupo" title="Eliminar" data-id="${grupo.id}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('')}
             </tbody>
         </table>
     `;
@@ -1148,5 +1175,463 @@ function mostrarModalAsignarGrupo(moduloId) {
                 type: 'error'
             });
         }
+    });
+}
+
+/**
+ * Muestra un modal para asignar practicantes a un grupo
+ */
+function mostrarModalAsignarPracticantes(grupoId) {
+    // Verificar que el usuario actual sea admin
+    const currentUser = authModel.getCurrentUser();
+    if (!currentUser || currentUser.rol !== 'admin') {
+        modalUtil.mostrarAlerta({
+            title: 'Acceso Denegado',
+            message: 'Solo los administradores pueden asignar practicantes a grupos.',
+            type: 'warning'
+        });
+        return;
+    }
+
+    const grupo = gestionModel.getGrupoById(grupoId);
+    if (!grupo) {
+        console.error('GestionView: No se encontró el grupo', grupoId);
+        return;
+    }
+
+    // Obtener todos los usuarios
+    const todosLosUsuarios = authModel.getAllUsers();
+    
+    // Filtrar solo practicantes sin grupo asignado (excluyendo los ya asignados a este grupo)
+    const practicantesSinGrupo = todosLosUsuarios.filter(usuario => 
+        usuario.rol === 'practicante' && 
+        usuario.activo !== false &&
+        (!usuario.grupoId || usuario.grupoId === '')
+    );
+
+    // Obtener practicantes actualmente asignados a este grupo
+    const practicantesAsignados = todosLosUsuarios.filter(usuario =>
+        usuario.rol === 'practicante' &&
+        usuario.activo !== false &&
+        usuario.grupoId === grupoId
+    );
+
+    // Eliminar modal anterior si existe
+    document.getElementById('asignar-practicantes-modal')?.remove();
+
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'asignar-practicantes-modal';
+    modalContainer.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow-y: auto;
+        backdrop-filter: blur(5px);
+    `;
+
+    modalContainer.innerHTML = `
+        <div class="modal-dialog" style="
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            max-width: 700px;
+            width: 90%;
+            margin: 40px auto;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            overflow: hidden;
+            animation: modalFadeIn 0.3s ease-out;
+            max-height: 90vh;
+        ">
+            <style>
+                @keyframes modalFadeIn {
+                    from { opacity: 0; transform: translateY(-20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                
+                .practicante-checkbox {
+                    margin-right: 10px;
+                    transform: scale(1.2);
+                }
+                
+                .practicante-item {
+                    padding: 12px;
+                    border-radius: 8px;
+                    margin-bottom: 8px;
+                    background: rgba(255, 255, 255, 0.7);
+                    border: 1px solid rgba(203, 213, 225, 0.5);
+                    transition: all 0.2s ease;
+                    cursor: pointer;
+                }
+                
+                .practicante-item:hover {
+                    background: rgba(255, 255, 255, 0.9);
+                    border-color: #3b82f6;
+                }
+                
+                .practicante-asignado {
+                    background: rgba(34, 197, 94, 0.1);
+                    border-color: rgba(34, 197, 94, 0.3);
+                }
+            </style>
+            
+            <div class="modal-header" style="
+                padding: 20px 25px;
+                border-bottom: 2px solid rgba(203, 213, 225, 0.5);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: linear-gradient(135deg, #1e40af, #3b82f6);
+                color: white;
+            ">
+                <h3 style="
+                    margin: 0; 
+                    font-weight: 600;
+                    font-size: 1.5rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                ">
+                    <i class="fas fa-user-plus" style="color: #93c5fd;"></i>
+                    Asignar Practicantes
+                </h3>
+                <button id="btnCerrarAsignacionPracticantes" style="
+                    background: rgba(255, 255, 255, 0.2);
+                    border: none;
+                    border-radius: 50%;
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 20px;
+                    cursor: pointer;
+                    color: white;
+                    transition: all 0.2s ease;
+                " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">×</button>
+            </div>
+            
+            <div class="modal-body" style="padding: 25px 30px; max-height: 60vh; overflow-y: auto;">
+                <div style="
+                    margin-bottom: 25px;
+                    background: linear-gradient(135deg, #dbeafe, #eff6ff);
+                    border-radius: 12px;
+                    padding: 15px;
+                    border-left: 4px solid #3b82f6;
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                ">
+                    <div style="
+                        background: rgba(59, 130, 246, 0.1);
+                        width: 50px;
+                        height: 50px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">
+                        <i class="fas fa-users" style="font-size: 20px; color: #3b82f6;"></i>
+                    </div>
+                    <div>
+                        <h4 style="
+                            margin: 0 0 5px 0;
+                            color: #1e40af;
+                            font-size: 1.2rem;
+                        ">${grupo.nombre}</h4>
+                        <p style="
+                            margin: 0;
+                            color: #334155;
+                            font-size: 0.95rem;
+                        ">${grupo.turno} - ${grupo.horario}</p>
+                    </div>
+                </div>
+
+                ${practicantesAsignados.length > 0 ? `
+                    <div style="margin-bottom: 25px;">
+                        <h5 style="
+                            margin: 0 0 15px 0;
+                            color: #059669;
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                        ">
+                            <i class="fas fa-check-circle"></i>
+                            Practicantes actualmente asignados (${practicantesAsignados.length})
+                        </h5>
+                        <div style="max-height: 150px; overflow-y: auto;">
+                            ${practicantesAsignados.map(practicante => `
+                                <div class="practicante-item practicante-asignado" style="
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: space-between;
+                                ">
+                                    <div>
+                                        <strong>${practicante.nombre} ${practicante.apellidos || ''}</strong><br>
+                                        <small style="color: #6b7280;">Matrícula: ${practicante.matricula}</small>
+                                    </div>
+                                    <button class="btn-remove-practicante" data-usuario-id="${practicante.id}" style="
+                                        background: #ef4444;
+                                        color: white;
+                                        border: none;
+                                        border-radius: 6px;
+                                        padding: 6px 12px;
+                                        font-size: 0.8rem;
+                                        cursor: pointer;
+                                    ">
+                                        <i class="fas fa-times"></i> Quitar
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <div>
+                    <h5 style="
+                        margin: 0 0 15px 0;
+                        color: #334155;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    ">
+                        <i class="fas fa-user-plus"></i>
+                        Practicantes disponibles para asignar (${practicantesSinGrupo.length})
+                    </h5>
+                    
+                    ${practicantesSinGrupo.length === 0 ? `
+                        <div style="
+                            text-align: center;
+                            padding: 30px;
+                            background: rgba(249, 250, 251, 0.8);
+                            border-radius: 8px;
+                            color: #6b7280;
+                        ">
+                            <i class="fas fa-user-slash" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+                            <p style="margin: 0;">No hay practicantes disponibles para asignar.</p>
+                            <small>Todos los practicantes ya están asignados a otros grupos.</small>
+                        </div>
+                    ` : `
+                        <div id="practicantes-disponibles" style="max-height: 200px; overflow-y: auto;">
+                            ${practicantesSinGrupo.map(practicante => `
+                                <div class="practicante-item" data-practicante-id="${practicante.id}">
+                                    <label style="
+                                        display: flex;
+                                        align-items: center;
+                                        cursor: pointer;
+                                        width: 100%;
+                                    ">
+                                        <input type="checkbox" 
+                                               class="practicante-checkbox" 
+                                               id="practicante-${practicante.id}" 
+                                               value="${practicante.id}">
+                                        <div style="flex: 1;">
+                                            <strong>${practicante.nombre} ${practicante.apellidos || ''}</strong><br>
+                                            <small style="color: #6b7280;">
+                                                Matrícula: ${practicante.matricula}
+                                                ${practicante.edad ? ` • Edad: ${practicante.edad}` : ''}
+                                                ${practicante.sexo ? ` • ${practicante.sexo === 'M' ? 'Masculino' : 'Femenino'}` : ''}
+                                            </small>
+                                        </div>
+                                    </label>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `}
+                </div>
+                
+                <div class="form-buttons" style="
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 15px;
+                    margin-top: 30px;
+                    border-top: 1px solid rgba(203, 213, 225, 0.5);
+                    padding-top: 20px;
+                ">
+                    <button type="button" id="btnCancelarAsignacionPracticantes" style="
+                        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+                        color: #475569;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 10px;
+                        padding: 12px 24px;
+                        font-size: 16px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                    ">Cancelar</button>
+                    <button type="button" id="btnGuardarAsignacionPracticantes" style="
+                        background: linear-gradient(135deg, #3b82f6, #2563eb);
+                        color: white;
+                        border: none;
+                        border-radius: 10px;
+                        padding: 12px 24px;
+                        font-size: 16px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+                    ">Asignar Seleccionados</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modalContainer);
+
+    // Configurar eventos
+    const cerrarBtn = document.getElementById('btnCerrarAsignacionPracticantes');
+    const cancelarBtn = document.getElementById('btnCancelarAsignacionPracticantes');
+    const guardarBtn = document.getElementById('btnGuardarAsignacionPracticantes');
+
+    // Eventos para cerrar/cancelar
+    cerrarBtn.addEventListener('click', () => {
+        modalContainer.remove();
+    });
+
+    cancelarBtn.addEventListener('click', () => {
+        modalContainer.remove();
+    });
+
+    // Cerrar al hacer clic fuera del modal
+    modalContainer.addEventListener('click', (e) => {
+        if (e.target === modalContainer) {
+            modalContainer.remove();
+        }
+    });
+
+    // Evento para toggle de practicantes (click en el item)
+    modalContainer.addEventListener('click', (e) => {
+        const practicanteItem = e.target.closest('.practicante-item[data-practicante-id]');
+        if (practicanteItem && !e.target.closest('.btn-remove-practicante')) {
+            const practicanteId = practicanteItem.dataset.practicanteId;
+            const checkbox = practicanteItem.querySelector('.practicante-checkbox');
+            if (checkbox && !e.target.matches('input[type="checkbox"]')) {
+                checkbox.checked = !checkbox.checked;
+            }
+        }
+    });
+
+    // Eventos para quitar practicantes asignados
+    modalContainer.addEventListener('click', (e) => {
+        if (e.target.closest('.btn-remove-practicante')) {
+            const usuarioId = e.target.closest('.btn-remove-practicante').dataset.usuarioId;
+            const usuario = todosLosUsuarios.find(u => u.id === usuarioId);
+            
+            modalUtil.confirmarAccion({
+                title: 'Quitar Practicante',
+                message: `¿Estás seguro de quitar a ${usuario.nombre} ${usuario.apellidos || ''} del grupo "${grupo.nombre}"?`,
+                onConfirm: () => {
+                    // Quitar del grupo en el modelo de gestión
+                    gestionModel.quitarUsuarioDeGrupo(grupoId, usuarioId);
+                    
+                    // Actualizar el usuario quitando su grupoId
+                    const usuarios = authModel.getAllUsers();
+                    const userIndex = usuarios.findIndex(u => u.id === usuarioId);
+                    if (userIndex !== -1) {
+                        const updatedUser = { ...usuarios[userIndex], grupoId: null };
+                        authModel.updateUser(userIndex, updatedUser);
+                        
+                        // Emitir evento de usuario actualizado
+                        eventBus.emit(EVENT_NAMES.USER_UPDATED, {
+                            user: updatedUser,
+                            previousGroup: grupoId,
+                            action: 'removed_from_group'
+                        });
+                    }
+                    
+                    modalContainer.remove();
+                    
+                    // Mostrar notificación de éxito
+                    modalUtil.mostrarAlerta({
+                        title: 'Practicante Removido',
+                        message: `${usuario.nombre} ha sido removido del grupo correctamente.`,
+                        type: 'success'
+                    });
+                    
+                    // Actualizar vista
+                    renderGestionGrupos(gruposContainer);
+                }
+            });
+        }
+    });
+
+    // Evento para guardar asignaciones
+    guardarBtn.addEventListener('click', () => {
+        const checkboxes = modalContainer.querySelectorAll('.practicante-checkbox:checked');
+        const practicantesSeleccionados = Array.from(checkboxes).map(cb => cb.value);
+
+        if (practicantesSeleccionados.length === 0) {
+            modalUtil.mostrarAlerta({
+                title: 'Ningún practicante seleccionado',
+                message: 'Por favor selecciona al menos un practicante para asignar al grupo.',
+                type: 'warning'
+            });
+            return;
+        }
+
+        // Asignar cada practicante seleccionado al grupo
+        const asignacionesExitosas = [];
+        const asignacionesFallidas = [];
+
+        practicantesSeleccionados.forEach(usuarioId => {
+            // Asignar en el modelo de gestión
+            const resultadoGestion = gestionModel.asignarUsuarioAGrupo(grupoId, usuarioId);
+            
+            if (resultadoGestion) {
+                // Actualizar el usuario con el nuevo grupoId
+                const usuarios = authModel.getAllUsers();
+                const userIndex = usuarios.findIndex(u => u.id === usuarioId);
+                
+                if (userIndex !== -1) {
+                    const updatedUser = { ...usuarios[userIndex], grupoId: grupoId };
+                    const updateResult = authModel.updateUser(userIndex, updatedUser);
+                    
+                    if (updateResult) {
+                        asignacionesExitosas.push(usuarios[userIndex]);
+                        
+                        // Emitir evento de usuario actualizado
+                        eventBus.emit(EVENT_NAMES.USER_UPDATED, {
+                            user: updatedUser,
+                            newGroup: grupoId,
+                            action: 'assigned_to_group'
+                        });
+                    } else {
+                        asignacionesFallidas.push(usuarios[userIndex]);
+                    }
+                }
+            } else {
+                asignacionesFallidas.push({ id: usuarioId });
+            }
+        });
+
+        // Mostrar resultado
+        if (asignacionesExitosas.length > 0) {
+            const nombresAsignados = asignacionesExitosas.map(u => u.nombre).join(', ');
+            modalUtil.mostrarAlerta({
+                title: 'Asignación Exitosa',
+                message: `Se han asignado ${asignacionesExitosas.length} practicante(s) al grupo "${grupo.nombre}": ${nombresAsignados}`,
+                type: 'success'
+            });
+        }
+
+        if (asignacionesFallidas.length > 0) {
+            modalUtil.mostrarAlerta({
+                title: 'Error en Asignación',
+                message: `No se pudieron asignar ${asignacionesFallidas.length} practicante(s) al grupo.`,
+                type: 'error'
+            });
+        }
+
+        modalContainer.remove();
+        
+        // Actualizar vista
+        renderGestionGrupos(gruposContainer);
     });
 }
