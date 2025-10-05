@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usuarios y Personal - Medical Developer</title>
+  <!-- Font Awesome para iconos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Arial', sans-serif;
+      min-height: 100vh;
+      background: url('../img/medical-background.png?v=1') center center / cover no-repeat;
+      position: relative;
+      overflow-x: hidden;
+    }
+    
+    /* Overlay para mejorar la legibilidad */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(126, 211, 252, 0.1);
+      z-index: -1;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      color: #1f2937;
+      text-align: center;
+      padding: 20px;
+      position: relative;
+      box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
+      z-index: 100;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    header .icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      font-size: 18px;
+      color: #1f2937;
+      transition: all 0.3s ease;
+    }
+
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    /* Layout principal */
+    .main-layout {
+      display: flex;
+      min-height: calc(100vh - 68px);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: rgba(255, 255, 255, 0.95);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      border-right: 1px solid rgba(125, 211, 252, 0.3);
+      padding: 20px;
+      box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+    }
+
+    .sidebar-menu li {
+      margin-bottom: 10px;
+    }
+
+    .sidebar-menu button {
+      width: 100%;
+      padding: 15px 20px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 2px solid rgba(125, 211, 252, 0.3);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1f2937;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+  .sidebar-menu button:hover {
+    background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+    border-color: rgba(125, 211, 252, 0.5);
+    transform: translateX(3px);
+  }
+  
+  .sidebar-menu button.active {
+    background: linear-gradient(135deg, #06b6d4, #f59e0b);
+    border-color: rgba(125, 211, 252, 0.7);
+    transform: translateX(5px);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+  }    /* Contenido principal */
+    .content {
+      flex: 1;
+      padding: 30px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .content-area {
+      background: rgba(255, 255, 255, 0.95);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      min-height: calc(100vh - 160px);
+    }
+
+    .content-title {
+      font-size: 2rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #06b6d4, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .welcome-message {
+      text-align: center;
+      color: #6b7280;
+      font-size: 1.2rem;
+      margin-top: 100px;
+    }
+
+    /* Secciones */
+    .form-section {
+      display: none;
+    }
+
+    .form-section.active {
+      display: block;
+    }
+
+     /* Estilos para la lista de personal */
+    .personal-lista {
+      margin-bottom: 25px;
+    }
+
+    .personal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(125, 211, 252, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(125, 211, 252, 0.2);
+            transition: all 0.3s ease;
+        }
+        .personal-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(125, 211, 252, 0.3);
+        }
+        .user-info-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-grow: 1;
+        }
+        .user-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(125, 211, 252, 0.5);
+            font-size: 1.2rem;
+        }
+        .user-info-container h4 { margin: 0 0 5px 0; color: #1f2937; font-size: 1.1rem; }
+        .user-info-container p { margin: 0; color: #6b7280; font-size: 0.9rem; }
+        .badge-container { margin-top: 5px; }
+        .badge-admin, .badge-practicante { color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 500; }
+        .badge-admin { background: #dc2626; }
+        .badge-practicante { background: #059669; }
+        .user-actions-container { display: flex; gap: 10px; }
+        .user-actions-container button { border: none; border-radius: 10px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; font-size: 1rem; }
+        .btn-edit-user { background: linear-gradient(135deg, #7dd3fc, #fef3c7); color: #1f2937; }
+        .btn-delete-user { background: linear-gradient(135deg, #f87171, #fca5a5); color: white; }
+        .user-actions-container button:hover { transform: scale(1.1); }
+
+        /* Estilos para Modales */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+        .modal-content-confirm, .modal-content-edit { background: white; padding: 30px; border-radius: 15px; max-width: 450px; width: 90%; box-shadow: 0 5px 25px rgba(0,0,0,0.2); }
+        .modal-content-edit { max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .modal-content-confirm h3 { margin-top: 0; font-size: 1.4rem; color: #1f2937; text-align: center; }
+        .modal-content-confirm p { margin: 15px 0; color: #6b7280; line-height: 1.5; text-align: center; }
+        .confirm-actions { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
+        .confirm-actions button, .form-actions button { padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-cancel { background-color: #e5e7eb; }
+        .btn-confirm-delete { background-color: #ef4444; color: white; }
+        .btn-save { background-color: #06b6d4; color: white; }
+    /* Formulario */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: transparent;
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 1rem;
+      background: white;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: #06b6d4;
+      box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 25px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      color: #1f2937;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #38bdf8, #fbbf24);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(125, 211, 252, 0.3);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #f87171, #fca5a5);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: linear-gradient(135deg, #ef4444, #f87171);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(248, 113, 113, 0.3);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .main-layout {
+        flex-direction: column;
+      }
+      
+      .sidebar {
+        width: 100%;
+        padding: 15px;
+      }
+      
+      .sidebar-menu {
+        display: flex;
+        overflow-x: auto;
+        gap: 10px;
+        padding-bottom: 10px;
+      }
+      
+      .sidebar-menu li {
+        margin-bottom: 0;
+        min-width: 180px;
+      }
+      
+      .content {
+        padding: 20px 15px;
+      }
+      
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Estilos para elementos con inline styles */
+    #userName {
+      font-weight: bold;
+      margin-left: 8px;
+    }
+    
+    #userDropdown {
+      display: none;
+      position: fixed;
+      top: 40px;
+      right: 0;
+      background: white;
+      color: #333;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      min-width: 180px;
+      z-index: 1000;
+    }
+    
+    #startServiceBtn, #logoutBtn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      text-align: left;
+    }
+    
+    .empty-state {
+      text-align: center;
+      color: #6b7280;
+      font-size: 1.1rem;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="back-btn" onclick="window.location.href='../menuInicio.html'" title="Volver al Menú">←</button>
+    <div class="icon" id="userIcon"><span id="userName"></span>
+      <div id="userDropdown">
+        <button id="startServiceBtn">Iniciar servicio</button>
+        <button id="logoutBtn">Cerrar sesión</button>
+      </div>
+    </div>
+    <h1>Medical Developer - Usuarios y Personal</h1>
+  </header>
+
+  <div class="main-layout">
+    <div class="sidebar">
+      <h2>Usuarios y Personal</h2>
+      <ul class="sidebar-menu">
+        <li>
+          <button data-section="mi-perfil">
+            🏠 Mi Perfil
+          </button>
+        </li>
+        <li>
+          <button data-section="personal" class="active">
+            👤 Personal
+          </button>
+        </li>
+        <li>
+          <button data-section="nuevo-usuario">
+            👤➕ Nuevo usuario
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <div class="content">
+      <div class="content-area">
+        <!-- Sección por defecto -->
+        <div id="default-section">
+          <h2 class="content-title">Gestión de Usuarios y Personal</h2>
+          <div class="welcome-message">
+            <p>Selecciona una opción del menú lateral para comenzar</p>
+          </div>
+        </div>
+
+        <!-- Mi Perfil -->
+        <div id="mi-perfil-section" class="form-section">
+          <h2 class="content-title">Mi Perfil</h2>
+          <div class="profile-container" id="profileContainer">
+            <div class="loading-message">
+              Cargando información del perfil...
+            </div>
+          </div>
+        </div>
+
+        <!-- Personal -->
+        <div id="personal-section" class="form-section">
+          <h2 class="content-title">Personal Registrado</h2>
+          <div class="personal-lista" id="personalLista">
+            <div class="empty-state">
+              No hay usuarios registrados en el sistema.
+            </div>
+          </div>
+        </div>
+
+        <!-- Nuevo usuario -->
+        <div id="nuevo-usuario-section" class="form-section">
+          <h2 class="content-title">Nuevo Usuario</h2>
+          <form id="formUsuario">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="id">ID (para email):</label>
+                <input type="text" id="id" name="id" required placeholder="ej: juan.perez">
+                <small>Se generará email: [id]@medical.com</small>
+              </div>
+              
+              <div class="form-group">
+                <label for="nombre">Nombre:</label>
+                <input type="text" id="nombre" name="nombre" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="apellidos">Apellidos:</label>
+                <input type="text" id="apellidos" name="apellidos" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="edad">Edad:</label>
+                <input type="number" id="edad" name="edad" required min="0">
+              </div>
+              
+              <div class="form-group">
+                <label for="sexo">Sexo:</label>
+                <select id="sexo" name="sexo" required>
+                  <option value="">Selecciona</option>
+                  <option value="M">Masculino</option>
+                  <option value="F">Femenino</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="matricula">Matrícula:</label>
+                <input type="text" id="matricula" name="matricula" required>
+              </div>
+              
+              <div class="form-group">
+                <label for="grupoId">Grupo de trabajo:</label>
+                <select id="grupoId" name="grupoId">
+                  <option value="">Cargando grupos...</option>
+                </select>
+              </div>
+              
+              <div class="form-group full-width">
+                <label for="rol">Rol:</label>
+                <select id="rol" name="rol" required>
+                  <option value="admin">Administrador</option>
+                  <option value="practicante">Practicante</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" onclick="limpiarFormulario()">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Registrar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { AuthGuard } from '../js/middleware/authGuard.js';
+    import { initGlobalController } from '../js/controllers/globalController.js';
+    import { initUsersController } from '../js/controllers/usersController.js';
+    document.addEventListener('DOMContentLoaded', () => {
+      if (AuthGuard.validateSession()) {
+        initGlobalController();
+        initUsersController();
+      }
+    });
+  </script>
+</body>
+</html>

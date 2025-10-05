@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login Simple - Medical Web</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            padding: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Login Simple - Medical Web</h1>
+        
+        <div class="instructions">
+            <h3>🚨 IMPORTANTE: Crear Usuario Manualmente</h3>
+            <p>Debido a la configuración de seguridad de Firebase, debes crear el usuario manualmente. Sigue estos pasos:</p>
+            
+            <h4>Paso 1: Crear usuario en Firebase Authentication</h4>
+            <ol>
+                <li>Ve a <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a></li>
+                <li>Selecciona tu proyecto "medicalweboffline"</li>
+                <li>Ve a <strong>Authentication > Users</strong></li>
+                <li>Haz clic en <strong>"Add user"</strong></li>
+                <li>Introduce:
+                    <ul>
+                        <li><strong>Email:</strong> test@medical.com</li>
+                        <li><strong>Password:</strong> test123456</li>
+                    </ul>
+                </li>
+                <li>Haz clic en <strong>"Add user"</strong></li>
+                <li><strong>¡IMPORTANTE!</strong> Copia el UID que se genera</li>
+            </ol>
+            
+            <h4>Paso 2: Crear documento en Firestore</h4>
+            <ol>
+                <li>Ve a <strong>Firestore Database > Data</strong></li>
+                <li>Si no existe, crea la colección "usuarios"</li>
+                <li>Crea un nuevo documento con el <strong>UID que copiaste</strong> como ID del documento</li>
+                <li>Agrega estos campos:
+                    <div class="code-block">{
+  "apellidos": "Test Apellidos",
+  "correo": "test@medical.com", 
+  "edad": 25,
+  "grupo_trabajo": "TEST_GROUP",
+  "matricula": "TEST001",
+  "nombre": "Usuario Test",
+  "rol": "admin",
+  "sexo": "M"
+}</div>
+                </li>
+            </ol>
+        </div>
+        
+        <form id="loginForm">
+            <h3>🔑 Probar Login</h3>
+            <div class="form-group">
+                <label for="identifier">Email o Matrícula:</label>
+                <input type="text" id="identifier" placeholder="test@medical.com o TEST001" value="test@medical.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" placeholder="test123456" value="test123456">
+            </div>
+            
+            <button type="submit">🔑 Iniciar Sesión</button>
+            <button type="button" id="checkCurrentUser">👁️ Ver Usuario Actual</button>
+            <button type="button" id="logout">🚪 Cerrar Sesión</button>
+        </form>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <script type="module">
+        import { authModel } from './js/models/storageModel.js';
+
+        const loginForm = document.getElementById('loginForm');
+        const resultDiv = document.getElementById('result');
+        const checkCurrentUserBtn = document.getElementById('checkCurrentUser');
+        const logoutBtn = document.getElementById('logout');
+
+        // Función para mostrar resultados
+        function showResult(message, isSuccess = true) {
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${isSuccess ? 'success' : 'error'}`;
+            resultDiv.innerHTML = message;
+        }
+
+        // Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const identifier = document.getElementById('identifier').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!identifier || !password) {
+                showResult('❌ Por favor introduce email/matrícula y contraseña', false);
+                return;
+            }
+            
+            try {
+                showResult('⏳ Iniciando sesión...', true);
+                
+                const user = await authModel.login(identifier, password);
+                
+                if (user) {
+                    showResult(`
+                        ✅ <strong>¡Login exitoso!</strong><br><br>
+                        <strong>🆔 UID:</strong> ${user.uid}<br>
+                        <strong>👤 Nombre:</strong> ${user.nombre}<br>
+                        <strong>📧 Email:</strong> ${user.email}<br>
+                        <strong>🎫 Matrícula:</strong> ${user.matricula}<br>
+                        <strong>🎭 Rol:</strong> ${user.rol}<br>
+                        <strong>👥 Grupo:</strong> ${user.grupo_trabajo || 'N/A'}<br>
+                        <strong>🎂 Edad:</strong> ${user.edad || 'N/A'}<br>
+                        <strong>⚧ Sexo:</strong> ${user.sexo || 'N/A'}
+                    `, true);
+                } else {
+                    showResult('❌ No se pudo obtener información del usuario', false);
+                }
+            } catch (error) {
+                console.error('Error en login:', error);
+                
+                let errorMessage = '';
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'No existe un usuario con ese email';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Contraseña incorrecta';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Email no válido';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMessage = 'Demasiados intentos fallidos. Intenta más tarde';
+                        break;
+                    default:
+                        errorMessage = error.message;
+                }
+                
+                showResult(`❌ <strong>Error de autenticación:</strong><br>${errorMessage}`, false);
+            }
+        });
+
+        // Ver usuario actual
+        checkCurrentUserBtn.addEventListener('click', () => {
+            try {
+                const currentUser = authModel.getCurrentUser();
+                
+                if (currentUser) {
+                    showResult(`
+                        👤 <strong>Usuario actualmente logueado:</strong><br><br>
+                        <strong>🆔 UID:</strong> ${currentUser.uid}<br>
+                        <strong>👤 Nombre:</strong> ${currentUser.nombre}<br>
+                        <strong>📧 Email:</strong> ${currentUser.email}<br>
+                        <strong>🎫 Matrícula:</strong> ${currentUser.matricula}<br>
+                        <strong>🎭 Rol:</strong> ${currentUser.rol}
+                    `, true);
+                } else {
+                    showResult('ℹ️ No hay ningún usuario logueado actualmente', true);
+                }
+            } catch (error) {
+                showResult(`❌ <strong>Error:</strong> ${error.message}`, false);
+                console.error('Error getting current user:', error);
+            }
+        });
+
+        // Logout
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                showResult('⏳ Cerrando sesión...', true);
+                await authModel.logout();
+                showResult('✅ Sesión cerrada correctamente', true);
+            } catch (error) {
+                showResult(`❌ <strong>Error cerrando sesión:</strong> ${error.message}`, false);
+                console.error('Error en logout:', error);
+            }
+        });
+
+        // Verificar usuario al cargar la página
+        window.addEventListener('load', () => {
+            const currentUser = authModel.getCurrentUser();
+            if (currentUser) {
+                showResult(`ℹ️ Ya hay un usuario logueado: ${currentUser.nombre}`, true);
+            }
+        });
+    </script>
+</body>
+</html>

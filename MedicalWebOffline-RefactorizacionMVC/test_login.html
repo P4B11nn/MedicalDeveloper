@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login - Medical Web</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Login - Medical Web</h1>
+        <p>Prueba el sistema de login con correo o matrícula</p>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="identifier">Email o Matrícula:</label>
+                <input type="text" id="identifier" placeholder="ejemplo@correo.com o MAT001" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Contraseña:</label>
+                <input type="password" id="password" placeholder="Tu contraseña" required>
+            </div>
+            
+            <button type="submit">🔑 Iniciar Sesión</button>
+            <button type="button" id="checkCurrentUser">�️ Ver Usuario Actual</button>
+            <button type="button" id="checkConfig">⚙️ Verificar Configuración</button>
+        </form>
+        
+        <div id="result" class="result"></div>
+        
+        <hr style="margin: 30px 0;">
+        
+        <h3>📝 Instrucciones:</h3>
+        <ol>
+            <li><strong>Crear usuario manualmente:</strong> Ve a la consola de Firebase y crea un usuario</li>
+            <li><strong>Login con email:</strong> Usa el email del usuario creado</li>
+            <li><strong>Login con matrícula:</strong> Usa la matrícula del usuario creado</li>
+            <li><strong>Ver usuario actual:</strong> Verifica qué usuario está logueado</li>
+        </ol>
+        
+        <h3>� Problema de Permisos:</h3>
+        <p>Firebase está configurado para no permitir registro desde el cliente. Debes crear el usuario manualmente en la consola de Firebase:</p>
+        
+        <h3>📊 Pasos para crear usuario test:</h3>
+        <ol>
+            <li>Ve a <a href="https://console.firebase.google.com" target="_blank">Firebase Console</a></li>
+            <li>Selecciona tu proyecto "medicalweboffline"</li>
+            <li>Ve a Authentication > Users</li>
+            <li>Haz clic en "Add user"</li>
+            <li>Crea el usuario con estos datos:
+                <ul>
+                    <li><strong>Email:</strong> test@medical.com</li>
+                    <li><strong>Contraseña:</strong> test123456</li>
+                </ul>
+            </li>
+            <li>Luego ve a Firestore Database > usuarios</li>
+            <li>Crea un documento con el UID del usuario creado y estos datos:
+                <pre>{
+  "nombre": "Usuario Test",
+  "apellidos": "Apellidos Test", 
+  "correo": "test@medical.com",
+  "matricula": "TEST001",
+  "rol": "admin",
+  "edad": 25,
+  "sexo": "M",
+  "grupo_trabajo": "TEST_GROUP",
+  "fechaCreacion": firebase.firestore.Timestamp.now()
+}</pre>
+            </li>
+        </ol>
+    </div>
+
+    <script type="module">
+        import { authModel } from './js/models/storageModel.js';
+
+        const loginForm = document.getElementById('loginForm');
+        const resultDiv = document.getElementById('result');
+        const checkCurrentUserBtn = document.getElementById('checkCurrentUser');
+        const checkConfigBtn = document.getElementById('checkConfig');
+
+        // Función para mostrar resultados
+        function showResult(message, isSuccess = true) {
+            resultDiv.style.display = 'block';
+            resultDiv.className = `result ${isSuccess ? 'success' : 'error'}`;
+            resultDiv.innerHTML = message;
+        }
+
+        // Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const identifier = document.getElementById('identifier').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            try {
+                showResult('⏳ Iniciando sesión...', true);
+                
+                const user = await authModel.login(identifier, password);
+                
+                if (user) {
+                    showResult(`
+                        ✅ <strong>Login exitoso!</strong><br>
+                        <strong>Nombre:</strong> ${user.nombre}<br>
+                        <strong>Email:</strong> ${user.email}<br>
+                        <strong>Matrícula:</strong> ${user.matricula}<br>
+                        <strong>Rol:</strong> ${user.rol}<br>
+                        <strong>UID:</strong> ${user.uid}
+                    `, true);
+                } else {
+                    showResult('❌ No se pudo obtener información del usuario', false);
+                }
+            } catch (error) {
+                showResult(`❌ <strong>Error:</strong> ${error.message}`, false);
+                console.error('Error en login:', error);
+            }
+        });
+
+        // Verificar configuración
+        checkConfigBtn.addEventListener('click', async () => {
+            try {
+                showResult('⏳ Verificando configuración de Firebase...', true);
+                
+                // Importar firebase directamente para verificar
+                const { auth, db } = await import('./js/models/firebaseConfig.js');
+                
+                let configInfo = `
+                    🔧 <strong>Configuración de Firebase:</strong><br>
+                    <strong>Project ID:</strong> ${auth.app.options.projectId}<br>
+                    <strong>Auth Domain:</strong> ${auth.app.options.authDomain}<br>
+                    <strong>Estado de conexión:</strong> `;
+                
+                // Verificar si el usuario está autenticado
+                if (auth.currentUser) {
+                    configInfo += `✅ Usuario autenticado (${auth.currentUser.email})<br>`;
+                } else {
+                    configInfo += `❌ No hay usuario autenticado<br>`;
+                }
+                
+                configInfo += `<br><strong>⚠️ Nota:</strong> El error de permisos insuficientes indica que Firebase Auth está configurado para no permitir registro público. Debes crear usuarios manualmente en la consola de Firebase.`;
+                
+                showResult(configInfo, true);
+                
+            } catch (error) {
+                showResult(`❌ <strong>Error verificando configuración:</strong> ${error.message}`, false);
+                console.error('Error checking config:', error);
+            }
+        });
+
+        // Ver usuario actual
+        checkCurrentUserBtn.addEventListener('click', () => {
+            try {
+                const currentUser = authModel.getCurrentUser();
+                
+                if (currentUser) {
+                    showResult(`
+                        👤 <strong>Usuario actual:</strong><br>
+                        <strong>Nombre:</strong> ${currentUser.nombre}<br>
+                        <strong>Email:</strong> ${currentUser.email}<br>
+                        <strong>Matrícula:</strong> ${currentUser.matricula}<br>
+                        <strong>Rol:</strong> ${currentUser.rol}<br>
+                        <strong>UID:</strong> ${currentUser.uid}
+                    `, true);
+                } else {
+                    showResult('ℹ️ No hay ningún usuario logueado actualmente', true);
+                }
+            } catch (error) {
+                showResult(`❌ <strong>Error:</strong> ${error.message}`, false);
+                console.error('Error getting current user:', error);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menú de Inicio</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      background: url('img/medical-background.png?v=1') center center / cover no-repeat;
+      position: relative;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding-top: 20px;
+    }
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(126, 211, 252, 0.1);
+      z-index: -1;
+    }
+    header {
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      color: #1f2937;
+      text-align: center;
+      padding: 20px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
+      z-index: 100;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    header .icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px 15px;
+      text-align: center;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      max-width: 800px;
+      width: calc(100% - 30px);
+    }
+    h2 {
+      margin-top: 10px;
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #7dd3fc, #fbbf24);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .menu button {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 15px;
+      padding: 18px 24px;
+      font-size: 16px;
+      font-weight: 500;
+      background: rgba(255, 255, 255, 0.8);
+      -webkit-backdrop-filter: blur(5px);
+      backdrop-filter: blur(5px);
+      border: 2px solid rgba(125, 211, 252, 0.3);
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    .menu button:hover {
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(125, 211, 252, 0.3);
+      border-color: rgba(125, 211, 252, 0.5);
+    }
+    .menu button span {
+      flex: 1;
+      text-align: left;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #555;
+    }
+    .buttons {
+      margin-top: 15px;
+      display: flex;
+      justify-content: space-around;
+    }
+    .buttons button {
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      color: #1f2937;
+      border: none;
+      border-radius: 25px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(125, 211, 252, 0.2);
+    }
+    .buttons button:hover {
+      background: linear-gradient(135deg, #38bdf8, #fbbf24);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(125, 211, 252, 0.3);
+    }
+
+    /* Estilos para el dropdown del usuario */
+    #userIcon {
+      cursor: pointer;
+    }
+    #userName {
+      font-weight: bold;
+      margin-left: 8px;
+    }
+    #userDropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      min-width: 200px;
+    }
+    #userDropdown.show {
+      display: block;
+    }
+    #userDropdown button {
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #userDropdown button:hover {
+      background-color: #f5f5f5;
+    }
+    #logoutBtn {
+      border-top: 1px solid #ddd !important;
+      color: #dc2626;
+    }
+    #logoutBtn:hover {
+      background-color: #fee2e2 !important;
+    }
+
+    /* Estilos para el botón de gestión */
+    #btnGestion {
+      display: none;
+    }
+
+    /* Estilos para modales */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      background-color: #fefefe;
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+      border-radius: 10px;
+    }
+    .modal-content.small {
+      margin: 15% auto;
+      max-width: 400px;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .modal-header h2 {
+      margin: 0;
+    }
+    .modal-close {
+      cursor: pointer;
+      font-size: 22px;
+    }
+    .modal-list {
+      max-height: 350px;
+      overflow-y: auto;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .modal-buttons button {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .modal-buttons .cancel {
+      background: #f2f2f2;
+    }
+    .modal-buttons .accept {
+      background: #007bce;
+      color: white;
+    }
+    #tituloConfirmacion {
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="icon" id="userIcon">👤 <span id="userName"></span>
+      <div id="userDropdown">
+        <button id="startServiceBtn">
+          <span>🟢</span> Iniciar servicio
+        </button>
+        <button id="verPerfilBtn">
+          <span>👤</span> Ver perfil
+        </button>
+        <button id="logoutBtn">
+          <span>🚪</span> Cerrar sesión
+        </button>
+      </div>
+    </div>
+    <h1>Medical Developer</h1>
+  </header>
+
+  <div class="container">
+    <h2>Bienvenido <span id="rolText"></span></h2>
+
+  <div class="menu">
+    <button data-category="pacientes">👥 <span>Pacientes</span></button>
+    <button data-category="usuarios-personal">👤 <span>Usuarios y Personal</span></button>
+    <button data-category="operaciones-control">⚙️ <span>Operaciones / Control</span></button>
+    <button data-category="reportes">📊 <span>Reportes</span></button>
+    <button data-category="gestion" id="btnGestion">📚
+        <i class="fas fa-cogs"></i><span>Gestión Administrativa</span>
+    </button>
+  </div>
+  </div>
+
+  <!-- Modales -->
+  <div id="modalRegistroES" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Registro de Actividad</h2>
+        <span id="cerrarRegistroES" class="modal-close">&times;</span>
+      </div>
+      <div id="registroESLista" class="modal-list"></div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación -->
+  <div id="modalConfirmacion" class="modal">
+    <div class="modal-content small">
+      <h2 id="tituloConfirmacion">Confirmación</h2>
+      <p id="mensajeConfirmacion">¿Está seguro de realizar esta acción?</p>
+      <div class="modal-buttons">
+        <button id="btnCancelarConfirmacion" class="cancel">Cancelar</button>
+        <button id="btnAceptarConfirmacion" class="accept">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { AuthGuard } from './js/middleware/authGuard.js';
+    import { initGlobalController } from './js/controllers/globalController.js';
+    import './js/views/MenuInicio.js';
+    import './js/utils/eventBusManager.js';      // Event Bus monitoring
+    import './js/utils/performanceMonitor.js';   // Performance monitoring
+    import './js/utils/architectureValidator.js'; // Architecture validation
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('MenuInicio: Página cargada con herramientas de desarrollo habilitadas');
+      
+      // Verificar autenticación usando checkAuthentication en lugar de validateSession
+      if (AuthGuard.checkAuthentication()) {
+        console.log('MenuInicio: Sesión válida, navegación habilitada');
+        console.log('Debug commands: EventBusDebug, PerformanceDebug, ArchitectureDebug');
+        
+        // Initialize global controller for user display and logout
+        initGlobalController();
+        
+      } else {
+        console.error('MenuInicio: Sesión inválida, redirigiendo al login');
+      }
+    });
+  </script>
+</body>
+</html>
