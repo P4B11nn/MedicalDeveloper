@@ -3,6 +3,33 @@ import { eliminarRegistro } from '../models/operacionesModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
 
 /**
+ * Formatea la ubicación de un módulo para mostrar coordenadas y lugar de forma elegante
+ * @param {Object} modulo - El objeto módulo con datos de ubicación
+ * @returns {string} Ubicación formateada para mostrar
+ */
+function formatearUbicacion(modulo) {
+    if (modulo.latitud && modulo.longitud && modulo.lugar) {
+        return `${modulo.lugar}`;
+    } else if (modulo.lugar) {
+        return modulo.lugar;
+    } else {
+        return modulo.ubicacion || 'Sin ubicación';
+    }
+}
+
+/**
+ * Formatea las coordenadas para mostrar
+ * @param {Object} modulo - El objeto módulo con datos de ubicación
+ * @returns {string} Coordenadas formateadas o cadena vacía
+ */
+function formatearCoordenadas(modulo) {
+    if (modulo.latitud && modulo.longitud) {
+        return `Lat: ${modulo.latitud}, Lng: ${modulo.longitud}`;
+    }
+    return '';
+}
+
+/**
  * Shows a mini modal for operation actions
  */
 function showOperationMiniModal(title, content, actions = []) {
@@ -355,10 +382,13 @@ export function renderModulos(modulos, container) {
                   color: #64748b;
                   margin-right: 8px;
                 "></i>
-                <span style="
+                <div style="
                   color: #334155;
                   font-weight: 500;
-                ">${modulo.ubicacion}</span>
+                ">
+                  <div>${formatearUbicacion(modulo)}</div>
+                  ${formatearCoordenadas(modulo) ? `<div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">${formatearCoordenadas(modulo)}</div>` : ''}
+                </div>
               </div>
               
               <div style="

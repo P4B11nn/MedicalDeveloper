@@ -1,0 +1,16 @@
+{
+  "name": "medicalweboffline-main",
+  "version": "1.0.0",
+  "description": "Sistema de gestión médica offline que permite administrar pacientes, operaciones, reportes y personal médico utilizando almacenamiento local del navegador.Sistema web offline de gestión médica implementado con **arquitectura MVC estricta**, **Event Bus pattern** y **middleware de autenticación robusto**. Incluye mejoras visuales significativas y optimizaciones en la experiencia de usuario.",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "hint": "^2.0.0"
+  }
+}

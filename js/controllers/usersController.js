@@ -171,14 +171,15 @@ function setupNewUserForm() {
 }
 
 /**
- * Carga la lista de grupos disponibles en el formulario
+ * Carga la lista de grupos disponibles en el formulario con información de módulos asignados
  */
 function cargarGruposEnFormulario() {
   const grupoSelect = document.getElementById('grupoId');
   if (!grupoSelect) return;
   
-  // Obtener lista de grupos
+  // Obtener lista de grupos y módulos
   const grupos = gestionModel.getGrupos();
+  const modulos = gestionModel.getModulos();
   
   // Guardar el valor seleccionado actualmente
   const valorSeleccionado = grupoSelect.value;
@@ -188,11 +189,24 @@ function cargarGruposEnFormulario() {
     grupoSelect.remove(1);
   }
   
-  // Agregar los grupos como opciones
+  // Agregar los grupos como opciones con información de módulos
   grupos.forEach(grupo => {
     const option = document.createElement('option');
     option.value = grupo.id;
-    option.textContent = `${grupo.nombre} (${grupo.turno})`;
+    
+    // Buscar módulos asignados a este grupo
+    const modulosAsignados = modulos.filter(modulo => modulo.grupoAsignadoId === grupo.id);
+    
+    let textoOption = `${grupo.nombre} (${grupo.turno} - ${grupo.horario})`;
+    
+    if (modulosAsignados.length > 0) {
+      const nombresModulos = modulosAsignados.map(m => m.nombre).join(', ');
+      textoOption += ` → ${nombresModulos}`;
+    } else {
+      textoOption += ' → Sin módulo asignado';
+    }
+    
+    option.textContent = textoOption;
     grupoSelect.appendChild(option);
   });
   

@@ -1,6 +1,67 @@
 // js/models/gestionModel.js
+import { authModel } from './storageModel.js';
+
 const GRUPOS_KEY = 'grupos';
 const MODULOS_KEY = 'modulos';
+
+// 🔧 CONFIGURACIÓN: Cambiar a true para usar IDs aleatorios
+const USE_RANDOM_IDS = false;
+
+/**
+ * Genera un ID aleatorio para grupos o módulos
+ * @param {string} prefix - Prefijo ('G' para grupos, 'M' para módulos)
+ * @returns {string} ID aleatorio único
+ */
+function generateRandomId(prefix) {
+    const timestamp = Date.now().toString(36);
+    const randomPart = Math.random().toString(36).substr(2, 5);
+    return `${prefix}_${timestamp}_${randomPart}`;
+}
+
+/**
+ * Genera un ID secuencial tradicional
+ * @param {Array} items - Array de elementos existentes
+ * @param {string} prefix - Prefijo ('G' para grupos, 'M' para módulos)
+ * @returns {string} ID secuencial
+ */
+function generateSequentialId(items, prefix) {
+    if (prefix === 'G') {
+        const lastId = items.length > 0 
+            ? Math.max(...items.map(g => {
+                const match = g.id.match(/^G(\d+)$/);
+                return match ? parseInt(match[1]) : 0;
+            })) 
+            : 0;
+        return `G${String(lastId + 1).padStart(3, '0')}`;
+    } else if (prefix === 'M') {
+        const lastId = items.length > 0 
+            ? Math.max(...items.map(m => {
+                const match = m.id.match(/^M(\d+)$/);
+                return match ? parseInt(match[1]) : 0;
+            })) 
+            : 0;
+        return `M${String(lastId + 1).padStart(2, '0')}`;
+    }
+    return `${prefix}001`;
+}
+
+/**
+ * Genera un ID único (aleatorio o secuencial según configuración)
+ * @param {Array} items - Array de elementos existentes
+ * @param {string} prefix - Prefijo ('G' para grupos, 'M' para módulos)
+ * @returns {string} ID único
+ */
+function generateUniqueId(items, prefix) {
+    if (USE_RANDOM_IDS) {
+        let newId;
+        do {
+            newId = generateRandomId(prefix);
+        } while (items.some(item => item.id === newId));
+        return newId;
+    } else {
+        return generateSequentialId(items, prefix);
+    }
+}
 
 function inicializarDatos() {
     if (!localStorage.getItem(GRUPOS_KEY)) {
@@ -10,8 +71,26 @@ function inicializarDatos() {
     }
     if (!localStorage.getItem(MODULOS_KEY)) {
         localStorage.setItem(MODULOS_KEY, JSON.stringify([
-            { id: "M01", nombre: "Módulo 1", grupoAsignadoId: "G001", ubicacion: "Planta Baja, Ala A", estado: "Activo" },
-            { id: "M02", nombre: "Módulo 2", grupoAsignadoId: null, ubicacion: "Primer Piso, Ala B", estado: "Inactivo" }
+            { 
+                id: "M01", 
+                nombre: "Módulo 1", 
+                grupoAsignadoId: "G001", 
+                ubicacion: "latitud: 21.1619, longitud: -86.8515, Facultad de Medicina - UAT", 
+                latitud: "21.1619",
+                longitud: "-86.8515",
+                lugar: "Facultad de Medicina - UAT",
+                estado: "Activo" 
+            },
+            { 
+                id: "M02", 
+                nombre: "Módulo 2", 
+                grupoAsignadoId: null, 
+                ubicacion: "latitud: 21.1620, longitud: -86.8516, Hospital General", 
+                latitud: "21.1620",
+                longitud: "-86.8516",
+                lugar: "Hospital General",
+                estado: "Inactivo" 
+            }
         ]));
     }
 }
@@ -36,11 +115,8 @@ export const gestionModel = {
                 throw new Error('Nombre, turno y horario son campos obligatorios');
             }
             
-            // Generar ID único (formato G001, G002, etc.)
-            const lastId = grupos.length > 0 
-                ? Math.max(...grupos.map(g => parseInt(g.id.replace('G', '')))) 
-                : 0;
-            const newId = `G${String(lastId + 1).padStart(3, '0')}`;
+            // Generar ID único (formato configurable)
+            const newId = generateUniqueId(grupos, 'G');
             
             // Crear grupo con valores por defecto
             const newGrupo = {
@@ -127,6 +203,21 @@ export const gestionModel = {
                 console.warn(`Se han actualizado ${modulosAsociados.length} módulos que usaban este grupo`);
             }
             
+            // 🔧 SOLUCIÓN: Desasignar usuarios del grupo eliminado
+            const usuarios = authModel.getAllUsers();
+            const usuariosAfectados = usuarios.filter(u => u.grupoId === id);
+            
+            if (usuariosAfectados.length > 0) {
+                usuariosAfectados.forEach((usuario) => {
+                    const userIndex = usuarios.findIndex(u => u.id === usuario.id);
+                    if (userIndex !== -1) {
+                        const updatedUser = { ...usuario, grupoId: null };
+                        authModel.updateUser(userIndex, updatedUser);
+                    }
+                });
+                console.warn(`Se han desasignado ${usuariosAfectados.length} usuarios del grupo eliminado`);
+            }
+            
             // Eliminar grupo
             grupos.splice(grupoIndex, 1);
             localStorage.setItem(GRUPOS_KEY, JSON.stringify(grupos));
@@ -207,22 +298,25 @@ export const gestionModel = {
             
             // Validar campos requeridos
             if (!modulo.nombre || !modulo.ubicacion) {
-                throw new Error('Nombre y ubicación son campos obligatorios');
+                throw new Error('Nombre, ubicación y horario de atención son campos obligatorios');
             }
             
-            // Generar ID único (formato M01, M02, etc.)
-            const lastId = modulos.length > 0 
-                ? Math.max(...modulos.map(m => parseInt(m.id.replace('M', '')))) 
-                : 0;
-            const newId = `M${String(lastId + 1).padStart(2, '0')}`;
+            // Generar ID único (formato configurable)
+            const newId = generateUniqueId(modulos, 'M');
             
             // Crear módulo con valores por defecto
             const newModulo = {
                 id: newId,
                 nombre: modulo.nombre,
                 ubicacion: modulo.ubicacion,
+                latitud: modulo.latitud || null,
+                longitud: modulo.longitud || null,
+                lugar: modulo.lugar || modulo.ubicacion,
                 estado: modulo.estado || 'Inactivo',
-                grupoAsignadoId: modulo.grupoAsignadoId || null
+                grupoAsignadoId: modulo.grupoAsignadoId || null,
+                horaInicio: modulo.horaInicio || null,
+                horaFin: modulo.horaFin || null,
+                diasAtencion: modulo.diasAtencion || []
             };
             
             // Guardar en localStorage

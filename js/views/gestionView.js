@@ -11,10 +11,50 @@ let gruposContainer = null;
 // Datos de ejemplo para inicializar el sistema si no existen datos
 const datosIniciales = {
     modulos: [
-        { nombre: "Módulo Principal", ubicacion: "Planta baja - Entrada", estado: "Activo" },
-        { nombre: "Módulo Pediatría", ubicacion: "Planta baja - Ala este", estado: "Activo" },
-        { nombre: "Módulo Urgencias", ubicacion: "Planta baja - Ala oeste", estado: "Activo" },
-        { nombre: "Módulo Especialidades", ubicacion: "Planta alta - Ala norte", estado: "Inactivo" }
+        { 
+            nombre: "Módulo Principal", 
+            ubicacion: "latitud: 21.1619, longitud: -86.8515, Facultad de Medicina - Entrada Principal", 
+            latitud: "21.1619",
+            longitud: "-86.8515",
+            lugar: "Facultad de Medicina - Entrada Principal",
+            estado: "Activo",
+            horaInicio: "08:00",
+            horaFin: "17:00",
+            diasAtencion: ["lunes", "martes", "miercoles", "jueves", "viernes"]
+        },
+        { 
+            nombre: "Módulo Pediatría", 
+            ubicacion: "latitud: 21.1620, longitud: -86.8516, Hospital Infantil", 
+            latitud: "21.1620",
+            longitud: "-86.8516",
+            lugar: "Hospital Infantil",
+            estado: "Activo",
+            horaInicio: "09:00",
+            horaFin: "15:00",
+            diasAtencion: ["lunes", "miercoles", "viernes"]
+        },
+        { 
+            nombre: "Módulo Urgencias", 
+            ubicacion: "latitud: 21.1621, longitud: -86.8517, Centro de Emergencias", 
+            latitud: "21.1621",
+            longitud: "-86.8517",
+            lugar: "Centro de Emergencias",
+            estado: "Activo",
+            horaInicio: "00:00",
+            horaFin: "23:59",
+            diasAtencion: ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado"]
+        },
+        { 
+            nombre: "Módulo Especialidades", 
+            ubicacion: "latitud: 21.1622, longitud: -86.8518, Clínica de Especialidades", 
+            latitud: "21.1622",
+            longitud: "-86.8518",
+            lugar: "Clínica de Especialidades",
+            estado: "Inactivo",
+            horaInicio: "10:00",
+            horaFin: "16:00",
+            diasAtencion: ["martes", "jueves"]
+        }
     ],
     grupos: [
         { nombre: "Grupo A", turno: "Matutino", horario: "8:00 - 14:00", miembros: [] },
@@ -215,6 +255,8 @@ function renderTablaModulos(modulos, grupos) {
                     <th>ID</th>
                     <th>Nombre</th>
                     <th>Ubicación</th>
+                    <th>Horario de Atención</th>
+                    <th>Días de Atención</th>
                     <th>Estado</th>
                     <th>Grupo Asignado</th>
                     <th>Acciones</th>
@@ -230,7 +272,9 @@ function renderTablaModulos(modulos, grupos) {
                         <tr>
                             <td>${modulo.id}</td>
                             <td>${modulo.nombre}</td>
-                            <td>${modulo.ubicacion}</td>
+                            <td>${formatearUbicacion(modulo)}</td>
+                            <td>${formatearHorarioAtencion(modulo.horaInicio, modulo.horaFin)}</td>
+                            <td>${formatearDiasAtencion(modulo.diasAtencion)}</td>
                             <td>
                                 <span class="badge ${getEstadoClass(modulo.estado)}">
                                     ${modulo.estado}
@@ -470,16 +514,130 @@ export function renderFormModulo(modulo = null) {
                     </div>
                     
                     <div class="form-group" style="margin-bottom: 20px;">
-                        <label for="modulo-ubicacion" style="display: block; margin-bottom: 8px; font-weight: 500;">Ubicación:</label>
-                        <input type="text" id="modulo-ubicacion" required value="${modulo?.ubicacion || ''}" style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #d1d5db;
-                            border-radius: 8px;
-                            background-color: #f9fafb;
-                            font-size: 16px;
-                            box-sizing: border-box;
-                        ">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Ubicación:</label>
+                        
+                        <!-- Campo para coordenadas -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <div style="flex: 1;">
+                                <label for="modulo-latitud" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #6b7280;">Latitud:</label>
+                                <input type="number" id="modulo-latitud" step="any" placeholder="23.93292" value="${modulo?.latitud || ''}" style="
+                                    width: 100%;
+                                    padding: 8px 10px;
+                                    border: 1px solid #d1d5db;
+                                    border-radius: 6px;
+                                    background-color: #f9fafb;
+                                    font-size: 14px;
+                                    box-sizing: border-box;
+                                ">
+                            </div>
+                            <div style="flex: 1;">
+                                <label for="modulo-longitud" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #6b7280;">Longitud:</label>
+                                <input type="number" id="modulo-longitud" step="any" placeholder="-90.9392" value="${modulo?.longitud || ''}" style="
+                                    width: 100%;
+                                    padding: 8px 10px;
+                                    border: 1px solid #d1d5db;
+                                    border-radius: 6px;
+                                    background-color: #f9fafb;
+                                    font-size: 14px;
+                                    box-sizing: border-box;
+                                ">
+                            </div>
+                        </div>
+                        
+                        <!-- Campo para nombre del lugar -->
+                        <div>
+                            <label for="modulo-lugar" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #6b7280;">Nombre del lugar:</label>
+                            <input type="text" id="modulo-lugar" required placeholder="Facultad de Medicina" value="${modulo?.lugar || modulo?.ubicacion || ''}" style="
+                                width: 100%;
+                                padding: 10px 12px;
+                                border: 1px solid #d1d5db;
+                                border-radius: 8px;
+                                background-color: #f9fafb;
+                                font-size: 16px;
+                                box-sizing: border-box;
+                            ">
+                        </div>
+                        
+                        <!-- Información de ayuda -->
+                        <div style="margin-top: 8px; padding: 8px; background: #f0f9ff; border-radius: 6px; border-left: 3px solid #3b82f6;">
+                            <small style="color: #1e40af; font-size: 0.85rem;">
+                                <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                Las coordenadas son opcionales. Ejemplo: Lat: 23.93292, Lng: -90.9392
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Horario de Atención:</label>
+                        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center;">
+                            <div>
+                                <label for="modulo-hora-inicio" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #6b7280;">Hora de inicio:</label>
+                                <input type="time" id="modulo-hora-inicio" value="${modulo?.horaInicio || '08:00'}" style="
+                                    width: 100%;
+                                    padding: 10px 12px;
+                                    border: 1px solid #d1d5db;
+                                    border-radius: 8px;
+                                    background-color: #f9fafb;
+                                    font-size: 16px;
+                                    box-sizing: border-box;
+                                ">
+                            </div>
+                            <span style="color: #6b7280; font-weight: 500; padding: 0 8px;">a</span>
+                            <div>
+                                <label for="modulo-hora-fin" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #6b7280;">Hora de fin:</label>
+                                <input type="time" id="modulo-hora-fin" value="${modulo?.horaFin || '17:00'}" style="
+                                    width: 100%;
+                                    padding: 10px 12px;
+                                    border: 1px solid #d1d5db;
+                                    border-radius: 8px;
+                                    background-color: #f9fafb;
+                                    font-size: 16px;
+                                    box-sizing: border-box;
+                                ">
+                            </div>
+                        </div>
+                        <div style="margin-top: 4px;">
+                            <small style="color: #6b7280; font-size: 0.85rem;">
+                                <i class="fas fa-clock" style="margin-right: 4px;"></i>
+                                Define el horario de atención del módulo (hora de inicio y fin)
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 12px; font-weight: 500;">Días de Atención:</label>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+                            <label style="display: flex; align-items: center; padding: 8px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
+                                <input type="checkbox" name="dias-atencion" value="lunes" id="dia-lunes" ${modulo?.diasAtencion?.includes('lunes') ? 'checked' : ''} style="margin-right: 8px;">
+                                <span>Lunes</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 8px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
+                                <input type="checkbox" name="dias-atencion" value="martes" id="dia-martes" ${modulo?.diasAtencion?.includes('martes') ? 'checked' : ''} style="margin-right: 8px;">
+                                <span>Martes</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 8px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
+                                <input type="checkbox" name="dias-atencion" value="miercoles" id="dia-miercoles" ${modulo?.diasAtencion?.includes('miercoles') ? 'checked' : ''} style="margin-right: 8px;">
+                                <span>Miércoles</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 8px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
+                                <input type="checkbox" name="dias-atencion" value="jueves" id="dia-jueves" ${modulo?.diasAtencion?.includes('jueves') ? 'checked' : ''} style="margin-right: 8px;">
+                                <span>Jueves</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 8px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
+                                <input type="checkbox" name="dias-atencion" value="viernes" id="dia-viernes" ${modulo?.diasAtencion?.includes('viernes') ? 'checked' : ''} style="margin-right: 8px;">
+                                <span>Viernes</span>
+                            </label>
+                            <label style="display: flex; align-items: center; padding: 8px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
+                                <input type="checkbox" name="dias-atencion" value="sabado" id="dia-sabado" ${modulo?.diasAtencion?.includes('sabado') ? 'checked' : ''} style="margin-right: 8px;">
+                                <span>Sábado</span>
+                            </label>
+                        </div>
+                        <div style="margin-top: 4px;">
+                            <small style="color: #6b7280; font-size: 0.85rem;">
+                                <i class="fas fa-calendar-alt" style="margin-right: 4px;"></i>
+                                Selecciona los días de la semana en que el módulo dará atención
+                            </small>
+                        </div>
                     </div>
                     
                     <div class="form-group" style="margin-bottom: 20px;">
@@ -562,24 +720,54 @@ export function renderFormModulo(modulo = null) {
         if (!formModulo) return;
         
         const nombre = formModulo.querySelector('#modulo-nombre').value.trim();
-        const ubicacion = formModulo.querySelector('#modulo-ubicacion').value.trim();
+        const latitud = formModulo.querySelector('#modulo-latitud').value.trim();
+        const longitud = formModulo.querySelector('#modulo-longitud').value.trim();
+        const lugar = formModulo.querySelector('#modulo-lugar').value.trim();
         const estado = formModulo.querySelector('#modulo-estado').value;
+        const horaInicio = formModulo.querySelector('#modulo-hora-inicio').value;
+        const horaFin = formModulo.querySelector('#modulo-hora-fin').value;
+        
+        // Capturar días de atención seleccionados
+        const diasCheckboxes = formModulo.querySelectorAll('input[name="dias-atencion"]:checked');
+        const diasAtencion = Array.from(diasCheckboxes).map(checkbox => checkbox.value);
         
         // Validar datos
-        if (!nombre || !ubicacion) {
+        if (!nombre || !lugar) {
             modalUtil.mostrarAlerta({
                 title: 'Campos incompletos',
-                message: 'Nombre y ubicación son campos obligatorios',
+                message: 'Nombre y lugar son campos obligatorios',
                 type: 'warning'
             });
             return;
         }
         
+        // Validar coordenadas si se proporcionan
+        if ((latitud && !longitud) || (!latitud && longitud)) {
+            modalUtil.mostrarAlerta({
+                title: 'Coordenadas incompletas',
+                message: 'Si proporciona coordenadas, debe incluir tanto latitud como longitud',
+                type: 'warning'
+            });
+            return;
+        }
+        
+        // Construir la ubicación completa
+        let ubicacionCompleta = lugar;
+        if (latitud && longitud) {
+            ubicacionCompleta = `latitud: ${latitud}, longitud: ${longitud}, ${lugar}`;
+        }
+        
         // Datos a guardar
         const moduloData = {
             nombre,
-            ubicacion,
-            estado
+            ubicacion: ubicacionCompleta,
+            latitud: latitud || null,
+            longitud: longitud || null,
+            lugar: lugar,
+            estado,
+            horaInicio: horaInicio || null,
+            horaFin: horaFin || null,
+            diasAtencion: diasAtencion
         };
         
         let resultado;
@@ -853,6 +1041,39 @@ export function renderFormGrupo(grupo = null) {
 }
 
 /**
+ * Formatea la ubicación de un módulo para mostrar coordenadas y lugar de forma elegante
+ * @param {Object} modulo - El objeto módulo con datos de ubicación
+ * @returns {string} Ubicación formateada para mostrar
+ */
+function formatearUbicacion(modulo) {
+    if (modulo.latitud && modulo.longitud && modulo.lugar) {
+        return `${modulo.lugar} (${modulo.latitud}, ${modulo.longitud})`;
+    } else if (modulo.lugar) {
+        return modulo.lugar;
+    } else {
+        return modulo.ubicacion || 'Sin ubicación';
+    }
+}
+
+/**
+ * Formatea el horario de atención para mostrar en la tabla
+ * @param {string} horaInicio - Hora de inicio en formato HH:MM
+ * @param {string} horaFin - Hora de fin en formato HH:MM
+ * @returns {string} Horario formateado para mostrar
+ */
+function formatearHorarioAtencion(horaInicio, horaFin) {
+    if (!horaInicio || !horaFin) {
+        return '<span style="color: #9ca3af;">No definido</span>';
+    }
+    
+    try {
+        return `<span style="color: #059669; font-weight: 500;">${horaInicio} - ${horaFin}</span>`;
+    } catch (error) {
+        return '<span style="color: #dc2626;">Formato inválido</span>';
+    }
+}
+
+/**
  * Devuelve la clase CSS para el estado del módulo
  */
 function getEstadoClass(estado) {
@@ -1008,7 +1229,7 @@ function mostrarModalAsignarGrupo(moduloId) {
                             margin: 0;
                             color: #334155;
                             font-size: 0.95rem;
-                        ">${modulo.ubicacion || 'Sin ubicación'}</p>
+                        ">${formatearUbicacion(modulo)}</p>
                     </div>
                 </div>
                 
@@ -1634,4 +1855,31 @@ function mostrarModalAsignarPracticantes(grupoId) {
         // Actualizar vista
         renderGestionGrupos(gruposContainer);
     });
+}
+
+/**
+ * Formatea los días de atención para mostrar en la tabla
+ * @param {Array} diasAtencion - Array de días de atención
+ * @return {string} Texto formateado de los días
+ */
+function formatearDiasAtencion(diasAtencion) {
+    if (!diasAtencion || diasAtencion.length === 0) {
+        return '<span style="color: #9ca3af;">No definido</span>';
+    }
+    
+    // Mapear nombres completos a abreviaturas
+    const abreviaturas = {
+        'lunes': 'L',
+        'martes': 'M',
+        'miercoles': 'X',
+        'jueves': 'J',
+        'viernes': 'V',
+        'sabado': 'S'
+    };
+    
+    const diasAbrev = diasAtencion
+        .map(dia => abreviaturas[dia] || dia)
+        .join(', ');
+    
+    return `<span style="color: #059669; font-weight: 500;">${diasAbrev}</span>`;
 }

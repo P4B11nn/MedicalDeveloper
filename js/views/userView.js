@@ -326,7 +326,14 @@ function abrirModalEdicion(userIndex) {
                             cursor: pointer;
                         " onFocus="this.style.borderColor='rgba(125, 211, 252, 0.5)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(125, 211, 252, 0.3)'" onBlur="this.style.borderColor='rgba(125, 211, 252, 0.3)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.1)'">
                             <option value="">Sin Grupo</option>
-                            ${gestionModel.getGrupos().map(g => `<option value="${g.id}" ${usuario.grupoId === g.id ? 'selected' : ''}>${g.nombre}</option>`).join('')}
+                            ${gestionModel.getGrupos().map(g => {
+                                const modulos = gestionModel.getModulos();
+                                const modulosAsignados = modulos.filter(m => m.grupoAsignadoId === g.id);
+                                const infoModulos = modulosAsignados.length > 0 
+                                    ? ` → ${modulosAsignados.map(m => m.nombre).join(', ')}`
+                                    : ' → Sin módulo asignado';
+                                return `<option value="${g.id}" ${usuario.grupoId === g.id ? 'selected' : ''}>${g.nombre} (${g.turno})${infoModulos}</option>`;
+                            }).join('')}
                         </select>
                     </div>
                 </div>
