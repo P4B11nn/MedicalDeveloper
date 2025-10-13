@@ -33,6 +33,11 @@
       z-index: -1;
     }
 
+    /* Evitar destellos mientras inicializamos la página */
+    body.pre-init .content-area,
+    body.pre-init .form-section,
+    body.pre-init .sidebar { visibility: hidden; opacity: 0; }
+
     /* Header */
     header {
       background: linear-gradient(135deg, #7dd3fc, #fef3c7);
@@ -403,7 +408,7 @@
     }
   </style>
 </head>
-<body>
+<body class="pre-init">
   <header>
     <button class="back-btn" onclick="window.location.href='../menuInicio.html'" title="Volver al Menú">←</button>
     <div class="icon" id="userIcon"><span id="userName"></span>
@@ -532,6 +537,128 @@
         initGlobalController();
         initUsersController();
       }
+    });
+  </script>
+
+  <script>
+    // Manejo básico del formulario de nuevo usuario por si el controller no lo hace
+    function limpiarFormulario(){
+      const f = document.getElementById('formUsuario');
+      if(!f) return;
+      f.reset();
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const f = document.getElementById('formUsuario');
+      if(f){
+        f.addEventListener('submit', (ev)=>{
+          ev.preventDefault();
+          // Si initUsersController provee un método global para crear usuarios, usarlo; si no, simular
+          try{
+            if(window.UsersController && typeof window.UsersController.createUser === 'function'){
+              const data = Object.fromEntries(new FormData(f).entries());
+              window.UsersController.createUser(data);
+              alert('Usuario creado (controlador).');
+              limpiarFormulario();
+            } else {
+              alert('Formulario enviado (simulado). Si deseas, implementar la creación en usersController.');
+              limpiarFormulario();
+            }
+          }catch(e){ console.warn('Error manejando submit de nuevo usuario', e); alert('Error al procesar el formulario'); }
+        });
+      }
+    });
+  </script>
+
+  <script>
+    // Mostrar sólo la sección objetivo cuando venimos desde el menú (compact=1) o con hash
+    (function(){
+      document.addEventListener('DOMContentLoaded', ()=>{
+        try{
+          const params = new URLSearchParams(window.location.search);
+          const compact = params.get('compact') === '1';
+          const hash = window.location.hash;
+          const sections = document.querySelectorAll('.form-section');
+          const sidebar = document.querySelector('.sidebar');
+          const defaultSection = document.getElementById('default-section');
+
+          function hideAll(){
+            sections.forEach(s=>{ s.style.display = 'none'; s.classList.remove('active'); });
+            if(defaultSection) defaultSection.style.display = 'none';
+            // remove active state from sidebar buttons
+            document.querySelectorAll('.sidebar-menu button').forEach(b=>b.classList.remove('active'));
+          }
+
+          // Busca la sección por id, aceptando variantes con/sin '-section'
+          function resolveSectionId(candidate){
+            if(!candidate) return null;
+            // si ya tiene suffijo -section, comprobar directo
+            let id = candidate.replace(/^#/, '');
+            if(document.getElementById(id)) return id;
+            // probar añadiendo '-section'
+            if(!id.endsWith('-section')){
+              const withSuffix = id + '-section';
+              if(document.getElementById(withSuffix)) return withSuffix;
+            }
+            // probar removiendo '-section' si viene duplicado
+            if(id.endsWith('-section')){
+              const without = id.replace(/-section$/,'');
+              if(document.getElementById(without)) return without;
+            }
+            return null;
+          }
+
+          function showOnly(sectionId){
+            hideAll();
+            const resolved = resolveSectionId(sectionId);
+            if(resolved){
+              const target = document.getElementById(resolved);
+              if(target){ target.style.display = 'block'; target.classList.add('active'); }
+              // marcar botón lateral correspondiente (data-section sin sufijo)
+              const baseName = resolved.replace(/-section$/,'');
+              const btn = document.querySelector(`.sidebar-menu button[data-section="${baseName}"]`);
+              if(btn) btn.classList.add('active');
+            }
+          }
+
+          // Clicks en el sidebar muestran sólo la sección correspondiente
+          document.querySelectorAll('.sidebar-menu button[data-section]').forEach(btn=>{
+            btn.addEventListener('click', ()=>{
+              const id = btn.dataset.section + '-section';
+              showOnly(id);
+              // Si estamos en modo compact (por ejemplo enlazado desde el menú), ocultar sidebar
+              if(compact && sidebar) sidebar.style.display = 'none';
+            });
+          });
+
+          // Si venimos con compact=1 o con hash, mostramos sólo la sección objetivo
+          if(compact || (hash && hash.length > 1)){
+            const raw = (hash && hash.length>1) ? hash.replace('#','') : (sections[0] ? sections[0].id : null);
+            const sectionId = resolveSectionId(raw);
+            if(sidebar && compact) sidebar.style.display = 'none';
+            if(sectionId) {
+              showOnly(sectionId);
+              // reforzar la selección un poco después por si algún controlador la sobreescribe
+              setTimeout(()=>{ showOnly(sectionId); }, 60);
+            } else {
+              // si no se resolvió, mostrar el primer form-section o default
+              if(sections[0]) showOnly(sections[0].id);
+              else if(defaultSection) { hideAll(); defaultSection.style.display = 'block'; }
+            }
+          } else {
+            // Mostrar por defecto el mensaje de bienvenida y ocultar secciones
+            hideAll();
+            if(defaultSection) defaultSection.style.display = 'block';
+          }
+        }catch(e){ console.warn('Error manejando compact/hash en usuarios-personal', e); }
+      });
+    })();
+  </script>
+
+  <script>
+    // Quitamos la clase pre-init una vez que la página terminó de inicializarse
+    document.addEventListener('DOMContentLoaded', ()=>{
+      setTimeout(()=>{ document.body.classList.remove('pre-init'); }, 80);
     });
   </script>
 </body>

@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Menú de Inicio</title>
   <style>
+    :root{
+      --header-h: 70px;
+      --sidebar-w: 260px;
+      --gutter: 20px;
+    }
+
     body {
       font-family: 'Arial', sans-serif;
       margin: 0;
@@ -12,11 +18,8 @@
       background: url('img/medical-background.png?v=1') center center / cover no-repeat;
       position: relative;
       overflow-x: hidden;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding-top: 20px;
+      /* layout for sidebar + content */
+      display: block;
     }
     body::before {
       content: '';
@@ -32,19 +35,19 @@
       background: linear-gradient(135deg, #7dd3fc, #fef3c7);
       color: #1f2937;
       text-align: center;
-      padding: 20px;
+      padding: 14px 20px;
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
+      height: var(--header-h);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
       z-index: 100;
     }
-    header h1 {
-      margin: 0;
-      font-size: 28px;
-      font-weight: bold;
-    }
+  header h1{ margin:0; font-size:26px; font-weight:600 }
     header .icon {
       position: absolute;
       top: 20px;
@@ -52,17 +55,40 @@
       font-size: 20px;
       cursor: pointer;
     }
+    /* Botón hamburguesa (solo visible en mobile) */
+    .hamburger {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 26px;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      z-index: 110;
+    }
+    .hamburger span{
+      display:block;
+      height:3.5px;
+      background:#1f2937;
+      border-radius:3px;
+    }
     .container {
-      background: rgba(255, 255, 255, 0.95);
-      -webkit-backdrop-filter: blur(10px);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      padding: 20px 15px;
-      text-align: center;
-      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      max-width: 800px;
-      width: calc(100% - 30px);
+      background: transparent; /* quitar la franja blanca horizontal */
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+      border-radius: 0;
+      padding: 8px 18px;
+      text-align: left;
+      box-shadow: none;
+      border: none;
+      /* make content start below the header and to the right of the sidebar */
+      margin: calc(var(--header-h) + 18px) 20px 20px calc(var(--sidebar-w) + 24px);
+      width: auto;
+      max-width: calc(100% - (var(--sidebar-w) + 48px));
+      z-index: 50; /* below header but above background */
     }
     h2 {
       margin-top: 10px;
@@ -74,31 +100,132 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-    .menu {
+    .hero{
+      background: rgba(255,255,255,0.85);
+      border-radius: 10px;
+      padding: 12px 18px;
+      display: inline-block;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      text-align: left;
+      margin-bottom: 14px;
+    }
+    .hero h2{ font-size:1.6rem; margin:0 0 6px 0; color: #2b7a9e }
+    .subtitle{ margin:0; color:#666; font-size:0.95rem }
+    /* Sidebar container */
+    .sidebar {
+      width: var(--sidebar-w);
+      height: 100vh;
+      background: var(--sidebar-bg);
+      color: #fff;
+      padding-top: calc(var(--header-h) + 8px); /* dejar espacio para el header */
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 900;
+    }
+
+    .sidebar .menu {
       display: flex;
       flex-direction: column;
       gap: 10px;
       width: 100%;
-      max-width: 500px;
-      margin: 0 auto;
+      max-width: none;
+      margin: 0;
+    }
+
+    /* Estilos para bloque deshabilitado (ej. Pacientes) */
+    .sidebar .menu .menu-item[data-disabled="true"] {
+      background: transparent; /* quitar caja blanca detrás del botón */
+      border-radius: 12px;
+      padding: 0; /* dejar que sea el botón el que tenga el padding */
+      box-shadow: none;
+      margin: 4px 8px; /* mantener separación entre items */
+    }
+    .sidebar .menu .menu-item[data-disabled="true"] > button{
+      background: transparent;
+      color: #374151; /* texto atenuado */
+      font-weight: 600;
+      pointer-events: none; /* bloquear clicks en el botón */
+    }
+    .sidebar .menu .menu-item[data-disabled="true"] .submenu{
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+      padding: 6px;
+      display: none; /* seguir controlando visibilidad por JS/hover */
+    }
+    .sidebar .menu .menu-item[data-disabled="true"] .submenu a{
+      color: #374151;
+      pointer-events: auto; /* permitir navegación desde enlaces del submenu */
+      opacity: 0.85;
     }
     .menu button {
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      gap: 15px;
-      padding: 18px 24px;
-      font-size: 16px;
+      gap: 12px;
+      padding: 12px 16px;
+      font-size: 15px;
       font-weight: 500;
-      background: rgba(255, 255, 255, 0.8);
-      -webkit-backdrop-filter: blur(5px);
-      backdrop-filter: blur(5px);
-      border: 2px solid rgba(125, 211, 252, 0.3);
-      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.92);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(125, 211, 252, 0.18);
+      border-radius: 12px;
       cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      transition: all 0.22s ease;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+      width: 100%;
+      text-align: left;
+      white-space: normal;
     }
+    /* panel blanco que aparece detrás de la welcome y las opciones */
+    .sidebar-panel{
+      background: rgba(255,255,255,0.98);
+      border-radius: 12px;
+      margin: 6px 8px;
+      padding: 8px 10px;
+      height: calc(100vh - 16px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+      overflow: visible; /* permitir que el submenu se muestre por fuera del panel */
+      position: relative;
+    }
+    /* hacer que los botones se muestren como filas limpias sobre el panel */
+    .sidebar-panel .menu button{
+      background: rgba(255,255,255,1);
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.04);
+    }
+    .menu-item{ position: relative; }
+    .submenu{
+      display:none;
+      position:absolute;
+      left: calc(100% + 12px);
+      top: 0; /* comenzar en la misma altura que la pestaña */
+      transform: none;
+      min-width: 220px;
+      background: transparent;
+      z-index: 210;
+      padding: 6px 0;
+    }
+    /* cada enlace representado como una tarjeta alineada verticalmente */
+    .submenu a{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:12px 14px;
+      color:#1f2937;
+      text-decoration:none;
+      background: #fff;
+      border-radius: 10px;
+      margin: 6px 8px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+      white-space:nowrap;
+    }
+    .submenu a i{ font-size:18px; width:22px; text-align:center }
+    .submenu a:hover{ transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.08) }
+    .menu-item:hover .submenu, .menu-item:focus-within .submenu{ display:block }
+    .welcome-card h3{ font-size:18px; font-weight:700; color:#2b7a9e }
     .menu button:hover {
       background: linear-gradient(135deg, #7dd3fc, #fef3c7);
       transform: translateY(-2px);
@@ -109,6 +236,37 @@
       flex: 1;
       text-align: left;
     }
+    /* Estado activo estilo similar a la imagen adjunta */
+    .menu button.active{
+      background: linear-gradient(180deg,#2a9df4,#1b82d3);
+      color: #fff;
+      box-shadow: none;
+      border-color: rgba(0,0,0,0.06);
+    }
+
+    /* overlay para mobile (oculto por defecto) */
+    .overlay{ display:none }
+
+      /* Welcome card style (sidebar) */
+      /* welcome text: no white box, larger and dark, positioned above the panel content */
+      .welcome-card{
+        background: transparent;
+        color: #2b7a9e;
+        padding: 0;
+        margin: 4px 4px 10px 8px;
+        border-radius: 0;
+        box-shadow: none;
+        text-align: left;
+        z-index: 2;
+        position: relative;
+      }
+    .welcome-card h3{ margin:0 0 10px 0; font-size:24px; color:#2b7a9e; font-weight:700 }
+      .welcome-card .subtitle{ display: none; }
+
+    /* cuando la clase se añade al body mostramos cambios visuales */
+    body.sidebar-open .overlay{ display:block }
+    body.sidebar-open .hamburger span{ background:#fff }
+    body.sidebar-open .sidebar{ transform: translateX(0); }
     .footer {
       margin-top: 20px;
       font-size: 14px;
@@ -136,6 +294,27 @@
       transform: translateY(-1px);
       box-shadow: 0 6px 20px rgba(125, 211, 252, 0.3);
     }
+
+    /* Dashboard summary (KPIs) */
+    .kpi-grid{ display:grid; grid-template-columns: repeat(4,1fr); gap:18px; margin: 10px 0 24px }
+    .kpi-card{ background: rgba(255,255,255,0.95); padding:16px 18px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.06); cursor:pointer; transition:all .18s ease }
+    .kpi-card:hover{ transform: translateY(-6px); box-shadow:0 18px 40px rgba(0,0,0,0.08) }
+    .kpi-card.alert{ border-left:4px solid #f59e0b }
+    .kpi-title{ font-weight:700; color:#0f5671; margin-bottom:6px }
+    .kpi-value{ font-size:28px; font-weight:800; color:#074a77 }
+    .kpi-note{ color:#6b7280; font-size:0.9rem; margin-top:8px }
+    .dashboard-footer{ margin-top:6px; color:#475569 }
+
+    @media (max-width:900px){ .kpi-grid{ grid-template-columns: repeat(2,1fr) } }
+    @media (max-width:480px){ .kpi-grid{ grid-template-columns: 1fr } }
+
+  /* Charts area */
+  .charts-grid{ display:grid; grid-template-columns: 1fr 1fr 0.8fr; gap:16px; align-items:start; margin-top: 10px }
+  .chart-card{ background: rgba(255,255,255,0.95); padding:14px; border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,0.06) }
+  .chart-card.small{ display:flex; flex-direction:column; align-items:center }
+  .chart-card h3{ margin:0 0 8px 0; font-size:1rem; color:#0f5671 }
+  @media (max-width:1000px){ .charts-grid{ grid-template-columns: 1fr; } }
+  .chart-card canvas{ width:100% !important; height:220px !important; display:block }
 
     /* Estilos para el dropdown del usuario */
     #userIcon {
@@ -174,6 +353,55 @@
     /* Estilos para el botón de gestión */
     #btnGestion {
       display: none;
+    }
+
+    /* Responsive: en pantallas pequeñas el sidebar se comporta como bloque normal */
+    @media (max-width: 768px) {
+      .hamburger { display:flex }
+      .sidebar {
+        position: static;
+        width: 100%;
+        height: auto;
+        top: auto;
+        left: auto;
+        bottom: auto;
+        border-right: none;
+        box-shadow: none;
+        border-radius: 12px;
+        margin: 10px 0;
+      }
+      .container {
+        margin: calc(var(--header-h) + 12px) 12px 12px 12px;
+        width: calc(100% - (var(--gutter) * 2));
+        padding-top: 18px;
+      }
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+      }
+      /* overlay styling in mobile when sidebar-open */
+      .overlay{
+        position:fixed;
+        inset:var(--header-h) 0 0 0;
+        background: rgba(0,0,0,0.35);
+        z-index:95;
+        display:none;
+      }
+      body.sidebar-open .overlay{ display:block }
+      body.sidebar-open .sidebar{
+        position:fixed;
+        left:0;
+        top:var(--header-h);
+        width:260px;
+        height:calc(100% - var(--header-h));
+        z-index:100;
+        background: rgba(255,255,255,0.98);
+        box-shadow: 4px 0 30px rgba(0,0,0,0.12);
+      }
+      /* ocultar submenus en mobile (usar navegación alternativa) */
+      .submenu{ display:none !important }
     }
 
     /* Estilos para modales */
@@ -245,7 +473,7 @@
 <body>
 
   <header>
-    <div class="icon" id="userIcon">👤 <span id="userName"></span>
+    <div class="icon" id="userIcon">👤 <span id="userName">Administrador</span>
       <div id="userDropdown">
         <button id="startServiceBtn">
           <span>🟢</span> Iniciar servicio
@@ -258,21 +486,103 @@
         </button>
       </div>
     </div>
+    <!-- hamburguesa visible en mobile -->
+    <div class="hamburger" id="hamburger" aria-label="menu" role="button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
     <h1>Medical Developer</h1>
   </header>
 
-  <div class="container">
-    <h2>Bienvenido <span id="rolText"></span></h2>
-
-  <div class="menu">
-    <button data-category="pacientes">👥 <span>Pacientes</span></button>
-    <button data-category="usuarios-personal">👤 <span>Usuarios y Personal</span></button>
-    <button data-category="operaciones-control">⚙️ <span>Operaciones / Control</span></button>
-    <button data-category="reportes">📊 <span>Reportes</span></button>
-    <button data-category="gestion" id="btnGestion">📚
-        <i class="fas fa-cogs"></i><span>Gestión Administrativa</span>
-    </button>
+  <!-- Sidebar + main content layout -->
+  <div class="sidebar">
+    <div class="sidebar-panel">
+      <div class="welcome-card">
+        <h3>Bienvenido</h3>
+      </div>
+      <div class="menu">
+        <div class="menu-item" data-disabled="true">
+          <button data-category="pacientes">👥 <span>Pacientes</span></button>
+          <div class="submenu" aria-hidden="true">
+            <a href="pages/categoria-pacientes.html?compact=1#pacientes-registrados-section"><i class="fas fa-user-check"></i> Ver pacientes registrados</a>
+            <a href="pages/categoria-pacientes.html?compact=1#registro-paciente-section"><i class="fas fa-user-plus"></i> Registro de paciente</a>
+            <a href="pages/categoria-pacientes.html?compact=1#ingresar-datos-medicos-section"><i class="fas fa-notes-medical"></i> Ingresar datos médicos</a>
+            <a href="pages/categoria-pacientes.html?compact=1#historial-medico-completo-section"><i class="fas fa-file-medical"></i> Historial médico completo</a>
+          </div>
+        </div>
+        <div class="menu-item" data-disabled="true">
+          <button data-category="usuarios-personal">👤 <span>Usuarios y Personal</span></button>
+          <div class="submenu" aria-hidden="true">
+            <a href="pages/categoria-usuarios-personal.html?compact=1#personal-section"><i class="fas fa-user"></i> Personal</a>
+            <a href="pages/categoria-usuarios-personal.html?compact=1#nuevo-usuario-section"><i class="fas fa-user-plus"></i> Nuevo usuario</a>
+          </div>
+        </div>
+        <div class="menu-item">
+          <button data-category="operaciones-control">⚙️ <span>Operaciones / Control</span></button>
+        </div>
+        <div class="menu-item">
+          <button data-category="reportes">📊 <span>Reportes</span></button>
+        </div>
+        <div class="menu-item">
+          <button data-category="gestion" id="btnGestion">📚
+              <i class="fas fa-cogs"></i><span>Gestión Administrativa</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- overlay para mobile cuando se abre sidebar -->
+  <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+  <!-- Hero / tarjeta compacta en el área principal -->
+  <div class="container">
+    <!-- Dashboard de resumen (widgets) -->
+    <section id="dashboard-summary">
+      <div class="kpi-grid">
+        <div class="kpi-card" id="kpi-pacientes">
+          <div class="kpi-title">Número Total de Pacientes</div>
+          <div class="kpi-value" id="kpi-pacientes-value">--</div>
+          <div class="kpi-note">Registros totales</div>
+        </div>
+        <div class="kpi-card" id="kpi-consultas">
+          <div class="kpi-title">Consultas (hoy)</div>
+          <div class="kpi-value" id="kpi-consultas-value">--</div>
+          <div class="kpi-note">Actividad reciente</div>
+        </div>
+        <div class="kpi-card" id="kpi-nuevos">
+          <div class="kpi-title">Nuevos Usuarios</div>
+          <div class="kpi-value" id="kpi-nuevos-value">--</div>
+          <div class="kpi-note">Últimos 7 días</div>
+        </div>
+        <div class="kpi-card alert" id="kpi-alertas">
+          <div class="kpi-title">Alertas Importantes</div>
+          <div class="kpi-value" id="kpi-alertas-value">--</div>
+          <div class="kpi-note">Pacientes con métricas críticas</div>
+        </div>
+      </div>
+      <div class="dashboard-footer">
+        <small>Consejo: haz clic en una tarjeta para ver la sección correspondiente.</small>
+      </div>
+    </section>
+  <!-- Gráficos rápidos -->
+  <section id="dashboard-charts">
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>Distribución por Facultad</h3>
+          <canvas id="chart-facultad"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Consultas últimos 6 meses</h3>
+          <canvas id="chart-consultas"></canvas>
+        </div>
+        <div class="chart-card small">
+          <h3>Padecimientos comunes</h3>
+          <canvas id="chart-padecimientos"></canvas>
+        </div>
+      </div>
+    </section>
   </div>
 
   <!-- Modales -->
@@ -320,6 +630,195 @@
         console.error('MenuInicio: Sesión inválida');
       }
     });
+    // Script para togglear sidebar en móvil
+    const hamburger = document.getElementById('hamburger');
+    const overlay = document.getElementById('overlay');
+    function openSidebar(){ document.body.classList.add('sidebar-open'); }
+    function closeSidebar(){ document.body.classList.remove('sidebar-open'); }
+    if(hamburger){
+      hamburger.addEventListener('click', ()=>{
+        if(document.body.classList.contains('sidebar-open')) closeSidebar(); else openSidebar();
+      });
+    }
+    if(overlay){ overlay.addEventListener('click', closeSidebar); }
+
+    // Marcar boton activo y comportamiento: sólo en mobile el click selecciona; en desktop
+    // los submenus se muestran por hover y el click no debe cambiar la pestaña.
+    document.querySelectorAll('.menu button').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile) {
+          // Comportamiento original en mobile: marcar activo y cerrar sidebar
+          document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));
+          btn.classList.add('active');
+          closeSidebar();
+        } else {
+          // En desktop evitamos que el click active otra pestaña. Solo prevenimos
+          // la acción por defecto si el botón contiene un enlace futuro.
+          e.preventDefault();
+          // No removemos ni añadimos clases 'active' aquí para permitir que el hover
+          // determine la visibilidad del submenu.
+        }
+      });
+    });
+
+    // Asegurar específicamente que el botón 'Pacientes' no navegue al hacer click
+    // en desktop (solo hover debe mostrar el submenu). Esto evita comportamientos
+    // accidentales donde un click abría la página de pacientes.
+    (function(){
+      const pacientesBtn = document.querySelector('.menu button[data-category="pacientes"]');
+      if(pacientesBtn){
+        pacientesBtn.addEventListener('click', (e)=>{
+          if(window.innerWidth > 768){
+            e.preventDefault();
+            e.stopPropagation();
+            // Asegurar que la clase active no cambie por este click
+            pacientesBtn.classList.remove('active');
+            // No navegamos: el submenu se controla por hover/mouseenter
+          }
+        });
+      }
+      // Igual para Usuarios y Personal: bloquear el botón en desktop pero permitir submenu
+      const usuariosBtn = document.querySelector('.menu button[data-category="usuarios-personal"]');
+      if(usuariosBtn){
+        usuariosBtn.addEventListener('click', (e)=>{
+          if(window.innerWidth > 768){
+            e.preventDefault();
+            e.stopPropagation();
+            usuariosBtn.classList.remove('active');
+          }
+        });
+      }
+    })();
+
+    // Cerrar submenus al clicar fuera (solo si el click no fue dentro del menú o del propio submenu)
+    document.addEventListener('click', (e)=>{
+      if(!e.target.closest('.menu') && !e.target.closest('.submenu')){
+        document.querySelectorAll('.submenu').forEach(sm=>{ sm.style.display='none'; sm.setAttribute('aria-hidden','true'); });
+      }
+    });
+
+    // Mantener submenu abierto mientras el cursor esté sobre la pestaña o sobre el propio submenu
+    document.querySelectorAll('.menu-item').forEach(item=>{
+      const sm = item.querySelector('.submenu');
+      if(!sm) return;
+      let hideTimeout = null;
+      const show = ()=>{ clearTimeout(hideTimeout); sm.style.display = 'block'; sm.setAttribute('aria-hidden','false'); };
+      const hide = ()=>{ sm.style.display = 'none'; sm.setAttribute('aria-hidden','true'); };
+
+      item.addEventListener('mouseenter', ()=>{ show(); });
+      item.addEventListener('mouseleave', ()=>{
+        hideTimeout = setTimeout(()=>{
+          if(!item.matches(':hover') && !sm.matches(':hover')) hide();
+        }, 160);
+      });
+
+      sm.addEventListener('mouseenter', ()=>{ clearTimeout(hideTimeout); show(); });
+      sm.addEventListener('mouseleave', ()=>{
+        hideTimeout = setTimeout(()=>{
+          if(!item.matches(':hover') && !sm.matches(':hover')) hide();
+        }, 160);
+      });
+    });
+
+    // Cerrar submenu al hacer click en un enlace: permitir navegación incluso dentro de
+    // un menu-item marcado como data-disabled (se quiere bloquear el botón, no los enlaces).
+    document.querySelectorAll('.submenu a').forEach(a=>{
+      a.addEventListener('click', (e)=>{
+        // No prevenimos la acción por defecto. Solo evitamos que el click burbujee
+        // y cerramos el submenu para mejorar la UX antes de la navegación.
+        e.stopPropagation();
+        const current = a.closest('.submenu');
+        if(current){ current.style.display = 'none'; current.setAttribute('aria-hidden','true'); }
+      });
+    });
+
+    // Cargar datos reales desde los modelos y poblar KPIs + gráficos
+    async function loadDashboardData(){
+      try{
+        const [{ reporteModel }, { pacienteModel }] = await Promise.all([
+          import('./js/models/reporteModel.js'),
+          import('./js/models/pacienteModel.js')
+        ]);
+
+        const estadisticas = reporteModel.getEstadisticas('mes');
+
+        // KPIs
+        const kpiPacientes = estadisticas.pacientes.totalPacientes || 0;
+        // consultasHoy: contar entradas del historial cuya fecha sea hoy
+        const historial = pacienteModel.getHistorialMedico() || [];
+        const hoyStr = new Date().toISOString().split('T')[0];
+        const consultasHoy = historial.filter(h => (new Date(h.fecha).toISOString().split('T')[0]) === hoyStr).length;
+        const pacientesNuevos = estadisticas.pacientes.pacientesNuevos || 0;
+        const alertas = estadisticas.pacientes.citasPendientes || 0;
+
+        // Escribir en DOM (si existen elementos)
+        const setText = (id, value) => { const el = document.getElementById(id); if(el) el.textContent = value; };
+        setText('kpi-pacientes-value', kpiPacientes);
+        setText('kpi-consultas-value', consultasHoy);
+        setText('kpi-nuevos-value', pacientesNuevos);
+        setText('kpi-alertas-value', alertas);
+
+        // Click rápido en tarjetas (mantener comportamiento anterior)
+        const goTo = (hash, fallbackUrl) => {
+          const el = document.getElementById(hash.replace('#','') + '-section');
+          if(el){ window.location.hash = hash; } else { window.location.href = fallbackUrl; }
+        };
+        const kpPac = document.getElementById('kpi-pacientes'); if(kpPac) kpPac.onclick = ()=> goTo('#pacientes-registrados', 'pages/categoria-pacientes.html?compact=1#pacientes-registrados-section');
+        const kpCons = document.getElementById('kpi-consultas'); if(kpCons) kpCons.onclick = ()=> window.location.href = 'pages/categoria-pacientes.html?compact=1#pacientes-registrados-section';
+        const kpNue = document.getElementById('kpi-nuevos'); if(kpNue) kpNue.onclick = ()=> window.location.href = 'pages/categoria-usuarios-personal.html?compact=1#nuevo-usuario-section';
+        const kpAlt = document.getElementById('kpi-alertas'); if(kpAlt) kpAlt.onclick = ()=> window.location.href = 'pages/categoria-pacientes.html?compact=1#historial-medico-completo-section';
+
+        // Ahora preparar datasets para gráficos usando datos reales
+        // 1) Distribución por facultad
+        const pacientes = pacienteModel.getPacientes() || [];
+        const facultadCounts = pacientes.reduce((acc, p) => { const f = p.facultad || 'No especificado'; acc[f] = (acc[f]||0) + 1; return acc; }, {});
+        const facultades = Object.keys(facultadCounts);
+        const facultadValues = facultades.map(f => facultadCounts[f]);
+
+        // 2) Consultas últimos 6 meses (por mes)
+        const meses = (function(){ const d = new Date(); const arr=[]; for(let i=5;i>=0;i--){ const dt=new Date(d.getFullYear(), d.getMonth()-i, 1); arr.push(dt.toLocaleString('es-ES',{month:'short'})); } return arr; })();
+        const consultasPorMes = new Array(6).fill(0);
+        historial.forEach(h => {
+          const fecha = new Date(h.fecha);
+          const now = new Date();
+          const diffMonths = (now.getFullYear() - fecha.getFullYear()) * 12 + (now.getMonth() - fecha.getMonth());
+          if(diffMonths >=0 && diffMonths < 6){ consultasPorMes[5 - diffMonths]++; }
+        });
+
+        // 3) Padecimientos / tipos en historial (top N)
+        const tipoCounts = historial.reduce((acc, r) => { const t = r.tipo || r.diagnostico || 'Otro'; acc[t] = (acc[t]||0)+1; return acc; }, {});
+        let padecimientos = Object.keys(tipoCounts);
+        let padecimientosValues = padecimientos.map(t=>tipoCounts[t]);
+        // Si no hay datos reales, dejar ejemplos previos
+        if(padecimientos.length === 0){ padecimientos = ['Obesidad','Presión alta','Diabetes','Asma','Anemia']; padecimientosValues = [120,95,80,56,42]; }
+
+        // Cargar Chart.js y dibujar (si aún no cargado)
+        try{
+          if(typeof Chart === 'undefined'){
+            const script = document.createElement('script'); script.src = 'https://cdn.jsdelivr.net/npm/chart.js'; document.head.appendChild(script);
+            await new Promise((res, rej)=>{ script.onload = res; script.onerror = rej; });
+          }
+
+          // Pie chart - facultad
+          const ctxFac = document.getElementById('chart-facultad').getContext('2d');
+          new Chart(ctxFac, { type:'pie', data:{ labels: facultades, datasets:[{ data: facultadValues, backgroundColor: ['#06b6d4','#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6'] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } } });
+
+          // Bar chart - consultas
+          const ctxCons = document.getElementById('chart-consultas').getContext('2d');
+          new Chart(ctxCons, { type:'bar', data:{ labels: meses, datasets:[{ label:'Consultas', data: consultasPorMes, backgroundColor:'#38bdf8' }] }, options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } } });
+
+          // Doughnut - padecimientos
+          const ctxPad = document.getElementById('chart-padecimientos').getContext('2d');
+          new Chart(ctxPad, { type:'doughnut', data:{ labels: padecimientos, datasets:[{ data: padecimientosValues, backgroundColor:['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#06b6d4'] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } } });
+
+        }catch(err){ console.warn('No fue posible cargar Chart.js o dibujar gráficos', err); }
+
+      }catch(err){ console.warn('Error cargando datos de reporte/paciente', err); }
+    }
+
+    // Ejecutar carga de datos al iniciar
+    loadDashboardData();
   </script>
 </body>
 </html>

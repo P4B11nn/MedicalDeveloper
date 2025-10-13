@@ -507,3 +507,12 @@ Al crear nuevos elementos UI en la aplicación, se recomienda seguir esta guía 
 ---
 
 *Documentación técnica completa sobre la arquitectura MVC implementada, el sistema de Event Bus, la gestión de UI y todas las herramientas de desarrollo disponibles.*
+
+## 🧭 Nota: Cambio en la ubicación del menú
+
+Se ha actualizado `menuInicio.html` para mostrar el menú como una barra lateral fija a la izquierda (clase `.sidebar`). Si prefieres el diseño anterior (menú centrado), abre `menuInicio.html` y:
+
+- Mueve el bloque `.menu` fuera de `.sidebar` y colócalo dentro de `.container`.
+- Elimina o ajusta las reglas CSS relacionadas con `.sidebar` y la propiedad `margin-left` de `.container`.
+
+Estos cambios son principalmente visuales y no alteran la lógica de navegación o los controladores.

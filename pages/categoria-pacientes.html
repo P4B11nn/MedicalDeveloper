@@ -32,6 +32,11 @@
       z-index: -1;
     }
 
+    /* Evitar 'flash of unstyled content' mientras inicializamos la página */
+    body.pre-init .content-area,
+    body.pre-init .form-section,
+    body.pre-init .sidebar { visibility: hidden; opacity: 0; }
+
     /* Header */
     header {
       background: linear-gradient(135deg, #7dd3fc, #fef3c7);
@@ -884,29 +889,95 @@
   </style>
 
   <script>
+    // Si la página recibe ?compact=1 se oculta la barra lateral interna y se muestra solo la sección objetivo.
+    (function(){
+      try{
+        const params = new URLSearchParams(window.location.search);
+        if(params.get('compact') === '1'){
+          // Esperamos a DOMContentLoaded para manipular elementos
+          document.addEventListener('DOMContentLoaded', ()=>{
+            const sidebar = document.querySelector('.sidebar');
+            if(sidebar) sidebar.style.display = 'none';
+
+            // Determinar la sección desde el hash (si no, dejamos la primera activa)
+            const hash = window.location.hash;
+            if(hash){
+              const target = document.querySelector(hash);
+              if(target && target.classList.contains('form-section')){
+                // ocultar todas y mostrar solo la target
+                document.querySelectorAll('.form-section').forEach(s=>{ s.style.display = 'none'; s.classList.remove('active'); });
+                target.style.display = 'block'; target.classList.add('active');
+              }
+            }
+          });
+        }
+      }catch(e){ console.warn('compact handling failed', e); }
+    })();
+  </script>
+
+  <script>
+    // Quitamos la clase pre-init una vez que la página terminó de inicializarse
+    document.addEventListener('DOMContentLoaded', ()=>{
+      // small delay to allow section logic to run
+      setTimeout(()=>{ document.body.classList.remove('pre-init'); }, 80);
+    });
+  </script>
+
+  <script>
     // Funcionalidad básica para navegación y visualización
     document.addEventListener('DOMContentLoaded', function() {
       // Configurar navegación de secciones
       const menuItems = document.querySelectorAll('.sidebar .menu-item');
       const sections = document.querySelectorAll('.form-section');
 
+      // Helper: show only the given section id (hide sidebar if compact)
+      function showOnlySection(sectionId, hideSidebar = false){
+        sections.forEach(section => { section.classList.remove('active'); section.style.display = 'none'; });
+        if(sectionId){
+          const target = document.getElementById(sectionId);
+          if(target){ target.classList.add('active'); target.style.display = 'block'; }
+        }
+        // Update menu active classes (if sidebar visible)
+        if(!hideSidebar){
+          menuItems.forEach(mi => mi.classList.remove('active'));
+          const activeBtn = document.querySelector(`.sidebar .menu-item[data-section="${sectionId}"]`);
+          if(activeBtn) activeBtn.classList.add('active');
+        }
+      }
+
+      // Si venimos con compact=1 o con hash, mostramos solo la sección objetivo
+      const params = new URLSearchParams(window.location.search);
+      const hash = window.location.hash;
+      const compact = params.get('compact') === '1';
+
+      // Asociar click en cada menuItem (si la sidebar está presente en esta página)
       menuItems.forEach(item => {
         item.addEventListener('click', function() {
           const targetId = this.dataset.section;
-          
           // Actualizar menú activo
           menuItems.forEach(mi => mi.classList.remove('active'));
           this.classList.add('active');
-          
           // Mostrar sección correspondiente
-          sections.forEach(section => {
-            section.classList.remove('active');
-            if (section.id === targetId) {
-              section.classList.add('active');
-            }
-          });
+          sections.forEach(section => { section.classList.remove('active'); section.style.display = 'none'; });
+          const target = document.getElementById(targetId);
+          if(target){ target.classList.add('active'); target.style.display = 'block'; }
         });
       });
+
+      // Si llegamos con compact o con un hash, ocultar sidebar y mostrar solo la sección
+      if(compact || (hash && hash.length>1)){
+        const sectionId = hash ? hash.replace('#','') : (sections[0] ? sections[0].id : null);
+        const sidebarEl = document.querySelector('.sidebar');
+        if(sidebarEl) sidebarEl.style.display = 'none';
+        if(sectionId) showOnlySection(sectionId, true);
+      } else {
+        // Inicializar primera sección activa sólo si no venimos con compact/hash
+        if (menuItems.length > 0 && sections.length > 0) {
+          menuItems[0].classList.add('active');
+          sections[0].classList.add('active');
+          sections[0].style.display = 'block';
+        }
+      }
 
       // Funcionalidad de filtros
       const filterDateFrom = document.getElementById('filter-date-from');
@@ -1083,7 +1154,7 @@
     }
   </script>
 </head>
-<body>
+<body class="pre-init">
   <header>
   <button class="back-btn" onclick="window.history.back()" title="Volver">←</button>
     <div class="icon" id="userIcon"><span id="userName" style="font-weight:bold; margin-left:8px;"></span>
@@ -1527,8 +1598,20 @@
         });
       });
 
-      // Mostrar sección inicial (pacientes registrados)
-      mostrarSeccion('pacientes-registrados');
+      // Mostrar sección inicial: si venimos con hash o ?compact=1, respetarlos;
+      const paramsInit = new URLSearchParams(window.location.search);
+      const hashInit = window.location.hash;
+      if(paramsInit.get('compact') === '1' && hashInit && hashInit.length>1){
+        // hash trae algo como #registro-paciente-section -> quitar el sufijo -section
+        const idFromHash = hashInit.replace('#','').replace(/-section$/,'');
+        if(idFromHash) mostrarSeccion(idFromHash);
+      } else if(hashInit && hashInit.length>1){
+        const idFromHash = hashInit.replace('#','').replace(/-section$/,'');
+        if(idFromHash) mostrarSeccion(idFromHash);
+      } else {
+        // por defecto
+        mostrarSeccion('pacientes-registrados');
+      }
 
       // Funcionalidad de búsqueda
       const buscarPaciente = document.getElementById('buscarPaciente');
