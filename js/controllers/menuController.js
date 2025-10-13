@@ -102,14 +102,15 @@ function setupUserDropdown() {
   const userDropdown = document.getElementById('userDropdown');
   
   if (userIcon && userDropdown) {
-    userIcon.addEventListener('click', () => {
-      userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
+    userIcon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      userDropdown.classList.toggle('hidden');
     });
-    
+
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
       if (!userIcon.contains(e.target) && !userDropdown.contains(e.target)) {
-        userDropdown.style.display = 'none';
+        userDropdown.classList.add('hidden');
       }
     });
   }
@@ -200,16 +201,26 @@ function setupModalCloseButtons() {
 function setupCategoryButtons() {
   const categoryButtons = document.querySelectorAll('.menu button[data-category]');
   categoryButtons.forEach(button => {
+    const category = button.getAttribute('data-category');
+
+    // Bloquear navegación para operaciones-control: el botón sólo debe mostrar submenu
+    if (category === 'operaciones-control') {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('menuController: Click en operaciones-control bloqueado (no navega)');
+        // Registrar intento de navegación pero no redirigir
+        authModel.registrarActividad({ accion: 'navegacion-bloqueada', descripcion: `Intento de navegar desde ${category}` });
+      });
+      return; // saltar configuración normal para este botón
+    }
+
     button.addEventListener('click', () => {
-      const category = button.getAttribute('data-category');
-      
-      // Log navigation activity
+      // Para otros botones, procesar navegación
       authModel.registrarActividad({
         accion: 'navegar',
         descripcion: `Navegando a sección ${category}`
       });
-      
-      // Navigate to category page - usa rutas absolutas con raíz
       window.location.href = `/js/views/pages/categoria-${category}.html`;
     });
   });

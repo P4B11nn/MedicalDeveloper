@@ -208,6 +208,44 @@
       z-index: 210;
       padding: 6px 0;
     }
+    /* Estilo específico para el submenu de Operaciones: caja blanca redondeada
+       y tamaño ajustado a sus dos opciones. */
+    .menu-item > button[data-category="operaciones-control"] + .submenu{
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 8px;
+      min-width: 220px;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.08);
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .menu-item > button[data-category="operaciones-control"] + .submenu a{
+      background: transparent; /* usar el fondo del contenedor */
+      margin: 6px 0; /* separar verticalmente las dos opciones */
+      padding: 10px 14px;
+      border-radius: 8px;
+      display: block;
+      width: calc(100% - 28px);
+      box-shadow: none;
+      color: #0f172a;
+    }
+    /* Estilo específico para el submenu de Reportes: cuadro blanco con esquinas redondeadas */
+    .menu-item > button[data-category="reportes"] + .submenu{
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 10px;
+      min-width: 240px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .menu-item > button[data-category="reportes"] + .submenu a{
+      background: transparent;
+      margin: 6px 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      display: block;
+      color: #0f172a;
+      box-shadow: none;
+    }
     /* cada enlace representado como una tarjeta alineada verticalmente */
     .submenu a{
       display:flex;
@@ -232,9 +270,67 @@
       box-shadow: 0 8px 25px rgba(125, 211, 252, 0.3);
       border-color: rgba(125, 211, 252, 0.5);
     }
+    /* Evitar que los botones que muestran submenu cambien a gradient al hacer hover.
+       Mantenerlos como las tarjetas blancas superiores. */
+    .menu-item:hover > button,
+    .menu-item:focus-within > button {
+      background: rgba(255,255,255,1) !important;
+      transform: none !important;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.04) !important;
+      border-color: rgba(0,0,0,0.06) !important;
+      color: #1f2937 !important;
+    }
     .menu button span {
       flex: 1;
       text-align: left;
+      white-space: normal; /* permitir varias líneas */
+      overflow: visible;
+      text-overflow: unset;
+      display: block;
+      padding-right: 0;
+      line-height: 1.15;
+      word-break: break-word;
+      margin-left: 0;
+    }
+    /* Icon style to match upper items (purple icon, consistent size) */
+    .menu-icon{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex: 0 0 22px; /* narrower icon width */
+      height: 22px;
+      font-size:18px;
+      color:#6d28d9; /* purple similar to other icons */
+      margin-right:0;
+      line-height:1;
+    }
+    /* Ensure buttons have consistent height and text styling and small gap */
+    .menu .menu-item > button{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:6px;
+      padding:12px 16px;
+      font-size:16px;
+      font-weight:700;
+      overflow:hidden;
+      min-height:56px;
+    }
+    /* Ajuste específico para acercar el texto al icono de operaciones */
+    .menu .menu-item > button[data-category="operaciones-control"]{
+      gap:4px !important;
+      padding-left:14px;
+    }
+    .menu .menu-item > button[data-category="operaciones-control"] .menu-icon{
+      flex: 0 0 18px !important;
+      color: #4c1d95 !important; /* morado oscuro */
+      background: rgba(76,29,149,0.08) !important; /* halo morado tenue */
+      border-radius: 50% !important;
+      padding: 4px !important;
+    }
+    .menu .menu-item > button[data-category="operaciones-control"] span{
+      padding-right:0 !important;
+      margin-left:0 !important;
     }
     /* Estado activo estilo similar a la imagen adjunta */
     .menu button.active{
@@ -243,6 +339,33 @@
       box-shadow: none;
       border-color: rgba(0,0,0,0.06);
     }
+
+    /* Botón salir en sidebar (estilo acorde al resto de botones del menú) */
+    .sidebar-logout-wrap { padding: 12px 8px; }
+    .sidebar-logout-btn {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255,255,255,1);
+      color: #0f172a; /* texto oscuro */
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.04);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: flex-start;
+    }
+    .sidebar-logout-btn:hover {
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.08);
+      border-color: rgba(125, 211, 252, 0.5);
+    }
+
+    /* Nombre de usuario más visible */
+    .user-name-inline { font-weight: 700; margin-left: 8px; color: #0f172a; }
 
     /* overlay para mobile (oculto por defecto) */
     .overlay{ display:none }
@@ -322,7 +445,13 @@
     }
     #userName {
       font-weight: bold;
-      margin-left: 8px;
+    }
+
+    /* Botón Reportes inactivo (solo usar el submenu) */
+    .disabled-menu-btn {
+      pointer-events: none;
+      opacity: 0.95;
+      cursor: default;
     }
     #userDropdown {
       display: none;
@@ -469,19 +598,29 @@
       margin-top: 0;
     }
   </style>
+    <style>
+      /* Estilos para dropdown de usuario */
+      .user-dropdown { position: absolute; right: 0; top: 36px; background: white; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.12); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 160px; z-index: 200; }
+      .user-dropdown button { background: transparent; border: none; padding: 8px 10px; text-align: left; cursor: pointer; border-radius: 6px; transition: background .15s ease; }
+      .user-dropdown button:hover { background: rgba(6,182,212,0.06); }
+      .btn-logout { background: linear-gradient(135deg,#ef4444,#f97316); color: white; padding: 8px 10px; border-radius: 6px; font-weight: 600; }
+      .btn-logout:hover { opacity: 0.95; transform: translateY(-1px); }
+      /* Utility hidden class already used elsewhere */
+      .hidden { display: none !important; }
+    </style>
 </head>
 <body>
 
   <header>
     <div class="icon" id="userIcon">👤 <span id="userName">Administrador</span>
-      <div id="userDropdown">
+      <div id="userDropdown" class="hidden user-dropdown">
         <button id="startServiceBtn">
           <span>🟢</span> Iniciar servicio
         </button>
         <button id="verPerfilBtn">
           <span>👤</span> Ver perfil
         </button>
-        <button id="logoutBtn">
+        <button id="logoutBtn" class="btn-logout">
           <span>🚪</span> Cerrar sesión
         </button>
       </div>
@@ -519,15 +658,30 @@
           </div>
         </div>
         <div class="menu-item">
-          <button data-category="operaciones-control">⚙️ <span>Operaciones / Control</span></button>
+          <button data-category="operaciones-control"><span class="menu-icon">⚙️</span> <span>Operaciones / Control</span></button>
+          <div class="submenu" aria-hidden="true">
+            <a href="pages/categoria-operaciones-control.html?compact=1#registro-entradas-salidas-section"><i class="fas fa-door-open"></i> Registro de Entradas/Salidas</a>
+            <a href="pages/categoria-operaciones-control.html?compact=1#mesas-salud-section"><i class="fas fa-map-marker-alt"></i> Módulos de Salud</a>
+          </div>
         </div>
         <div class="menu-item">
-          <button data-category="reportes">📊 <span>Reportes</span></button>
+          <button data-category="reportes" aria-disabled="true" tabindex="-1" class="disabled-menu-btn">📊 <span>Reportes</span></button>
+          <div class="submenu" aria-hidden="true">
+            <a href="pages/categoria-reportes.html?section=estadisticas" data-section="estadisticas" id="link-reportes-estadisticas"><i class="fas fa-chart-pie"></i> Estadísticas</a>
+            <a href="pages/categoria-reportes.html?section=actividades" data-section="actividades" id="link-reportes-actividades"><i class="fas fa-history"></i> Registro de actividades</a>
+            <a href="pages/categoria-reportes.html?section=exportacion" data-section="exportacion" id="link-reportes-exportacion"><i class="fas fa-file-export"></i> Exportar datos</a>
+          </div>
         </div>
-        <div class="menu-item">
-          <button data-category="gestion" id="btnGestion">📚
-              <i class="fas fa-cogs"></i><span>Gestión Administrativa</span>
-          </button>
+        <div class="menu-item" data-disabled="true">
+          <button data-category="gestion" id="btnGestion" aria-disabled="true" tabindex="-1">📚 <i class="fas fa-cogs"></i><span>Gestión Administrativa</span></button>
+          <div class="submenu" aria-hidden="true">
+            <a href="pages/categoria-gestion.html?section=modulos" id="link-gestion-modulos"><i class="fas fa-hospital"></i> Gestionar Módulos</a>
+            <a href="pages/categoria-gestion.html?section=grupos" id="link-gestion-grupos"><i class="fas fa-users"></i> Gestionar Grupos</a>
+          </div>
+        </div>
+        <!-- Botón persistente de Salir -->
+        <div class="sidebar-logout-wrap">
+          <button id="sidebarLogoutBtn" class="sidebar-logout-btn">🚪 Salir</button>
         </div>
       </div>
     </div>
@@ -689,7 +843,39 @@
           }
         });
       }
+      // Igual para Operaciones / Control: bloquear click en desktop y usar hover/submenu
+      const operacionesBtn = document.querySelector('.menu button[data-category="operaciones-control"]');
+      if(operacionesBtn){
+        // Bloquear el click en TODOs los casos: el botón sólo sirve para mostrar el submenu
+        // y no debe navegar ni activar otra página si se hace click.
+        operacionesBtn.addEventListener('click', (e)=>{
+          e.preventDefault();
+          e.stopPropagation();
+          // Nos aseguramos de no cambiar estado "active" por click
+          operacionesBtn.classList.remove('active');
+          // Si se quisiera habilitar apertura en mobile se podría hacer aquí,
+          // pero la petición fue bloquear la navegación completamente.
+          return false;
+        });
+      }
     })();
+
+      // Bloquear el comportamiento por defecto del botón 'Reportes' en desktop
+      (function(){
+        const reportesBtn = document.querySelector('.menu button[data-category="reportes"]');
+        if (reportesBtn) {
+          reportesBtn.addEventListener('click', (e) => {
+            if (window.innerWidth > 768) {
+              e.preventDefault();
+              e.stopPropagation();
+              // No navegar al hacer click en desktop; el submenu se muestra por hover
+              reportesBtn.classList.remove('active');
+              return false;
+            }
+            // En mobile, permitir que el click actúe como selección (se maneja arriba)
+          });
+        }
+      })();
 
     // Cerrar submenus al clicar fuera (solo si el click no fue dentro del menú o del propio submenu)
     document.addEventListener('click', (e)=>{
@@ -819,6 +1005,17 @@
 
     // Ejecutar carga de datos al iniciar
     loadDashboardData();
+  </script>
+  <script>
+    // Previene cualquier handler que intente navegar desde el botón de 'Reportes'
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest && e.target.closest('button[data-category="reportes"]');
+      if (btn) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    }, true);
   </script>
 </body>
 </html>

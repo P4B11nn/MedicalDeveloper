@@ -55,48 +55,33 @@ document.addEventListener('DOMContentLoaded', () => {
       
       console.log(`MenuInicio: Sección '${category}' deshabilitada para rol '${usuario.rol}'`);
     } else {
-      // Configurar navegación normal
-      btn.addEventListener('click', () => {
-        console.log(`MenuInicio: Navegando a categoría '${category}'`);
-        
-        let url = '';
-        switch (category) {
-          case 'pacientes':
-            url = 'pages/categoria-pacientes.html';
-            break;
-          case 'usuarios-personal':
-            url = 'pages/categoria-usuarios-personal.html';
-            break;
-          case 'operaciones-control':
-            url = 'pages/categoria-operaciones-control.html';
-            break;
-          case 'reportes':
-            url = 'pages/categoria-reportes.html';
-            break;
-          case 'gestion':
-            url = 'pages/categoria-gestion.html';
-            break;
-          default:
-            url = 'index.html';
-        }
-        
-        // Registrar navegación
-        authModel.registrarActividad({
-          accion: 'navigation',
-          descripcion: `Navegación a categoría: ${category}`
+      // Para operaciones-control no permitimos navegación desde el botón, sólo se usa el submenu
+      if (category === 'operaciones-control') {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('MenuInicio: Click en operaciones-control bloqueado (no navega)');
+          authModel.registrarActividad({ accion: 'navegacion-bloqueada', descripcion: 'Intento de navegación desde operaciones-control' });
         });
-        
-        // Emitir evento de navegación
-        eventBus.emit(EVENT_NAMES.NAVIGATE_TO, {
-          target: url,
-          category: category,
-          source: 'menu_button'
+        console.log(`MenuInicio: Sección '${category}' habilitada pero click bloqueado (usa submenu)`);
+      } else {
+        // Configurar navegación normal para otras categorías
+        btn.addEventListener('click', () => {
+          console.log(`MenuInicio: Navegando a categoría '${category}'`);
+          let url = '';
+          switch (category) {
+            case 'pacientes': url = 'pages/categoria-pacientes.html'; break;
+            case 'usuarios-personal': url = 'pages/categoria-usuarios-personal.html'; break;
+            case 'reportes': url = 'pages/categoria-reportes.html'; break;
+            case 'gestion': url = 'pages/categoria-gestion.html'; break;
+            default: url = 'index.html';
+          }
+          authModel.registrarActividad({ accion: 'navigation', descripcion: `Navegación a categoría: ${category}` });
+          eventBus.emit(EVENT_NAMES.NAVIGATE_TO, { target: url, category: category, source: 'menu_button' });
+          window.location.href = url;
         });
-        
-        window.location.href = url;
-      });
-      
-      console.log(`MenuInicio: Sección '${category}' habilitada para rol '${usuario.rol}'`);
+        console.log(`MenuInicio: Sección '${category}' habilitada para rol '${usuario.rol}'`);
+      }
     }
   });
   

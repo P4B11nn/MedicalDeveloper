@@ -17,18 +17,83 @@ export function initOperationsController() {
   setupSimpleExport();
 
   // Activar la primera sección por defecto
-  setTimeout(() => {
-    const firstButton = document.querySelector('.sidebar-menu button[data-section]');
-    if (firstButton) {
-      console.log('Activando primera sección:', firstButton.getAttribute('data-section'));
-      firstButton.click();
-    } else {
-      console.error('No se encontró el primer botón del menú lateral');
-    }
-    
-    // Mostrar todos los registros sin filtros
-    mostrarTodosLosRegistros();
-  }, 100);
+  // Activar la sección correspondiente según el hash de la URL si existe;
+  // si no existe, activar la primera sección por defecto.
+  (function activateInitialSection(){
+    const maxWait = 2000; // ms
+    const interval = 50; // ms
+    let waited = 0;
+
+    const tryActivate = () => {
+      const buttons = document.querySelectorAll('.sidebar-menu button[data-section]');
+      const sections = document.querySelectorAll('.content-area .form-section');
+
+      if (buttons.length > 0 && sections.length > 0) {
+        try {
+          console.log('OperationsController: botones y secciones disponibles, procediendo a activar sección inicial');
+          let hash = window.location.hash ? window.location.hash.replace(/^#/, '') : null;
+          if (hash && hash.endsWith('-section')) hash = hash.replace(/-section$/, '');
+
+          let activated = false;
+
+          if (hash) {
+            const targetBtn = document.querySelector(`.sidebar-menu button[data-section="${hash}"]`);
+            const targetSectionEl = document.getElementById(`${hash}-section`);
+            if (targetSectionEl) {
+              console.log('Activando sección directamente desde hash (element):', hash);
+              // Limpiar estados
+              buttons.forEach(b => b.classList.remove('active'));
+              sections.forEach(s => {
+                s.classList.remove('active');
+                s.classList.add('hidden');
+              });
+
+              // Limpiar contenidos opuestos para evitar solapamientos visuales
+              const registroEl = document.getElementById('registroESLista'); if (registroEl) registroEl.innerHTML = '';
+              const mesasEl = document.getElementById('mesasGrid'); if (mesasEl) mesasEl.innerHTML = '';
+
+              if (targetBtn) targetBtn.classList.add('active');
+              targetSectionEl.classList.add('active');
+              targetSectionEl.classList.remove('hidden');
+
+              if (hash === 'registro-entradas-salidas') mostrarTodosLosRegistros();
+              else if (hash === 'mesas-salud') cargarMesasSalud();
+
+              activated = true;
+            } else if (targetBtn) {
+              console.log('Activando sección desde hash via botón (fallback):', hash);
+              targetBtn.click();
+              activated = true;
+            }
+          }
+
+          if (!activated) {
+            const firstButton = document.querySelector('.sidebar-menu button[data-section]');
+            if (firstButton) {
+              console.log('Activando primera sección por defecto:', firstButton.getAttribute('data-section'));
+              firstButton.click();
+            } else {
+              console.error('No se encontró el primer botón del menú lateral');
+            }
+          }
+        } catch (err) {
+          console.error('Error al activar sección inicial', err);
+        }
+      } else {
+        waited += interval;
+        if (waited < maxWait) {
+          setTimeout(tryActivate, interval);
+        } else {
+          console.warn('OperationsController: timeout esperando botones/secciones, activando fallback');
+          // fallback: intentar activar la primera que exista
+          const firstButton = document.querySelector('.sidebar-menu button[data-section]');
+          if (firstButton) firstButton.click();
+        }
+      }
+    };
+
+    tryActivate();
+  })();
 
   // Hacer disponibles funciones de debug
   window.OperationsDebug = {
@@ -67,12 +132,13 @@ function setupEventListeners() {
     handleExportRequest(data);
   });
   
-  // Escuchar eventos de datos cargados
+  // Escuchar eventos de datos cargados (aceptamos tanto 'mesas' como 'modulos' por compatibilidad)
   eventBus.on(EVENT_NAMES.DATA_LOADED, (data) => {
     console.log('OperationsController: Datos cargados', data);
+    if (!data || !data.type) return;
     if (data.type === 'registro') {
       refreshRegistroView();
-    } else if (data.type === 'mesas') {
+    } else if (data.type === 'mesas' || data.type === 'modulos') {
       refreshMesasView();
     }
   });
@@ -87,6 +153,11 @@ function setupSidebarNavigation() {
   sidebarButtons.forEach((button, index) => {
     button.addEventListener('click', () => {
       const targetSectionId = button.getAttribute('data-section');
+      // Seguridad: si por alguna razón el botón no tiene data-section, ignoramos el click
+      if (!targetSectionId) {
+        console.warn('Botón lateral sin data-section ignorado');
+        return;
+      }
       console.log(`Clic en sección: ${targetSectionId}`);
       
       // Limpiar estados activos
@@ -96,15 +167,29 @@ function setupSidebarNavigation() {
       // Activar botón y sección
       button.classList.add('active');
       const activeSection = document.getElementById(`${targetSectionId}-section`);
-      
+
+      // Asegurarnos de que sólo la sección activa se muestre (evitar solapamientos)
+      const allSections = document.querySelectorAll('.content-area .form-section');
+      allSections.forEach(sec => {
+        if (sec.id === `${targetSectionId}-section`) {
+          sec.classList.add('active');
+          sec.classList.remove('hidden');
+        } else {
+          sec.classList.remove('active');
+          sec.classList.add('hidden');
+        }
+      });
+
       if (activeSection) {
-        activeSection.classList.add('active');
         console.log(`Sección activada: ${targetSectionId}`);
-        
-        // Renderizar contenido según la sección
+        // Renderizar contenido según la sección y ocultar lo demás
         if (targetSectionId === 'registro-entradas-salidas') {
+          // ocultar contenedor de mesas
+          const mg = document.getElementById('mesasGrid'); if (mg) mg.classList.add('hidden');
           mostrarTodosLosRegistros();
         } else if (targetSectionId === 'mesas-salud') {
+          // ocultar contenedor de registro
+          const re = document.getElementById('registroESLista'); if (re) re.classList.add('hidden');
           cargarMesasSalud();
         }
       } else {
@@ -125,15 +210,15 @@ function setupSimpleExport() {
     const buscarInput = document.getElementById('buscarRegistro');
     const rolSelect = document.getElementById('filtroRol');
     
-    if (buscarInput) {
-        buscarInput.style.display = 'none';
-        console.log('Input de búsqueda ocultado');
-    }
+  if (buscarInput) {
+    buscarInput.classList.add('hidden');
+    console.log('Input de búsqueda ocultado (clase .hidden)');
+  }
     
-    if (rolSelect) {
-        rolSelect.style.display = 'none';
-        console.log('Select de filtro ocultado');
-    }
+  if (rolSelect) {
+    rolSelect.classList.add('hidden');
+    console.log('Select de filtro ocultado (clase .hidden)');
+  }
     
     // Configurar solo exportación
     const exportarBtn = document.getElementById('btnExportarTodo');
@@ -174,7 +259,18 @@ function mostrarTodosLosRegistros() {
     // Obtener todos los registros reales de actividad
     const historial = getRegistroEntradasSalidas();
     console.log(`Registros obtenidos: ${historial.length}`);
-    
+
+    // Asegurar que sólo el contenedor de registro esté visible y la vista de mesas quede completamente limpia
+    if (container) {
+      container.classList.remove('hidden');
+    }
+    const mg = document.getElementById('mesasGrid');
+    if (mg) {
+      mg.classList.add('hidden');
+      // Limpiar contenido para evitar que fragmentos previos se muestren
+      mg.innerHTML = '';
+    }
+
     // Renderizar todos los registros sin filtros
     renderRegistroEntradasSalidas(historial, container);
     
@@ -184,11 +280,19 @@ function mostrarTodosLosRegistros() {
 function cargarMesasSalud() {
   const container = document.getElementById('mesasGrid');
   if (container) {
+    // Asegurar que solo este contenedor está visible
+    container.classList.remove('hidden');
+    const re = document.getElementById('registroESLista');
+    if (re) {
+      re.classList.add('hidden');
+      // Limpiar también el HTML del registro para evitar solapamientos visuales al volver
+      re.innerHTML = '';
+    }
+
     const modulos = gestionModel.getModulos();
-    eventBus.emit(EVENT_NAMES.DATA_LOADED, { 
-      type: 'modulos', 
-      count: modulos.length 
-    });
+    // Emitir evento indicando que las mesas fueron cargadas. Usamos 'mesas' por consistencia,
+    // pero el listener acepta 'modulos' también para compatibilidad con versiones previas.
+    eventBus.emit(EVENT_NAMES.DATA_LOADED, { type: 'mesas', count: modulos.length });
     renderModulos(modulos, container);
   }
 }

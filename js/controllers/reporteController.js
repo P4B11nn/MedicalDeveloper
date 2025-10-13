@@ -100,25 +100,64 @@ export function initReporteController() {
   
   // Función para cambiar de sección
   function cambiarSeccion(seccionActiva) {
-    // Ocultar todas las secciones
-    seccionEstadisticas.classList.remove('active');
-    seccionActividades.classList.remove('active');
-    seccionExportacion.classList.remove('active');
-    
-    // Quitar clase activa de todos los botones
-    btnEstadisticas.classList.remove('active');
-    btnActividades.classList.remove('active');
-    btnExportacion.classList.remove('active');
-    
-    // Mostrar sección seleccionada
-    seccionActiva.classList.add('active');
+    if (!seccionActiva) return;
+
+    // Lista completa de secciones y botones
+    const secciones = [
+      { el: seccionEstadisticas, btn: btnEstadisticas },
+      { el: seccionActividades, btn: btnActividades },
+      { el: seccionExportacion, btn: btnExportacion }
+    ];
+
+    // Primero ocultar y limpiar todas las secciones y quitar active de botones
+    secciones.forEach(item => {
+      if (!item.el) return;
+      try {
+        item.el.classList.remove('active');
+        item.el.style.display = 'none';
+        // limpiar contenido para evitar mezcla
+        item.el.innerHTML = '';
+      } catch (err) { /* noop */ }
+      if (item.btn) item.btn.classList.remove('active');
+    });
+
+    // Mostrar solo la sección activa
+    try {
+      seccionActiva.style.display = 'block';
+      seccionActiva.classList.add('active');
+    } catch (e) { /* noop */ }
+
+    // Activar el botón asociado (si existe)
+    const botonAsociado = secciones.find(s => s.el === seccionActiva);
+    if (botonAsociado && botonAsociado.btn) {
+      botonAsociado.btn.classList.add('active');
+    }
+
+    // Mostrar/ocultar la barra lateral dependiendo de la sección
+    try {
+      const sidebar = document.querySelector('.sidebar');
+      if (seccionActiva === seccionEstadisticas) {
+        // Ocultar todo el sidebar para ganar espacio
+        if (sidebar) sidebar.style.display = 'none';
+        // añadir clase al body para que el layout se adapte via CSS
+        try { document.body.classList.add('sidebar-hidden'); } catch(e) {}
+      } else {
+        // Restaurar sidebar y botones
+        if (sidebar) sidebar.style.display = '';
+        try { document.body.classList.remove('sidebar-hidden'); } catch(e) {}
+        if (btnActividades) btnActividades.style.display = '';
+        if (btnExportacion) btnExportacion.style.display = '';
+        if (btnEstadisticas) btnEstadisticas.style.display = '';
+      }
+    } catch (err) {
+      // noop
+    }
   }
   
   // Configurar eventos de los botones
   if (btnEstadisticas) {
     btnEstadisticas.addEventListener('click', () => {
       cambiarSeccion(seccionEstadisticas);
-      btnEstadisticas.classList.add('active');
       renderEstadisticas();
     });
   }
@@ -126,7 +165,6 @@ export function initReporteController() {
   if (btnActividades) {
     btnActividades.addEventListener('click', () => {
       cambiarSeccion(seccionActividades);
-      btnActividades.classList.add('active');
       renderActividades();
     });
   }
@@ -134,14 +172,61 @@ export function initReporteController() {
   if (btnExportacion) {
     btnExportacion.addEventListener('click', () => {
       cambiarSeccion(seccionExportacion);
-      btnExportacion.classList.add('active');
       renderExportacion();
     });
   }
   
-  // Iniciar con la sección de estadísticas por defecto
-  if (btnEstadisticas) {
-    btnEstadisticas.click();
+  // No renderizar una sección por defecto aún. Primero intentaremos abrir la
+  // sección indicada por la URL (query param 'section' o hash). Si no hay
+  // ninguna, entonces abrimos Estadísticas por defecto.
+  const openedByUrl = (function handleInitialSectionFromUrl(){
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const sectionParam = params.get('section');
+      const hash = window.location.hash || '';
+
+      // Helper que dispara la acción de manera segura
+      const openSection = (name) => {
+        switch (name) {
+          case 'estadisticas':
+          case 'estadisticas-section':
+            if (btnEstadisticas) { btnEstadisticas.click(); }
+            return true;
+          case 'actividades':
+          case 'actividades-section':
+            if (btnActividades) { btnActividades.click(); }
+            return true;
+          case 'exportacion':
+          case 'exportacion-section':
+            if (btnExportacion) { btnExportacion.click(); }
+            return true;
+          default:
+            return false;
+        }
+      };
+
+      // Si existe section en query string, abrirla y salir
+      if (sectionParam) {
+        return openSection(sectionParam) === true;
+      }
+
+      // Si existe hash y no hay query param, usar hash
+      if (hash) {
+        const target = hash.replace('#', '');
+        return openSection(target) === true;
+      }
+    } catch (err) {
+      console.warn('Error parsing initial section from URL', err);
+      return false;
+    }
+  })();
+
+  // Si la URL no abrió ninguna sección específica, abrir Estadísticas por defecto
+  if (!openedByUrl) {
+    if (btnEstadisticas) {
+      cambiarSeccion(seccionEstadisticas);
+      renderEstadisticas();
+    }
   }
 
   // Registrar actividad de acceso a reportes

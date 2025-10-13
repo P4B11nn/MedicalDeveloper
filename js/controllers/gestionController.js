@@ -12,8 +12,44 @@ export function initGestionController() {
     
     setupSidebarNavigation();
     
-    // Cargar la primera sección por defecto
-    document.querySelector('.sidebar-menu button[data-section="modulos"]').click();
+    // Abrir la sección indicada por la URL (query param 'section' o hash) o
+    // por defecto abrir 'modulos'. Esto evita que se rendericen varias
+    // secciones simultáneamente.
+    (function handleInitialSectionFromUrl(){
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const sectionParam = params.get('section');
+            const hash = window.location.hash || '';
+
+            const openSection = (name) => {
+                if (name === 'modulos' || name === 'modulos-section') {
+                    const btn = document.querySelector('.sidebar-menu button[data-section="modulos"]');
+                    if (btn) { btn.click(); return true; }
+                }
+                if (name === 'grupos' || name === 'grupos-section') {
+                    const btn = document.querySelector('.sidebar-menu button[data-section="grupos"]');
+                    if (btn) { btn.click(); return true; }
+                }
+                return false;
+            };
+
+            if (sectionParam) {
+                if (openSection(sectionParam)) return;
+            }
+
+            if (hash) {
+                const target = hash.replace('#','');
+                openSection(target);
+                return;
+            }
+
+            // Si no se abrió nada desde la URL, abrir 'modulos' por defecto
+            document.querySelector('.sidebar-menu button[data-section="modulos"]').click();
+        } catch (err) {
+            console.warn('Error parsing initial section from URL', err);
+            document.querySelector('.sidebar-menu button[data-section="modulos"]').click();
+        }
+    })();
     
     // Suscribirse a evento de inicialización de datos
     eventBus.on('gestion-data-initialized', (data) => {
@@ -30,9 +66,22 @@ function setupSidebarNavigation() {
             // Activar la sección correspondiente
             document.querySelectorAll('.sidebar-menu button').forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-            
-            document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
-            document.getElementById(`${sectionId}-section`).classList.add('active');
+
+            // Limpiar y ocultar las secciones no activas para evitar mezcla de contenido
+            document.querySelectorAll('.form-section').forEach(s => {
+                if (s.id !== `${sectionId}-section`) {
+                    s.classList.remove('active');
+                    s.style.display = 'none';
+                    try { s.innerHTML = ''; } catch(e) { /* noop */ }
+                }
+            });
+
+            // Mostrar la sección activa y renderizar su contenido
+            const activeSection = document.getElementById(`${sectionId}-section`);
+            if (activeSection) {
+                activeSection.style.display = 'block';
+                activeSection.classList.add('active');
+            }
 
             if (sectionId === 'modulos') {
                 renderGestionModulos(document.getElementById('modulos-section'));

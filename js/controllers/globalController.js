@@ -174,16 +174,21 @@ function setupUserDropdown() {
  */
 function setupLogoutButton() {
   const logoutBtn = document.getElementById('logoutBtn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      console.log('GlobalController: Solicitud de logout');
-      
-      // Crear modal de confirmación elegante en lugar del confirm nativo
+  const sidebarLogoutBtn = document.getElementById('sidebarLogoutBtn');
+
+  const attach = (el) => {
+    if (!el) return;
+    el.addEventListener('click', () => {
+      console.log('GlobalController: Solicitud de logout (botón)', el.id);
       showLogoutConfirmModal();
     });
-    
-    console.log('GlobalController: Botón de logout configurado');
-  } else {
+    console.log(`GlobalController: Botón de logout configurado - ${el.id}`);
+  };
+
+  if (logoutBtn) attach(logoutBtn);
+  if (sidebarLogoutBtn) attach(sidebarLogoutBtn);
+
+  if (!logoutBtn && !sidebarLogoutBtn) {
     console.warn('GlobalController: Botón de logout no encontrado');
   }
 }

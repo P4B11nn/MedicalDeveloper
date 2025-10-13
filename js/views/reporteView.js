@@ -11,18 +11,60 @@ function formatearFecha(fecha) {
 }
 
 // Renderiza la sección de estadísticas
-export function renderEstadisticas(estadisticasPrevia = null) {
+export function renderEstadisticas(estadisticasPrevia = null, options = {}) {
   const section = document.getElementById('estadisticas-section');
   if (!section) return;
+
+  // Limpiar otras secciones para evitar contenido mezclado
+  try { document.getElementById('actividades-section').innerHTML = ''; } catch(e) {}
+  try { document.getElementById('exportacion-section').innerHTML = ''; } catch(e) {}
+
+  // Mostrar versión compacta solo si se solicita explícitamente via options.compact
+  const compactMode = options && options.compact === true;
+  if (compactMode) {
+    const estadisticas = estadisticasPrevia || reporteModel.getEstadisticas();
+    const compactHtml = `
+      <div class="estadisticas-compact">
+        <div class="stats-cards">
+          <div class="stats-card">
+            <div class="stats-icon"><i class="fas fa-user"></i></div>
+            <div class="stats-info">
+              <span class="stats-value">${estadisticas.general.totalUsuarios}</span>
+              <span class="stats-label">Usuarios registrados</span>
+            </div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-icon"><i class="fas fa-users"></i></div>
+            <div class="stats-info">
+              <span class="stats-value">${estadisticas.pacientes.totalPacientes}</span>
+              <span class="stats-label">Pacientes</span>
+            </div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-icon"><i class="fas fa-calendar-check"></i></div>
+            <div class="stats-info">
+              <span class="stats-value">${estadisticas.pacientes.totalCitas}</span>
+              <span class="stats-label">Citas registradas</span>
+            </div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-icon"><i class="fas fa-clipboard-list"></i></div>
+            <div class="stats-info">
+              <span class="stats-value">${estadisticas.pacientes.totalConsultas}</span>
+              <span class="stats-label">Consultas registradas</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    section.innerHTML = compactHtml;
+    return;
+  }
 
   // Obtener estadísticas actualizadas si no se proporcionan
   const estadisticas = estadisticasPrevia || reporteModel.getEstadisticas();
   
-  let html = `
-    <div class="section-header">
-      <h2>Estadísticas del Sistema</h2>
-    </div>
-    
+    let html = `
     <div class="estadisticas-container">
       <div class="filtros-estadisticas">
         <h3>Personalizar estadísticas</h3>
@@ -162,6 +204,10 @@ export function renderEstadisticas(estadisticasPrevia = null) {
 export function renderActividades() {
   const section = document.getElementById('actividades-section');
   if (!section) return;
+
+  // Limpiar otras secciones para evitar contenido mezclado
+  try { document.getElementById('estadisticas-section').innerHTML = ''; } catch(e) {}
+  try { document.getElementById('exportacion-section').innerHTML = ''; } catch(e) {}
   
   // Obtener usuarios para el filtro
   const usuarios = authModel.getAllUsers();
@@ -263,6 +309,10 @@ export function renderActividades() {
 export function renderExportacion() {
   const section = document.getElementById('exportacion-section');
   if (!section) return;
+
+  // Limpiar otras secciones para evitar contenido mezclado
+  try { document.getElementById('estadisticas-section').innerHTML = ''; } catch(e) {}
+  try { document.getElementById('actividades-section').innerHTML = ''; } catch(e) {}
   
   let html = `
     <div class="section-header">

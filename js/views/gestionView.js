@@ -6,7 +6,6 @@ import * as modalUtil from '../utils/modalUtil.js'; // Importamos modalUtil est�
 
 // Variables globales para mantener referencias a los contenedores
 let modulosContainer = null;
-let gruposContainer = null;
 
 // Datos de ejemplo para inicializar el sistema si no existen datos
 const datosIniciales = {
@@ -72,10 +71,9 @@ export function init() {
     
     // Obtener referencias a los contenedores
     modulosContainer = document.getElementById('modulos-section');
-    gruposContainer = document.getElementById('grupos-section');
     
-    if (!modulosContainer || !gruposContainer) {
-        console.error('GestionView: Contenedores no encontrados. La vista no puede funcionar correctamente.');
+    if (!modulosContainer) {
+        console.error('GestionView: Contenedor de módulos no encontrado. La vista no puede funcionar correctamente.');
         return;
     }
     
@@ -98,34 +96,10 @@ export function init() {
         }
     });
     
-    eventBus.on(EVENT_NAMES.GROUP_CREATED, () => {
-        if (gruposContainer.classList.contains('active')) {
-            renderGestionGrupos(gruposContainer);
-        }
-    });
-    
-    eventBus.on(EVENT_NAMES.GROUP_UPDATED, () => {
-        if (gruposContainer.classList.contains('active')) {
-            renderGestionGrupos(gruposContainer);
-        }
-    });
-    
-    eventBus.on(EVENT_NAMES.GROUP_DELETED, () => {
-        if (gruposContainer.classList.contains('active')) {
-            renderGestionGrupos(gruposContainer);
-        }
-    });
-    
-    // También mantener compatibilidad con eventos antiguos
+    // Mantener compatibilidad con eventos antiguos para módulos
     eventBus.on('gestion-modulo-updated', () => {
         if (modulosContainer.classList.contains('active')) {
             renderGestionModulos(modulosContainer);
-        }
-    });
-    
-    eventBus.on('gestion-grupo-updated', () => {
-        if (gruposContainer.classList.contains('active')) {
-            renderGestionGrupos(gruposContainer);
         }
     });
     
@@ -167,8 +141,6 @@ export function inicializarDatosGestion() {
  */
 export function renderGestionModulos(container) {
     const modulos = gestionModel.getModulos();
-    const grupos = gestionModel.getGrupos();
-    
     container.innerHTML = `
         <h2 class="content-title">Módulos de Salud</h2>
         <button class="btn-primary" id="btnNuevoModulo">
@@ -178,7 +150,7 @@ export function renderGestionModulos(container) {
         <div id="lista-modulos" style="margin-top: 20px;">
             ${modulos.length === 0 ? 
                 '<div class="empty-message">No hay módulos registrados. Crea uno nuevo para comenzar.</div>' : 
-                renderTablaModulos(modulos, grupos)
+                renderTablaModulos(modulos)
             }
         </div>
     `;
@@ -234,12 +206,6 @@ export function renderGestionModulos(container) {
                     }
                 });
             }
-            else if (target.classList.contains('assign-grupo')) {
-                const moduloId = target.dataset.moduloid;
-                console.log('GestionView: Solicitando asignación de grupo para módulo', moduloId);
-                // Implementar la asignación directamente en la vista
-                mostrarModalAsignarGrupo(moduloId);
-            }
         });
     }
 }
@@ -247,7 +213,7 @@ export function renderGestionModulos(container) {
 /**
  * Renderiza la tabla de módulos
  */
-function renderTablaModulos(modulos, grupos) {
+function renderTablaModulos(modulos) {
     return `
         <table class="data-table">
             <thead>
@@ -258,16 +224,11 @@ function renderTablaModulos(modulos, grupos) {
                     <th>Horario de Atención</th>
                     <th>Días de Atención</th>
                     <th>Estado</th>
-                    <th>Grupo Asignado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 ${modulos.map(modulo => {
-                    // Encontrar el grupo asignado, si existe
-                    const grupoAsignado = modulo.grupoAsignadoId ? 
-                        grupos.find(g => g.id === modulo.grupoAsignadoId) : null;
-                    
                     return `
                         <tr>
                             <td>${modulo.id}</td>
@@ -280,16 +241,8 @@ function renderTablaModulos(modulos, grupos) {
                                     ${modulo.estado}
                                 </span>
                             </td>
-                            <td>
-                                ${grupoAsignado ? 
-                                    `${grupoAsignado.nombre} <br><small>(${grupoAsignado.turno})</small>` : 
-                                    '<span class="badge badge-gray">No asignado</span>'
-                                }
-                            </td>
                             <td class="actions">
-                                <button class="btn-icon assign-grupo" title="Asignar grupo" data-moduloid="${modulo.id}">
-                                    <i class="fas fa-users"></i>
-                                </button>
+                                
                                 <button class="btn-icon edit-modulo" title="Editar" data-id="${modulo.id}">
                                     <i class="fas fa-edit"></i>
                                 </button>
@@ -308,142 +261,10 @@ function renderTablaModulos(modulos, grupos) {
 /**
  * Renderiza la sección de grupos
  */
-export function renderGestionGrupos(container) {
-    const grupos = gestionModel.getGrupos();
-    
-    container.innerHTML = `
-        <h2 class="content-title">Grupos de Trabajo</h2>
-        <button class="btn-primary" id="btnNuevoGrupo">
-            <i class="fas fa-plus"></i> Nuevo Grupo
-        </button>
-        
-        <div id="lista-grupos" style="margin-top: 20px;">
-            ${grupos.length === 0 ? 
-                '<div class="empty-message">No hay grupos registrados. Crea uno nuevo para comenzar.</div>' : 
-                renderTablaGrupos(grupos)
-            }
-        </div>
-    `;
-    
-    // Configurar evento para nuevo grupo
-    const btnNuevoGrupo = container.querySelector('#btnNuevoGrupo');
-    if (btnNuevoGrupo) {
-        // Eliminar eventos anteriores
-        const nuevoBtn = btnNuevoGrupo.cloneNode(true);
-        btnNuevoGrupo.parentNode.replaceChild(nuevoBtn, btnNuevoGrupo);
-        
-        // Añadir nuevo evento
-        nuevoBtn.addEventListener('click', () => {
-            console.log('GestionView: Solicitando formulario para nuevo grupo');
-            // Renderizar directamente sin modificar el controlador
-            renderFormGrupo();
-        });
-    }
-    
-    // Configurar delegación de eventos para la tabla
-    const tablaGrupos = container.querySelector('.data-table');
-    if (tablaGrupos) {
-        // Eliminar eventos anteriores
-        const nuevaTabla = tablaGrupos.cloneNode(true);
-        tablaGrupos.parentNode.replaceChild(nuevaTabla, tablaGrupos);
-        
-        // Añadir nuevo evento con delegación
-        nuevaTabla.addEventListener('click', (e) => {
-            const target = e.target.closest('button');
-            if (!target) return;
-            
-            if (target.classList.contains('assign-practicantes')) {
-                const grupoId = target.dataset.grupoId;
-                console.log('GestionView: Solicitando asignación de practicantes al grupo', grupoId);
-                mostrarModalAsignarPracticantes(grupoId);
-            }
-            else if (target.classList.contains('edit-grupo')) {
-                const grupoId = target.dataset.id;
-                console.log('GestionView: Solicitando edición de grupo', grupoId);
-                const grupo = gestionModel.getGrupoById(grupoId);
-                renderFormGrupo(grupo);
-            }
-            else if (target.classList.contains('delete-grupo')) {
-                const grupoId = target.dataset.id;
-                const grupo = gestionModel.getGrupoById(grupoId);
-                console.log('GestionView: Solicitando eliminación de grupo', grupoId);
-                
-                modalUtil.confirmarAccion({
-                    title: 'Eliminar Grupo',
-                    message: `¿Estás seguro de eliminar el grupo "${grupo.nombre}"? Esta acción no se puede deshacer.`,
-                    onConfirm: () => {
-                        const grupoEliminado = gestionModel.getGrupoById(grupoId);
-                        gestionModel.deleteGrupo(grupoId);
-                        
-                        // Emitir eventos
-                        eventBus.emit(EVENT_NAMES.GROUP_DELETED, { group: grupoEliminado });
-                        eventBus.emit('gestion-grupo-updated', { action: 'delete', id: grupoId });
-                    }
-                });
-            }
-        });
-    }
-}
-
-/**
- * Renderiza la tabla de grupos
- */
-function renderTablaGrupos(grupos) {
-    // Verificar si el usuario actual es admin
-    const currentUser = authModel.getCurrentUser();
-    const isAdmin = currentUser && currentUser.rol === 'admin';
-
-    // Obtener todos los usuarios para contar miembros reales
-    const todosLosUsuarios = authModel.getAllUsers();
-
-    return `
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Turno</th>
-                    <th>Horario</th>
-                    <th>Miembros</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${grupos.map(grupo => {
-                    // Contar miembros reales del grupo
-                    const miembrosReales = todosLosUsuarios.filter(u => 
-                        u.rol === 'practicante' && 
-                        u.activo !== false && 
-                        u.grupoId === grupo.id
-                    ).length;
-
-                    return `
-                        <tr>
-                            <td>${grupo.id}</td>
-                            <td>${grupo.nombre}</td>
-                            <td>${grupo.turno}</td>
-                            <td>${grupo.horario}</td>
-                            <td>${miembrosReales} miembro(s)</td>
-                            <td class="actions">
-                                ${isAdmin ? `
-                                    <button class="btn-icon assign-practicantes" title="Asignar practicantes" data-grupo-id="${grupo.id}">
-                                        <i class="fas fa-user-plus"></i>
-                                    </button>
-                                ` : ''}
-                                <button class="btn-icon edit-grupo" title="Editar" data-id="${grupo.id}">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn-icon delete-grupo" title="Eliminar" data-id="${grupo.id}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('')}
-            </tbody>
-        </table>
-    `;
-}
+// La gestión de grupos se ha eliminado de la vista para mantener solo la
+// funcionalidad de módulos en esta página. Las operaciones de grupos
+// siguen existiendo en el modelo (`gestionModel`) para ser utilizadas
+// por otras partes de la aplicación si es necesario.
 
 /**
  * Renderiza el formulario de módulo y configura sus eventos
@@ -1776,8 +1597,10 @@ function mostrarModalAsignarPracticantes(grupoId) {
                         type: 'success'
                     });
                     
-                    // Actualizar vista
-                    renderGestionGrupos(gruposContainer);
+                    // Actualizar vista: si la sección de módulos está activa, re-renderizarla
+                    if (modulosContainer && modulosContainer.classList.contains('active')) {
+                        renderGestionModulos(modulosContainer);
+                    }
                 }
             });
         }
@@ -1852,8 +1675,10 @@ function mostrarModalAsignarPracticantes(grupoId) {
 
         modalContainer.remove();
         
-        // Actualizar vista
-        renderGestionGrupos(gruposContainer);
+        // Actualizar vista en modulos si aplica
+        if (modulosContainer && modulosContainer.classList.contains('active')) {
+            renderGestionModulos(modulosContainer);
+        }
     });
 }
 
@@ -1882,4 +1707,101 @@ function formatearDiasAtencion(diasAtencion) {
         .join(', ');
     
     return `<span style="color: #059669; font-weight: 500;">${diasAbrev}</span>`;
+}
+
+/**
+ * Renderiza la secci f3n de grupos
+ */
+export function renderGestionGrupos(container) {
+    const grupos = gestionModel.getGrupos();
+    container.innerHTML = `
+        <h2 class="content-title">Grupos</h2>
+        <button class="btn-primary" id="btnNuevoGrupo">
+            <i class="fas fa-plus"></i> Nuevo Grupo
+        </button>
+
+        <div id="lista-grupos" style="margin-top: 20px;">
+            ${grupos.length === 0 ? 
+                '<div class="empty-message">No hay grupos registrados. Crea uno nuevo para comenzar.</div>' : 
+                renderTablaGrupos(grupos)
+            }
+        </div>
+    `;
+
+    // Configurar evento para nuevo grupo
+    const btnNuevo = container.querySelector('#btnNuevoGrupo');
+    if (btnNuevo) {
+        const nuevoBtn = btnNuevo.cloneNode(true);
+        btnNuevo.parentNode.replaceChild(nuevoBtn, btnNuevo);
+        nuevoBtn.addEventListener('click', () => {
+            renderFormGrupo();
+        });
+    }
+
+    // Configurar delegaci f3n de eventos en la tabla
+    const tabla = container.querySelector('.data-table');
+    if (tabla) {
+        const nuevaTabla = tabla.cloneNode(true);
+        tabla.parentNode.replaceChild(nuevaTabla, tabla);
+
+        nuevaTabla.addEventListener('click', (e) => {
+            const target = e.target.closest('button');
+            if (!target) return;
+
+            if (target.classList.contains('edit-grupo')) {
+                const grupoId = target.dataset.id;
+                const grupo = gestionModel.getGrupoById(grupoId);
+                renderFormGrupo(grupo);
+            } else if (target.classList.contains('delete-grupo')) {
+                const grupoId = target.dataset.id;
+                const grupo = gestionModel.getGrupoById(grupoId);
+                modalUtil.confirmarAccion({
+                    title: 'Eliminar Grupo',
+                    message: `\u00BFEst\u00E1s seguro de eliminar el grupo "${grupo.nombre}"?`,
+                    onConfirm: () => {
+                        gestionModel.deleteGrupo(grupoId);
+                        eventBus.emit(EVENT_NAMES.GROUP_DELETED, { id: grupoId });
+                        // Re-renderizar la secci\u00f3n activa
+                        renderGestionGrupos(container);
+                    }
+                });
+            }
+        });
+    }
+}
+
+function renderTablaGrupos(grupos) {
+    return `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Turno</th>
+                    <th>Horario</th>
+                    <th>Miembros</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${grupos.map(grupo => `
+                    <tr>
+                        <td>${grupo.id || ''}</td>
+                        <td>${grupo.nombre}</td>
+                        <td>${grupo.turno}</td>
+                        <td>${grupo.horario}</td>
+                        <td>${(grupo.miembros || []).length}</td>
+                        <td class="actions">
+                            <button class="btn-icon edit-grupo" title="Editar" data-id="${grupo.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon delete-grupo" title="Eliminar" data-id="${grupo.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
 }
