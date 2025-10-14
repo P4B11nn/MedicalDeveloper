@@ -1,6 +1,22 @@
 // js/views/operacionesView.js
 import { eliminarRegistro } from '../models/operacionesModel.js';
+import { authModel } from '../models/storageModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
+
+/**
+ * Calcula el número de practicantes asignados a un grupo
+ * @param {string} grupoId - ID del grupo
+ * @returns {number} Número de practicantes asignados
+ */
+function contarPracticantesEnGrupo(grupoId) {
+    if (!grupoId) return 0;
+    const usuarios = authModel.getAllUsers();
+    return usuarios.filter(usuario => 
+        usuario.rol === 'practicante' && 
+        usuario.grupoId === grupoId &&
+        usuario.activo !== false
+    ).length;
+}
 
 /**
  * Formatea la ubicación de un módulo para mostrar coordenadas y lugar de forma elegante
@@ -482,7 +498,7 @@ export function renderModulos(modulos, container) {
                       "><i class="fas fa-user-md"></i></div>
                       <div style="
                         color: #334155;
-                      ">Miembros: <strong>${grupoAsignado.miembros.length}</strong></div>
+                      ">Miembros: <strong>${contarPracticantesEnGrupo(grupoAsignado.id)}</strong></div>
                     </div>
                   </div>
                 ` : `

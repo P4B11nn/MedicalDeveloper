@@ -7,22 +7,6 @@ const PACIENTES_KEY = 'pacientes';
 const CITAS_KEY = 'citas';
 const HISTORIAL_KEY = 'historialMedico';
 
-// Datos iniciales de ejemplo (mantener consistencia con las vistas)
-const pacienteEjemplo = {
-  id: 'P123456EJM',
-  matricula: '2023001234',
-  nombre: 'pacienteEjemplo',
-  apellidos: '',
-  fechaNacimiento: '2002-03-15',
-  grado: '7mo Semestre',
-  grupo: 'A',
-  carrera: 'Ingeniería en Sistemas Computacionales',
-  facultad: 'FIT',
-  telefono: '+52 83 3123-4567',
-  status: 'activo',
-  fechaRegistro: new Date().toISOString()
-};
-
 function read(key) {
   try {
     return JSON.parse(localStorage.getItem(key)) || [];
@@ -42,9 +26,9 @@ function write(key, data) {
   }
 }
 
-// Inicializar si no existen
+// Inicializar si no existen (sin pacientes de prueba)
 if (!localStorage.getItem(PACIENTES_KEY)) {
-  write(PACIENTES_KEY, [pacienteEjemplo]);
+  write(PACIENTES_KEY, []);
 }
 
 if (!localStorage.getItem(CITAS_KEY)) {
@@ -70,9 +54,26 @@ export const pacienteModel = {
   addPaciente: (paciente) => {
     if (!paciente) return null;
     const lista = read(PACIENTES_KEY);
+    
     // Asegurar id único
     if (!paciente.id) paciente.id = 'P' + Date.now().toString().slice(-8);
     paciente.fechaRegistro = paciente.fechaRegistro || new Date().toISOString();
+    
+    // Inicializar campos médicos como null
+    paciente.datosMedicos = {
+      temperatura: null,
+      presion: null,
+      peso: null,
+      talla: null,
+      frecuenciaRespiratoria: null,
+      examenVista: null,
+      examenOido: null,
+      fechaRegistroMedico: null
+    };
+    
+    // El status será 'sin_datos_medicos' hasta que se complete la información médica
+    paciente.status = 'sin_datos_medicos';
+    
     lista.push(paciente);
     write(PACIENTES_KEY, lista);
     return paciente;
@@ -124,6 +125,31 @@ export const pacienteModel = {
     const changed = lista.length !== inicial;
     if (changed) write(CITAS_KEY, lista);
     return changed;
+  },
+
+  // Datos médicos
+  updateDatosMedicos: (pacienteId, datosMedicos) => {
+    const lista = read(PACIENTES_KEY);
+    const idx = lista.findIndex(p => p.id === pacienteId || p.matricula === pacienteId);
+    if (idx === -1) return null;
+    
+    // Actualizar datos médicos
+    lista[idx].datosMedicos = {
+      ...datosMedicos,
+      fechaRegistroMedico: new Date().toISOString()
+    };
+    
+    // Cambiar status a 'completo' cuando se registren los datos médicos
+    lista[idx].status = 'completo';
+    
+    write(PACIENTES_KEY, lista);
+    return lista[idx];
+  },
+
+  // Obtener pacientes sin datos médicos
+  getPacientesSinDatosMedicos: () => {
+    const pacientes = read(PACIENTES_KEY);
+    return pacientes.filter(p => p.status === 'sin_datos_medicos');
   },
 
   // Historial médico

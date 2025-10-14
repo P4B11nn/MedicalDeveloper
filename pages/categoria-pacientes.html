@@ -183,105 +183,563 @@
       return isValid;
     }
 
-    // Funciones para simulación de datos (solo visual)
-    function simulatePatientData() {
-      const samplePatients = [
-        {
-          id: 'P123456EJM',
-          matricula: '2023001234',
-          name: 'pacienteEjemplo',
-          age: 21,
-          fechaNacimiento: '2002-03-15',
-          grado: '7mo Semestre',
-          grupo: 'A',
-          carrera: 'Ingeniería en Sistemas Computacionales',
-          facultad: 'FIT',
-          phone: '+52 83 3123-4567',
-          status: 'pending',
-          lastVisit: '2024-01-15'
-        }
-      ];
-      
-      return samplePatients;
-    }
-
-    // Función para cargar datos del paciente (solo visual)
-    function cargarDatosPaciente(pacienteId) {
-      const paciente = {
-        id: 'P123456EJM',
-        matricula: '2023001234',
-        name: 'pacienteEjemplo',
-        fechaNacimiento: '2002-03-15',
-        grado: '7mo Semestre',
-        grupo: 'A',
-        carrera: 'Ingeniería en Sistemas Computacionales',
-        facultad: 'FIT'
-      };
-
-      // Mostrar información del paciente
-      const infoSection = document.getElementById('paciente-info-section');
-      const avatar = document.getElementById('paciente-avatar');
-      const nombre = document.getElementById('paciente-nombre');
-      const detalles = document.getElementById('paciente-detalles');
-      const select = document.getElementById('seleccionarPaciente');
-
-      if (infoSection && avatar && nombre && detalles) {
-        // Mostrar la sección
-        infoSection.style.display = 'block';
-        
-        // Actualizar avatar
-        avatar.textContent = paciente.name.charAt(0).toUpperCase();
-        
-        // Actualizar nombre
-        nombre.textContent = `👤 ${paciente.name}`;
-        
-        // Actualizar detalles
-        detalles.innerHTML = `
-          <span><strong>ID:</strong> ${paciente.id}</span>
-          <span><strong>Matrícula:</strong> ${paciente.matricula}</span>
-          <span><strong>Fecha de Nacimiento:</strong> ${paciente.fechaNacimiento}</span>
-          <span><strong>Grado:</strong> ${paciente.grado}</span>
-          <span><strong>Grupo:</strong> ${paciente.grupo}</span>
-          <span><strong>Carrera:</strong> ${paciente.carrera}</span>
-          <span><strong>Facultad:</strong> ${paciente.facultad}</span>
-        `;
-
-        // Seleccionar en el dropdown
-        if (select) {
-          select.value = 'pacienteEjemplo';
-        }
-
-        // Scroll suave hacia el formulario
-        const formSection = document.querySelector('.form-container');
-        if (formSection) {
-          formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }
-    }
-
-    // Función para cargar datos desde el select
-    function cargarDatosPacienteSelect(valor) {
-      if (valor === 'pacienteEjemplo') {
-        cargarDatosPaciente(valor);
-      } else {
-        // Ocultar información si no hay selección
-        const infoSection = document.getElementById('paciente-info-section');
-        if (infoSection) {
-          infoSection.style.display = 'none';
-        }
-      }
-    }
+    // Las funciones de manejo de pacientes están ahora en el controlador MVC
   </script>
+  <style>
+    header {
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      color: #1f2937;
+      text-align: center;
+      padding: 20px;
+      position: relative;
+      box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
+      z-index: 100;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    header .icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      font-size: 18px;
+      color: #1f2937;
+      transition: all 0.3s ease;
+    }
+    
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .user-icon {
+      position: relative;
+    }
+
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: none;
+      z-index: 1000;
+      min-width: 180px;
+    }
+
+    .user-dropdown.show {
+      display: block;
+    }
+
+    .user-dropdown .dropdown-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      background: #f9f9f9;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .user-dropdown .username {
+      font-weight: bold;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .user-dropdown .user-role {
+      color: #666;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .user-dropdown .dropdown-item {
+      display: block;
+      padding: 12px 20px;
+      color: #333;
+      text-decoration: none;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .user-dropdown .dropdown-item:hover {
+      background: #f5f5f5;
+    }
+
+    .user-dropdown .dropdown-item.logout {
+      border-top: 1px solid #eee;
+      color: #dc3545;
+    }
+
+    .user-dropdown .dropdown-item.logout:hover {
+      background: #f8d7da;
+    }
+
+    /* Estilos para modales de facultades y carreras */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      animation: modalSlideIn 0.3s ease-out;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+      background: linear-gradient(135deg, #7dd3fc20, #fef3c720);
+      border-radius: 12px 12px 0 0;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      color: #0891b2;
+      font-size: 1.2em;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-close:hover {
+      background: rgba(0, 0, 0, 0.1);
+      color: #333;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    /* Estilos para modales grandes */
+    .modal-large {
+      max-width: 900px;
+      width: 95%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-subtitle {
+      font-size: 0.9em;
+      color: #666;
+      font-weight: normal;
+    }
+
+    .modal-scrollable {
+      max-height: 60vh;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .modal-footer {
+      padding: 15px 20px;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      background: #f8f9fa;
+      border-radius: 0 0 12px 12px;
+    }
+
+    /* Secciones de información */
+    .info-section, .edit-section {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .info-section h4, .edit-section h4 {
+      margin: 0 0 15px 0;
+      color: #0891b2;
+      font-size: 1.1em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-item label {
+      font-weight: 600;
+      color: #374151;
+      font-size: 0.9em;
+    }
+
+    .info-item span {
+      color: #6b7280;
+    }
+
+    /* Grid médico */
+    .medical-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+    }
+
+    .medical-item {
+      background: white;
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 4px solid #10b981;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .medical-item label {
+      display: block;
+      font-size: 0.85em;
+      color: #374151;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .medical-value {
+      font-size: 1.1em;
+      font-weight: 600;
+      color: #10b981;
+    }
+
+    .medical-value.temperature { color: #f59e0b; }
+    .medical-value.pressure { color: #ef4444; }
+    .medical-value.weight { color: #8b5cf6; }
+    .medical-value.height { color: #06b6d4; }
+    .medical-value.imc { color: #3b82f6; }
+    .medical-value.frequency { color: #10b981; }
+
+    /* Exámenes */
+    .exam-item {
+      background: white;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 4px solid #06b6d4;
+    }
+
+    .exam-item label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+
+    .exam-result {
+      color: #6b7280;
+      line-height: 1.4;
+      background: #f3f4f6;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    /* Sistema de mensajes personalizados */
+    .message-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 400px;
+    }
+
+    .custom-message {
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      animation: messageSlideIn 0.3s ease-out;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .custom-message::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: currentColor;
+    }
+
+    .custom-message.success {
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      border: 1px solid #10b981;
+      color: #065f46;
+    }
+
+    .custom-message.error {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      border: 1px solid #ef4444;
+      color: #991b1b;
+    }
+
+    .custom-message.warning {
+      background: linear-gradient(135deg, #fef3c7, #fed7aa);
+      border: 1px solid #f59e0b;
+      color: #92400e;
+    }
+
+    .custom-message.info {
+      background: linear-gradient(135deg, #e0f2fe, #b3e5fc);
+      border: 1px solid #0891b2;
+      color: #0e7490;
+    }
+
+    .message-icon {
+      font-size: 1.2em;
+      margin-top: 2px;
+    }
+
+    .message-content {
+      flex: 1;
+    }
+
+    .message-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-size: 1em;
+    }
+
+    .message-text {
+      font-size: 0.9em;
+      line-height: 1.4;
+      opacity: 0.9;
+    }
+
+    .message-close {
+      background: none;
+      border: none;
+      color: currentColor;
+      font-size: 1.2em;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .message-close:hover {
+      opacity: 1;
+    }
+
+    @keyframes messageSlideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes messageSlideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+
+    /* Modal de confirmación personalizado */
+    .modal-confirm {
+      max-width: 450px;
+      width: 90%;
+    }
+
+    .modal-confirm-header {
+      background: linear-gradient(135deg, #fef3c7, #fed7aa);
+      border-bottom: 1px solid #f59e0b;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modal-confirm-header.danger {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      border-bottom: 1px solid #ef4444;
+    }
+
+    .confirm-icon {
+      font-size: 1.5em;
+    }
+
+    .confirm-message {
+      line-height: 1.6;
+      color: #374151;
+      white-space: pre-line;
+    }
+
+    .btn-icon {
+      background: none;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #666;
+      transition: all 0.2s ease;
+    }
+
+    .btn-icon:hover:not(:disabled) {
+      background: #f0f9ff;
+      border-color: #0891b2;
+      color: #0891b2;
+    }
+
+    .btn-icon:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Estilos para botón de eliminar */
+    .btn-icon.btn-danger {
+      border-color: #fca5a5;
+      color: #dc2626;
+    }
+
+    .btn-icon.btn-danger:hover:not(:disabled) {
+      background: #fef2f2;
+      border-color: #dc2626;
+      color: #dc2626;
+      transform: scale(1.05);
+    }
+
+    /* Estilos para nuevos badges */
+    .age-badge {
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+      color: #1565c0;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 500;
+      border: 1px solid #90caf9;
+    }
+
+    .faculty-badge {
+      background: linear-gradient(135deg, #fff3e0, #ffcc02);
+      color: #ef6c00;
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 0.85em;
+      font-weight: bold;
+      border: 1px solid #ffb74d;
+      letter-spacing: 0.5px;
+    }
+  </style>
 </head>
 <body class="pre-init">
   <header>
-  <button class="back-btn" onclick="window.history.back()" title="Volver">←</button>
-  <div class="icon" id="userIcon"><span id="userName" class="user-name"></span>
-      <div id="userDropdown">
-        <button id="logoutBtn">Cerrar sesión</button>
+    <button class="back-btn" onclick="window.history.back()" title="Volver">←</button>
+    <h1 id="headerTitle">Pacientes</h1>
+    <div class="user-icon icon" id="userIcon">
+      <span id="userName"></span>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="dropdown-header">
+          <div class="username" id="dropdownUserName"></div>
+          <div class="user-role" id="dropdownUserRole"></div>
+        </div>
+        <button class="dropdown-item" id="profileBtn">
+          <i class="fas fa-user" style="margin-right: 8px;"></i>
+          Ver perfil
+        </button>
+        <button class="dropdown-item logout" id="logoutBtn">
+          <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i>
+          Cerrar sesión
+        </button>
       </div>
     </div>
-    <h1 id="headerTitle">Medical Developer - Pacientes</h1>
   </header>
 
   <div class="main-layout">
@@ -324,7 +782,7 @@
         <!-- Pacientes Registrados -->
         <div id="pacientes-registrados-section" class="form-section active">
           <div class="section-header">
-            <h2>Pacientes Registrados</h2>
+            <h2>Pacientes Registrados <span id="contador-pacientes" class="badge badge-info">0</span></h2>
             <div class="search-container">
               <input type="text" class="search-input" placeholder="Buscar paciente..." id="buscarPaciente">
             </div>
@@ -334,9 +792,9 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Matrícula</th>
                   <th>Nombre</th>
+                  <th>Edad</th>
                   <th>Carrera</th>
                   <th>Grado</th>
                   <th>Grupo</th>
@@ -347,26 +805,7 @@
                 </tr>
               </thead>
               <tbody id="tablaPacientes">
-                <!-- Paciente de ejemplo -->
-                <tr>
-                  <td class="patient-id">P123456EJM</td>
-                  <td>2023001234</td>
-                  <td><span class="badge badge-success badge-inline">P</span>pacienteEjemplo</td>
-                  <td>Ingeniería en Sistemas Computacionales</td>
-                  <td>7mo Semestre</td>
-                  <td><span class="badge badge-blue">A</span></td>
-                  <td>FIT</td>
-                  <td class="phone-number">📞 8331234567</td>
-                  <td><span class="badge badge-warning">⏳ PENDIENTE</span></td>
-                  <td class="text-center">
-                    <button class="btn-icon" title="Ver detalles" aria-label="Ver detalles">
-                      <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn-icon" title="Editar" aria-label="Editar">
-                      <i class="fas fa-edit"></i>
-                    </button>
-                  </td>
-                </tr>
+                <!-- Los pacientes se cargarán dinámicamente -->
               </tbody>
             </table>
           </div>
@@ -379,10 +818,11 @@
           </div>
           
           <div class="form-container">
-            <div class="detail-card">
-              <h4>📋 Información Personal</h4>
-              
-              <div class="form-row">
+            <form id="registrar-paciente-form">
+              <div class="detail-card">
+                <h4>📋 Información Personal</h4>
+                
+                <div class="form-row">
                 <div class="form-group col-md-6">
                   <label for="matricula">Matrícula:</label>
                   <input type="text" id="matricula" name="matricula" placeholder="Ej: EST001" required>
@@ -399,7 +839,8 @@
                   <input type="date" id="fecha-nacimiento" name="fecha-nacimiento" required>
                 </div>
                 <div class="form-group col-md-6">
-                  <!-- Espacio para mantener diseño equilibrado -->
+                  <label for="apellidos">Apellidos:</label>
+                  <input type="text" id="apellidos" name="apellidos" placeholder="Apellidos completos" required>
                 </div>
               </div>
               
@@ -427,45 +868,331 @@
               </div>
               
               <div class="form-row">
-                <div class="form-group col-md-12">
+                <div class="form-group col-md-6">
+                  <label for="facultad">Facultad:</label>
+                  <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="facultad" name="facultad" required style="flex: 1;">
+                      <option value="">Seleccione una facultad</option>
+                    </select>
+                    <button type="button" class="btn-icon" onclick="mostrarModalNuevaFacultad()" title="Agregar nueva facultad">
+                      <i class="fas fa-plus"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group col-md-6">
                   <label for="carrera">Carrera:</label>
-                  <select id="carrera" name="carrera" required>
-                    <option value="">Seleccione la carrera</option>
-                    <option value="Ingeniería en Sistemas Computacionales">Ingeniería en Sistemas Computacionales</option>
-                    <option value="Ingeniería Industrial">Ingeniería Industrial</option>
-                    <option value="Ingeniería Mecatrónica">Ingeniería Mecatrónica</option>
-                    <option value="Ingeniería en Gestión Empresarial">Ingeniería en Gestión Empresarial</option>
-                    <option value="Ingeniería Química">Ingeniería Química</option>
-                    <option value="Ingeniería Civil">Ingeniería Civil</option>
-                    <option value="Licenciatura en Administración">Licenciatura en Administración</option>
-                    <option value="Arquitectura">Arquitectura</option>
-                    <option value="Medicina">Medicina</option>
-                    <option value="Enfermería">Enfermería</option>
-                    <option value="Psicología">Psicología</option>
-                    <option value="Derecho">Derecho</option>
-                  </select>
+                  <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="carrera" name="carrera" required disabled style="flex: 1;">
+                      <option value="">Seleccione una carrera</option>
+                    </select>
+                    <button type="button" class="btn-icon" onclick="mostrarModalNuevaCarrera()" title="Agregar nueva carrera" id="btnAgregarCarrera" disabled>
+                      <i class="fas fa-plus"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
               
               <div class="form-row">
-                <div class="form-group col-md-6">
+                <div class="form-group col-md-12">
                   <label for="telefono">Teléfono:</label>
                   <input type="tel" id="telefono" name="telefono" placeholder="Ej: 5551234567" required>
                 </div>
-                <div class="form-group col-md-6">
-                  <label for="facultad">Facultad:</label>
-                  <input type="text" id="facultad" name="facultad" placeholder="Ej: Facultad de Medicina" required>
-                </div>
               </div>
               
-              <div class="form-actions">
-                <button type="button" class="btn-secondary">
-                  🧹 Limpiar
-                </button>
+                <div class="form-actions">
+                  <button type="button" class="btn-secondary">
+                    🧹 Limpiar
+                  </button>
+                  <button type="submit" class="btn-primary">
+                    👤 Registrar Paciente
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Modales para agregar facultades y carreras -->
+        <!-- Modal para nueva facultad -->
+        <div id="modalNuevaFacultad" class="modal" style="display: none;">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>Agregar Nueva Facultad</h3>
+              <button type="button" class="modal-close" onclick="cerrarModalFacultad()">&times;</button>
+            </div>
+            <div class="modal-body">
+              <form id="formNuevaFacultad">
+                <div class="form-group">
+                  <label for="nombreFacultad">Nombre de la Facultad:</label>
+                  <input type="text" id="nombreFacultad" name="nombreFacultad" placeholder="Ej: Facultad de Ingeniería" required>
+                </div>
+                <div class="modal-actions">
+                  <button type="button" class="btn-secondary" onclick="cerrarModalFacultad()">Cancelar</button>
+                  <button type="submit" class="btn-primary">Agregar Facultad</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal para nueva carrera -->
+        <div id="modalNuevaCarrera" class="modal" style="display: none;">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>Agregar Nueva Carrera</h3>
+              <button type="button" class="modal-close" onclick="cerrarModalCarrera()">&times;</button>
+            </div>
+            <div class="modal-body">
+              <form id="formNuevaCarrera">
+                <div class="form-group">
+                  <label for="facultadParaCarrera">Facultad:</label>
+                  <select id="facultadParaCarrera" name="facultadParaCarrera" required>
+                    <option value="">Seleccione la facultad</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="nombreCarrera">Nombre de la Carrera:</label>
+                  <input type="text" id="nombreCarrera" name="nombreCarrera" placeholder="Ej: Ingeniería en Sistemas" required>
+                </div>
+                <div class="modal-actions">
+                  <button type="button" class="btn-secondary" onclick="cerrarModalCarrera()">Cancelar</button>
+                  <button type="submit" class="btn-primary">Agregar Carrera</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal para ver detalles del paciente -->
+        <div id="modalVerPaciente" class="modal" style="display: none;">
+          <div class="modal-content modal-large">
+            <div class="modal-header">
+              <h3 id="modalTituloPaciente">Pablo Daniel</h3>
+              <span id="modalSubtituloPaciente" class="modal-subtitle">EST001 • FIT</span>
+              <button type="button" class="modal-close" onclick="cerrarModalVerPaciente()">&times;</button>
+            </div>
+            <div class="modal-body modal-scrollable">
+              <!-- Información Personal -->
+              <div class="info-section">
+                <h4><i class="fas fa-user"></i> Información Personal</h4>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <label>Matrícula:</label>
+                    <span id="modalMatricula">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Grado:</label>
+                    <span id="modalGrado">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Grupo:</label>
+                    <span id="modalGrupo">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Facultad:</label>
+                    <span id="modalFacultad">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Teléfono:</label>
+                    <span id="modalTelefono">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Datos Médicos -->
+              <div class="info-section" id="datosMedicosSection">
+                <h4><i class="fas fa-heartbeat"></i> Datos Médicos</h4>
+                <div class="medical-grid">
+                  <div class="medical-item">
+                    <label>Temperatura:</label>
+                    <span id="modalTemperatura" class="medical-value temperature">-</span>
+                  </div>
+                  <div class="medical-item">
+                    <label>Presión Arterial:</label>
+                    <span id="modalPresion" class="medical-value pressure">-</span>
+                  </div>
+                  <div class="medical-item">
+                    <label>Peso:</label>
+                    <span id="modalPeso" class="medical-value weight">-</span>
+                  </div>
+                  <div class="medical-item">
+                    <label>Talla:</label>
+                    <span id="modalTalla" class="medical-value height">-</span>
+                  </div>
+                  <div class="medical-item">
+                    <label>IMC:</label>
+                    <span id="modalIMC" class="medical-value imc">-</span>
+                  </div>
+                  <div class="medical-item">
+                    <label>Frecuencia Resp.:</label>
+                    <span id="modalFrecuencia" class="medical-value frequency">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Exámenes Complementarios -->
+              <div class="info-section" id="examenesSection">
+                <h4><i class="fas fa-stethoscope"></i> Exámenes Complementarios</h4>
+                <div class="exam-item">
+                  <label>Examen de Vista:</label>
+                  <div id="modalExamenVista" class="exam-result">-</div>
+                </div>
+                <div class="exam-item">
+                  <label>Examen de Oído:</label>
+                  <div id="modalExamenOido" class="exam-result">-</div>
+                </div>
+              </div>
+
+              <!-- Información del Registro -->
+              <div class="info-section">
+                <h4><i class="fas fa-info-circle"></i> Información del Registro</h4>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <label>Registrado por:</label>
+                    <span id="modalUsuarioRegistro">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Fecha de registro:</label>
+                    <span id="modalFechaRegistro">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Datos médicos por:</label>
+                    <span id="modalUsuarioMedico">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Última actualización:</label>
+                    <span id="modalUltimaActualizacion">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn-secondary" onclick="cerrarModalVerPaciente()">Cerrar</button>
+              <button type="button" class="btn-primary" onclick="abrirModalEditarPaciente()">
+                <i class="fas fa-edit"></i> Editar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal para editar paciente -->
+        <div id="modalEditarPaciente" class="modal" style="display: none;">
+          <div class="modal-content modal-large">
+            <div class="modal-header">
+              <h3>Editar Paciente</h3>
+              <button type="button" class="modal-close" onclick="cerrarModalEditarPaciente()">&times;</button>
+            </div>
+            <form id="formEditarPaciente">
+              <div class="modal-body modal-scrollable">
+                <!-- Información Personal -->
+                <div class="edit-section">
+                  <h4><i class="fas fa-user"></i> Información Personal</h4>
+                  <div class="form-row">
+                    <div class="form-group col-md-6">
+                      <label for="editMatricula">Matrícula:</label>
+                      <input type="text" id="editMatricula" name="matricula" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="editNombre">Nombre:</label>
+                      <input type="text" id="editNombre" name="nombre" required>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group col-md-4">
+                      <label for="editGrado">Grado:</label>
+                      <select id="editGrado" name="grado" required>
+                        <option value="1er Semestre">1er Semestre</option>
+                        <option value="2do Semestre">2do Semestre</option>
+                        <option value="3er Semestre">3er Semestre</option>
+                        <option value="4to Semestre">4to Semestre</option>
+                        <option value="5to Semestre">5to Semestre</option>
+                        <option value="6to Semestre">6to Semestre</option>
+                        <option value="7mo Semestre">7mo Semestre</option>
+                        <option value="8vo Semestre">8vo Semestre</option>
+                      </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                      <label for="editGrupo">Grupo:</label>
+                      <input type="text" id="editGrupo" name="grupo" required>
+                    </div>
+                    <div class="form-group col-md-4">
+                      <label for="editTelefono">Teléfono:</label>
+                      <input type="tel" id="editTelefono" name="telefono" required>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="editFacultad">Facultad:</label>
+                    <input type="text" id="editFacultad" name="facultad" required>
+                  </div>
+                </div>
+
+                <!-- Datos Médicos -->
+                <div class="edit-section">
+                  <h4><i class="fas fa-heartbeat"></i> Datos Médicos</h4>
+                  <div class="form-row">
+                    <div class="form-group col-md-6">
+                      <label for="editTemperatura">Temperatura Corporal (°C):</label>
+                      <input type="number" id="editTemperatura" name="temperatura" step="0.1" min="30" max="45">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="editPresion">Presión Arterial (mmHg):</label>
+                      <input type="text" id="editPresion" name="presion" placeholder="Ej: 120/80">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group col-md-6">
+                      <label for="editPeso">Peso (kg):</label>
+                      <input type="number" id="editPeso" name="peso" step="0.1" min="20" max="300">
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="editTalla">Talla (cm):</label>
+                      <input type="number" id="editTalla" name="talla" min="50" max="250">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group col-md-6">
+                      <label for="editFrecuencia">Frecuencia Respiratoria (rpm):</label>
+                      <input type="number" id="editFrecuencia" name="frecuenciaRespiratoria" min="10" max="40">
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group col-md-6">
+                      <label for="editExamenVista">Examen de Vista:</label>
+                      <textarea id="editExamenVista" name="examenVista" rows="3" placeholder="Observaciones del examen visual"></textarea>
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="editExamenOido">Examen de Oído:</label>
+                      <textarea id="editExamenOido" name="examenOido" rows="3" placeholder="Observaciones del examen auditivo"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="cerrarModalEditarPaciente()">Cancelar</button>
                 <button type="submit" class="btn-primary">
-                  👤 Registrar Paciente
+                  <i class="fas fa-save"></i> Guardar Cambios
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Sistema de mensajes personalizados -->
+        <div id="message-container" class="message-container"></div>
+
+        <!-- Modal de confirmación personalizado -->
+        <div id="modalConfirmacion" class="modal" style="display: none;">
+          <div class="modal-content modal-confirm">
+            <div class="modal-header modal-confirm-header">
+              <div class="confirm-icon" id="confirmIcon">⚠️</div>
+              <h3 id="confirmTitle">Confirmar Acción</h3>
+            </div>
+            <div class="modal-body">
+              <div id="confirmMessage" class="confirm-message">¿Estás seguro de realizar esta acción?</div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn-secondary" id="confirmCancel">Cancelar</button>
+              <button type="button" class="btn-danger" id="confirmAccept">Confirmar</button>
             </div>
           </div>
         </div>
@@ -481,12 +1208,7 @@
           <div class="pending-alert">
             <h4 class="warning-text">⚠️ Pacientes con datos médicos pendientes</h4>
             <div class="flex-gap-20">
-              <div class="pending-patient-card" id="paciente-pendiente-card">
-                <div class="patient-name fw-600">pacienteEjemplo</div>
-                <div class="muted-text">Matrícula: 2023001234</div>
-                <div class="muted-text">Carrera: Ingeniería en Sistemas Computacionales</div>
-                <button class="btn-primary small-btn mt-10" onclick="cargarDatosPaciente('pacienteEjemplo')">➕ Agregar Datos</button>
-              </div>
+              <!-- Los pacientes pendientes se cargarán dinámicamente -->
             </div>
           </div>
           
@@ -494,33 +1216,29 @@
             <label for="seleccionarPaciente">Seleccionar Paciente:</label>
             <select id="seleccionarPaciente" name="seleccionarPaciente" onchange="cargarDatosPacienteSelect(this.value)" required>
               <option value="">Seleccione un paciente...</option>
-              <option value="pacienteEjemplo">pacienteEjemplo - 2023001234 (Sin datos médicos)</option>
+              <!-- Los pacientes se cargarán dinámicamente -->
             </select>
           </div>
           
           <!-- Información del paciente seleccionado -->
             <div id="paciente-info-section" class="patient-info hidden">
             <div class="flex-center">
-              <div id="paciente-avatar" class="patient-avatar avatar-green">P</div>
+              <div id="paciente-avatar" class="patient-avatar avatar-green">?</div>
               <div>
-                <h4 id="paciente-nombre" class="patient-name">👤 pacienteEjemplo</h4>
+                <h4 id="paciente-nombre" class="patient-name">👤 Seleccionar paciente</h4>
                 <div id="paciente-detalles" class="patient-details">
-                  <span><strong>ID:</strong> P123456EJM</span>
-                  <span><strong>Matrícula:</strong> 2023001234</span>
-                  <span><strong>Grado:</strong> 7mo Semestre</span>
-                  <span><strong>Grupo:</strong> A</span>
-                  <span><strong>Carrera:</strong> Ingeniería en Sistemas Computacionales</span>
-                  <span><strong>Facultad:</strong> FIT</span>
+                  <span>Selecciona un paciente para ver sus datos</span>
                 </div>
               </div>
             </div>
           </div>
           
           <div class="form-container">
-            <div class="detail-card">
-              <h4>🏥 Datos Médicos</h4>
-              
-              <div class="form-row">
+            <form id="datos-medicos-form">
+              <div class="detail-card">
+                <h4>🏥 Datos Médicos</h4>
+                
+                <div class="form-row">
                 <div class="form-group col-md-6">
                   <label for="temperatura">Temperatura Corporal (°C):</label>
                   <input type="number" id="temperatura" name="temperatura" placeholder="Ej: 36.5" step="0.1" min="30" max="45">
@@ -566,7 +1284,8 @@
                   💾 Guardar Datos Médicos
                 </button>
               </div>
-            </div>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -588,7 +1307,7 @@
               <label for="filtroPaciente">Filtrar por paciente:</label>
               <select id="filtroPaciente" name="filtroPaciente" class="padded-input">
                 <option value="">Todos los pacientes</option>
-                <option value="pacienteEjemplo">pacienteEjemplo</option>
+                <!-- Los pacientes se cargarán dinámicamente -->
               </select>
             </div>
             <div class="align-end">
@@ -610,37 +1329,7 @@
                 </tr>
               </thead>
               <tbody>
-                <!-- Registro inicial del pacienteEjemplo -->
-                <tr>
-                  <td>
-                    <div class="fw-600">9/10/2025</div>
-                    <div class="muted-text small-text">10:30 a.m.</div>
-                  </td>
-                  <td>
-                    <div class="flex-center">
-                      <span class="small-avatar">P</span>
-                      <div>
-                        <div class="fw-600">pacienteEjemplo</div>
-                        <div class="muted-text small-text">ID: P123456EJM</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span class="badge badge-success">🟢 Registro Inicial</span>
-                    <div class="muted-text tiny-text mt-2">Datos personales registrados</div>
-                  </td>
-                  <td>
-                    <div>
-                      <div class="fw-600">Sistema</div>
-                      <div class="muted-text small-text">Registro automático</div>
-                    </div>
-                  </td>
-                  <td class="text-center">
-                    <button class="btn-icon" title="Ver detalles">
-                      <i class="fas fa-eye"></i>
-                    </button>
-                  </td>
-                </tr>
+                <!-- Los registros del historial se cargarán dinámicamente -->
               </tbody>
             </table>
           </div>
@@ -666,6 +1355,24 @@
     import '../js/utils/performanceMonitor.js';   // Performance monitoring
     import '../js/utils/architectureValidator.js'; // Architecture validation
     
+    // "Mini-Modelo" para facultades y carreras (igual que en pacienteView.js)
+    const facultadesYCarreras = {
+      "Facultad de Medicina de Tampico": [
+        "Médico Cirujano"
+      ],
+      "Facultad de Enfermería de Tampico": [
+        "Licenciatura en Enfermería"
+      ],
+      "Facultad de Odontología de Tampico": [
+        "Médico Cirujano Dentista"
+      ],
+      "Facultad de Comercio y Administración de Tampico": [
+        "Lic. en Administración",
+        "Lic. en Contaduría Pública",
+        "Lic. en Negocios Internacionales"
+      ]
+    };
+    
     document.addEventListener('DOMContentLoaded', () => {
       if (AuthGuard.validateSession()) {
         initGlobalController();
@@ -673,131 +1380,259 @@
         
         // Inicializar navegación entre secciones
         initNavegacionPacientes();
+        
+        // Inicializar el sistema de facultades y carreras
+        initFacultadesCarreras();
+        
+        // Mostrar la primera sección por defecto
+        const firstSection = document.querySelector('.sidebar-menu button');
+        if (firstSection) {
+          firstSection.click();
+        }
       }
     });
 
+    function initFacultadesCarreras() {
+      // Esperar a que los elementos estén disponibles
+      setTimeout(() => {
+        // Cargar datos persistidos primero
+        cargarFacultadesYCarreras();
+        
+        const facultadSelect = document.getElementById('facultad');
+        const carreraSelect = document.getElementById('carrera');
+        const btnAgregarCarrera = document.getElementById('btnAgregarCarrera');
+        
+        if (facultadSelect && carreraSelect) {
+          // Poblar el select de facultades
+          Object.keys(facultadesYCarreras).forEach(facultad => {
+            facultadSelect.add(new Option(facultad, facultad));
+          });
+
+          // Event listener para cambio de facultad
+          facultadSelect.addEventListener('change', () => {
+            const facultadSeleccionada = facultadSelect.value;
+            carreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+
+            if (facultadSeleccionada && facultadesYCarreras[facultadSeleccionada]) {
+              carreraSelect.disabled = false;
+              if (btnAgregarCarrera) btnAgregarCarrera.disabled = false;
+              
+              facultadesYCarreras[facultadSeleccionada].forEach(carrera => {
+                carreraSelect.add(new Option(carrera, carrera));
+              });
+            } else {
+              carreraSelect.disabled = true;
+              if (btnAgregarCarrera) btnAgregarCarrera.disabled = true;
+            }
+          });
+          
+          console.log('✅ Sistema de facultades y carreras inicializado');
+        } else {
+          console.log('⚠️ Selectores de facultad/carrera no encontrados');
+        }
+      }, 100);
+    }
+
     function initNavegacionPacientes() {
       const menuButtons = document.querySelectorAll('.sidebar-menu button');
-      const sections = document.querySelectorAll('.form-section, #default-section');
-
-      // Función para cambiar de sección
-      function mostrarSeccion(sectionId) {
-        // Ocultar todas las secciones
-        sections.forEach(section => {
-          section.classList.remove('active');
-          section.style.display = 'none';
-        });
-
-        // Mostrar la sección seleccionada
-        const targetSection = document.getElementById(sectionId + '-section');
-        if (targetSection) {
-          targetSection.classList.add('active');
-          targetSection.style.display = 'block';
-        }
-
-        // Actualizar botones activos
-        menuButtons.forEach(btn => btn.classList.remove('active'));
-        const activeButton = document.querySelector(`[data-section="${sectionId}"]`);
-        if (activeButton) {
-          activeButton.classList.add('active');
-        }
-
-        console.log(`Navegando a sección: ${sectionId}`);
-      }
-
-      // Event listeners para los botones del menú
-      menuButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          const section = button.getAttribute('data-section');
-          mostrarSeccion(section);
-        });
-      });
-
+      
+      // Los eventos ya están manejados por el controlador a través de event delegation
+      // Solo necesitamos configurar la navegación inicial
+      
       // Mostrar sección inicial: si venimos con hash o ?compact=1, respetarlos;
       const paramsInit = new URLSearchParams(window.location.search);
       const hashInit = window.location.hash;
+      
       if(paramsInit.get('compact') === '1' && hashInit && hashInit.length>1){
-        // hash trae algo como #registro-paciente-section -> quitar el sufijo -section
         const idFromHash = hashInit.replace('#','').replace(/-section$/,'');
-        if(idFromHash) mostrarSeccion(idFromHash);
+        if(idFromHash) {
+          const btn = document.querySelector(`[data-section="${idFromHash}"]`);
+          if (btn) btn.click();
+        }
       } else if(hashInit && hashInit.length>1){
         const idFromHash = hashInit.replace('#','').replace(/-section$/,'');
-        if(idFromHash) mostrarSeccion(idFromHash);
+        if(idFromHash) {
+          const btn = document.querySelector(`[data-section="${idFromHash}"]`);
+          if (btn) btn.click();
+        }
       } else {
-        // por defecto
-        mostrarSeccion('pacientes-registrados');
-      }
-
-      // Funcionalidad de búsqueda
-      const buscarPaciente = document.getElementById('buscarPaciente');
-      if (buscarPaciente) {
-        buscarPaciente.addEventListener('input', (e) => {
-          const searchTerm = e.target.value.toLowerCase();
-          const rows = document.querySelectorAll('#tablaPacientes tr');
-          
-          rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? '' : 'none';
-          });
-        });
-      }
-
-      // Funcionalidad de búsqueda en historial
-      const buscarHistorial = document.getElementById('buscarHistorial');
-      if (buscarHistorial) {
-        buscarHistorial.addEventListener('input', (e) => {
-          const searchTerm = e.target.value.toLowerCase();
-          const rows = document.querySelectorAll('#historial-medico-completo-section tbody tr');
-          
-          rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? '' : 'none';
-          });
-        });
-      }
-
-      // Funcionalidad para limpiar filtros
-      const limpiarFiltros = document.querySelector('#historial-medico-completo-section .btn-secondary');
-      if (limpiarFiltros) {
-        limpiarFiltros.addEventListener('click', () => {
-          document.getElementById('filtroFecha').value = '';
-          document.getElementById('filtroPaciente').value = '';
-          document.getElementById('buscarHistorial').value = '';
-          
-          // Mostrar todas las filas
-          const rows = document.querySelectorAll('#historial-medico-completo-section tbody tr');
-          rows.forEach(row => {
-            row.style.display = '';
-          });
-        });
-      }
-
-      // Funcionalidad para limpiar formulario de registro
-      const limpiarRegistro = document.querySelector('#registro-paciente-section .btn-secondary');
-      if (limpiarRegistro) {
-        limpiarRegistro.addEventListener('click', () => {
-          const form = document.querySelector('#registro-paciente-section');
-          const inputs = form.querySelectorAll('input, select, textarea');
-          inputs.forEach(input => {
-            input.value = '';
-          });
-        });
-      }
-
-      // Funcionalidad para cancelar datos médicos
-      const cancelarDatos = document.querySelector('#ingresar-datos-medicos-section .btn-secondary');
-      if (cancelarDatos) {
-        cancelarDatos.addEventListener('click', () => {
-          const form = document.querySelector('#ingresar-datos-medicos-section');
-          const inputs = form.querySelectorAll('input, textarea');
-          inputs.forEach(input => {
-            input.value = '';
-          });
-        });
+        // Por defecto mostrar pacientes registrados
+        const defaultBtn = document.querySelector('[data-section="pacientes-registrados"]');
+        if (defaultBtn) defaultBtn.click();
       }
 
       console.log('🏥 Navegación de pacientes inicializada correctamente');
     }
+
+    // Funciones para gestionar facultades y carreras dinámicamente
+    function guardarFacultadesYCarreras() {
+      // Persistir en localStorage
+      localStorage.setItem('facultadesYCarreras', JSON.stringify(facultadesYCarreras));
+    }
+
+    function cargarFacultadesYCarreras() {
+      // Cargar desde localStorage si existe
+      const saved = localStorage.getItem('facultadesYCarreras');
+      if (saved) {
+        const savedData = JSON.parse(saved);
+        Object.assign(facultadesYCarreras, savedData);
+      }
+    }
+
+    function mostrarModalNuevaFacultad() {
+      document.getElementById('modalNuevaFacultad').style.display = 'flex';
+      document.getElementById('nombreFacultad').focus();
+    }
+
+    function cerrarModalFacultad() {
+      document.getElementById('modalNuevaFacultad').style.display = 'none';
+      document.getElementById('formNuevaFacultad').reset();
+    }
+
+    function mostrarModalNuevaCarrera() {
+      const facultadSeleccionada = document.getElementById('facultad').value;
+      if (!facultadSeleccionada) {
+        alert('Primero selecciona una facultad');
+        return;
+      }
+      
+      // Poblar el selector de facultades en el modal
+      const facultadParaCarrera = document.getElementById('facultadParaCarrera');
+      facultadParaCarrera.innerHTML = '<option value="">Seleccione la facultad</option>';
+      Object.keys(facultadesYCarreras).forEach(facultad => {
+        const option = new Option(facultad, facultad);
+        if (facultad === facultadSeleccionada) {
+          option.selected = true;
+        }
+        facultadParaCarrera.add(option);
+      });
+      
+      document.getElementById('modalNuevaCarrera').style.display = 'flex';
+      document.getElementById('nombreCarrera').focus();
+    }
+
+    function cerrarModalCarrera() {
+      document.getElementById('modalNuevaCarrera').style.display = 'none';
+      document.getElementById('formNuevaCarrera').reset();
+    }
+
+    function actualizarSelectoresFacultades() {
+      const facultadSelect = document.getElementById('facultad');
+      const selectedValue = facultadSelect.value;
+      
+      // Limpiar y repoblar
+      facultadSelect.innerHTML = '<option value="">Seleccione una facultad</option>';
+      Object.keys(facultadesYCarreras).forEach(facultad => {
+        facultadSelect.add(new Option(facultad, facultad));
+      });
+      
+      // Restaurar selección si aún existe
+      if (selectedValue && facultadesYCarreras[selectedValue]) {
+        facultadSelect.value = selectedValue;
+        facultadSelect.dispatchEvent(new Event('change'));
+      }
+    }
+
+    // Event listeners para los formularios de modales
+    document.addEventListener('DOMContentLoaded', () => {
+      // Cargar datos persistidos
+      cargarFacultadesYCarreras();
+      
+      // Form para nueva facultad
+      document.getElementById('formNuevaFacultad').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const nombreFacultad = document.getElementById('nombreFacultad').value.trim();
+        
+        if (!nombreFacultad) {
+          alert('Ingresa el nombre de la facultad');
+          return;
+        }
+        
+        if (facultadesYCarreras[nombreFacultad]) {
+          alert('Esta facultad ya existe');
+          return;
+        }
+        
+        // Agregar nueva facultad
+        facultadesYCarreras[nombreFacultad] = [];
+        guardarFacultadesYCarreras();
+        actualizarSelectoresFacultades();
+        cerrarModalFacultad();
+        
+        alert('Facultad agregada exitosamente');
+      });
+
+      // Form para nueva carrera
+      document.getElementById('formNuevaCarrera').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const facultadSeleccionada = document.getElementById('facultadParaCarrera').value;
+        const nombreCarrera = document.getElementById('nombreCarrera').value.trim();
+        
+        if (!facultadSeleccionada || !nombreCarrera) {
+          alert('Completa todos los campos');
+          return;
+        }
+        
+        if (!facultadesYCarreras[facultadSeleccionada]) {
+          alert('La facultad seleccionada no existe');
+          return;
+        }
+        
+        if (facultadesYCarreras[facultadSeleccionada].includes(nombreCarrera)) {
+          alert('Esta carrera ya existe en la facultad seleccionada');
+          return;
+        }
+        
+        // Agregar nueva carrera
+        facultadesYCarreras[facultadSeleccionada].push(nombreCarrera);
+        guardarFacultadesYCarreras();
+        
+        // Si la facultad está actualmente seleccionada, actualizar carreras
+        const currentFacultad = document.getElementById('facultad').value;
+        if (currentFacultad === facultadSeleccionada) {
+          const carreraSelect = document.getElementById('carrera');
+          carreraSelect.add(new Option(nombreCarrera, nombreCarrera));
+          carreraSelect.value = nombreCarrera;
+        }
+        
+        cerrarModalCarrera();
+        alert('Carrera agregada exitosamente');
+      });
+
+      // Actualizar botón de agregar carrera cuando cambie la facultad
+      document.addEventListener('change', (e) => {
+        if (e.target.id === 'facultad') {
+          const btnAgregarCarrera = document.getElementById('btnAgregarCarrera');
+          btnAgregarCarrera.disabled = !e.target.value;
+        }
+      });
+
+      // Cerrar modales con Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          cerrarModalFacultad();
+          cerrarModalCarrera();
+          if (window.cerrarModalVerPaciente) cerrarModalVerPaciente();
+          if (window.cerrarModalEditarPaciente) cerrarModalEditarPaciente();
+        }
+      });
+      
+      // Cerrar modales al hacer clic fuera
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+          if (e.target.id === 'modalNuevaFacultad') cerrarModalFacultad();
+          if (e.target.id === 'modalNuevaCarrera') cerrarModalCarrera();
+          if (e.target.id === 'modalVerPaciente' && window.cerrarModalVerPaciente) cerrarModalVerPaciente();
+          if (e.target.id === 'modalEditarPaciente' && window.cerrarModalEditarPaciente) cerrarModalEditarPaciente();
+        }
+      });
+    });
+
+    // Hacer funciones globales
+    window.mostrarModalNuevaFacultad = mostrarModalNuevaFacultad;
+    window.cerrarModalFacultad = cerrarModalFacultad;
+    window.mostrarModalNuevaCarrera = mostrarModalNuevaCarrera;
+    window.cerrarModalCarrera = cerrarModalCarrera;
   </script>
 </body>
 </html>

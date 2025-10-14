@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Operaciones / Control - Medical Developer</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Arial', sans-serif; min-height: 100vh; background: url('../img/medical-background.png?v=1') center center / cover no-repeat; position: relative; overflow-x: hidden; }
@@ -11,6 +12,72 @@
     header { background: linear-gradient(135deg, #7dd3fc, #fef3c7); color: #1f2937; text-align: center; padding: 20px; position: relative; box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3); z-index: 100; }
     header h1 { margin: 0; font-size: 28px; font-weight: bold; }
     header .icon { position: absolute; top: 20px; right: 20px; font-size: 20px; cursor: pointer; }
+
+    .user-icon {
+      position: relative;
+    }
+
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: none;
+      z-index: 1000;
+      min-width: 180px;
+    }
+
+    .user-dropdown.show {
+      display: block;
+    }
+
+    .user-dropdown .dropdown-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      background: #f9f9f9;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .user-dropdown .username {
+      font-weight: bold;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .user-dropdown .user-role {
+      color: #666;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .user-dropdown .dropdown-item {
+      display: block;
+      padding: 12px 20px;
+      color: #333;
+      text-decoration: none;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .user-dropdown .dropdown-item:hover {
+      background: #f5f5f5;
+    }
+
+    .user-dropdown .dropdown-item.logout {
+      border-top: 1px solid #eee;
+      color: #dc3545;
+    }
+
+    .user-dropdown .dropdown-item.logout:hover {
+      background: #f8d7da;
+    }
     .back-btn { position: absolute; top: 20px; left: 20px; background: rgba(255, 255, 255, 0.2); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 18px; color: #1f2937; transition: all 0.3s ease; }
     .back-btn:hover { background: rgba(255, 255, 255, 0.3); transform: translateY(-1px); }
     .main-layout { display: flex; min-height: calc(100vh - 68px); }
@@ -31,12 +98,22 @@
      Oculta la sidebar y el botón de volver, pero mantiene visible el título y el usuario/rol
      en el header (p. ej. 'Medical Developer' y 'Administrador'). */
    body.compact .sidebar { display: none !important; }
-   /* Ocultar únicamente el botón de retroceso y compactar el header visualmente */
-   body.compact header { background: transparent; box-shadow: none; padding: 8px 10px; }
-   body.compact header .back-btn { display: none !important; }
+   /* Mantener header visible con estilos normales en modo compacto */
+   body.compact header { 
+     background: linear-gradient(135deg, #7dd3fc, #fef3c7); 
+     box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3); 
+     padding: 20px; 
+   }
+   /* Mantener el botón de regresar visible en modo compacto */
+   body.compact header .back-btn { 
+     display: block !important; 
+     position: absolute;
+     top: 20px;
+     left: 20px;
+   }
    /* Mantener el título y el icono de usuario visibles y en su sitio */
-   body.compact header h1 { display: block; margin: 0 auto; text-align: center; font-size: 22px; }
-   body.compact header .icon, body.compact header #userIcon { display: block; position: absolute; right: 12px; top: 8px; }
+   body.compact header h1 { display: block; margin: 0; text-align: center; font-size: 28px; }
+   body.compact header .icon, body.compact header #userIcon { display: block; position: absolute; right: 20px; top: 20px; }
    body.compact .main-layout { min-height: calc(100vh - 0px); }
    /* Contener y centrar el contenido para que no se vea desajustado */
    body.compact .content { padding: 8px 12px; display: flex; justify-content: center; }
@@ -127,12 +204,24 @@
 <body>
   <header>
     <button class="back-btn" onclick="window.location.href='../menuInicio.html'" title="Volver al Menú">←</button>
-    <div class="icon" id="userIcon"><span id="userName" class="user-name"></span>
-      <div id="userDropdown" class="user-dropdown">
-        <button id="logoutBtn">Cerrar sesión</button>
+    <h1>Operaciones / Control</h1>
+    <div class="user-icon icon" id="userIcon">
+      <span id="userName"></span>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="dropdown-header">
+          <div class="username" id="dropdownUserName"></div>
+          <div class="user-role" id="dropdownUserRole"></div>
+        </div>
+        <button class="dropdown-item" id="profileBtn">
+          <i class="fas fa-user" style="margin-right: 8px;"></i>
+          Ver perfil
+        </button>
+        <button class="dropdown-item logout" id="logoutBtn">
+          <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i>
+          Cerrar sesión
+        </button>
       </div>
     </div>
-    <h1>Medical Developer - Operaciones / Control</h1>
   </header>
 
   <div class="main-layout">

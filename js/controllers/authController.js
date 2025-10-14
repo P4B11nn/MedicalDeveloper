@@ -53,7 +53,12 @@ function handleLogin() {
   console.log('Intento de inicio de sesión con:', matriculaOId);
   
   if (!matriculaOId || !contrasena) {
-    alert('Por favor ingresa matrícula/ID y contraseña');
+    // Usar el sistema de mensajes si está disponible, sino usar alert
+    if (typeof mostrarMensaje === 'function') {
+      mostrarMensaje('warning', '⚠️ Campos Requeridos', 'Por favor ingresa tu matrícula/ID y contraseña para continuar.');
+    } else {
+      alert('Por favor ingresa matrícula/ID y contraseña');
+    }
     return;
   }
   
@@ -93,10 +98,18 @@ function handleLogin() {
       window.location.href = '/menuInicio.html';
     } catch (error) {
       console.error('Error al redirigir:', error);
-      alert('Error al redirigir al menú. Por favor intente de nuevo.');
+      if (typeof mostrarMensaje === 'function') {
+        mostrarMensaje('error', '❌ Error de Redirección', 'Error al acceder al menú principal. Actualiza la página e intenta nuevamente.');
+      } else {
+        alert('Error al redirigir al menú. Por favor intente de nuevo.');
+      }
     }
   } else {
-    alert('ID/Matrícula o contraseña incorrecta.');
+    if (typeof mostrarMensaje === 'function') {
+      mostrarMensaje('error', '❌ Credenciales Incorrectas', 'ID/Matrícula o contraseña incorrecta. Verifica tus datos e intenta nuevamente.');
+    } else {
+      alert('ID/Matrícula o contraseña incorrecta.');
+    }
   }
 }
 

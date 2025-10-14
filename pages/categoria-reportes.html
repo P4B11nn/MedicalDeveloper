@@ -57,6 +57,72 @@
       cursor: pointer;
     }
 
+    .user-icon {
+      position: relative;
+    }
+
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: none;
+      z-index: 1000;
+      min-width: 180px;
+    }
+
+    .user-dropdown.show {
+      display: block;
+    }
+
+    .user-dropdown .dropdown-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      background: #f9f9f9;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .user-dropdown .username {
+      font-weight: bold;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .user-dropdown .user-role {
+      color: #666;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .user-dropdown .dropdown-item {
+      display: block;
+      padding: 12px 20px;
+      color: #333;
+      text-decoration: none;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .user-dropdown .dropdown-item:hover {
+      background: #f5f5f5;
+    }
+
+    .user-dropdown .dropdown-item.logout {
+      border-top: 1px solid #eee;
+      color: #dc3545;
+    }
+
+    .user-dropdown .dropdown-item.logout:hover {
+      background: #f8d7da;
+    }
+
     .back-btn {
       position: absolute;
       top: 20px;
@@ -70,6 +136,11 @@
       font-size: 18px;
       color: #1f2937;
       transition: all 0.3s ease;
+    }
+    
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
     }
 
     .back-btn:hover {
@@ -327,16 +398,25 @@
 <body>
   <header>
     <button class="back-btn" onclick="window.location.href='../menuInicio.html'" title="Volver al Menú">←</button>
-    <div class="icon" id="userIcon"><span id="userName" style="font-weight:bold; margin-left:8px;"></span>
-      <div id="userDropdown" style="display:none; position:absolute; top:40px; right:0; background:white; color:#333; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:180px; z-index:10;">
-        <button id="startServiceBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left;">Iniciar servicio</button>
-        <button id="logoutBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left;">Cerrar sesión</button>
+    <h1>Reportes</h1>
+    <div class="user-icon icon" id="userIcon">
+      <span id="userName"></span>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="dropdown-header">
+          <div class="username" id="dropdownUserName"></div>
+          <div class="user-role" id="dropdownUserRole"></div>
+        </div>
+        <button class="dropdown-item" id="profileBtn">
+          <i class="fas fa-user" style="margin-right: 8px;"></i>
+          Ver perfil
+        </button>
+        <button class="dropdown-item logout" id="logoutBtn">
+          <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i>
+          Cerrar sesión
+        </button>
       </div>
     </div>
-    <h1>Medical Developer - Reportes</h1>
   </header>
-
-  <button class="back-btn" onclick="window.location.href='../menuInicio.html'" title="Volver al Menú">←</button>
 
   <div class="main-layout">
     <div class="sidebar">

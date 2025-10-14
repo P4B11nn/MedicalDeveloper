@@ -157,7 +157,6 @@ header .icon { position: absolute; top: 20px; right: 20px; font-size: 20px; curs
 .status-pending { background: rgba(245,158,11,0.1); color: #d97706; border: 1px solid rgba(245,158,11,0.3); }
 .phone-number { color: #06b6d4; text-decoration: none; font-weight: 500; }
 .phone-number:hover { text-decoration: underline; }
-.patient-id { color: #06b6d4; font-weight: 600; font-family: monospace; }
 .warning-text { color: #f59e0b; font-size: 0.8rem; font-style: italic; }
 .form-section h4 { display:flex; align-items:center; gap:8px; margin-bottom:20px; }
 .pending-patients-alert { background: linear-gradient(135deg, #fef3c7, #fed7aa); border: 1px solid #f59e0b; border-radius: 12px; padding: 20px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(245,158,11,0.1); }
@@ -211,6 +210,66 @@ header .icon { position: absolute; top: 20px; right: 20px; font-size: 20px; curs
 .pending-alert { background: #fef3c7; padding: 15px; border-radius: 12px; margin-bottom: 20px; border-left: 4px solid #f59e0b; }
 .badge-inline { margin-right: 8px; }
 .badge-blue { background: #3b82f6; color: white; }
+
+/* Badges específicos */
+.career-badge { 
+  background: #8b5cf6; 
+  color: white; 
+  padding: 4px 8px; 
+  border-radius: 15px; 
+  font-size: 0.75rem; 
+  font-weight: 600; 
+  cursor: help; 
+  position: relative;
+  display: inline-block;
+  transition: all 0.2s ease;
+}
+
+.career-badge:hover {
+  background: #7c3aed;
+  transform: translateY(-1px);
+}
+
+/* Tooltip para mostrar nombre completo */
+.career-badge::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 1000;
+  margin-bottom: 5px;
+}
+
+.career-badge::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #1f2937;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+.career-badge:hover::after,
+.career-badge:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
 .icon-blue { color: #06b6d4; }
 .icon-amber { color: #f59e0b; }
 .avatar-green { background: #10b981; color: white; }
@@ -302,4 +361,116 @@ header .icon { position: absolute; top: 20px; right: 20px; font-size: 20px; curs
   transform: translateY(-3px);
   box-shadow: 0 18px 40px rgba(0,0,0,0.08);
   background: #ffffff;
+}
+
+/* ========= COMPACT TABLE STYLES ========= */
+
+/* Compact table styles */
+.patients-table {
+  font-size: 0.85rem;
+}
+
+.patients-table td {
+  padding: 8px 6px;
+  vertical-align: middle;
+}
+
+.patients-table th {
+  padding: 10px 6px;
+  font-size: 0.8rem;
+}
+
+/* Status icons - compact and colorful */
+.status-icon {
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.status-icon:hover {
+  transform: scale(1.2);
+}
+
+.status-complete {
+  color: #28a745;
+}
+
+.status-pending {
+  color: #ffc107;
+}
+
+.status-unknown {
+  color: #6c757d;
+}
+
+/* Actions cell styles */
+.actions-cell {
+  text-align: center;
+  padding: 6px 4px !important;
+  white-space: nowrap;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  margin: 0 2px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.view-btn:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+.edit-btn:hover {
+  background-color: rgba(40, 167, 69, 0.1);
+}
+
+.delete-btn:hover {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+/* More compact badges */
+.age-badge {
+  padding: 2px 6px;
+  font-size: 0.7rem;
+}
+
+.badge-blue {
+  padding: 2px 6px;
+  font-size: 0.7rem;
+}
+
+.faculty-badge {
+  padding: 2px 6px;
+  font-size: 0.7rem;
+}
+
+.badge-inline {
+  padding: 2px 4px;
+  font-size: 0.65rem;
+}
+
+/* Career badge more compact */
+.career-badge { 
+  background: #8b5cf6; 
+  color: white; 
+  padding: 3px 6px; 
+  border-radius: 12px; 
+  font-size: 0.7rem; 
+  font-weight: 600; 
+  cursor: help; 
+  position: relative;
+  display: inline-block;
+  transition: all 0.2s ease;
 }

@@ -66,7 +66,7 @@ function generateUniqueId(items, prefix) {
 function inicializarDatos() {
     if (!localStorage.getItem(GRUPOS_KEY)) {
         localStorage.setItem(GRUPOS_KEY, JSON.stringify([
-            { id: "G001", nombre: "Grupo Alpha", turno: "Matutino", horario: "08:00 - 16:00", miembros: ["pract"] }
+            { id: "G001", nombre: "Grupo Alpha", turno: "Matutino", horario: "08:00 - 16:00" }
         ]));
     }
     if (!localStorage.getItem(MODULOS_KEY)) {
@@ -123,8 +123,7 @@ export const gestionModel = {
                 id: newId,
                 nombre: grupo.nombre,
                 turno: grupo.turno,
-                horario: grupo.horario,
-                miembros: grupo.miembros || []
+                horario: grupo.horario
             };
             
             // Guardar en localStorage
@@ -237,20 +236,34 @@ export const gestionModel = {
      */
     asignarUsuarioAGrupo: (grupoId, usuarioId) => {
         try {
-            const grupos = gestionModel.getGrupos();
-            const grupoIndex = grupos.findIndex(g => g.id === grupoId);
-            
-            if (grupoIndex === -1) {
+            // Verificar que el grupo existe
+            const grupo = gestionModel.getGrupoById(grupoId);
+            if (!grupo) {
                 throw new Error(`Grupo con ID ${grupoId} no encontrado`);
             }
             
-            // Verificar si el usuario ya está asignado
-            if (!grupos[grupoIndex].miembros.includes(usuarioId)) {
-                grupos[grupoIndex].miembros.push(usuarioId);
-                localStorage.setItem(GRUPOS_KEY, JSON.stringify(grupos));
+            // Obtener todos los usuarios
+            const usuarios = authModel.getAllUsers();
+            const usuarioIndex = usuarios.findIndex(u => u.id === usuarioId);
+            
+            if (usuarioIndex === -1) {
+                throw new Error(`Usuario con ID ${usuarioId} no encontrado`);
             }
             
-            return true;
+            // Verificar que es un practicante
+            if (usuarios[usuarioIndex].rol !== 'practicante') {
+                throw new Error('Solo se pueden asignar practicantes a grupos');
+            }
+            
+            // Asignar el grupo al usuario
+            const usuarioActualizado = { ...usuarios[usuarioIndex], grupoId: grupoId };
+            const resultado = authModel.updateUser(usuarioIndex, usuarioActualizado);
+            
+            if (resultado) {
+                console.log(`✅ Usuario ${usuarioId} asignado al grupo ${grupoId}`);
+            }
+            
+            return resultado;
         } catch (error) {
             console.error('Error al asignar usuario a grupo:', error);
             return false;
@@ -265,18 +278,35 @@ export const gestionModel = {
      */
     quitarUsuarioDeGrupo: (grupoId, usuarioId) => {
         try {
-            const grupos = gestionModel.getGrupos();
-            const grupoIndex = grupos.findIndex(g => g.id === grupoId);
-            
-            if (grupoIndex === -1) {
+            // Verificar que el grupo existe
+            const grupo = gestionModel.getGrupoById(grupoId);
+            if (!grupo) {
                 throw new Error(`Grupo con ID ${grupoId} no encontrado`);
             }
             
-            // Quitar el usuario del grupo
-            grupos[grupoIndex].miembros = grupos[grupoIndex].miembros.filter(id => id !== usuarioId);
-            localStorage.setItem(GRUPOS_KEY, JSON.stringify(grupos));
+            // Obtener todos los usuarios
+            const usuarios = authModel.getAllUsers();
+            const usuarioIndex = usuarios.findIndex(u => u.id === usuarioId);
             
-            return true;
+            if (usuarioIndex === -1) {
+                throw new Error(`Usuario con ID ${usuarioId} no encontrado`);
+            }
+            
+            // Verificar que el usuario está asignado a este grupo
+            if (usuarios[usuarioIndex].grupoId !== grupoId) {
+                console.warn(`El usuario ${usuarioId} no está asignado al grupo ${grupoId}`);
+                return false;
+            }
+            
+            // Quitar la asignación del grupo (establecer grupoId como null)
+            const usuarioActualizado = { ...usuarios[usuarioIndex], grupoId: null };
+            const resultado = authModel.updateUser(usuarioIndex, usuarioActualizado);
+            
+            if (resultado) {
+                console.log(`✅ Usuario ${usuarioId} removido del grupo ${grupoId}`);
+            }
+            
+            return resultado;
         } catch (error) {
             console.error('Error al quitar usuario de grupo:', error);
             return false;

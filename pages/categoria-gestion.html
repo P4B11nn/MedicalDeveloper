@@ -16,27 +16,111 @@
     header {
       background: linear-gradient(135deg, #7dd3fc, #fef3c7);
       color: #1f2937;
-      padding: 15px 20px;
-      display: flex;
-      align-items: center;
+      text-align: center;
+      padding: 20px;
+      position: relative;
       box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
-      position: relative; /* Para posicionar correctamente el dropdown */
-      z-index: 999; /* Z-index elevado pero menor que los modales */
+      z-index: 100;
     }
-    
+
     header h1 {
       margin: 0;
-      flex-grow: 1;
-      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    header .icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .user-icon {
+      position: relative;
+    }
+
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: none;
+      z-index: 1000;
+      min-width: 180px;
+    }
+
+    .user-dropdown.show {
+      display: block;
+    }
+
+    .user-dropdown .dropdown-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #eee;
+      background: #f9f9f9;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .user-dropdown .username {
+      font-weight: bold;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .user-dropdown .user-role {
+      color: #666;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .user-dropdown .dropdown-item {
+      display: block;
+      padding: 12px 20px;
+      color: #333;
+      text-decoration: none;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .user-dropdown .dropdown-item:hover {
+      background: #f5f5f5;
+    }
+
+    .user-dropdown .dropdown-item.logout {
+      border-top: 1px solid #eee;
+      color: #dc3545;
+    }
+
+    .user-dropdown .dropdown-item.logout:hover {
+      background: #f8d7da;
     }
     
     .back-btn {
-      background: none;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(255, 255, 255, 0.2);
       border: none;
-      font-size: 24px;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
       cursor: pointer;
-      padding: 0 10px;
+      font-size: 18px;
       color: #1f2937;
+      transition: all 0.3s ease;
+    }
+    
+    .back-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
     }
     
     /* Estilos para dropdown y usuario */
@@ -297,11 +381,21 @@
   <header>
     <button class="back-btn" onclick="window.location.href='/menuInicio.html'">←</button>
     <h1>Gestión Administrativa</h1>
-    <div class="icon" id="userIcon">
-      <span id="userName" style="font-weight:bold; margin-right:8px;"></span>
-      <div id="userDropdown" style="display:none; position:fixed; top:60px; right:10px; background:white; color:#333; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); min-width:180px; z-index:1000;">
-        <button id="startServiceBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left;">Iniciar servicio</button>
-        <button id="logoutBtn" style="width:100%; padding:10px; border:none; background:none; cursor:pointer; text-align:left;">Cerrar sesión</button>
+    <div class="user-icon icon" id="userIcon">
+      <span id="userName"></span>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="dropdown-header">
+          <div class="username" id="dropdownUserName"></div>
+          <div class="user-role" id="dropdownUserRole"></div>
+        </div>
+        <button class="dropdown-item" id="profileBtn">
+          <i class="fas fa-user" style="margin-right: 8px;"></i>
+          Ver perfil
+        </button>
+        <button class="dropdown-item logout" id="logoutBtn">
+          <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i>
+          Cerrar sesión
+        </button>
       </div>
     </div>
   </header>

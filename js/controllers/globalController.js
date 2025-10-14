@@ -152,8 +152,16 @@ function setupUserDropdown() {
     userIcon.addEventListener('click', (e) => {
       e.stopPropagation();
       const isVisible = userDropdown.style.display === 'block';
+      
       userDropdown.style.display = isVisible ? 'none' : 'block';
+      
       console.log(`GlobalController: Dropdown ${isVisible ? 'cerrado' : 'abierto'}`);
+      
+      // Emitir evento de toggle del dropdown
+      eventBus.emit(EVENT_NAMES.USER_DROPDOWN_TOGGLED, { 
+        isVisible: !isVisible,
+        source: 'user_icon_click' 
+      });
     });
 
     // Cerrar dropdown al hacer clic fuera

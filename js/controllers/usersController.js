@@ -142,7 +142,13 @@ function setupNewUserForm() {
           gestionModel.asignarUsuarioAGrupo(userData.grupoId, userData.id);
         }
         
-        alert('¡Usuario Registrado! El usuario ha sido registrado correctamente.');
+        if (typeof mostrarMensaje === 'function') {
+          const usuarioActual = typeof obtenerUsuarioActual === 'function' ? obtenerUsuarioActual() : { nombre: 'Administrador' };
+          mostrarMensaje('success', '✅ Usuario Registrado', 
+            `${userData.nombre} ha sido registrado exitosamente en el sistema.\nMatrícula/ID: ${userData.id}\nRol: ${userData.rol}\n\nRegistrado por: ${usuarioActual.nombre}`, 6000);
+        } else {
+          alert('¡Usuario Registrado! El usuario ha sido registrado correctamente.');
+        }
         formUsuario.reset();
         
         // Vuelve a la sección de personal para ver al nuevo usuario

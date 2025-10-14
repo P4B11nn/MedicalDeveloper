@@ -98,12 +98,28 @@ export function initOperationsController() {
   // Hacer disponibles funciones de debug
   window.OperationsDebug = {
     limpiarRegistros: () => {
-      const confirmacion = confirm('¿Estás seguro de que deseas limpiar TODOS los registros?\n\nEsta acción no se puede deshacer.');
-      if (confirmacion) {
-        limpiarRegistros();
-        mostrarTodosLosRegistros();
-        console.log('OperationsDebug: Registros limpiados');
-        alert('Registros limpiados exitosamente');
+      if (typeof mostrarConfirmacion === 'function') {
+        mostrarConfirmacion('🗑️ Limpiar Registros', 
+          '¿Estás seguro de que deseas limpiar TODOS los registros de entradas y salidas?\n\nEsta acción no se puede deshacer.',
+          () => {
+            limpiarRegistros();
+            mostrarTodosLosRegistros();
+            console.log('OperationsDebug: Registros limpiados');
+            if (typeof mostrarMensaje === 'function') {
+              mostrarMensaje('success', '✅ Registros Limpiados', 'Todos los registros de entradas y salidas han sido eliminados exitosamente.');
+            } else {
+              alert('Registros limpiados exitosamente');
+            }
+          }
+        );
+      } else {
+        const confirmacion = confirm('¿Estás seguro de que deseas limpiar TODOS los registros?\n\nEsta acción no se puede deshacer.');
+        if (confirmacion) {
+          limpiarRegistros();
+          mostrarTodosLosRegistros();
+          console.log('OperationsDebug: Registros limpiados');
+          alert('Registros limpiados exitosamente');
+        }
       }
     },
     mostrarRegistros: () => {
@@ -236,7 +252,11 @@ function setupSimpleExport() {
                 console.log(`Exportando ${historial.length} registros`);
             } else {
                 console.warn('No hay datos para exportar');
-                alert('No hay datos para exportar.');
+                if (typeof mostrarMensaje === 'function') {
+                  mostrarMensaje('info', 'ℹ️ Sin Datos', 'No hay registros de entradas y salidas para exportar.');
+                } else {
+                  alert('No hay datos para exportar.');
+                }
             }
         });
         console.log('Botón de exportar CSV configurado');

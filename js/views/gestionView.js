@@ -6,6 +6,7 @@ import * as modalUtil from '../utils/modalUtil.js'; // Importamos modalUtil est�
 
 // Variables globales para mantener referencias a los contenedores
 let modulosContainer = null;
+let gruposContainer = null;
 
 // Datos de ejemplo para inicializar el sistema si no existen datos
 const datosIniciales = {
@@ -56,9 +57,9 @@ const datosIniciales = {
         }
     ],
     grupos: [
-        { nombre: "Grupo A", turno: "Matutino", horario: "8:00 - 14:00", miembros: [] },
-        { nombre: "Grupo B", turno: "Vespertino", horario: "14:00 - 20:00", miembros: [] },
-        { nombre: "Grupo C", turno: "Nocturno", horario: "20:00 - 8:00", miembros: [] }
+        { nombre: "Grupo A", turno: "Matutino", horario: "8:00 - 14:00" },
+        { nombre: "Grupo B", turno: "Vespertino", horario: "14:00 - 20:00" },
+        { nombre: "Grupo C", turno: "Nocturno", horario: "20:00 - 8:00" }
     ]
 };
 
@@ -71,9 +72,15 @@ export function init() {
     
     // Obtener referencias a los contenedores
     modulosContainer = document.getElementById('modulos-section');
+    gruposContainer = document.getElementById('grupos-section');
     
     if (!modulosContainer) {
         console.error('GestionView: Contenedor de módulos no encontrado. La vista no puede funcionar correctamente.');
+        return;
+    }
+    
+    if (!gruposContainer) {
+        console.error('GestionView: Contenedor de grupos no encontrado. La vista no puede funcionar correctamente.');
         return;
     }
     
@@ -100,6 +107,25 @@ export function init() {
     eventBus.on('gestion-modulo-updated', () => {
         if (modulosContainer.classList.contains('active')) {
             renderGestionModulos(modulosContainer);
+        }
+    });
+
+    // Escuchar eventos para actualizar la vista de grupos
+    eventBus.on(EVENT_NAMES.GROUP_CREATED, () => {
+        if (gruposContainer.classList.contains('active')) {
+            renderGestionGrupos(gruposContainer);
+        }
+    });
+    
+    eventBus.on(EVENT_NAMES.GROUP_UPDATED, () => {
+        if (gruposContainer.classList.contains('active')) {
+            renderGestionGrupos(gruposContainer);
+        }
+    });
+    
+    eventBus.on(EVENT_NAMES.GROUP_DELETED, () => {
+        if (gruposContainer.classList.contains('active')) {
+            renderGestionGrupos(gruposContainer);
         }
     });
     
@@ -206,6 +232,11 @@ export function renderGestionModulos(container) {
                     }
                 });
             }
+            else if (target.classList.contains('assign-grupo')) {
+                const moduloId = target.dataset.moduloid;
+                console.log('GestionView: Solicitando asignación de grupo a módulo', moduloId);
+                mostrarModalAsignarGrupo(moduloId);
+            }
         });
     }
 }
@@ -224,6 +255,7 @@ function renderTablaModulos(modulos) {
                     <th>Horario de Atención</th>
                     <th>Días de Atención</th>
                     <th>Estado</th>
+                    <th>Grupo Asignado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -241,8 +273,11 @@ function renderTablaModulos(modulos) {
                                     ${modulo.estado}
                                 </span>
                             </td>
+                            <td>${formatearGrupoAsignado(modulo.grupoAsignadoId)}</td>
                             <td class="actions">
-                                
+                                <button class="btn-icon assign-grupo" title="Asignar grupo" data-moduloid="${modulo.id}">
+                                    <i class="fas fa-users"></i>
+                                </button>
                                 <button class="btn-icon edit-modulo" title="Editar" data-id="${modulo.id}">
                                     <i class="fas fa-edit"></i>
                                 </button>
@@ -1224,6 +1259,8 @@ function mostrarModalAsignarGrupo(moduloId) {
  * Muestra un modal para asignar practicantes a un grupo
  */
 function mostrarModalAsignarPracticantes(grupoId) {
+    // Usar authModel que ya está importado al inicio del archivo
+    
     // Verificar que el usuario actual sea admin
     const currentUser = authModel.getCurrentUser();
     if (!currentUser || currentUser.rol !== 'admin') {
@@ -1570,36 +1607,25 @@ function mostrarModalAsignarPracticantes(grupoId) {
                 title: 'Quitar Practicante',
                 message: `¿Estás seguro de quitar a ${usuario.nombre} ${usuario.apellidos || ''} del grupo "${grupo.nombre}"?`,
                 onConfirm: () => {
-                    // Quitar del grupo en el modelo de gestión
-                    gestionModel.quitarUsuarioDeGrupo(grupoId, usuarioId);
-                    
-                    // Actualizar el usuario quitando su grupoId
-                    const usuarios = authModel.getAllUsers();
-                    const userIndex = usuarios.findIndex(u => u.id === usuarioId);
-                    if (userIndex !== -1) {
-                        const updatedUser = { ...usuarios[userIndex], grupoId: null };
-                        authModel.updateUser(userIndex, updatedUser);
-                        
-                        // Emitir evento de usuario actualizado
-                        eventBus.emit(EVENT_NAMES.USER_UPDATED, {
-                            user: updatedUser,
-                            previousGroup: grupoId,
-                            action: 'removed_from_group'
-                        });
-                    }
+                    console.log(`🔄 Intentando quitar usuario ${usuarioId} del grupo ${grupoId}`);
+                    // Solo quitar del grupo en el modelo de gestión
+                    const resultado = gestionModel.quitarUsuarioDeGrupo(grupoId, usuarioId);
+                    console.log(`${resultado ? '✅' : '❌'} Resultado de eliminación:`, resultado);
                     
                     modalContainer.remove();
                     
-                    // Mostrar notificación de éxito
-                    modalUtil.mostrarAlerta({
-                        title: 'Practicante Removido',
-                        message: `${usuario.nombre} ha sido removido del grupo correctamente.`,
-                        type: 'success'
-                    });
+                    // Mostrar notificación en consola
+                    console.log(`✅ ${usuario.nombre} ha sido removido del grupo correctamente.`);
                     
-                    // Actualizar vista: si la sección de módulos está activa, re-renderizarla
-                    if (modulosContainer && modulosContainer.classList.contains('active')) {
-                        renderGestionModulos(modulosContainer);
+                    // Re-renderizar la sección de grupos directamente
+                    console.log('🔍 GruposContainer encontrado (eliminación):', gruposContainer);
+                    console.log('🔍 Container existe (eliminación):', !!gruposContainer);
+                    console.log('🔍 Container clases (eliminación):', gruposContainer?.classList.toString());
+                    
+                    if (gruposContainer) {
+                        console.log('🔄 Re-renderizando grupos después de eliminación (forzado)...');
+                        renderGestionGrupos(gruposContainer);
+                        console.log('✅ Grupos re-renderizados después de eliminación');
                     }
                 }
             });
@@ -1621,63 +1647,37 @@ function mostrarModalAsignarPracticantes(grupoId) {
         }
 
         // Asignar cada practicante seleccionado al grupo
-        const asignacionesExitosas = [];
-        const asignacionesFallidas = [];
-
+        let asignacionesExitosas = 0;
+        
         practicantesSeleccionados.forEach(usuarioId => {
-            // Asignar en el modelo de gestión
-            const resultadoGestion = gestionModel.asignarUsuarioAGrupo(grupoId, usuarioId);
-            
-            if (resultadoGestion) {
-                // Actualizar el usuario con el nuevo grupoId
-                const usuarios = authModel.getAllUsers();
-                const userIndex = usuarios.findIndex(u => u.id === usuarioId);
-                
-                if (userIndex !== -1) {
-                    const updatedUser = { ...usuarios[userIndex], grupoId: grupoId };
-                    const updateResult = authModel.updateUser(userIndex, updatedUser);
-                    
-                    if (updateResult) {
-                        asignacionesExitosas.push(usuarios[userIndex]);
-                        
-                        // Emitir evento de usuario actualizado
-                        eventBus.emit(EVENT_NAMES.USER_UPDATED, {
-                            user: updatedUser,
-                            newGroup: grupoId,
-                            action: 'assigned_to_group'
-                        });
-                    } else {
-                        asignacionesFallidas.push(usuarios[userIndex]);
-                    }
-                }
-            } else {
-                asignacionesFallidas.push({ id: usuarioId });
+            console.log(`🔄 Intentando asignar usuario ${usuarioId} al grupo ${grupoId}`);
+            // Solo asignar en el modelo de gestión
+            const resultado = gestionModel.asignarUsuarioAGrupo(grupoId, usuarioId);
+            console.log(`${resultado ? '✅' : '❌'} Resultado de asignación:`, resultado);
+            if (resultado) {
+                asignacionesExitosas++;
             }
         });
 
-        // Mostrar resultado
-        if (asignacionesExitosas.length > 0) {
-            const nombresAsignados = asignacionesExitosas.map(u => u.nombre).join(', ');
-            modalUtil.mostrarAlerta({
-                title: 'Asignación Exitosa',
-                message: `Se han asignado ${asignacionesExitosas.length} practicante(s) al grupo "${grupo.nombre}": ${nombresAsignados}`,
-                type: 'success'
-            });
-        }
-
-        if (asignacionesFallidas.length > 0) {
-            modalUtil.mostrarAlerta({
-                title: 'Error en Asignación',
-                message: `No se pudieron asignar ${asignacionesFallidas.length} practicante(s) al grupo.`,
-                type: 'error'
-            });
+        // Mostrar resultado en consola
+        if (asignacionesExitosas > 0) {
+            console.log(`✅ Asignados ${asignacionesExitosas} practicante(s) al grupo "${grupo.nombre}"`);
         }
 
         modalContainer.remove();
         
-        // Actualizar vista en modulos si aplica
-        if (modulosContainer && modulosContainer.classList.contains('active')) {
-            renderGestionModulos(modulosContainer);
+        // Re-renderizar la sección de grupos directamente
+        console.log('🔍 GruposContainer encontrado:', gruposContainer);
+        console.log('🔍 Container existe:', !!gruposContainer);
+        console.log('🔍 Container clases:', gruposContainer?.classList.toString());
+        console.log('🔍 Container activo:', gruposContainer?.classList.contains('active'));
+        
+        if (gruposContainer) {
+            console.log('🔄 Re-renderizando grupos (forzado)...');
+            renderGestionGrupos(gruposContainer);
+            console.log('✅ Grupos re-renderizados');
+        } else {
+            console.error('❌ gruposContainer no está disponible');
         }
     });
 }
@@ -1710,10 +1710,33 @@ function formatearDiasAtencion(diasAtencion) {
 }
 
 /**
+ * Formatea el grupo asignado para mostrar en la tabla de módulos
+ * @param {string} grupoAsignadoId - ID del grupo asignado al módulo
+ * @return {string} Texto formateado del grupo
+ */
+function formatearGrupoAsignado(grupoAsignadoId) {
+    if (!grupoAsignadoId) {
+        return '<span style="color: #9ca3af;">Sin grupo</span>';
+    }
+    
+    // Obtener el grupo desde el modelo
+    const grupo = gestionModel.getGrupoById(grupoAsignadoId);
+    
+    if (!grupo) {
+        return '<span style="color: #ef4444;">Grupo no encontrado</span>';
+    }
+    
+    return `<span style="color: #059669; font-weight: 500;">${grupo.nombre}</span>`;
+}
+
+/**
  * Renderiza la secci f3n de grupos
  */
 export function renderGestionGrupos(container) {
     const grupos = gestionModel.getGrupos();
+    console.log('🔄 Renderizando grupos. Total de grupos:', grupos.length);
+    console.log('📋 Datos de grupos:', grupos.map(g => ({id: g.id, nombre: g.nombre})));
+    
     container.innerHTML = `
         <h2 class="content-title">Grupos</h2>
         <button class="btn-primary" id="btnNuevoGrupo">
@@ -1765,9 +1788,27 @@ export function renderGestionGrupos(container) {
                         renderGestionGrupos(container);
                     }
                 });
+            } else if (target.classList.contains('assign-practicante')) {
+                const grupoId = target.dataset.grupoid;
+                console.log('GestionView: Solicitando asignación de practicante a grupo', grupoId);
+                mostrarModalAsignarPracticantes(grupoId);
             }
         });
     }
+}
+
+/**
+ * Calcula el número de practicantes asignados a un grupo
+ * @param {string} grupoId - ID del grupo
+ * @returns {number} Número de practicantes asignados
+ */
+function calcularPracticantesEnGrupo(grupoId) {
+    const usuarios = authModel.getAllUsers();
+    return usuarios.filter(usuario => 
+        usuario.rol === 'practicante' && 
+        usuario.grupoId === grupoId &&
+        usuario.activo !== false
+    ).length;
 }
 
 function renderTablaGrupos(grupos) {
@@ -1790,8 +1831,11 @@ function renderTablaGrupos(grupos) {
                         <td>${grupo.nombre}</td>
                         <td>${grupo.turno}</td>
                         <td>${grupo.horario}</td>
-                        <td>${(grupo.miembros || []).length}</td>
+                        <td>${calcularPracticantesEnGrupo(grupo.id)} practicante(s)</td>
                         <td class="actions">
+                            <button class="btn-icon assign-practicante" title="Asignar practicante" data-grupoid="${grupo.id}">
+                                <i class="fas fa-user-plus"></i>
+                            </button>
                             <button class="btn-icon edit-grupo" title="Editar" data-id="${grupo.id}">
                                 <i class="fas fa-edit"></i>
                             </button>

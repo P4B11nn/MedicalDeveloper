@@ -106,7 +106,11 @@ export function asignarGrupo(moduloId) {
     const modulo = gestionModel.getModuloById(moduloId);
     
     if (!modulo) {
-        alert('Módulo no encontrado');
+        if (typeof mostrarMensaje === 'function') {
+          mostrarMensaje('error', '❌ Error', 'Módulo no encontrado. Actualiza la página e intenta nuevamente.');
+        } else {
+          alert('Módulo no encontrado');
+        }
         return;
     }
     

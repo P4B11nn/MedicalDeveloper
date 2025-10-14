@@ -35,19 +35,18 @@
       background: linear-gradient(135deg, #7dd3fc, #fef3c7);
       color: #1f2937;
       text-align: center;
-      padding: 14px 20px;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: var(--header-h);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 20px;
+      position: relative;
       box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
       z-index: 100;
     }
-  header h1{ margin:0; font-size:26px; font-weight:600 }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
     header .icon {
       position: absolute;
       top: 20px;
@@ -439,23 +438,117 @@
   @media (max-width:1000px){ .charts-grid{ grid-template-columns: 1fr; } }
   .chart-card canvas{ width:100% !important; height:220px !important; display:block }
 
-    /* Estilos para el dropdown del usuario */
-    #userIcon {
-      cursor: pointer;
+  /* Dashboard Placeholder Styles */
+  .dashboard-center-message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 500px;
+    padding: 60px 20px;
+    margin-top: 40px;
+  }
+
+  .placeholder-content {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 60px 40px;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+    border: 2px dashed rgba(15, 86, 113, 0.3);
+  }
+
+  .placeholder-icon {
+    font-size: 4rem;
+    color: #0f5671;
+    margin-bottom: 20px;
+    opacity: 0.7;
+  }
+
+  .placeholder-content h2 {
+    color: #0f5671;
+    font-size: 2rem;
+    margin-bottom: 15px;
+    font-weight: 600;
+  }
+
+  .placeholder-content p {
+    color: #64748b;
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+    line-height: 1.6;
+  }
+
+  .dashboard-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 30px 0;
+    text-align: left;
+  }
+
+  .dashboard-features li {
+    padding: 12px 0;
+    color: #475569;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-bottom: 1px solid rgba(15, 86, 113, 0.1);
+  }
+
+  .dashboard-features li:last-child {
+    border-bottom: none;
+  }
+
+  .dashboard-features i {
+    color: #0f5671;
+    font-size: 1.2rem;
+    width: 20px;
+    text-align: center;
+  }
+
+  .development-note {
+    background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
+    padding: 15px 20px;
+    border-radius: 12px;
+    color: #0f5671;
+    font-size: 0.95rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .development-note i {
+    font-size: 1.1rem;
+  }
+
+  @media (max-width: 768px) {
+    .placeholder-content {
+      padding: 40px 25px;
+      margin: 20px;
     }
+    
+    .placeholder-content h2 {
+      font-size: 1.6rem;
+    }
+    
+    .placeholder-icon {
+      font-size: 3rem;
+    }
+  }
+
+    /* Estilos para elementos con inline styles */
     #userName {
       font-weight: bold;
+      margin-left: 8px;
     }
-
-    /* Botón Reportes inactivo (solo usar el submenu) */
-    .disabled-menu-btn {
-      pointer-events: none;
-      opacity: 0.95;
-      cursor: default;
-    }
+    
     #userDropdown {
       display: none;
-      position: absolute;
+      position: fixed;
       top: 40px;
       right: 0;
       background: white;
@@ -463,8 +556,9 @@
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
       min-width: 180px;
-      z-index: 10;
+      z-index: 1000;
     }
+    
     #startServiceBtn, #verPerfilBtn, #logoutBtn {
       width: 100%;
       padding: 10px;
@@ -472,11 +566,17 @@
       background: none;
       cursor: pointer;
       text-align: left;
-      display: flex;
-      align-items: center;
     }
-    #startServiceBtn span, #verPerfilBtn span, #logoutBtn span {
-      margin-right: 10px;
+    
+    #startServiceBtn:hover, #verPerfilBtn:hover, #logoutBtn:hover {
+      background-color: #f3f4f6;
+    }
+
+    /* Botón Reportes inactivo (solo usar el submenu) */
+    .disabled-menu-btn {
+      pointer-events: none;
+      opacity: 0.95;
+      cursor: default;
     }
 
     /* Estilos para el botón de gestión */
@@ -598,31 +698,15 @@
       margin-top: 0;
     }
   </style>
-    <style>
-      /* Estilos para dropdown de usuario */
-      .user-dropdown { position: absolute; right: 0; top: 36px; background: white; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.12); padding: 8px; display: flex; flex-direction: column; gap: 6px; min-width: 160px; z-index: 200; }
-      .user-dropdown button { background: transparent; border: none; padding: 8px 10px; text-align: left; cursor: pointer; border-radius: 6px; transition: background .15s ease; }
-      .user-dropdown button:hover { background: rgba(6,182,212,0.06); }
-      .btn-logout { background: linear-gradient(135deg,#ef4444,#f97316); color: white; padding: 8px 10px; border-radius: 6px; font-weight: 600; }
-      .btn-logout:hover { opacity: 0.95; transform: translateY(-1px); }
-      /* Utility hidden class already used elsewhere */
-      .hidden { display: none !important; }
-    </style>
+
 </head>
 <body>
 
   <header>
-    <div class="icon" id="userIcon">👤 <span id="userName">Administrador</span>
-      <div id="userDropdown" class="hidden user-dropdown">
-        <button id="startServiceBtn">
-          <span>🟢</span> Iniciar servicio
-        </button>
-        <button id="verPerfilBtn">
-          <span>👤</span> Ver perfil
-        </button>
-        <button id="logoutBtn" class="btn-logout">
-          <span>🚪</span> Cerrar sesión
-        </button>
+    <div class="icon" id="userIcon"><span id="userName"></span>
+      <div id="userDropdown">
+        <button id="startServiceBtn">Iniciar servicio</button>
+        <button id="logoutBtn">Cerrar sesión</button>
       </div>
     </div>
     <!-- hamburguesa visible en mobile -->
@@ -692,8 +776,8 @@
 
   <!-- Hero / tarjeta compacta en el área principal -->
   <div class="container">
-    <!-- Dashboard de resumen (widgets) -->
-    <section id="dashboard-summary">
+    <!-- Dashboard de resumen (widgets) - OCULTO TEMPORALMENTE -->
+    <section id="dashboard-summary" style="display: none;">
       <div class="kpi-grid">
         <div class="kpi-card" id="kpi-pacientes">
           <div class="kpi-title">Número Total de Pacientes</div>
@@ -720,8 +804,8 @@
         <small>Consejo: haz clic en una tarjeta para ver la sección correspondiente.</small>
       </div>
     </section>
-  <!-- Gráficos rápidos -->
-  <section id="dashboard-charts">
+  <!-- Gráficos rápidos - OCULTOS TEMPORALMENTE -->
+  <section id="dashboard-charts" style="display: none;">
       <div class="charts-grid">
         <div class="chart-card">
           <h3>Distribución por Facultad</h3>
@@ -736,7 +820,29 @@
           <canvas id="chart-padecimientos"></canvas>
         </div>
       </div>
-    </section>
+  </section>
+
+  <!-- Mensaje Dashboard Temporal -->
+  <section id="dashboard-placeholder" class="dashboard-center-message">
+    <div class="placeholder-content">
+      <div class="placeholder-icon">
+        <i class="fas fa-chart-line"></i>
+      </div>
+      <h2>Dashboard en Desarrollo</h2>
+      <p>En esta área se mostrarán:</p>
+      <ul class="dashboard-features">
+        <li><i class="fas fa-users"></i> Estadísticas de practicantes en servicio  y pacientes en atención</li>
+        <li><i class="fas fa-chart-pie"></i> Gráficas de distribución y estadísticas</li>
+        <li><i class="fas fa-heartbeat"></i> Indicadores de salud general</li>
+        <li><i class="fas fa-calendar-alt"></i> Citas y consultas programadas</li>
+        <li><i class="fas fa-bell"></i> Notificaciones y alertas médicas</li>
+      </ul>
+      <div class="development-note">
+        <i class="fas fa-code"></i>
+        <span>Secciones del sistema médico en desarrollo</span>
+      </div>
+    </div>
+  </section>
   </div>
 
   <!-- Modales -->
@@ -979,7 +1085,8 @@
         // Si no hay datos reales, dejar ejemplos previos
         if(padecimientos.length === 0){ padecimientos = ['Obesidad','Presión alta','Diabetes','Asma','Anemia']; padecimientosValues = [120,95,80,56,42]; }
 
-        // Cargar Chart.js y dibujar (si aún no cargado)
+        // Cargar Chart.js y dibujar (TEMPORALMENTE DESHABILITADO)
+        /*
         try{
           if(typeof Chart === 'undefined'){
             const script = document.createElement('script'); script.src = 'https://cdn.jsdelivr.net/npm/chart.js'; document.head.appendChild(script);
@@ -999,6 +1106,7 @@
           new Chart(ctxPad, { type:'doughnut', data:{ labels: padecimientos, datasets:[{ data: padecimientosValues, backgroundColor:['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6','#06b6d4'] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } } });
 
         }catch(err){ console.warn('No fue posible cargar Chart.js o dibujar gráficos', err); }
+        */
 
       }catch(err){ console.warn('Error cargando datos de reporte/paciente', err); }
     }
