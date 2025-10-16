@@ -438,105 +438,712 @@
   @media (max-width:1000px){ .charts-grid{ grid-template-columns: 1fr; } }
   .chart-card canvas{ width:100% !important; height:220px !important; display:block }
 
-  /* Dashboard Placeholder Styles */
-  .dashboard-center-message {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  /* Dashboard Content Styles */
+  .dashboard-main-content {
+    padding: 20px;
     min-height: 500px;
-    padding: 60px 20px;
-    margin-top: 40px;
   }
 
-  .placeholder-content {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 60px 40px;
-    border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    max-width: 600px;
-    width: 100%;
-    border: 2px dashed rgba(15, 86, 113, 0.3);
+  .role-dashboard {
+    max-width: 1400px;
+    margin: 0 auto;
   }
 
-  .placeholder-icon {
-    font-size: 4rem;
-    color: #0f5671;
-    margin-bottom: 20px;
-    opacity: 0.7;
-  }
-
-  .placeholder-content h2 {
-    color: #0f5671;
-    font-size: 2rem;
-    margin-bottom: 15px;
-    font-weight: 600;
-  }
-
-  .placeholder-content p {
-    color: #64748b;
-    font-size: 1.1rem;
-    margin-bottom: 25px;
-    line-height: 1.6;
-  }
-
-  .dashboard-features {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 30px 0;
-    text-align: left;
-  }
-
-  .dashboard-features li {
-    padding: 12px 0;
-    color: #475569;
-    font-size: 1rem;
+  .dashboard-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 15px;
-    border-bottom: 1px solid rgba(15, 86, 113, 0.1);
+    margin-bottom: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   }
 
-  .dashboard-features li:last-child {
-    border-bottom: none;
-  }
-
-  .dashboard-features i {
+  .dashboard-header h2 {
     color: #0f5671;
-    font-size: 1.2rem;
-    width: 20px;
-    text-align: center;
-  }
-
-  .development-note {
-    background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
-    padding: 15px 20px;
-    border-radius: 12px;
-    color: #0f5671;
-    font-size: 0.95rem;
-    font-weight: 500;
+    margin: 0;
+    font-size: 1.8rem;
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-top: 20px;
   }
 
-  .development-note i {
+  .header-stats {
+    display: flex;
+    gap: 20px;
+  }
+
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .stat-item i {
+    color: #0f5671;
+  }
+
+  /* Grid Layouts */
+  .admin-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 25px;
+  }
+
+  .practitioner-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+  }
+
+  /* Dashboard Cards */
+  .dashboard-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 1px solid rgba(15, 86, 113, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+  }
+
+  .card-header {
+    padding: 20px;
+    border-bottom: 1px solid rgba(15, 86, 113, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  }
+
+  .card-header h3 {
+    margin: 0;
+    color: #0f5671;
     font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Status Indicators */
+  .status-indicator {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .status-indicator.active {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .time-indicator {
+    padding: 4px 12px;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  /* Modules List */
+  .modules-list {
+    padding: 20px;
+  }
+
+  .module-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(15, 86, 113, 0.1);
+  }
+
+  .module-item:last-child {
+    border-bottom: none;
+  }
+
+  .module-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .module-name {
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .module-status {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .module-status.active {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .module-status.maintenance {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .module-stats {
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+
+  /* Consultation Activity */
+  .consultation-activity {
+    padding: 20px;
+  }
+
+  .activity-item {
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(15, 86, 113, 0.1);
+    background: #f8fafc;
+  }
+
+  .activity-item.waiting {
+    background: #fef3c7;
+    border-color: #f59e0b;
+  }
+
+  .activity-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .patient-name {
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .consultation-type {
+    color: #0f5671;
+    font-size: 0.9rem;
+  }
+
+  .activity-details {
+    display: flex;
+    gap: 15px;
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  /* Work Groups Styles */
+  .work-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+  }
+
+  .group-item {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+  }
+
+  .group-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border-color: #3b82f6;
+  }
+
+  .group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .group-name {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .group-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #1e293b;
+  }
+
+  .member-count {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  .group-assignment {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .assigned-module {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  }
+
+  .group-schedule {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid #cbd5e1;
+  }
+
+  .group-members {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 12px;
+  }
+
+  .member-avatars {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .member-avatar:hover {
+    transform: scale(1.1);
+    z-index: 10;
+  }
+
+  .member-avatar.more {
+    background: linear-gradient(135deg, #64748b, #475569);
+    font-size: 0.9rem;
+  }
+
+  .member-avatar:nth-child(2) { background: linear-gradient(135deg, #10b981, #059669); }
+  .member-avatar:nth-child(3) { background: linear-gradient(135deg, #f59e0b, #d97706); }
+  .member-avatar:nth-child(4) { background: linear-gradient(135deg, #ef4444, #dc2626); }
+  .member-avatar:nth-child(5) { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+  /* Team Assignments (Legacy for compatibility) */
+  .team-assignments {
+    padding: 20px;
+  }
+
+  .team-member {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid rgba(15, 86, 113, 0.1);
+  }
+
+  .team-member:last-child {
+    border-bottom: none;
+  }
+
+  .member-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #0f5671;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .member-details {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .member-name {
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .member-role {
+    color: #64748b;
+    font-size: 0.85rem;
+  }
+
+  .assignment-info {
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    gap: 3px;
+  }
+
+  .assignment {
+    color: #0f5671;
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+
+  .schedule {
+    color: #64748b;
+    font-size: 0.8rem;
+  }
+
+  /* Practitioner Specific Styles */
+  .assignment-details {
+    padding: 20px;
+  }
+
+  .assignment-main {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .module-assigned {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .module-assigned .module-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0f5671;
+  }
+
+  .supervisor {
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+
+  .location-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+
+  .location-info i {
+    color: #ef4444;
+  }
+
+  /* Schedule */
+  .schedule-info {
+    padding: 20px;
+  }
+
+  .schedule-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid rgba(15, 86, 113, 0.1);
+  }
+
+  .schedule-item.current {
+    background: #dcfce7;
+    border-color: #22c55e;
+  }
+
+  .time-slot {
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .activity {
+    color: #0f5671;
+  }
+
+  .status {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #e2e8f0;
+    color: #475569;
+  }
+
+  /* Checklist */
+  .checklist-content {
+    padding: 20px;
+  }
+
+  .checklist-section {
+    margin-bottom: 25px;
+  }
+
+  .checklist-section h4 {
+    margin: 0 0 15px 0;
+    color: #0f5671;
+    font-size: 1rem;
+  }
+
+  .checklist-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .checklist-item:hover {
+    background: #e2e8f0;
+  }
+
+  .checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  .checklist-item input[type="checkbox"] {
+    display: none;
+  }
+
+  .checklist-item input[type="checkbox"]:checked + .checkmark {
+    background: #22c55e;
+    border-color: #22c55e;
+  }
+
+  .checklist-item input[type="checkbox"]:checked + .checkmark::after {
+    content: "✓";
+    color: white;
+    font-weight: bold;
+    font-size: 0.8rem;
+  }
+
+  .item-name {
+    flex: 1;
+    color: #1f2937;
+  }
+
+  .item-status {
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .item-status.good {
+    background: #dcfce7;
+    color: #166534;
+  }
+
+  .item-status.missing {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .item-status.damaged {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .item-status.low {
+    background: #fed7d7;
+    color: #c53030;
+  }
+
+  /* Observations */
+  .observations-content {
+    padding: 20px;
+  }
+
+  .observation-form {
+    margin-bottom: 25px;
+  }
+
+  .observation-form textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    resize: vertical;
+    font-family: inherit;
+    margin-bottom: 12px;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .form-actions select {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+  }
+
+  .recent-observations h4 {
+    margin: 0 0 15px 0;
+    color: #0f5671;
+  }
+
+  .observation-item {
+    padding: 15px;
+    border: 1px solid rgba(15, 86, 113, 0.1);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    background: #f8fafc;
+  }
+
+  .obs-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 8px;
+  }
+
+  .obs-text {
+    color: #1f2937;
+    font-weight: 500;
+  }
+
+  .obs-priority {
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .obs-priority.high {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+
+  .obs-priority.medium {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .obs-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .obs-status.pending {
+    color: #f59e0b;
+  }
+
+  .obs-status.resolved {
+    color: #22c55e;
+  }
+
+  /* Buttons */
+  .manage-btn, .checklist-btn, .report-btn, .submit-observation {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    background: #0f5671;
+    color: white;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .manage-btn:hover, .checklist-btn:hover, .report-btn:hover, .submit-observation:hover {
+    background: #0c4a61;
+  }
+
+  .date-today {
+    background: #e0f2fe;
+    color: #0f5671;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 1200px) {
+    .admin-grid {
+      grid-template-columns: 1fr 1fr;
+    }
   }
 
   @media (max-width: 768px) {
-    .placeholder-content {
-      padding: 40px 25px;
-      margin: 20px;
+    .admin-grid, .practitioner-grid {
+      grid-template-columns: 1fr;
     }
     
-    .placeholder-content h2 {
-      font-size: 1.6rem;
+    .dashboard-header {
+      flex-direction: column;
+      gap: 15px;
+      text-align: center;
     }
     
-    .placeholder-icon {
-      font-size: 3rem;
+    .header-stats {
+      flex-direction: column;
+      gap: 10px;
     }
   }
 
@@ -631,6 +1238,26 @@
       }
       /* ocultar submenus en mobile (usar navegación alternativa) */
       .submenu{ display:none !important }
+      
+      /* Responsive for work groups */
+      .group-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .group-assignment {
+        align-items: flex-start;
+      }
+
+      .assigned-module {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+      }
+
+      .member-avatars {
+        justify-content: center;
+      }
     }
 
     /* Estilos para modales */
@@ -822,26 +1449,352 @@
       </div>
   </section>
 
-  <!-- Mensaje Dashboard Temporal -->
-  <section id="dashboard-placeholder" class="dashboard-center-message">
-    <div class="placeholder-content">
-      <div class="placeholder-icon">
-        <i class="fas fa-chart-line"></i>
+  <!-- Dashboard Específico por Rol -->
+  <section id="dashboard-content" class="dashboard-main-content">
+    
+    <!-- Dashboard para Administrador -->
+    <div id="admin-dashboard" class="role-dashboard" style="display: none;">
+      <div class="dashboard-header">
+        <h2><i class="fas fa-user-shield"></i> Panel de Administración</h2>
+        <div class="header-stats">
+          <span class="stat-item">
+            <i class="fas fa-users"></i>
+            <span id="total-practicantes">12</span> Practicantes
+          </span>
+          <span class="stat-item">
+            <i class="fas fa-heartbeat"></i>
+            <span id="consultas-hoy">8</span> Consultas hoy
+          </span>
+        </div>
       </div>
-      <h2>Dashboard en Desarrollo</h2>
-      <p>En esta área se mostrarán:</p>
-      <ul class="dashboard-features">
-        <li><i class="fas fa-users"></i> Estadísticas de practicantes en servicio  y pacientes en atención</li>
-        <li><i class="fas fa-chart-pie"></i> Gráficas de distribución y estadísticas</li>
-        <li><i class="fas fa-heartbeat"></i> Indicadores de salud general</li>
-        <li><i class="fas fa-calendar-alt"></i> Citas y consultas programadas</li>
-        <li><i class="fas fa-bell"></i> Notificaciones y alertas sobre el estado medico</li>
-      </ul>
-      <div class="development-note">
-        <i class="fas fa-code"></i>
-        <span>Secciones del sistema médico en desarrollo</span>
+
+      <div class="admin-grid">
+        <!-- Módulos Activos -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h3><i class="fas fa-puzzle-piece"></i> Módulos Activos</h3>
+            <span class="status-indicator active">En línea</span>
+          </div>
+          <div class="modules-list">
+            <div class="module-item">
+              <div class="module-info">
+                <span class="module-name">Gestión de Pacientes</span>
+                <span class="module-status active">Activo</span>
+              </div>
+              <div class="module-stats">18 registros hoy</div>
+            </div>
+            <div class="module-item">
+              <div class="module-info">
+                <span class="module-name">Control de Operaciones</span>
+                <span class="module-status active">Activo</span>
+              </div>
+              <div class="module-stats">5 operaciones</div>
+            </div>
+            <div class="module-item">
+              <div class="module-info">
+                <span class="module-name">Reportes Médicos</span>
+                <span class="module-status active">Activo</span>
+              </div>
+              <div class="module-stats">3 reportes generados</div>
+            </div>
+            <div class="module-item">
+              <div class="module-info">
+                <span class="module-name">Gestión de Personal</span>
+                <span class="module-status maintenance">Mantenimiento</span>
+              </div>
+              <div class="module-stats">Actualización 15:30</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actividad en Consulta -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h3><i class="fas fa-stethoscope"></i> Actividad en Consulta</h3>
+            <span class="time-indicator">Tiempo real</span>
+          </div>
+          <div class="consultation-activity">
+            <div class="activity-item">
+              <div class="activity-info">
+                <span class="patient-name">María González</span>
+                <span class="consultation-type">Consulta General</span>
+              </div>
+              <div class="activity-details">
+                <span class="practitioner">Dr. Ana López</span>
+                <span class="room">Sala 1</span>
+                <span class="time">14:30 - 15:00</span>
+              </div>
+            </div>
+            <div class="activity-item">
+              <div class="activity-info">
+                <span class="patient-name">Carlos Ruiz</span>
+                <span class="consultation-type">Seguimiento</span>
+              </div>
+              <div class="activity-details">
+                <span class="practitioner">Dr. Luis García</span>
+                <span class="room">Sala 2</span>
+                <span class="time">15:00 - 15:30</span>
+              </div>
+            </div>
+            <div class="activity-item waiting">
+              <div class="activity-info">
+                <span class="patient-name">Elena Martín</span>
+                <span class="consultation-type">Revisión</span>
+              </div>
+              <div class="activity-details">
+                <span class="practitioner">En espera</span>
+                <span class="room">-</span>
+                <span class="time">15:30</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grupos de Trabajo -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h3><i class="fas fa-users-cog"></i> Grupos de Trabajo</h3>
+            <button class="manage-btn">Gestionar</button>
+          </div>
+          <div class="work-groups">
+            <div class="group-item">
+              <div class="group-header">
+                <div class="group-name">
+                  <span class="group-title">Grupo Alpha</span>
+                  <span class="member-count">5 miembros</span>
+                </div>
+                <div class="group-assignment">
+                  <span class="assigned-module">Consulta Externa - Medicina General</span>
+                  <span class="group-schedule">08:00 - 16:00</span>
+                </div>
+              </div>
+              <div class="group-members">
+                <div class="member-avatars">
+                  <div class="member-avatar" title="Dr. Ana López - Supervisor">AL</div>
+                  <div class="member-avatar" title="Juan Martínez - Practicante">JM</div>
+                  <div class="member-avatar" title="María Rodríguez - Enfermera">MR</div>
+                  <div class="member-avatar" title="Carlos Fernández - Técnico">CF</div>
+                  <div class="member-avatar more" title="Ver más miembros">+1</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="group-item">
+              <div class="group-header">
+                <div class="group-name">
+                  <span class="group-title">Grupo Beta</span>
+                  <span class="member-count">4 miembros</span>
+                </div>
+                <div class="group-assignment">
+                  <span class="assigned-module">Urgencias - Medicina de Emergencia</span>
+                  <span class="group-schedule">06:00 - 14:00</span>
+                </div>
+              </div>
+              <div class="group-members">
+                <div class="member-avatars">
+                  <div class="member-avatar" title="Dr. Luis García - Supervisor">LG</div>
+                  <div class="member-avatar" title="Sofia Torres - Practicante">ST</div>
+                  <div class="member-avatar" title="Roberto Silva - Enfermero">RS</div>
+                  <div class="member-avatar" title="Ana Morales - Técnica">AM</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="group-item">
+              <div class="group-header">
+                <div class="group-name">
+                  <span class="group-title">Grupo Gamma</span>
+                  <span class="member-count">3 miembros</span>
+                </div>
+                <div class="group-assignment">
+                  <span class="assigned-module">Pediatría - Medicina Infantil</span>
+                  <span class="group-schedule">14:00 - 22:00</span>
+                </div>
+              </div>
+              <div class="group-members">
+                <div class="member-avatars">
+                  <div class="member-avatar" title="Dra. Carmen Vega - Supervisor">CV</div>
+                  <div class="member-avatar" title="Pedro Jiménez - Practicante">PJ</div>
+                  <div class="member-avatar" title="Isabel Ruiz - Enfermera">IR</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Dashboard para Practicante -->
+    <div id="practitioner-dashboard" class="role-dashboard" style="display: none;">
+      <div class="dashboard-header">
+        <h2><i class="fas fa-user-md"></i> Panel del Practicante</h2>
+        <div class="header-stats">
+          <span class="stat-item">
+            <i class="fas fa-calendar"></i>
+            <span id="turno-actual">Turno Matutino</span>
+          </span>
+          <span class="stat-item">
+            <i class="fas fa-clock"></i>
+            <span id="tiempo-restante">4h 30m restantes</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="practitioner-grid">
+        <!-- Módulo Asignado -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h3><i class="fas fa-clipboard-check"></i> Mi Módulo Asignado</h3>
+            <span class="status-indicator active">Activo</span>
+          </div>
+          <div class="assignment-details">
+            <div class="assignment-main">
+              <div class="module-assigned">
+                <span class="module-name">Consulta Externa - Medicina General</span>
+                <span class="supervisor">Supervisor: Dr. Ana López</span>
+              </div>
+              <div class="location-info">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Edificio A - Piso 2 - Consultorios 201-205</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Horario y Fecha -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h3><i class="fas fa-calendar-alt"></i> Mi Horario</h3>
+            <span class="date-today">15 Oct 2025</span>
+          </div>
+          <div class="schedule-info">
+            <div class="schedule-item current">
+              <div class="time-slot">08:00 - 12:00</div>
+              <div class="activity">Consulta Externa</div>
+              <div class="status">En curso</div>
+            </div>
+            <div class="schedule-item">
+              <div class="time-slot">12:00 - 13:00</div>
+              <div class="activity">Descanso</div>
+              <div class="status">Próximo</div>
+            </div>
+            <div class="schedule-item">
+              <div class="time-slot">13:00 - 17:00</div>
+              <div class="activity">Rondas Médicas</div>
+              <div class="status">Programado</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Checklist de Instrumentos -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h3><i class="fas fa-tasks"></i> Checklist de Instrumentos</h3>
+            <button class="checklist-btn">Actualizar</button>
+          </div>
+          <div class="checklist-content">
+            <div class="checklist-section">
+              <h4>Instrumentos Médicos</h4>
+              <div class="checklist-items">
+                <label class="checklist-item">
+                  <input type="checkbox" checked>
+                  <span class="checkmark"></span>
+                  <span class="item-name">Estetoscopio</span>
+                  <span class="item-status good">Buen estado</span>
+                </label>
+                <label class="checklist-item">
+                  <input type="checkbox" checked>
+                  <span class="checkmark"></span>
+                  <span class="item-name">Tensiómetro</span>
+                  <span class="item-status good">Buen estado</span>
+                </label>
+                <label class="checklist-item">
+                  <input type="checkbox">
+                  <span class="checkmark"></span>
+                  <span class="item-name">Otoscopio</span>
+                  <span class="item-status missing">Faltante</span>
+                </label>
+                <label class="checklist-item">
+                  <input type="checkbox" checked>
+                  <span class="checkmark"></span>
+                  <span class="item-name">Termómetro digital</span>
+                  <span class="item-status damaged">Mal estado</span>
+                </label>
+              </div>
+            </div>
+            <div class="checklist-section">
+              <h4>Insumos Médicos</h4>
+              <div class="checklist-items">
+                <label class="checklist-item">
+                  <input type="checkbox" checked>
+                  <span class="checkmark"></span>
+                  <span class="item-name">Guantes desechables (50 pares)</span>
+                  <span class="item-status good">Disponible</span>
+                </label>
+                <label class="checklist-item">
+                  <input type="checkbox" checked>
+                  <span class="checkmark"></span>
+                  <span class="item-name">Mascarillas quirúrgicas (25 uds)</span>
+                  <span class="item-status good">Disponible</span>
+                </label>
+                <label class="checklist-item">
+                  <input type="checkbox">
+                  <span class="checkmark"></span>
+                  <span class="item-name">Gasas estériles (20 paquetes)</span>
+                  <span class="item-status low">Bajo stock</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Observaciones y Quejas -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h3><i class="fas fa-exclamation-triangle"></i> Observaciones y Reportes</h3>
+            <button class="report-btn">Nuevo Reporte</button>
+          </div>
+          <div class="observations-content">
+            <div class="observation-form">
+              <textarea id="new-observation" placeholder="Describe cualquier material faltante, en mal estado, o situación que requiera atención..."></textarea>
+              <div class="form-actions">
+                <select id="priority-level">
+                  <option value="low">Prioridad Baja</option>
+                  <option value="medium">Prioridad Media</option>
+                  <option value="high">Prioridad Alta</option>
+                  <option value="urgent">Urgente</option>
+                </select>
+                <button class="submit-observation">Enviar Reporte</button>
+              </div>
+            </div>
+            <div class="recent-observations">
+              <h4>Reportes Recientes</h4>
+              <div class="observation-item">
+                <div class="obs-content">
+                  <span class="obs-text">Otoscopio del consultorio 203 no enciende</span>
+                  <span class="obs-priority high">Alta prioridad</span>
+                </div>
+                <div class="obs-meta">
+                  <span class="obs-date">14 Oct 2025 - 16:30</span>
+                  <span class="obs-status pending">Pendiente</span>
+                </div>
+              </div>
+              <div class="observation-item">
+                <div class="obs-content">
+                  <span class="obs-text">Bajo stock de gasas estériles</span>
+                  <span class="obs-priority medium">Media prioridad</span>
+                </div>
+                <div class="obs-meta">
+                  <span class="obs-date">14 Oct 2025 - 10:15</span>
+                  <span class="obs-status resolved">Resuelto</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </section>
   </div>
 
@@ -1114,6 +2067,409 @@
     // Ejecutar carga de datos al iniciar
     loadDashboardData();
   </script>
+
+  <script>
+    // ========= DASHBOARD ROLE MANAGEMENT =========
+    
+    // Variable para evitar múltiples inicializaciones
+    let dashboardInitialized = false;
+    
+    // Función de debugging para verificar localStorage
+    function debugLocalStorage() {
+      console.log('🔍 DEBUG - Contenido de localStorage:');
+      console.log('- usuarioActual:', localStorage.getItem('usuarioActual'));
+      console.log('- currentUser:', localStorage.getItem('currentUser'));
+      console.log('- sessionData:', localStorage.getItem('sessionData'));
+      console.log('- usuarios:', localStorage.getItem('usuarios'));
+    }
+    
+    async function initializeDashboard() {
+      // Prevenir múltiples inicializaciones
+      if (dashboardInitialized) {
+        console.log('⚠️ Dashboard ya inicializado, saltando...');
+        return;
+      }
+      
+      console.log('🚀 Iniciando configuración del dashboard...');
+      
+      // Debug localStorage
+      debugLocalStorage();
+      
+      try {
+        // Obtener el rol del usuario
+        const userRole = getUserRole();
+        console.log('👤 Usuario actual con rol:', userRole);
+        
+        // Mostrar dashboard correspondiente
+        showDashboardByRole(userRole);
+        
+        // Inicializar funcionalidades específicas
+        console.log('⚙️ Inicializando funcionalidades adicionales...');
+        initializeChecklistFunctionality();
+        initializeObservationForm();
+        
+        // Marcar como inicializado
+        dashboardInitialized = true;
+        console.log('✅ Dashboard inicializado exitosamente');
+        
+      } catch (error) {
+        console.error('❌ Error durante la inicialización del dashboard:', error);
+      }
+    }
+
+    function getUserRole() {
+      // Usar el sistema de autenticación existente del proyecto
+      try {
+        console.log('🔍 Buscando rol del usuario...');
+        
+        // Verificar la clave correcta del localStorage (usuarioActual según storageModel.js)
+        const currentUserData = localStorage.getItem('usuarioActual');
+        if (currentUserData) {
+          const user = JSON.parse(currentUserData);
+          console.log('👤 Usuario desde usuarioActual:', user);
+          console.log('🏷️ Rol encontrado:', user.rol);
+          console.log('🏷️ Tipo de rol:', typeof user.rol);
+          return user.rol || 'practicante';
+        }
+        
+        // Fallback: verificar con la clave alternativa
+        const currentUserDataAlt = localStorage.getItem('currentUser');
+        if (currentUserDataAlt) {
+          const user = JSON.parse(currentUserDataAlt);
+          console.log('👤 Usuario desde currentUser (fallback):', user);
+          console.log('🏷️ Rol encontrado:', user.rol);
+          return user.rol || 'practicante';
+        }
+        
+        // Segundo fallback: verificar si hay datos de sesión
+        const sessionData = localStorage.getItem('sessionData');
+        if (sessionData) {
+          const session = JSON.parse(sessionData);
+          console.log('📝 Usuario desde sessionData:', session);
+          console.log('🏷️ Rol de sesión:', session.userRole || session.rol);
+          return session.userRole || session.rol || 'practicante';
+        }
+        
+        console.log('⚠️ No se encontró usuario, usando rol por defecto: practicante');
+        return 'practicante'; // Default
+      } catch (error) {
+        console.error('❌ Error al obtener rol del usuario:', error);
+        return 'practicante';
+      }
+    }
+
+    function showDashboardByRole(role) {
+      console.log('=== DASHBOARD ROLE DETECTION ===');
+      console.log('🎯 Rol detectado:', role);
+      console.log('🔍 Tipo de rol:', typeof role);
+      console.log('🔍 Rol normalizado:', role ? role.toLowerCase().trim() : 'undefined');
+      
+      const adminDashboard = document.getElementById('admin-dashboard');
+      const practitionerDashboard = document.getElementById('practitioner-dashboard');
+      
+      // Verificar que los elementos existan
+      if (!adminDashboard) {
+        console.error('❌ Elemento admin-dashboard no encontrado');
+        return;
+      }
+      if (!practitionerDashboard) {
+        console.error('❌ Elemento practitioner-dashboard no encontrado');
+        return;
+      }
+      
+      console.log('✅ Elementos del dashboard encontrados');
+      
+      // Ocultar todos los dashboards primero
+      adminDashboard.style.display = 'none';
+      practitionerDashboard.style.display = 'none';
+      
+      // Normalizar el rol para comparación
+      const normalizedRole = role ? role.toLowerCase().trim() : '';
+      console.log('📝 Comparando rol normalizado:', normalizedRole);
+      
+      // Mostrar el dashboard correspondiente con mejor detección
+      if (normalizedRole === 'admin' || 
+          normalizedRole === 'administrador' || 
+          normalizedRole === 'administrator') {
+        adminDashboard.style.display = 'block';
+        console.log('🔧 Dashboard de administrador activado');
+        loadAdminData();
+      } else {
+        // Para cualquier otro rol (practicante, usuario, etc.)
+        practitionerDashboard.style.display = 'block';
+        console.log('👨‍⚕️ Dashboard de practicante activado');
+        loadPractitionerData();
+      }
+      
+      console.log('=== FIN DASHBOARD ROLE DETECTION ===');
+    }
+    
+    // Función para testing desde consola
+    window.testDashboard = function(role) {
+      console.log('🧪 TESTING: Forzando dashboard para rol:', role);
+      showDashboardByRole(role);
+    };
+    
+    window.debugAuth = function() {
+      debugLocalStorage();
+      const role = getUserRole();
+      console.log('🎯 Rol actual detectado:', role);
+      return { role, localStorage: localStorage };
+    };
+
+    function loadAdminData() {
+      // Cargar datos específicos del administrador
+      console.log('📊 Cargando datos del administrador...');
+      try {
+        updateModuleStatus();
+        updateConsultationActivity();
+        updateTeamAssignments();
+        console.log('✅ Datos del administrador cargados exitosamente');
+      } catch (error) {
+        console.error('❌ Error cargando datos del administrador:', error);
+      }
+    }
+
+    function loadPractitionerData() {
+      // Cargar datos específicos del practicante
+      console.log('📊 Cargando datos del practicante...');
+      try {
+        updatePractitionerAssignment();
+        updateSchedule();
+        loadChecklist();
+        loadRecentObservations();
+        console.log('✅ Datos del practicante cargados exitosamente');
+      } catch (error) {
+        console.error('❌ Error cargando datos del practicante:', error);
+      }
+    }
+
+    function updateModuleStatus() {
+      // Simular actualización de estado de módulos
+      console.log('Updating module status...');
+    }
+
+    function updateConsultationActivity() {
+      // Simular actualización de actividad de consultas
+      console.log('Updating consultation activity...');
+    }
+
+    function updateTeamAssignments() {
+      // Simular actualización de asignaciones de equipo
+      console.log('Updating team assignments...');
+    }
+
+    function updatePractitionerAssignment() {
+      // Simular actualización de asignación del practicante
+      console.log('Updating practitioner assignment...');
+    }
+
+    function updateSchedule() {
+      // Actualizar horario con datos reales
+      const now = new Date();
+      const timeRemaining = calculateTimeRemaining();
+      document.getElementById('tiempo-restante').textContent = timeRemaining;
+    }
+
+    function calculateTimeRemaining() {
+      // Simular cálculo de tiempo restante en el turno
+      const hours = Math.floor(Math.random() * 8);
+      const minutes = Math.floor(Math.random() * 60);
+      return `${hours}h ${minutes}m restantes`;
+    }
+
+    function loadChecklist() {
+      // Cargar estado del checklist desde localStorage o API
+      console.log('Loading checklist data...');
+    }
+
+    function loadRecentObservations() {
+      // Cargar observaciones recientes
+      console.log('Loading recent observations...');
+    }
+
+    // ========= CHECKLIST FUNCTIONALITY =========
+    function initializeChecklistFunctionality() {
+      const checklistItems = document.querySelectorAll('.checklist-item input[type="checkbox"]');
+      
+      checklistItems.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const item = this.closest('.checklist-item');
+          const itemName = item.querySelector('.item-name').textContent;
+          const isChecked = this.checked;
+          
+          // Guardar estado en localStorage
+          saveChecklistState(itemName, isChecked);
+          
+          // Mostrar feedback visual
+          if (isChecked) {
+            item.style.background = '#f0f9ff';
+          } else {
+            item.style.background = '#fef3c7';
+          }
+        });
+      });
+
+      // Botón de actualizar checklist
+      const updateBtn = document.querySelector('.checklist-btn');
+      if (updateBtn) {
+        updateBtn.addEventListener('click', function() {
+          refreshChecklist();
+        });
+      }
+    }
+
+    function saveChecklistState(itemName, isChecked) {
+      let checklistData = JSON.parse(localStorage.getItem('checklistData') || '{}');
+      checklistData[itemName] = {
+        checked: isChecked,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem('checklistData', JSON.stringify(checklistData));
+    }
+
+    function refreshChecklist() {
+      // Simular actualización del checklist
+      console.log('Refreshing checklist...');
+      alert('Checklist actualizado exitosamente');
+    }
+
+    // ========= OBSERVATION FORM FUNCTIONALITY =========
+    function initializeObservationForm() {
+      const submitBtn = document.querySelector('.submit-observation');
+      const textarea = document.getElementById('new-observation');
+      const prioritySelect = document.getElementById('priority-level');
+      
+      if (submitBtn && textarea && prioritySelect) {
+        submitBtn.addEventListener('click', function() {
+          const observationText = textarea.value.trim();
+          const priority = prioritySelect.value;
+          
+          if (!observationText) {
+            alert('Por favor describe la observación antes de enviar.');
+            return;
+          }
+          
+          submitObservation(observationText, priority);
+        });
+      }
+
+      // Auto-save draft
+      if (textarea) {
+        textarea.addEventListener('input', function() {
+          localStorage.setItem('observationDraft', this.value);
+        });
+        
+        // Load draft on page load
+        const draft = localStorage.getItem('observationDraft');
+        if (draft) {
+          textarea.value = draft;
+        }
+      }
+    }
+
+    function submitObservation(text, priority) {
+      const observation = {
+        id: Date.now(),
+        text: text,
+        priority: priority,
+        timestamp: new Date().toISOString(),
+        status: 'pending',
+        user: getCurrentUserName()
+      };
+      
+      // Guardar observación
+      saveObservation(observation);
+      
+      // Limpiar formulario
+      document.getElementById('new-observation').value = '';
+      localStorage.removeItem('observationDraft');
+      
+      // Mostrar confirmación
+      alert('Reporte enviado exitosamente. El personal administrativo será notificado.');
+      
+      // Actualizar lista de observaciones
+      addObservationToList(observation);
+    }
+
+    function saveObservation(observation) {
+      let observations = JSON.parse(localStorage.getItem('observations') || '[]');
+      observations.unshift(observation);
+      // Mantener solo las últimas 50 observaciones
+      if (observations.length > 50) {
+        observations = observations.slice(0, 50);
+      }
+      localStorage.setItem('observations', JSON.stringify(observations));
+    }
+
+    function addObservationToList(observation) {
+      const container = document.querySelector('.recent-observations');
+      if (!container) return;
+      
+      const observationElement = createObservationElement(observation);
+      container.insertBefore(observationElement, container.children[1]); // After h4
+    }
+
+    function createObservationElement(observation) {
+      const div = document.createElement('div');
+      div.className = 'observation-item';
+      div.innerHTML = `
+        <div class="obs-content">
+          <span class="obs-text">${observation.text}</span>
+          <span class="obs-priority ${observation.priority}">${getPriorityText(observation.priority)}</span>
+        </div>
+        <div class="obs-meta">
+          <span class="obs-date">${formatDate(observation.timestamp)}</span>
+          <span class="obs-status ${observation.status}">${getStatusText(observation.status)}</span>
+        </div>
+      `;
+      return div;
+    }
+
+    function getPriorityText(priority) {
+      const priorities = {
+        'low': 'Baja prioridad',
+        'medium': 'Media prioridad', 
+        'high': 'Alta prioridad',
+        'urgent': 'Urgente'
+      };
+      return priorities[priority] || priority;
+    }
+
+    function getStatusText(status) {
+      const statuses = {
+        'pending': 'Pendiente',
+        'resolved': 'Resuelto',
+        'in-progress': 'En progreso'
+      };
+      return statuses[status] || status;
+    }
+
+    function formatDate(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleDateString('es-MX') + ' - ' + date.toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'});
+    }
+
+    function getCurrentUserName() {
+      try {
+        const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        return user.nombre || 'Usuario';
+      } catch {
+        return 'Usuario';
+      }
+    }
+
+    // Inicializar dashboard una sola vez cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        initializeDashboard();
+      });
+    } else {
+      // DOM ya está cargado, inicializar inmediatamente
+      initializeDashboard();
+    }
+  </script>
+  
   <script>
     // Previene cualquier handler que intente navegar desde el botón de 'Reportes'
     document.addEventListener('click', function(e) {
