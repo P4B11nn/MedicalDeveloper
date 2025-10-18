@@ -1,7 +1,6 @@
 import { authModel } from '../models/storageModel.js';
 import { AuthGuard } from '../middleware/authGuard.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
-import { registrarEntrada, registrarSalida } from '../models/operacionesModel.js';
 import { setupEventLogging } from '../utils/eventLogger.js';
 
 /**
@@ -22,8 +21,9 @@ export function initGlobalController() {
 
   console.log(`GlobalController: Usuario autenticado - ${usuarioActual.nombre} (${usuarioActual.role || usuarioActual.rol})`);
 
-  // Registrar entrada del usuario si no está ya registrada
-  registrarEntradaUsuario(usuarioActual);
+  // Nota: La entrada ya no se registra automáticamente al iniciar sesión.
+  // El registro de 'entrada' ahora debe realizarse explícitamente desde la ventana de Asistencia
+  // para cumplir con el nuevo flujo de trabajo de asistencia.
 
   // Suscribirse a eventos del Event Bus
   setupEventListeners();

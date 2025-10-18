@@ -30,11 +30,45 @@
       height: 100%;
       padding: 0 20px;
       max-width: 100%;
+      position: relative;
+    }
+
+    /* Reservar espacio a los laterales para que el título siempre quede centrado */
+    .nav-left, .nav-right {
+      display: flex;
+      align-items: center;
+      min-width: 160px; /* espacio mínimo reservado para botones */
+      gap: 8px;
+    }
+
+    /* Centrado absoluto horizontal para mantener el título exactamente en el medio */
+    .nav-center {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      min-width: 0;
+      width: 60%;
+      pointer-events: none; /* evitar capturar clicks fuera del título */
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .nav-left {
       flex: 0 0 auto;
       min-width: 0;
+    }
+
+    .nav-center h1 {
+      margin: 0;
+      font-size: clamp(18px, 3vw, 24px);
+      font-weight: bold;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      pointer-events: auto; /* permitir interacción si fuera necesario */
     }
 
     .back-button {
@@ -56,40 +90,46 @@
       background: rgba(255, 255, 255, 0.3);
       transform: translateX(-2px);
     }
-
-    .nav-center {
-      flex: 1;
-      text-align: center;
-      min-width: 0;
+    /* Ajustes básicos para alinear botones laterales y titulo central */
+    .back-button {
+      padding: 0 16px;
+      height: 44px;
     }
 
     .nav-center h1 {
       margin: 0;
       font-size: clamp(18px, 3vw, 24px);
       font-weight: bold;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1;
+      padding: 0 8px;
       white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
 
     .nav-right {
+      display: flex;
+      align-items: center;
       flex: 0 0 auto;
       position: relative;
       min-width: 0;
     }
 
     .user-info {
-      display: flex;
+      display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
       background: rgba(255, 255, 255, 0.15);
-      padding: 10px 16px;
-      border-radius: 25px;
+      padding: 0 14px;
+      height: 44px;
+      border-radius: 22px;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.25s ease;
       font-size: 14px;
-      min-height: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      line-height: 1;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      margin: 0;
     }
 
     .user-info:hover {
@@ -102,6 +142,18 @@
     .user-info:active {
       transform: translateY(0);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Ajuste para el texto del nombre dentro del badge */
+    #userName {
+      font-weight: 600;
+      color: #0f172a;
+      padding-left: 6px;
+      display: inline-block;
+      max-width: 160px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .user-dropdown {
@@ -328,12 +380,12 @@
     .tabla-registros tr:hover { background-color: rgba(125, 211, 252, 0.1); }
     .mesa-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 20px 0; }
   .mesa-item { background: rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); border: 2px solid rgba(125, 211, 252, 0.3); border-radius: 15px; padding: 25px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); text-align: center; }
-    .mesa-numero { font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #06b6d4, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 15px; }
-    .mesa-status { display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; margin: 10px 0; color: white; }
-    .mesa-status.en-servicio { background: linear-gradient(135deg, #10b981, #34d399); }
-    .mesa-status.ocupada { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
-    .mesa-status.fuera-servicio { background: linear-gradient(135deg, #ef4444, #f87171); }
-    .mesa-info p { margin: 5px 0; color: #374151; font-size: 0.9rem; }
+      .mesa-numero, .modulo-numero { font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #06b6d4, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 15px; }
+      .mesa-status, .modulo-status { display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; margin: 10px 0; color: white; }
+      .mesa-status.en-servicio, .modulo-status.en-servicio { background: linear-gradient(135deg, #10b981, #34d399); }
+      .mesa-status.ocupada, .modulo-status.ocupada { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+      .mesa-status.fuera-servicio, .modulo-status.fuera-servicio { background: linear-gradient(135deg, #ef4444, #f87171); }
+      .mesa-info p, .modulo-info p { margin: 5px 0; color: #374151; font-size: 0.9rem; }
   </style>
   <script>
     // Protección temprana: si la URL contiene un hash que apunta a una sección
@@ -370,7 +422,7 @@
 
           // Limpiar contenedores para evitar solapamientos visuales
           const registroEl = document.getElementById('registroESLista'); if (registroEl) registroEl.innerHTML = '';
-          const mesasEl = document.getElementById('mesasGrid'); if (mesasEl) mesasEl.innerHTML = '';
+          // Eliminado: se removieron todas las referencias a 'mesasGrid' para evitar conflictos.
 
           const target = document.getElementById(hash + '-section');
           if(target) {
@@ -432,6 +484,7 @@
           <!-- Flyout lateral que aparece al hover sobre el elemento padre -->
           <ul class="submenu-right">
             <li><button data-section="registro-entradas-salidas">🚪 Registro de Entradas/Salidas</button></li>
+            <li><button data-section="asistencia">✅ Asistencia</button></li>
           </ul>
         </li>
       </ul>
@@ -439,7 +492,7 @@
 
     <div class="content">
       <div class="content-area">
-  <div id="registro-entradas-salidas-section" class="form-section hidden">
+      <div id="registro-entradas-salidas-section" class="form-section hidden">
           <h2 class="content-title">Registro de Entradas/Salidas</h2>
           <div class="control-panel">
             <input type="text" id="buscarRegistro" class="search-input" placeholder="Buscar por nombre o matrícula...">
@@ -452,6 +505,19 @@
           </div>
           <div id="registroESLista" class="hidden"></div>
         </div>
+        <div id="asistencia-section" class="form-section hidden">
+          <h2 class="content-title">Asistencia</h2>
+            <div class="control-panel">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <!-- Selector de módulos eliminado por solicitud del equipo -->
+            </div>
+          </div>
+
+          <div id="asistenciaContainer">
+            <!-- Render dinámico de asistencia -->
+          </div>
+        </div>
+        <!-- Contenedor de tarjetas de módulos eliminado por solicitud -->
       </div>
     </div>
   </div>

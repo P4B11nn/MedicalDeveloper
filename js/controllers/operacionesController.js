@@ -1,8 +1,12 @@
 // js/controllers/operacionesController.js
 import { getRegistroEntradasSalidas, exportarDatosCSV, limpiarRegistros } from '../models/operacionesModel.js';
-import { renderRegistroEntradasSalidas, renderModulos } from '../views/operacionesView.js';
+import { renderRegistroEntradasSalidas, renderModulos, renderAsistencia, obtenerEtiquetaModulo } from '../views/operacionesView.js';
 import { gestionModel } from '../models/gestionModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
+import { authModel } from '../models/storageModel.js';
+
+// Indicar que el módulo se ha cargado (ayuda a depurar si el script se ejecuta)
+console.log('OperationsController module loaded');
 
 export function initOperationsController() {
   console.log('OperationsController: Inicializando controlador de operaciones');
@@ -14,7 +18,13 @@ export function initOperationsController() {
   setupEventListeners();
   
   setupSidebarNavigation();
-  setupSimpleExport();
+  // CSV export initialization intentionally disabled (commented out)
+  // Date: 2025-10-18
+  // Reason: The app currently does not use the CSV export UI and some pages trigger
+  // a console warning when the export button (`btnExportarTodo`) is missing.
+  // To avoid console noise and test timeouts, the initialization is kept but not executed.
+  // If you need the feature in the future, uncomment the line below to re-enable it:
+  // setupSimpleExport();
 
   // Activar la primera sección por defecto
   // Activar la sección correspondiente según el hash de la URL si existe;
@@ -50,7 +60,7 @@ export function initOperationsController() {
 
               // Limpiar contenidos opuestos para evitar solapamientos visuales
               const registroEl = document.getElementById('registroESLista'); if (registroEl) registroEl.innerHTML = '';
-              const mesasEl = document.getElementById('mesasGrid'); if (mesasEl) mesasEl.innerHTML = '';
+              // Nota: referencias a 'mesasGrid' eliminadas intencionalmente para evitar conflictos
 
               if (targetBtn) targetBtn.classList.add('active');
               targetSectionEl.classList.add('active');
@@ -127,7 +137,31 @@ export function initOperationsController() {
   };
   
   console.log('OperationsDebug: Comandos disponibles - OperationsDebug.limpiarRegistros(), OperationsDebug.mostrarRegistros()');
+
+  // Intentar pre-renderizar Asistencia si el contenedor ya existe (evita que parezca vacío)
+
+  setTimeout(() => {
+    const asistenciaEl = document.getElementById('asistenciaContainer');
+    if (asistenciaEl) {
+      try {
+        const todos = authModel.getAllUsers() || [];
+        console.log('OperationsController: Pre-render Asistencia con usuarios:', todos.length);
+        asistenciaEl.innerHTML = '';
+        // import renderAsistencia dinámicamente por seguridad (ya exportado arriba)
+        renderAsistencia(todos, asistenciaEl);
+        // pre-render Asistencia
+      } catch (e) {
+        console.error('OperationsController: Error pre-render Asistencia', e);
+      }
+    }
+  }, 120);
 }
+
+/**
+ * Helper: Pobla el select #asistenciaModuloSelect con los módulos disponibles.
+ * Usa `gestionModel.getModulos()` y hace fallback a localStorage si es necesario.
+ */
+// NOTE: All module-select and migration helper functions removed per request.
 
 /**
  * Configurar listeners de eventos del Event Bus
@@ -147,14 +181,14 @@ function setupEventListeners() {
     handleExportRequest(data);
   });
   
-  // Escuchar eventos de datos cargados (aceptamos tanto 'mesas' como 'modulos' por compatibilidad)
+  // Escuchar eventos de datos cargados (se usan 'modulos'; se mantiene compatibilidad con 'mesas')
   eventBus.on(EVENT_NAMES.DATA_LOADED, (data) => {
     console.log('OperationsController: Datos cargados', data);
     if (!data || !data.type) return;
     if (data.type === 'registro') {
       refreshRegistroView();
-    } else if (data.type === 'mesas' || data.type === 'modulos') {
-      refreshMesasView();
+  } else if (data.type === 'modulos' || data.type === 'mesas') {
+      refreshModulosView();
     }
   });
 }
@@ -199,9 +233,34 @@ function setupSidebarNavigation() {
         console.log(`Sección activada: ${targetSectionId}`);
         // Renderizar contenido según la sección y ocultar lo demás
         if (targetSectionId === 'registro-entradas-salidas') {
-          // ocultar contenedor de mesas
-          const mg = document.getElementById('mesasGrid'); if (mg) mg.classList.add('hidden');
-          mostrarTodosLosRegistros();
+              // Mostrar registros; cualquier UI de módulos eliminada.
+              mostrarTodosLosRegistros();
+            } else if (targetSectionId === 'asistencia') {
+          // Mostrar asistencia
+          const asistenciaEl = document.getElementById('asistenciaContainer');
+                if (asistenciaEl) {
+                // El select de módulos y la funcionalidad de filtrado por módulo fueron eliminados.
+                // Pre-renderizamos la lista completa de usuarios sin intentar poblar ningún combo.
+                // Obtener lista completa de usuarios y usarla como base para Asistencia
+                // Ahora la ventana de Asistencia debe mostrar TODO el personal; la marca de
+                // "en servicio" sólo se activará cuando se pulse Entrada en esta pantalla.
+                const todos = authModel.getAllUsers() || [];
+                const baseLista = todos;
+
+                console.log('OperationsController: Activando Asistencia - usuarios totales en authModel:', baseLista.length);
+                if (baseLista.length > 0) console.log('OperationsController: Primeros usuarios:', baseLista.slice(0,5));
+
+                // Limpiar contenedor antes de renderizar para evitar solapamientos
+                asistenciaEl.innerHTML = '';
+
+                renderAsistencia(baseLista, asistenciaEl);
+
+                // Render asistencia sin agregar lógica de filtrado por módulos (combobox removed)
+                // Simplemente renderizar la lista completa usando baseLista
+                renderAsistencia(baseLista, asistenciaEl);
+          } else {
+            console.error('No se encontró el contenedor de Asistencia');
+          }
         }
       } else {
         console.error(`No se encontró la sección: ${targetSectionId}-section`);
@@ -275,19 +334,16 @@ function mostrarTodosLosRegistros() {
     const historial = getRegistroEntradasSalidas();
     console.log(`Registros obtenidos: ${historial.length}`);
 
-    // Asegurar que sólo el contenedor de registro esté visible y la vista de mesas quede completamente limpia
-    if (container) {
-      container.classList.remove('hidden');
-    }
-    const mg = document.getElementById('mesasGrid');
-    if (mg) {
-      mg.classList.add('hidden');
-      // Limpiar contenido para evitar que fragmentos previos se muestren
-      mg.innerHTML = '';
-    }
+    // Asegurar que sólo el contenedor de registro esté visible.
+    if (container) container.classList.remove('hidden');
 
     // Renderizar todos los registros sin filtros
-    renderRegistroEntradasSalidas(historial, container);
+  // Hide top-level registro filters (search / role select) for clarity — registros should only
+  // reflect asistencia tomada por el administrador in Asistencia.
+  const buscarInput = document.getElementById('buscarRegistro'); if (buscarInput) buscarInput.classList.add('hidden');
+  const rolSelect = document.getElementById('filtroRol'); if (rolSelect) rolSelect.classList.add('hidden');
+
+  renderRegistroEntradasSalidas(historial, container);
     
     console.log('Todos los registros mostrados exitosamente');
 }
@@ -332,11 +388,10 @@ function refreshRegistroView() {
 /**
  * Refrescar vista de módulos
  */
-function refreshMesasView() {
-  const container = document.getElementById('mesasGrid');
-  if (container) {
-    const modulos = gestionModel.getModulos();
-    renderModulos(modulos, container);
-    console.log('OperationsController: Vista de módulos refrescada');
-  }
+function refreshModulosView() {
+  // El contenedor de módulos fue eliminado del DOM para evitar conflictos (se eliminó 'mesasGrid').
+  // Si en el futuro se necesita renderizar módulos en una ubicación concreta, llamar a
+  // renderModulos(modulos, container) pasando el contenedor deseado.
+  const modulos = gestionModel.getModulos() || [];
+  console.log('OperationsController: refreshModulosView invoked — module container removed. Modulos disponibles:', modulos.length);
 }

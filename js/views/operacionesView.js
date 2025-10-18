@@ -1,6 +1,7 @@
 // js/views/operacionesView.js
-import { eliminarRegistro } from '../models/operacionesModel.js';
+import { eliminarRegistro, getRegistroEntradasSalidas, getRegistroActivoPorMatricula, registrarEntradaAsistencia, registrarSalidaAsistencia } from '../models/operacionesModel.js';
 import { authModel } from '../models/storageModel.js';
+import { gestionModel } from '../models/gestionModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
 
 /**
@@ -43,6 +44,29 @@ function formatearCoordenadas(modulo) {
         return `Lat: ${modulo.latitud}, Lng: ${modulo.longitud}`;
     }
     return '';
+}
+
+/**
+ * Formatea una fecha/hora almacenada en el registro.
+ * Acepta strings (ya formateados) o objetos Date/ISO y devuelve una cadena legible.
+ */
+function formatDateTime(value) {
+  if (!value && value !== 0) return null;
+  try {
+    // Si ya es una cadena no vacía, devolverla (se asume que viene de toLocaleString o similar)
+    if (typeof value === 'string') {
+      const v = value.trim();
+      if (v === '' || v.toLowerCase() === 'null') return null;
+      return v;
+    }
+
+    // Si es Date u otro tipo, intentar convertir a fecha legible
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleString();
+  } catch (e) {
+    return null;
+  }
 }
 
 /**
@@ -237,7 +261,7 @@ export function renderRegistroEntradasSalidas(historial, container) {
         <tr>
           <th>Usuario</th>
           <th>Matrícula</th>
-          <th>Mesa</th>
+          <th>Módulo</th>
           <th>Rol</th>
           <th>Entrada</th>
           <th>Salida</th>
@@ -245,38 +269,45 @@ export function renderRegistroEntradasSalidas(historial, container) {
         </tr>
       </thead>
       <tbody>
-        ${historial.map((s, index) => `
-          <tr>
-            <td><strong>${s.nombre || 'N/A'}</strong></td>
-            <td>${s.matricula || '-'}</td>
-            <td>${s.mesa || '-'}</td>
-            <td>${s.rol === 'admin' ? '🛡️ Administrador' : '👨‍⚕️ Practicante'}</td>
-            <td>${s.entrada || 'No registrada'}</td>
-            <td>${s.salida || 'En servicio'}</td>
-            <td>
-              <button 
-                class="delete-registro-btn" 
-                data-registro-id="${s.id}" 
-                data-registro-index="${index}"
-                style="
-                  background: #ef4444; 
-                  color: white; 
-                  border: none; 
-                  padding: 4px 8px; 
-                  border-radius: 4px; 
-                  cursor: pointer; 
-                  font-size: 12px;
-                  transition: all 0.2s;
-                "
-                onmouseover="this.style.background='#dc2626'"
-                onmouseout="this.style.background='#ef4444'"
-                title="Eliminar registro"
-              >
-                🗑️
-              </button>
-            </td>
-          </tr>
-        `).join('')}
+        ${historial.map((s, index) => {
+          const entradaFmt = formatDateTime(s.entrada) || '';
+          const salidaFmt = formatDateTime(s.salida) || '';
+          // Mostrar solo la fecha/hora en Salida si existe; si no existe, dejar vacío
+          const salidaDisplay = salidaFmt ? salidaFmt : '';
+
+          return `
+            <tr>
+              <td><strong>${s.nombre || 'N/A'}</strong></td>
+              <td>${s.matricula || '-'}</td>
+              <td>${obtenerEtiquetaModulo(s.modulo || s.mesa || s.moduloId || s.grupoId)}</td>
+              <td>${s.rol === 'admin' ? '🛡️ Administrador' : '👨‍⚕️ Practicante'}</td>
+              <td>${entradaFmt}</td>
+              <td>${salidaDisplay}</td>
+              <td>
+                <button
+                  class="delete-registro-btn"
+                  data-registro-id="${s.id}"
+                  data-registro-index="${index}"
+                  style="
+                    background: #ef4444;
+                    color: white;
+                    border: none;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 12px;
+                    transition: all 0.2s;
+                  "
+                  onmouseover="this.style.background='#dc2626'"
+                  onmouseout="this.style.background='#ef4444'"
+                  title="Eliminar registro"
+                >
+                  🗑️
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('')}
       </tbody>
     </table>
   `;
@@ -527,4 +558,168 @@ export function renderModulos(modulos, container) {
       </div>
     `;
   });
+}
+
+/**
+ * Renderiza la lista de asistencia con checkboxes de entrada/salida
+ */
+export function renderAsistencia(listaUsuarios, container) {
+  if (!container) return;
+
+  if (!listaUsuarios || listaUsuarios.length === 0) {
+    console.log('OperacionesView: renderAsistencia llamada pero listaUsuarios está vacía');
+    container.innerHTML = `
+      <div style="text-align:center; color:#6b7280; padding:20px;">
+        <div style="font-weight:600; margin-bottom:8px;">No hay usuarios disponibles para mostrar</div>
+        <div style="font-size:13px; color:#9ca3af;">Verifica que hayas creado usuarios en el módulo de Usuarios. Revisa la consola para más detalles.</div>
+      </div>
+    `;
+    return;
+  }
+  // Obtener historial completo para mostrar últimas entradas/salidas
+  const historial = getRegistroEntradasSalidas() || [];
+  console.log('OperacionesView: renderAsistencia - usuarios recibidos:', listaUsuarios.length, 'registros historial:', historial.length);
+  if (historial.length > 0) console.log('OperacionesView: Primeros registros en historial:', historial.slice(0,3));
+
+  // Ordenar alfabéticamente por nombre
+  listaUsuarios = (listaUsuarios || []).slice().sort((a,b) => {
+    const na = (a.nombre || a.id || '').toLowerCase();
+    const nb = (b.nombre || b.id || '').toLowerCase();
+    return na.localeCompare(nb, 'es', { sensitivity: 'base' });
+  });
+
+  container.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      ${listaUsuarios.map(u => {
+  const registrosUsuario = historial.filter(r => r.matricula === u.matricula).sort((a,b)=> new Date(b.entrada) - new Date(a.entrada));
+  const ultimo = registrosUsuario[0] || null;
+  const activo = !!(ultimo && !ultimo.salida);
+  const entradaTime = ultimo ? (formatDateTime(ultimo.entrada) || '') : '';
+  const salidaTime = ultimo ? (formatDateTime(ultimo.salida) || '') : '';
+  const entradaChecked = activo ? 'checked' : '';
+
+        return `
+          <div class="asistencia-row" data-matricula="${u.matricula}" style="display:flex; align-items:center; gap:12px; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
+            <div style="flex:2; min-width:200px; display:flex; flex-direction:column;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="font-weight:600;">${u.nombre || u.id}</div>
+                
+              </div>
+              <div style="font-size:12px; color:#64748b;">Matrícula: ${u.matricula || '-'}</div>
+            </div>
+            <div style="flex:1; min-width:100px;">Módulo: <strong>${obtenerEtiquetaModulo(u.modulo || u.mesa || u.moduloId, u.grupoId)}</strong></div>
+            <div style="flex:1; min-width:140px; font-size:13px; color:#374151;">Entrada: <span class="entrada-time">${entradaTime}</span></div>
+            <div style="flex:1; min-width:140px; font-size:13px; color:#374151;">Salida: <span class="salida-time">${salidaTime}</span></div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <label style="display:flex; align-items:center; gap:6px;">
+                <input type="checkbox" class="entrada-chk" ${entradaChecked} ${entradaChecked ? 'disabled' : ''} /> Entrada
+              </label>
+              <label style="display:flex; align-items:center; gap:6px;">
+                <input type="checkbox" class="salida-chk" ${activo ? '' : 'disabled'} /> Salida
+              </label>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  // Agregar event listeners
+  setupAsistenciaHandlers(container);
+}
+
+function setupAsistenciaHandlers(container) {
+  const rows = container.querySelectorAll('.asistencia-row');
+  rows.forEach(row => {
+    const matricula = row.getAttribute('data-matricula');
+    const entradaChk = row.querySelector('.entrada-chk');
+    const salidaChk = row.querySelector('.salida-chk');
+    const entradaTimeEl = row.querySelector('.entrada-time');
+    const salidaTimeEl = row.querySelector('.salida-time');
+
+    if (entradaChk) {
+      entradaChk.addEventListener('change', async (e) => {
+        if (entradaChk.checked) {
+          // Registrar entrada
+          const usuario = authModel.getAllUsers().find(u => u.matricula === matricula) || { matricula };
+          const registro = registrarEntradaAsistencia(usuario);
+          // After registering, disable entrada and enable salida
+          entradaChk.disabled = true;
+          salidaChk.disabled = false;
+          entradaChk.checked = true;
+          // Update displayed entrada time
+          if (registro && registro.entrada && entradaTimeEl) entradaTimeEl.textContent = registro.entrada;
+        }
+      });
+    }
+
+    if (salidaChk) {
+        salidaChk.addEventListener('change', (e) => {
+          if (salidaChk.checked) {
+            // Only allow salida if there is an active registro
+            const activo = getRegistroActivoPorMatricula(matricula);
+            if (!activo) {
+              alert('No existe una entrada activa para esta matrícula');
+              salidaChk.checked = false;
+              salidaChk.disabled = true;
+              return;
+            }
+
+            // Mostrar confirmación usando el mini modal
+            showOperationMiniModal('Confirmar salida', `¿Deseas registrar la salida de <strong>${activo.nombre || activo.matricula}</strong>?`, [
+              { id: 'cancel', label: 'Cancelar', color: '#6b7280', callback: () => { salidaChk.checked = false; } },
+              { id: 'confirm', label: 'Registrar Salida', color: '#ef4444', callback: () => {
+                const resultado = registrarSalidaAsistencia(matricula);
+                // After registering salida, disable both and update UI
+                salidaChk.disabled = true;
+                entradaChk.disabled = false; // allow new entrada next time
+                if (resultado && resultado.salida && salidaTimeEl) salidaTimeEl.textContent = resultado.salida;
+                // Remove badge if present
+                const badge = row.querySelector('.badge-en-servicio'); if (badge) badge.remove();
+              }}
+            ]);
+          }
+        });
+    }
+  });
+}
+
+/**
+ * Normaliza y devuelve una etiqueta legible para la mesa/modulo de un usuario o registro.
+ * Si el valor no concuerda con los módulos configurados, devuelve 'No asignada'.
+ */
+export function obtenerEtiquetaModulo(valor, grupoId) {
+  const modulos = gestionModel.getModulos() || [];
+
+  // Si ya es un id de módulo (ej. 'M01' o 'M1') buscar por id
+  if (valor) {
+    const v = String(valor).trim();
+
+    // Buscar por id exacto (Mxx)
+    const byId = modulos.find(m => (m.id || '').toLowerCase() === v.toLowerCase());
+    if (byId) return `${byId.id} - ${byId.nombre}`;
+
+    // Si el valor contiene un número (ej. '3', 'mesa 3', 'modulo-03'), extraerlo e intentar mapear a M0N
+    const numMatch = v.match(/(\d+)/);
+    if (numMatch) {
+      const num = parseInt(numMatch[1], 10);
+      if (!isNaN(num)) {
+        const padded = `M${String(num).padStart(2, '0')}`;
+        const byNum = modulos.find(m => (m.id || '').toUpperCase() === padded.toUpperCase());
+        if (byNum) return `${byNum.id} - ${byNum.nombre}`;
+      }
+    }
+
+    // Buscar por nombre que contenga la cadena
+    const byName = modulos.find(m => (m.nombre || '').toLowerCase().includes(v.toLowerCase()));
+    if (byName) return `${byName.id} - ${byName.nombre}`;
+  }
+
+  // Intentar detectar por grupo asignado
+  if (grupoId) {
+    const byGroup = modulos.find(m => (m.grupoAsignadoId || '').toString() === grupoId.toString());
+    if (byGroup) return `${byGroup.id} - ${byGroup.nombre}`;
+  }
+
+  return 'No asignada';
 }

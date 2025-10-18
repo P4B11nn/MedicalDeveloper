@@ -12,11 +12,11 @@ Sistema de gestión médica offline que permite administrar pacientes, operacion
 
 - Gestión completa de pacientes
 
-- Control de operaciones y mesas de salud### **Modelos (Models)** - `js/models/`
+- Control de operaciones y módulos de salud### **Modelos (Models)** - `js/models/`
 
 - Sistema de reportes y estadísticas- **`storageModel.js`** - Gestión de usuarios, autenticación y actividades
 
-- Gestión de personal y usuarios con roles- **`operacionesModel.js`** - Registro de entradas/salidas y mesas de salud
+- Gestión de personal y usuarios con roles- **`operacionesModel.js`** - Registro de entradas/salidas y módulos de salud
 
 - Almacenamiento local (no requiere base de datos)- **`pacienteModel.js`** - Gestión de datos de pacientes
 
@@ -284,7 +284,7 @@ MedicalWebOffline/
 │   │   └── authGuard.js              # Protección rutas + Event Bus + roles
 │   ├── models/           # Modelos para manejar datos
 │   │   ├── gestionModel.js           # Gestión de módulos y grupos
-│   │   ├── operacionesModel.js       # Entradas/salidas, mesas
+│   │   ├── operacionesModel.js       # Entradas/salidas, módulos
 │   │   ├── pacienteModel.js          # Datos de pacientes
 │   │   ├── reporteModel.js           # Lógica de reportes
 │   │   └── storageModel.js           # Users, auth, actividad
