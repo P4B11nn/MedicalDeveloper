@@ -6,6 +6,9 @@
 import { authModel } from '../models/storageModel.js';
 import eventBus, { EVENT_NAMES } from './eventBus.js';
 
+// Hacer la función disponible globalmente INMEDIATAMENTE para que HeaderComponent pueda usarla
+window.initUserDisplay = initUserDisplay;
+
 /**
  * Initialize user display for any page
  * This is a centralized function to ensure consistent behavior
@@ -31,6 +34,11 @@ export function initUserDisplay() {
     // Setup click outside handler
     setupClickOutsideHandler();
     
+    // Mark as configured
+    if (window.UserDisplayGlobal) {
+        window.UserDisplayGlobal.isConfigured = true;
+    }
+    
     console.log('UserDisplayGlobal: Visualización de usuario inicializada correctamente');
     return true;
 }
@@ -45,32 +53,85 @@ function updateUserNameDisplay(user) {
         return;
     }
 
-    // Get role icon
-    const roleIcon = getRoleIcon(user.role);
+    // Get role icon and display name
+    const roleIcon = getRoleIcon(user.rol || user.role);
+    const displayName = user.nombre || user.name || user.username || 'Usuario';
     
-    // Update display
-    userNameElement.textContent = `${roleIcon} ${user.nombre || user.username || 'Usuario'}`;
-    
-    console.log(`UserDisplayGlobal: Nombre de usuario actualizado: ${user.nombre} (${user.role})`);
+    // SIEMPRE actualizar el display con el icono de rol
+    userNameElement.textContent = `${roleIcon} ${displayName}`;
+    console.log(`UserDisplayGlobal: Nombre de usuario actualizado: ${displayName} (${user.rol || user.role}) con icono: ${roleIcon}`);
+
+    // SIEMPRE actualizar el dropdown interno
+    updateDropdownUserInfo(user);
     
     // Emit event
     eventBus.emit(EVENT_NAMES.USER_DISPLAY_UPDATED, {
         user: user,
         element: 'userName',
+        roleIcon: roleIcon,
+        displayName: displayName,
         timestamp: new Date().toISOString()
     });
 }
 
 /**
+ * Update the dropdown user information
+ */
+function updateDropdownUserInfo(user) {
+    const dropdownUserName = document.getElementById('dropdownUserName');
+    const dropdownUserRole = document.getElementById('dropdownUserRole');
+    
+    const displayName = user.nombre || user.name || user.username || 'Usuario';
+    const displayRole = getRoleDisplayName(user.rol || user.role || 'sin-rol');
+    
+    if (dropdownUserName) {
+        dropdownUserName.textContent = displayName;
+        console.log(`UserDisplayGlobal: Dropdown userName actualizado: ${displayName}`);
+    }
+    
+    if (dropdownUserRole) {
+        dropdownUserRole.textContent = displayRole;
+        console.log(`UserDisplayGlobal: Dropdown userRole actualizado: ${displayRole}`);
+    }
+}
+
+/**
+ * Get display name for role
+ */
+function getRoleDisplayName(role) {
+    switch (role) {
+        case 'admin':
+            return 'Administrador';
+        case 'practicante':
+            return 'Practicante';
+        case 'supervisor':
+            return 'Supervisor';
+        default:
+            return 'Usuario';
+    }
+}
+
+/**
  * Get role icon based on user role
+ * This is the centralized function for all role icons across the application
  */
 function getRoleIcon(role) {
+    console.log(`UserDisplayGlobal: Obteniendo icono para rol: ${role}`);
     switch (role) {
         case 'admin':
             return '🛡️';
         case 'practicante':
             return '👨‍⚕️';
+        case 'supervisor':
+            return '👨‍💼';
+        case 'enfermero':
+        case 'enfermera':
+            return '👩‍⚕️';
+        case 'doctor':
+        case 'medico':
+            return '👨‍⚕️';
         default:
+            console.log(`UserDisplayGlobal: Rol no reconocido '${role}', usando icono por defecto`);
             return '👤';
     }
 }
@@ -87,7 +148,7 @@ function setupUserIconHandler() {
         return;
     }
 
-    // Remove existing listeners
+    // Remove existing listeners más agresivamente
     const newUserIcon = userIcon.cloneNode(true);
     userIcon.parentNode.replaceChild(newUserIcon, userIcon);
     
@@ -100,19 +161,37 @@ function setupUserIconHandler() {
         
         if (userDropdown) {
             const isVisible = userDropdown.style.display === 'block';
-            userDropdown.style.display = isVisible ? 'none' : 'block';
+            const newDisplay = isVisible ? 'none' : 'block';
+            userDropdown.style.display = newDisplay;
             
-            console.log(`UserDisplayGlobal: Dropdown ${isVisible ? 'ocultado' : 'mostrado'}`);
+            console.log(`UserDisplayGlobal: Dropdown ${isVisible ? 'ocultado' : 'mostrado'} - display set to: ${newDisplay}`);
+            console.log('UserDisplayGlobal: Current computed display:', window.getComputedStyle(userDropdown).display);
             
             // Emit event
             eventBus.emit(EVENT_NAMES.USER_DROPDOWN_TOGGLED, {
                 visible: !isVisible,
+                display: newDisplay,
                 timestamp: new Date().toISOString()
             });
         } else {
             console.warn('UserDisplayGlobal: userDropdown no encontrado');
         }
     });
+    
+    // También agregar listener al userName si existe
+    const userName = document.getElementById('userName');
+    if (userName) {
+        const newUserName = userName.cloneNode(true);
+        userName.parentNode.replaceChild(newUserName, userName);
+        
+        newUserName.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('UserDisplayGlobal: Click en userName, delegando a userIcon');
+            newUserIcon.click();
+        });
+    }
     
     console.log('UserDisplayGlobal: Handler de icono de usuario configurado');
 }
@@ -221,8 +300,21 @@ document.addEventListener('DOMContentLoaded', () => {
  * Show elegant logout confirmation modal
  */
 function showLogoutConfirmation() {
+    console.log('🔍 showLogoutConfirmation() llamada');
+    
+    // Check if modal already exists
+    const existingModal = document.querySelector('[id*="logout-confirmation-modal"]');
+    if (existingModal) {
+        console.warn('UserDisplayGlobal: Modal de logout ya existe, no creando duplicado');
+        console.log('Existing modal:', existingModal);
+        return;
+    }
+
+    console.log('UserDisplayGlobal: Creando nuevo modal de logout');
+
     // Create modal backdrop
     const modal = document.createElement('div');
+    modal.id = 'logout-confirmation-modal';
     modal.style.cssText = `
         position: fixed;
         top: 0;
@@ -342,59 +434,122 @@ function showLogoutConfirmation() {
 
     document.body.appendChild(modal);
 
-    // Event handlers
-    modal.querySelector('#cancelar-logout').addEventListener('click', () => {
-        console.log('UserDisplayGlobal: Usuario canceló cerrar sesión');
-        modal.style.animation = 'fadeIn 0.3s ease reverse';
-        setTimeout(() => modal.remove(), 300);
-    });
+    // Event handlers with improved event handling
+    const cancelButton = modal.querySelector('#cancelar-logout');
+    const confirmButton = modal.querySelector('#confirmar-logout');
+    
+    if (cancelButton) {
+        cancelButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🚫 UserDisplayGlobal: Usuario canceló cerrar sesión - BOTÓN CANCELAR');
+            modal.style.animation = 'fadeIn 0.3s ease reverse';
+            setTimeout(() => {
+                if (modal.parentNode) {
+                    console.log('🗑️ UserDisplayGlobal: Removiendo modal (cancelar)');
+                    modal.remove();
+                }
+            }, 300);
+        });
+    }
 
-    modal.querySelector('#confirmar-logout').addEventListener('click', () => {
-        console.log('UserDisplayGlobal: Usuario confirmó cerrar sesión');
-        
-        // Show loading state
-        const confirmBtn = modal.querySelector('#confirmar-logout');
-        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Cerrando...';
-        confirmBtn.disabled = true;
-        
-        setTimeout(() => {
-            // Emit logout event
-            eventBus.emit(EVENT_NAMES.USER_LOGOUT, {
-                source: 'logout_button',
-                timestamp: new Date().toISOString()
-            });
+    if (confirmButton) {
+        confirmButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('UserDisplayGlobal: Usuario confirmó cerrar sesión');
             
-            // Clear session
-            authModel.logout();
+            // Show loading state
+            confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Cerrando...';
+            confirmButton.disabled = true;
             
-            // Redirect to login
-            const currentPath = window.location.pathname;
-            const isInPagesFolder = currentPath.includes('/pages/');
-            const loginPath = isInPagesFolder ? '../index.html' : 'index.html';
-            
-            console.log('UserDisplayGlobal: Redirigiendo a login:', loginPath);
-            modal.remove();
-            window.location.href = loginPath;
-        }, 1000);
-    });
+            setTimeout(() => {
+                // Emit logout event
+                if (typeof eventBus !== 'undefined' && eventBus.emit) {
+                    eventBus.emit(EVENT_NAMES.USER_LOGOUT, {
+                        source: 'logout_button',
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                
+                // Clear session
+                if (typeof authModel !== 'undefined' && authModel.logout) {
+                    authModel.logout();
+                }
+                
+                // Redirect to login
+                const currentPath = window.location.pathname;
+                const isInPagesFolder = currentPath.includes('/pages/');
+                const loginPath = isInPagesFolder ? '../index.html' : 'index.html';
+                
+                console.log('UserDisplayGlobal: Redirigiendo a login:', loginPath);
+                if (modal.parentNode) {
+                    modal.remove();
+                }
+                window.location.href = loginPath;
+            }, 1000);
+        });
+    }
 
     // Close on backdrop click
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
-            console.log('UserDisplayGlobal: Usuario canceló cerrar sesión (click fuera)');
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🚫 UserDisplayGlobal: Usuario canceló cerrar sesión (click fuera)');
             modal.style.animation = 'fadeIn 0.3s ease reverse';
-            setTimeout(() => modal.remove(), 300);
+            setTimeout(() => {
+                if (modal.parentNode) {
+                    console.log('🗑️ UserDisplayGlobal: Removiendo modal (click fuera)');
+                    modal.remove();
+                }
+            }, 300);
         }
     });
 
     // Close on Escape key
     const handleEscape = (e) => {
         if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
             console.log('UserDisplayGlobal: Usuario canceló cerrar sesión (Escape)');
             modal.style.animation = 'fadeIn 0.3s ease reverse';
-            setTimeout(() => modal.remove(), 300);
-            document.removeEventListener('keydown', handleEscape);
+            setTimeout(() => {
+                if (modal.parentNode) {
+                    modal.remove();
+                }
+                document.removeEventListener('keydown', handleEscape);
+            }, 300);
         }
     };
     document.addEventListener('keydown', handleEscape);
 }
+
+// Export functions globally for compatibility
+window.UserDisplayGlobal = {
+    initUserDisplay,
+    updateUserNameDisplay,
+    setupUserIconHandler,
+    setupLogoutHandler,
+    showLogoutConfirmation,
+    getRoleIcon, // Exportar función de iconos de rol
+    getRoleDisplayName, // Exportar función de nombres de rol
+    isConfigured: false
+};
+
+// Auto-initialize when script loads
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        const currentUser = authModel.getCurrentUser();
+        if (currentUser) {
+            console.log('UserDisplayGlobal: Auto-inicializando visualización de usuario');
+            initUserDisplay();
+        }
+    }, 100);
+});
+
+// Also export standalone functions for backward compatibility
+window.initUserDisplay = initUserDisplay;
+window.showLogoutConfirmation = showLogoutConfirmation;
+window.getRoleIcon = getRoleIcon; // Hacer disponible globalmente
+window.getRoleDisplayName = getRoleDisplayName; // Hacer disponible globalmente

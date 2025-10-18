@@ -437,11 +437,11 @@ function renderPacientesList() {
   tableBody.innerHTML = pacientes.map(paciente => {
     let statusBadge;
     if (paciente.status === 'completo') {
-      statusBadge = '<span class="status-icon status-complete" title="Datos médicos completos">✅</span>';
+      statusBadge = '<span class="status-icon status-complete" title="Datos médicos completos"><i class="fas fa-check-circle" style="color: #10b981;"></i></span>';
     } else if (paciente.status === 'sin_datos_medicos') {
-      statusBadge = '<span class="status-icon status-pending" title="Sin datos médicos">⏳</span>';
+      statusBadge = '<span class="status-icon status-pending" title="Sin datos médicos"><i class="fas fa-clock" style="color: #f59e0b;"></i></span>';
     } else {
-      statusBadge = '<span class="status-icon status-unknown" title="Estado desconocido">❓</span>';
+      statusBadge = '<span class="status-icon status-unknown" title="Estado desconocido"><i class="fas fa-question-circle" style="color: #6b7280;"></i></span>';
     }
     
     const inicial = paciente.nombre ? paciente.nombre.charAt(0).toUpperCase() : 'P';
@@ -457,21 +457,21 @@ function renderPacientesList() {
           ${paciente.nombre} ${paciente.apellidos || ''}
         </td>
         <td><span class="age-badge">${edad} años</span></td>
-        <td><span class="career-badge" title="${paciente.carrera}" data-tooltip="${paciente.carrera}">📚 ${carreraAbrev}</span></td>
+        <td><span class="career-badge" title="${paciente.carrera}" data-tooltip="${paciente.carrera}"><i class="fas fa-graduation-cap" style="color: #3b82f6;"></i> ${carreraAbrev}</span></td>
         <td>${paciente.grado}</td>
         <td><span class="badge badge-blue">${paciente.grupo}</span></td>
         <td><span class="faculty-badge">${facultadAbrev}</span></td>
-        <td class="phone-number">📞 ${paciente.telefono}</td>
+        <td class="phone-number"><i class="fas fa-phone" style="color: #10b981;"></i> ${paciente.telefono}</td>
         <td>${statusBadge}</td>
         <td class="actions-cell">
           <button class="action-btn view-btn" title="Ver detalles" aria-label="Ver detalles" onclick="verDetallesPaciente('${paciente.id}')">
-            👁️
+            <i class="fas fa-eye" style="color: #3b82f6;"></i>
           </button>
           <button class="action-btn edit-btn" title="Editar" aria-label="Editar" onclick="editarPaciente('${paciente.id}')">
-            ✏️
+            <i class="fas fa-edit" style="color: #f59e0b;"></i>
           </button>
           <button class="action-btn delete-btn" title="Eliminar" aria-label="Eliminar paciente" onclick="eliminarPaciente('${paciente.id}')">
-            🗑️
+            <i class="fas fa-trash" style="color: #ef4444;"></i>
           </button>
         </td>
       </tr>
@@ -504,7 +504,7 @@ function renderDatosMedicosForm() {
     if (pacientesSinDatos.length === 0) {
       pendingAlert.innerHTML = `
         <div class="pending-patient-card">
-          <div class="patient-name fw-600">¡Excelente! 🎉</div>
+          <div class="patient-name fw-600">¡Excelente! <i class="fas fa-trophy" style="color: #f59e0b;"></i></div>
           <div class="muted-text">Todos los pacientes tienen sus datos médicos completos</div>
         </div>
       `;
@@ -618,7 +618,8 @@ function cargarDatosPaciente(pacienteId) {
     infoSection.classList.remove('hidden');
     
     avatar.textContent = paciente.nombre.charAt(0).toUpperCase();
-    nombre.textContent = `👤 ${paciente.nombre} ${paciente.apellidos || ''}`;
+    nombre.textContent = `${paciente.nombre} ${paciente.apellidos || ''}`;
+    nombre.innerHTML = `<i class="fas fa-user" style="color: #3b82f6; margin-right: 8px;"></i>${paciente.nombre} ${paciente.apellidos || ''}`;
     
     const edad = calcularEdad(paciente.fechaNacimiento);
     
@@ -758,7 +759,7 @@ function eliminarPaciente(pacienteId) {
   // Confirmación personalizada antes de eliminar
   const mensaje = `¿Estás seguro de que deseas eliminar al paciente?
 
-📋 Datos del paciente:
+� Datos del paciente:
 • Nombre: ${paciente.nombre} ${paciente.apellidos || ''}
 • Matrícula: ${paciente.matricula}
 • Estado: ${tieneDatosMedicos ? 'Datos médicos completos' : 'Sin datos médicos'}

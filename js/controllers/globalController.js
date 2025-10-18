@@ -28,10 +28,7 @@ export function initGlobalController() {
   // Suscribirse a eventos del Event Bus
   setupEventListeners();
 
-  // Mostrar información del usuario
-  displayUserInfo(usuarioActual);
-  
-  // Configurar menú de usuario
+  // Configurar menú de usuario (displayUserInfo se maneja ahora en userDisplayGlobal.js)
   setupUserDropdown();
   
   // Configurar botón de cerrar sesión
@@ -117,63 +114,121 @@ function setupEventListeners() {
 }
 
 /**
- * Mostrar información del usuario en la interfaz
- */
-function displayUserInfo(usuario) {
-  const userNameSpan = document.getElementById('userName');
-  if (userNameSpan) {
-    let rolIcon = '';
-    // Corregir los iconos de rol
-    switch (usuario.rol || usuario.role) {
-      case 'admin':
-        rolIcon = '🛡️ ';
-        break;
-      case 'practicante':
-        rolIcon = '👨‍⚕️ ';
-        break;
-      default:
-        rolIcon = '👤 ';
-    }
-    userNameSpan.textContent = `${rolIcon}${usuario.nombre}`;
-    console.log(`GlobalController: Info de usuario mostrada - ${usuario.nombre} (${usuario.rol || usuario.role})`);
-  } else {
-    console.warn('GlobalController: Elemento userName no encontrado');
-  }
-}
-
-/**
  * Configurar el dropdown del menú de usuario
  */
 function setupUserDropdown() {
+  const userName = document.getElementById('userName');
   const userIcon = document.getElementById('userIcon');
   const userDropdown = document.getElementById('userDropdown');
   
-  if (userIcon && userDropdown) {
-    userIcon.addEventListener('click', (e) => {
+  // Verificar si userDisplayGlobal.js ya está manejando el dropdown
+  if (window.initUserDisplay && typeof window.initUserDisplay === 'function') {
+    console.log('GlobalController: userDisplayGlobal.js está activo, omitiendo setupUserDropdown para evitar conflictos');
+    return;
+  }
+  
+  if (userName && userIcon && userDropdown) {
+    
+    // Función para posicionar el dropdown automáticamente justo debajo del área de usuario
+    function positionDropdown() {
+      const userNameRect = userName.getBoundingClientRect();
+      const userIconRect = userIcon.getBoundingClientRect();
+      
+      // Usar el área completa del usuario (desde el ícono hasta el final del nombre)
+      const userAreaLeft = Math.min(userIconRect.left, userNameRect.left);
+      const userAreaRight = Math.max(userIconRect.right, userNameRect.right);
+      const userAreaBottom = Math.max(userIconRect.bottom, userNameRect.bottom);
+      
+      const dropdownWidth = 200;
+      const margin = 20;
+      const viewportWidth = window.innerWidth;
+      
+      // Posicionar justo debajo del área del usuario
+      userDropdown.style.top = (userAreaBottom + 5) + 'px';
+      
+      let rightPosition = viewportWidth - userAreaRight;
+      let leftPosition = 'auto';
+      
+      // Verificar si hay espacio suficiente a la derecha
+      if (userAreaRight + dropdownWidth + margin > viewportWidth) {
+        // Alinear a la derecha del área de usuario
+        rightPosition = viewportWidth - userAreaRight;
+      } else {
+        // Hay espacio, mantener alineado a la derecha
+        rightPosition = viewportWidth - userAreaRight;
+      }
+      
+      // Si el dropdown se saldría por la izquierda, ajustar
+      if (viewportWidth - rightPosition - dropdownWidth < margin) {
+        leftPosition = margin + 'px';
+        rightPosition = 'auto';
+      }
+      
+      userDropdown.classList.add('auto-positioned');
+      if (leftPosition !== 'auto') {
+        userDropdown.style.left = leftPosition;
+        userDropdown.style.right = 'auto';
+      } else {
+        userDropdown.style.right = rightPosition + 'px';
+        userDropdown.style.left = 'auto';
+      }
+      
+      const maxWidth = Math.min(viewportWidth - (2 * margin), dropdownWidth);
+      userDropdown.style.maxWidth = maxWidth + 'px';
+    }
+    
+    // Hacer clickeable el nombre del usuario en lugar del ícono
+    userName.addEventListener('click', (e) => {
       e.stopPropagation();
-      const isVisible = userDropdown.style.display === 'block';
       
-      userDropdown.style.display = isVisible ? 'none' : 'block';
+      // Usar getComputedStyle para obtener el estado real
+      const currentDisplay = getComputedStyle(userDropdown).display;
+      const isCurrentlyVisible = currentDisplay === 'block';
       
-      console.log(`GlobalController: Dropdown ${isVisible ? 'cerrado' : 'abierto'}`);
+      if (isCurrentlyVisible) {
+        userDropdown.style.display = 'none';
+      } else {
+        positionDropdown(); // Calcular posición antes de mostrar
+        userDropdown.style.display = 'block';
+      }
+      
+      console.log(`GlobalController: Dropdown ${isCurrentlyVisible ? 'cerrado' : 'abierto'}`);
       
       // Emitir evento de toggle del dropdown
       eventBus.emit(EVENT_NAMES.USER_DROPDOWN_TOGGLED, { 
-        isVisible: !isVisible,
-        source: 'user_icon_click' 
+        isVisible: !isCurrentlyVisible,
+        source: 'user_name_click' 
       });
     });
 
     // Cerrar dropdown al hacer clic fuera
     document.addEventListener('click', (e) => {
-      if (!userIcon.contains(e.target) && !userDropdown.contains(e.target)) {
-        userDropdown.style.display = 'none';
+      if (!userName.contains(e.target) && !userIcon.contains(e.target) && !userDropdown.contains(e.target)) {
+        const wasVisible = getComputedStyle(userDropdown).display === 'block';
+        if (wasVisible) {
+          userDropdown.style.display = 'none';
+          eventBus.emit(EVENT_NAMES.USER_DROPDOWN_TOGGLED, { 
+            isVisible: false,
+            source: 'click_outside' 
+          });
+        }
+      }
+    });
+
+    // Reposicionar en resize de ventana
+    window.addEventListener('resize', function() {
+      if (getComputedStyle(userDropdown).display === 'block') {
+        positionDropdown();
       }
     });
     
     console.log('GlobalController: Dropdown del usuario configurado');
   } else {
-    console.warn('GlobalController: Elementos del dropdown no encontrados');
+    console.log('GlobalController: Elementos del dropdown no encontrados (posiblemente usando HeaderComponent)', {
+      userName: !!userName,
+      userIcon: !!userIcon, 
+      userDropdown: !!userDropdown
+    });
   }
 }
 
@@ -197,136 +252,33 @@ function setupLogoutButton() {
   if (sidebarLogoutBtn) attach(sidebarLogoutBtn);
 
   if (!logoutBtn && !sidebarLogoutBtn) {
-    console.warn('GlobalController: Botón de logout no encontrado');
+    console.log('GlobalController: Botón de logout no encontrado (posiblemente usando HeaderComponent)');
   }
 }
 
 /**
- * Muestra un modal de confirmación elegante para cerrar sesión
+ * Delega el modal de logout a UserDisplayGlobal
  */
 function showLogoutConfirmModal() {
-  // Crea el overlay del modal
-  const modalOverlay = document.createElement('div');
-  modalOverlay.className = 'modal-overlay';
-  modalOverlay.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  `;
+  console.log('GlobalController: Delegando logout a UserDisplayGlobal');
   
-  modalOverlay.innerHTML = `
-    <div style="
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border: 2px solid rgba(125, 211, 252, 0.3);
-      border-radius: 20px;
-      padding: 30px;
-      text-align: center;
-      box-shadow: 0 8px 25px rgba(125, 211, 252, 0.2);
-      max-width: 400px;
-      width: 90%;
-    ">
-      <h3 style="
-        margin: 0 0 20px 0;
-        color: #1f2937;
-        font-size: 1.4rem;
-        font-weight: 600;
-      ">Cerrar Sesión</h3>
-      
-      <p style="
-        margin: 0 0 25px 0;
-        color: #4b5563;
-        font-size: 1rem;
-        line-height: 1.5;
-      ">¿Estás seguro de que deseas cerrar la sesión?</p>
-      
-      <div style="
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-      ">
-        <button id="btn-cancel-logout" style="
-          background: linear-gradient(135deg, #e5e7eb, #d1d5db);
-          border: none;
-          border-radius: 20px;
-          padding: 12px 25px;
-          color: #374151;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        ">Cancelar</button>
-        
-        <button id="btn-confirm-logout" style="
-          background: linear-gradient(135deg, #f87171, #fca5a5);
-          border: none;
-          border-radius: 20px;
-          padding: 12px 25px;
-          color: white;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        ">Cerrar Sesión</button>
-      </div>
-    </div>
-  `;
-  
-  document.body.appendChild(modalOverlay);
-  
-  // Configurar botones
-  const cerrarModal = () => document.body.removeChild(modalOverlay);
-  
-  modalOverlay.querySelector('#btn-cancel-logout').addEventListener('click', cerrarModal);
-  
-  modalOverlay.querySelector('#btn-confirm-logout').addEventListener('click', () => {
-    cerrarModal();
-    
-    const usuarioActual = authModel.getCurrentUser();
-    
-    // Registrar salida automáticamente
-    if (usuarioActual) {
-      const salidaRegistrada = registrarSalida(usuarioActual.matricula);
-      if (salidaRegistrada) {
-        console.log('GlobalController: Salida registrada automáticamente');
-        
-        // Emitir evento de salida
-        eventBus.emit(EVENT_NAMES.OPERACION_UPDATED, {
-          type: 'salida',
-          usuario: usuarioActual,
-          timestamp: new Date().toISOString()
-        });
-      }
+  // Verificar si UserDisplayGlobal tiene la función
+  if (window.UserDisplayGlobal && typeof window.UserDisplayGlobal.showLogoutConfirmation === 'function') {
+    console.log('GlobalController: Llamando a UserDisplayGlobal.showLogoutConfirmation');
+    window.UserDisplayGlobal.showLogoutConfirmation();
+  } else if (typeof showLogoutConfirmation === 'function') {
+    console.log('GlobalController: Llamando a función global showLogoutConfirmation');
+    showLogoutConfirmation();
+  } else {
+    console.warn('GlobalController: No se encontró función de logout, usando fallback básico');
+    if (confirm('¿Estás seguro de que deseas cerrar la sesión?')) {
+      globalLogout();
     }
-    
-    // Emitir evento antes del logout
-    eventBus.emit(EVENT_NAMES.USER_LOGOUT, { source: 'logout_button' });
-    
-    // Limpiar sesión
-    authModel.logout();
-    
-    // Redirigir al login
-    const currentPath = window.location.pathname;
-    const isInPagesFolder = currentPath.includes('/pages/');
-    const loginPath = isInPagesFolder ? '../index.html' : 'index.html';
-    
-    console.log('GlobalController: Redirigiendo a login:', loginPath);
-    window.location.href = loginPath;
-  });
-  
-  // Cerrar al hacer clic fuera
-  modalOverlay.addEventListener('click', (e) => {
-    if (e.target === modalOverlay) {
-      cerrarModal();
-    }
-  });
+  }
 }
+
+// Hacer la función disponible globalmente para que HeaderComponent pueda usarla
+window.showLogoutConfirmModal = showLogoutConfirmModal;
 
 /**
  * Configurar el botón de regreso
@@ -343,7 +295,7 @@ function setupBackButton() {
     
     console.log('GlobalController: Botón de regreso configurado');
   } else {
-    console.warn('GlobalController: Botón de regreso no encontrado');
+    console.log('GlobalController: Botón de regreso no encontrado (posiblemente usando HeaderComponent)');
   }
 }
 

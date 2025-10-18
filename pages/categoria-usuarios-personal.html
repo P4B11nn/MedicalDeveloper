@@ -42,25 +42,177 @@
     header {
       background: linear-gradient(135deg, #7dd3fc, #fef3c7);
       color: #1f2937;
-      text-align: center;
-      padding: 20px;
-      position: relative;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 80px;
       box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
-      z-index: 100;
+      z-index: 1000;
+      padding: 0;
     }
 
-    header h1 {
-      margin: 0;
-      font-size: 28px;
-      font-weight: bold;
+    .nav-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 100%;
+      padding: 0 20px;
+      max-width: 100%;
     }
 
-    header .icon {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 20px;
+    .nav-left {
+      flex: 0 0 auto;
+      min-width: 0;
+    }
+
+    .back-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: #1f2937;
+      padding: 10px 16px;
+      border-radius: 25px;
       cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .back-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateX(-2px);
+    }
+
+    .nav-center {
+      flex: 1;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .nav-center h1 {
+      margin: 0;
+      font-size: clamp(18px, 3vw, 24px);
+      font-weight: bold;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .nav-right {
+      flex: 0 0 auto;
+      position: relative;
+      min-width: 0;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 10px 16px;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      min-height: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .user-info:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .user-info:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      min-width: 280px;
+      z-index: 1001;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .dropdown-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .user-avatar {
+      font-size: 32px;
+      color: #64748b;
+    }
+
+    .user-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-name {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 16px;
+      margin-bottom: 2px;
+    }
+
+    .user-role {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 0;
+    }
+
+    .dropdown-options {
+      padding: 8px 0;
+    }
+
+    .dropdown-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      text-decoration: none;
+      color: #475569;
+      transition: all 0.2s ease;
+      font-size: 14px;
+    }
+
+    .dropdown-option:hover {
+      background: #f1f5f9;
+      color: #dc2626;
+    }
+
+    .dropdown-option i {
+      width: 16px;
+      text-align: center;
+    }
+
+    /* Espaciado para header fijo */
+    body {
+      padding-top: 80px;
     }
 
     .back-btn {
@@ -378,17 +530,11 @@
       margin-left: 8px;
     }
     
-    #userDropdown {
-      display: none;
-      position: fixed;
-      top: 40px;
-      right: 0;
-      background: white;
-      color: #333;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      min-width: 180px;
-      z-index: 1000;
+    /* El CSS de #userDropdown se maneja ahora en HeaderComponent */
+    
+    #userDropdown.auto-positioned {
+      right: auto;
+      left: auto;
     }
     
     #startServiceBtn, #logoutBtn {
@@ -409,15 +555,42 @@
   </style>
 </head>
 <body class="pre-init">
+  <!-- Header individual estático -->
   <header>
-    <button class="back-btn" onclick="window.location.href='../menuInicio.html'" title="Volver al Menú">←</button>
-    <div class="icon" id="userIcon"><span id="userName"></span>
-      <div id="userDropdown">
-        <button id="startServiceBtn">Iniciar servicio</button>
-        <button id="logoutBtn">Cerrar sesión</button>
+    <div class="nav-container">
+      <div class="nav-left">
+        <button class="back-button" onclick="window.location.href='../menuInicio.html'">
+          <i class="fas fa-arrow-left"></i>
+          <span>Volver al inicio</span>
+        </button>
+      </div>
+      <div class="nav-center">
+        <h1>Usuarios y Personal</h1>
+      </div>
+      <div class="nav-right">
+        <div class="user-info" id="userIcon">
+          <span id="userName">Usuario</span>
+        </div>
+        <div class="user-dropdown" id="userDropdown" style="display: none;">
+          <div class="dropdown-header">
+            <div class="user-avatar">
+              <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="user-details">
+              <div class="user-name" id="dropdownUserName">Usuario</div>
+              <div class="user-role" id="dropdownUserRole">Rol no definido</div>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-options">
+            <a href="#" class="dropdown-option" id="logoutBtn">
+              <i class="fas fa-sign-out-alt"></i>
+              <span>Cerrar sesión</span>
+            </a>
+          </div>
+        </div>
       </div>
     </div>
-    <h1>Medical Developer - Usuarios y Personal</h1>
   </header>
 
   <div class="main-layout">
@@ -528,52 +701,123 @@
     </div>
   </div>
 
+  <script>
+    // Función para inicializar header individual
+    function initIndividualHeader() {
+      const userIcon = document.getElementById('userIcon');
+      const userDropdown = document.getElementById('userDropdown');
+      const logoutOption = document.getElementById('logoutBtn');
+      
+      // Obtener información del usuario (intentar múltiples fuentes)
+      let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      
+      // Si currentUser está vacío, intentar con usuarioActual
+      if (!currentUser.nombre && !currentUser.name) {
+        currentUser = JSON.parse(localStorage.getItem('usuarioActual') || '{}');
+      }
+      
+      // Función para obtener nombre para mostrar con rol
+      function getRoleDisplayName(role) {
+        switch (role) {
+          case 'admin': return 'Administrador';
+          case 'practicante': return 'Practicante';  
+          case 'supervisor': return 'Supervisor';
+          default: return 'Usuario';
+        }
+      }
+      
+      // Actualizar información del usuario
+      const displayName = currentUser.nombre || currentUser.name || 'Usuario';
+      const userRole = currentUser.rol || currentUser.role || 'sin-rol';
+      const roleDisplayName = getRoleDisplayName(userRole);
+      
+      // Actualizar elementos del DOM
+      const userNameElement = document.getElementById('userName');
+      const dropdownUserName = document.getElementById('dropdownUserName');
+      const dropdownUserRole = document.getElementById('dropdownUserRole');
+      
+      if (userNameElement) {
+        userNameElement.textContent = displayName;
+      }
+      
+      if (dropdownUserName) {
+        dropdownUserName.textContent = displayName;
+      }
+      
+      if (dropdownUserRole) {
+        dropdownUserRole.textContent = roleDisplayName;
+      }
+      
+      // Toggle dropdown
+      userIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = userDropdown.style.display === 'block';
+        userDropdown.style.display = isVisible ? 'none' : 'block';
+      });
+      
+      // Cerrar dropdown al hacer clic fuera
+      document.addEventListener('click', (e) => {
+        if (!userIcon.contains(e.target) && !userDropdown.contains(e.target)) {
+          userDropdown.style.display = 'none';
+        }
+      });
+      
+      // Manejar logout
+      logoutOption.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        if (typeof window.showLogoutConfirmationModal === 'function') {
+          window.showLogoutConfirmationModal();
+        } else {
+          // Fallback básico
+          if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('userSession');
+            window.location.href = '../index.html';
+          }
+        }
+        
+        userDropdown.style.display = 'none';
+      });
+    }
+
+    // Hacer disponible globalmente
+    window.initIndividualHeader = initIndividualHeader;
+  </script>
+
   <script type="module">
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initUsersController } from '../js/controllers/usersController.js';
+    // HeaderComponent eliminado, ahora usamos header individual
+    
     document.addEventListener('DOMContentLoaded', () => {
       if (AuthGuard.validateSession()) {
-        initGlobalController();
-        initUsersController();
+        // PRIMERO: Inicializar header component
+        // Inicializar header individual
+        initIndividualHeader();
+        console.log('Header component inicializado para Usuarios y Personal');
+        
+        // SEGUNDO: Inicializar controladores después del header
+        setTimeout(() => {
+          initGlobalController();
+          initUsersController();
+        }, 100);
       }
     });
   </script>
 
   <script>
-    // Manejo básico del formulario de nuevo usuario por si el controller no lo hace
-    function limpiarFormulario(){
-      const f = document.getElementById('formUsuario');
-      if(!f) return;
-      f.reset();
-    }
-
-    document.addEventListener('DOMContentLoaded', ()=>{
-      const f = document.getElementById('formUsuario');
-      if(f){
-        f.addEventListener('submit', (ev)=>{
-          ev.preventDefault();
-          // Si initUsersController provee un método global para crear usuarios, usarlo; si no, simular
-          try{
-            if(window.UsersController && typeof window.UsersController.createUser === 'function'){
-              const data = Object.fromEntries(new FormData(f).entries());
-              window.UsersController.createUser(data);
-              alert('Usuario creado (controlador).');
-              limpiarFormulario();
-            } else {
-              alert('Formulario enviado (simulado). Si deseas, implementar la creación en usersController.');
-              limpiarFormulario();
-            }
-          }catch(e){ console.warn('Error manejando submit de nuevo usuario', e); alert('Error al procesar el formulario'); }
-        });
-      }
-    });
+    // El formulario ahora es manejado completamente por usersController.js
+    console.log('Formulario de nuevo usuario será manejado por UsersController');
   </script>
 
   <script>
     // Mostrar sólo la sección objetivo cuando venimos desde el menú (compact=1) o con hash
     (function(){
       document.addEventListener('DOMContentLoaded', ()=>{
+        // Esperar a que usersController se inicialice primero
+        setTimeout(() => {
         try{
           const params = new URLSearchParams(window.location.search);
           const compact = params.get('compact') === '1';
@@ -651,6 +895,7 @@
             if(defaultSection) defaultSection.style.display = 'block';
           }
         }catch(e){ console.warn('Error manejando compact/hash en usuarios-personal', e); }
+        }, 150); // Ejecutar después de usersController
       });
     })();
   </script>
@@ -661,5 +906,12 @@
       setTimeout(()=>{ document.body.classList.remove('pre-init'); }, 80);
     });
   </script>
+
+  <script type="module">
+    import '../js/utils/userDisplayGlobal.js'; // Cargar userDisplayGlobal antes del header
+    
+    // La inicialización del header ahora se hace arriba en el script principal
+  </script>
+
 </body>
 </html>

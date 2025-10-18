@@ -8,7 +8,10 @@ const ACTIVITY_LOG_KEY = 'registroActividad';
 // Datos iniciales para asegurar que siempre haya usuarios de prueba
 const usuariosFijos = [
   { id: 'admin', nombre: 'Administrador', apellidos: '', matricula: 'admin', contrasena: 'admin123', rol: 'admin', estado: 'activo' },
-  { id: 'pract', nombre: 'Practicante', apellidos: '', matricula: 'pract', contrasena: 'pract123', rol: 'practicante', estado: 'activo' }
+  { id: 'pract', nombre: 'Practicante', apellidos: 'Principal', matricula: 'pract', contrasena: 'pract123', rol: 'practicante', estado: 'activo', grupoId: 'grupo-1', activo: true },
+  { id: 'pract2', nombre: 'Ana', apellidos: 'Vázquez', matricula: 'pract2', contrasena: 'pract123', rol: 'practicante', estado: 'activo', grupoId: 'grupo-1', activo: true },
+  { id: 'pract3', nombre: 'Miguel', apellidos: 'Rodríguez', matricula: 'pract3', contrasena: 'pract123', rol: 'practicante', estado: 'activo', grupoId: 'grupo-1', activo: true },
+  { id: 'super1', nombre: 'Dr. Carlos', apellidos: 'López', matricula: 'super1', contrasena: 'super123', rol: 'supervisor', estado: 'activo', grupoId: 'grupo-1', activo: true }
 ];
 
 // Inicializar usuarios si no existen

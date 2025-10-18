@@ -34,21 +34,200 @@ body.pre-init .sidebar { visibility: hidden; opacity: 0; }
 header {
   background: linear-gradient(135deg, #7dd3fc, #fef3c7);
   color: #1f2937;
-  text-align: center;
-  padding: 20px;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 80px;
   box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
-  z-index: 100;
+  z-index: 1000;
+  padding: 0;
 }
 
-header h1 { margin: 0; font-size: 28px; font-weight: bold; }
+.nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 20px;
+  max-width: 100%;
+}
 
-header .icon { position: absolute; top: 20px; right: 20px; font-size: 20px; cursor: pointer; display: flex; align-items: center; }
+.nav-left {
+  flex: 0 0 auto;
+  min-width: 0;
+}
 
-.back-btn { position: absolute; top: 20px; left: 20px; background: rgba(255, 255, 255, 0.2); border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 18px; color: #1f2937; transition: all 0.3s ease; }
-.back-btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-1px); }
+.nav-center {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
 
-.main-layout { display: flex; min-height: calc(100vh - 68px); }
+.nav-center h1 {
+  margin: 0;
+  font-size: clamp(18px, 3vw, 24px);
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-right {
+  flex: 0 0 auto;
+  position: relative;
+  min-width: 0;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #1f2937;
+  padding: 10px 16px;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-2px);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 10px 16px;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  min-height: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-info:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.user-info:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  min-width: 280px;
+  z-index: 1001;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.user-dropdown[style*="block"] {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.dropdown-header {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  padding: 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.user-role {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 0;
+}
+
+.dropdown-options {
+  padding: 8px 0;
+}
+
+.dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  color: #374151;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdown-option:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.dropdown-option i {
+  width: 16px;
+  text-align: center;
+}
+
+/* Eliminar estilos obsoletos */
+
+.main-layout { 
+  display: flex; 
+  min-height: calc(100vh - 80px); /* Actualizado para la nueva altura del header */
+  margin-top: 0; /* Removido margen extra */
+}
 
 .sidebar {
   width: 280px;

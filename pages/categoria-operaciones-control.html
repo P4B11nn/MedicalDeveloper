@@ -9,12 +9,195 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Arial', sans-serif; min-height: 100vh; background: url('../img/medical-background.png?v=1') center center / cover no-repeat; position: relative; overflow-x: hidden; }
     body::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(126, 211, 252, 0.1); z-index: -1; }
-    header { background: linear-gradient(135deg, #7dd3fc, #fef3c7); color: #1f2937; text-align: center; padding: 20px; position: relative; box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3); z-index: 100; }
-    header h1 { margin: 0; font-size: 28px; font-weight: bold; }
-    header .icon { position: absolute; top: 20px; right: 20px; font-size: 20px; cursor: pointer; }
+    header {
+      background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+      color: #1f2937;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 80px;
+      box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
+      z-index: 1000;
+      padding: 0;
+    }
+
+    .nav-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 100%;
+      padding: 0 20px;
+      max-width: 100%;
+    }
+
+    .nav-left {
+      flex: 0 0 auto;
+      min-width: 0;
+    }
+
+    .back-button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: #1f2937;
+      padding: 10px 16px;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .back-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateX(-2px);
+    }
+
+    .nav-center {
+      flex: 1;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .nav-center h1 {
+      margin: 0;
+      font-size: clamp(18px, 3vw, 24px);
+      font-weight: bold;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .nav-right {
+      flex: 0 0 auto;
+      position: relative;
+      min-width: 0;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 10px 16px;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      min-height: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .user-info:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .user-info:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      min-width: 280px;
+      z-index: 1001;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .dropdown-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .user-avatar {
+      font-size: 32px;
+      color: #64748b;
+    }
+
+    .user-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-name {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 16px;
+      margin-bottom: 2px;
+    }
+
+    .user-role {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 0;
+    }
+
+    .dropdown-options {
+      padding: 8px 0;
+    }
+
+    .dropdown-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      text-decoration: none;
+      color: #475569;
+      transition: all 0.2s ease;
+      font-size: 14px;
+    }
+
+    .dropdown-option:hover {
+      background: #f1f5f9;
+      color: #dc2626;
+    }
+
+    .dropdown-option i {
+      width: 16px;
+      text-align: center;
+    }
+    
+    #userName:hover {
+      background-color: rgba(31, 41, 55, 0.1);
+    }
+
+    /* Espaciado para header fijo */
+    body {
+      padding-top: 80px;
+    }
 
     .user-icon {
       position: relative;
+    }
+
+    /* El CSS de #userDropdown se maneja ahora en HeaderComponent */
+    
+    #userDropdown.auto-positioned {
+      right: auto;
+      left: auto;
     }
 
     .user-dropdown {
@@ -202,24 +385,40 @@
   </script>
 </head>
 <body>
+  <!-- Header individual estático -->
   <header>
-    <button class="back-btn" onclick="window.location.href='../menuInicio.html'" title="Volver al Menú">←</button>
-    <h1>Operaciones / Control</h1>
-    <div class="user-icon icon" id="userIcon">
-      <span id="userName"></span>
-      <div class="user-dropdown" id="userDropdown">
-        <div class="dropdown-header">
-          <div class="username" id="dropdownUserName"></div>
-          <div class="user-role" id="dropdownUserRole"></div>
+    <div class="nav-container">
+      <div class="nav-left">
+        <button class="back-button" onclick="window.location.href='../menuInicio.html'">
+          <i class="fas fa-arrow-left"></i>
+          <span>Volver al inicio</span>
+        </button>
+      </div>
+      <div class="nav-center">
+        <h1>Operaciones y Control</h1>
+      </div>
+      <div class="nav-right">
+        <div class="user-info" id="userIcon">
+          <span id="userName"></span>
         </div>
-        <button class="dropdown-item" id="profileBtn">
-          <i class="fas fa-user" style="margin-right: 8px;"></i>
-          Ver perfil
-        </button>
-        <button class="dropdown-item logout" id="logoutBtn">
-          <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i>
-          Cerrar sesión
-        </button>
+        <div class="user-dropdown" id="userDropdown" style="display: none;">
+          <div class="dropdown-header">
+            <div class="user-avatar">
+              <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="user-details">
+              <div class="user-name" id="dropdownUserName"></div>
+              <div class="user-role" id="dropdownUserRole"></div>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-options">
+            <a href="#" class="dropdown-option" id="logoutBtn">
+              <i class="fas fa-sign-out-alt"></i>
+              <span>Cerrar sesión</span>
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -233,7 +432,6 @@
           <!-- Flyout lateral que aparece al hover sobre el elemento padre -->
           <ul class="submenu-right">
             <li><button data-section="registro-entradas-salidas">🚪 Registro de Entradas/Salidas</button></li>
-            <li><button data-section="mesas-salud">📍 Modulos de Salud</button></li>
           </ul>
         </li>
       </ul>
@@ -254,19 +452,99 @@
           </div>
           <div id="registroESLista" class="hidden"></div>
         </div>
-
-  <div id="mesas-salud-section" class="form-section hidden">
-          <h2 class="content-title">Estado de los Modulos de Salud</h2>
-          <div class="mesa-grid" id="mesasGrid" class="hidden"></div>
-        </div>
       </div>
     </div>
   </div>
+
+  <script>
+    // Función para inicializar header individual
+    function initIndividualHeader() {
+      const userIcon = document.getElementById('userIcon');
+      const userDropdown = document.getElementById('userDropdown');
+      const logoutOption = document.getElementById('logoutBtn');
+      
+      // Obtener información del usuario (intentar múltiples fuentes)
+      let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      
+      // Si currentUser está vacío, intentar con usuarioActual
+      if (!currentUser.nombre && !currentUser.name) {
+        currentUser = JSON.parse(localStorage.getItem('usuarioActual') || '{}');
+      }
+      
+      // Función para obtener nombre para mostrar con rol
+      function getRoleDisplayName(role) {
+        switch (role) {
+          case 'admin': return 'Administrador';
+          case 'practicante': return 'Practicante';  
+          case 'supervisor': return 'Supervisor';
+          default: return 'Usuario';
+        }
+      }
+      
+      // Actualizar información del usuario
+      const displayName = currentUser.nombre || currentUser.name || 'Usuario';
+      const userRole = currentUser.rol || currentUser.role || 'sin-rol';
+      const roleDisplayName = getRoleDisplayName(userRole);
+      
+      // Actualizar elementos del DOM
+      const userNameElement = document.getElementById('userName');
+      const dropdownUserName = document.getElementById('dropdownUserName');
+      const dropdownUserRole = document.getElementById('dropdownUserRole');
+      
+      if (userNameElement) {
+        userNameElement.textContent = displayName;
+      }
+      
+      if (dropdownUserName) {
+        dropdownUserName.textContent = displayName;
+      }
+      
+      if (dropdownUserRole) {
+        dropdownUserRole.textContent = roleDisplayName;
+      }
+      
+      // Toggle dropdown
+      userIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = userDropdown.style.display === 'block';
+        userDropdown.style.display = isVisible ? 'none' : 'block';
+      });
+      
+      // Cerrar dropdown al hacer clic fuera
+      document.addEventListener('click', (e) => {
+        if (!userIcon.contains(e.target) && !userDropdown.contains(e.target)) {
+          userDropdown.style.display = 'none';
+        }
+      });
+      
+      // Manejar logout
+      logoutOption.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        if (typeof window.showLogoutConfirmationModal === 'function') {
+          window.showLogoutConfirmationModal();
+        } else {
+          // Fallback básico
+          if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('userSession');
+            window.location.href = '../index.html';
+          }
+        }
+        
+        userDropdown.style.display = 'none';
+      });
+    }
+
+    // Hacer disponible globalmente
+    window.initIndividualHeader = initIndividualHeader;
+  </script>
 
   <script type="module">
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initOperationsController } from '../js/controllers/operacionesController.js';
+    // HeaderComponent eliminado, ahora usamos header individual
     import '../js/utils/eventBusManager.js';      // Event Bus monitoring
     import '../js/utils/performanceMonitor.js';   // Performance monitoring  
     import '../js/utils/architectureValidator.js'; // Architecture validation
@@ -276,12 +554,26 @@
       console.log('🚀 Operaciones: Sistema MVC completo con herramientas de desarrollo');
       
       if (AuthGuard.validateSession()) {
-        initGlobalController();
-        initOperationsController();
-        console.log('✅ Operaciones: Página cargada exitosamente');
-        console.log('🔧 Debug: EventBusDebug, PerformanceDebug, ArchitectureDebug, TestSuite');
+        // PRIMERO: Inicializar header component
+        // Inicializar header individual
+        initIndividualHeader();
+        console.log('Header component inicializado para Operaciones y Control');
+        
+        // SEGUNDO: Inicializar controladores después del header
+        setTimeout(() => {
+          initGlobalController();
+          initOperationsController();
+          console.log('✅ Operaciones: Página cargada exitosamente');
+          console.log('🔧 Debug: EventBusDebug, PerformanceDebug, ArchitectureDebug, TestSuite');
+        }, 100);
       }
     });
   </script>
+  <script type="module">
+    import '../js/utils/userDisplayGlobal.js'; // Cargar userDisplayGlobal antes del header
+    
+    // La inicialización del header ahora se hace arriba en el script principal
+  </script>
+
 </body>
 </html>

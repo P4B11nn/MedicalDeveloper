@@ -6,7 +6,7 @@
   <title>Menú de Inicio</title>
   <style>
     :root{
-      --header-h: 70px;
+      --header-h: 80px;
       --sidebar-w: 260px;
       --gutter: 20px;
     }
@@ -15,7 +15,7 @@
       font-family: 'Arial', sans-serif;
       margin: 0;
       min-height: 100vh;
-      background: url('img/medical-background.png?v=1') center center / cover no-repeat;
+      background: url('img/medical-background.png?v=1') center center / cover no-repeat fixed;
       position: relative;
       overflow-x: hidden;
       /* layout for sidebar + content */
@@ -23,7 +23,7 @@
     }
     body::before {
       content: '';
-      position: absolute;
+      position: fixed;
       top: 0;
       left: 0;
       right: 0;
@@ -31,49 +31,337 @@
       background: rgba(126, 211, 252, 0.1);
       z-index: -1;
     }
+    /* Estilos del header individual */
     header {
       background: linear-gradient(135deg, #7dd3fc, #fef3c7);
       color: #1f2937;
-      text-align: center;
-      padding: 20px;
-      position: relative;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: var(--header-h);
       box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
-      z-index: 100;
+      z-index: 1000;
+      padding: 0;
     }
 
-    header h1 {
-      margin: 0;
-      font-size: 28px;
-      font-weight: bold;
-    }
-
-    header .icon {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 20px;
-      cursor: pointer;
-    }
-    /* Botón hamburguesa (solo visible en mobile) */
-    .hamburger {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 34px;
-      height: 26px;
-      display: none;
-      flex-direction: column;
+    .nav-container {
+      display: flex;
+      align-items: center;
       justify-content: space-between;
+      height: 100%;
+      padding: 0 20px;
+      max-width: 100%;
+    }
+
+    .nav-left {
+      flex: 0 0 auto;
+      min-width: 0;
+      width: 180px; /* Espacio reservado para simetría */
+    }
+
+    .nav-center {
+      flex: 1;
+      text-align: center;
+      min-width: 0;
+    }
+
+    .nav-center h1 {
+      margin: 0;
+      font-size: clamp(20px, 3.5vw, 26px);
+      font-weight: bold;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .nav-right {
+      flex: 0 0 auto;
+      position: relative;
+      min-width: 0;
+      width: 180px; /* Ancho fijo para simetría */
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 10px 16px;
+      border-radius: 25px;
       cursor: pointer;
-      z-index: 110;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      min-height: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .hamburger span{
-      display:block;
-      height:3.5px;
-      background:#1f2937;
-      border-radius:3px;
+
+    .user-info:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
+
+    .user-info:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-dropdown {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      min-width: 280px;
+      z-index: 1001;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .dropdown-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .user-avatar {
+      font-size: 32px;
+      color: #64748b;
+    }
+
+    .user-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-name {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 16px;
+      margin-bottom: 2px;
+    }
+
+    .user-role {
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 0;
+    }
+
+    .dropdown-options {
+      padding: 8px 0;
+    }
+
+    .dropdown-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      text-decoration: none;
+      color: #475569;
+      transition: all 0.2s ease;
+      font-size: 14px;
+    }
+
+    .dropdown-option:hover {
+      background: #f1f5f9;
+      color: #dc2626;
+    }
+
+    .dropdown-option i {
+      width: 16px;
+      text-align: center;
+    }
+
+    /* Modal elegante de logout */
+    .logout-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logout-modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .logout-modal-content {
+      position: relative;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      max-width: 480px;
+      width: 90%;
+      max-height: 90vh;
+      overflow: hidden;
+      animation: slideIn 0.3s ease-out;
+      transform: scale(1);
+    }
+
+    .logout-modal-header {
+      padding: 32px 32px 24px;
+      text-align: center;
+      background: linear-gradient(135deg, #fee2e2, #fef3c7);
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .logout-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
+    }
+
+    .logout-modal-header h3 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      color: #1f2937;
+      line-height: 1.3;
+    }
+
+    .logout-modal-body {
+      padding: 32px;
+      text-align: center;
+    }
+
+    .logout-modal-body p {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      color: #374151;
+      line-height: 1.5;
+    }
+
+    .logout-subtitle {
+      font-size: 14px !important;
+      color: #6b7280 !important;
+      margin: 0 !important;
+    }
+
+    .logout-modal-footer {
+      padding: 24px 32px 32px;
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .logout-btn-cancel,
+    .logout-btn-confirm {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 120px;
+      justify-content: center;
+    }
+
+    .logout-btn-cancel {
+      background: #f9fafb;
+      color: #374151;
+      border: 1px solid #e5e7eb;
+    }
+
+    .logout-btn-cancel:hover {
+      background: #f3f4f6;
+      border-color: #d1d5db;
+      transform: translateY(-1px);
+    }
+
+    .logout-btn-confirm {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+    }
+
+    .logout-btn-confirm:hover {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .logout-btn-confirm:active {
+      transform: translateY(0);
+    }
+
+    /* Animaciones */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+      from { 
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+      }
+      to { 
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .logout-modal-content {
+        width: 95%;
+        margin: 20px;
+      }
+      
+      .logout-modal-header,
+      .logout-modal-body {
+        padding: 24px 20px;
+      }
+      
+      .logout-modal-footer {
+        padding: 20px;
+        flex-direction: column;
+      }
+      
+      .logout-btn-cancel,
+      .logout-btn-confirm {
+        width: 100%;
+      }
+    }
+    
     .container {
       background: transparent; /* quitar la franja blanca horizontal */
       -webkit-backdrop-filter: none;
@@ -116,11 +404,12 @@
       height: 100vh;
       background: var(--sidebar-bg);
       color: #fff;
-      padding-top: calc(var(--header-h) + 8px); /* dejar espacio para el header */
+      padding-top: calc(var(--header-h) + 30px); /* espacio para el header + título "Bienvenido" */
       position: fixed;
       top: 0;
       left: 0;
       z-index: 900;
+      border-radius: 0 0 15px 0; /* solo redondear esquina inferior derecha */
     }
 
     .sidebar .menu {
@@ -387,7 +676,7 @@
 
     /* cuando la clase se añade al body mostramos cambios visuales */
     body.sidebar-open .overlay{ display:block }
-    body.sidebar-open .hamburger span{ background:#fff }
+    /* Estados para mobile sidebar - manejado por headerComponent.js */
     body.sidebar-open .sidebar{ transform: translateX(0); }
     .footer {
       margin-top: 20px;
@@ -431,16 +720,16 @@
     @media (max-width:480px){ .kpi-grid{ grid-template-columns: 1fr } }
 
   /* Charts area */
-  .charts-grid{ display:grid; grid-template-columns: 1fr 1fr 0.8fr; gap:16px; align-items:start; margin-top: 10px }
-  .chart-card{ background: rgba(255,255,255,0.95); padding:14px; border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,0.06) }
+  .charts-grid{ display:grid; grid-template-columns: 1fr 1fr 0.8fr; gap:14px; align-items:start; margin-top: 10px }
+  .chart-card{ background: rgba(255,255,255,0.95); padding:12px; border-radius:10px; box-shadow:0 8px 25px rgba(0,0,0,0.05) }
   .chart-card.small{ display:flex; flex-direction:column; align-items:center }
-  .chart-card h3{ margin:0 0 8px 0; font-size:1rem; color:#0f5671 }
+  .chart-card h3{ margin:0 0 6px 0; font-size:0.95rem; color:#0f5671 }
   @media (max-width:1000px){ .charts-grid{ grid-template-columns: 1fr; } }
-  .chart-card canvas{ width:100% !important; height:220px !important; display:block }
+  .chart-card canvas{ width:100% !important; height:180px !important; display:block }
 
   /* Dashboard Content Styles */
   .dashboard-main-content {
-    padding: 20px;
+    padding: 16px;
     min-height: 500px;
   }
 
@@ -453,7 +742,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     padding: 20px;
     background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
@@ -489,8 +778,8 @@
   /* Grid Layouts */
   .admin-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 25px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
   }
 
   .practitioner-grid {
@@ -499,11 +788,47 @@
     gap: 25px;
   }
 
+  /* Responsive adjustments for admin grid */
+  @media (max-width: 1800px) {
+    .admin-grid {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+  }
+
+  @media (max-width: 1400px) {
+    .admin-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .admin-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+  }
+
+  @media (max-width: 800px) {
+    .admin-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+  }
+
+  @media (max-width: 500px) {
+    .admin-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
+
   /* Dashboard Cards */
   .dashboard-card {
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 15px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
     overflow: hidden;
     border: 1px solid rgba(15, 86, 113, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -511,11 +836,11 @@
 
   .dashboard-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   }
 
   .card-header {
-    padding: 20px;
+    padding: 10px 12px;
     border-bottom: 1px solid rgba(15, 86, 113, 0.1);
     display: flex;
     justify-content: space-between;
@@ -526,17 +851,21 @@
   .card-header h3 {
     margin: 0;
     color: #0f5671;
-    font-size: 1.1rem;
+    font-size: 0.85rem;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 5px;
+  }
+
+  .card-header h3 i {
+    font-size: 0.9rem;
   }
 
   /* Status Indicators */
   .status-indicator {
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 0.65rem;
     font-weight: 600;
   }
 
@@ -546,12 +875,12 @@
   }
 
   .time-indicator {
-    padding: 4px 12px;
+    padding: 1px 6px;
     background: #dbeafe;
     color: #1e40af;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    border-radius: 10px;
+    font-size: 0.65rem;
+    font-weight: 500;
   }
 
   /* Modules List */
@@ -559,11 +888,16 @@
     padding: 20px;
   }
 
+  /* Modules Horizontal Grid (like operations control) */
+  .modules-horizontal-grid {
+    padding: 10px;
+  }
+
   .module-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 0;
+    padding: 8px 0;
     border-bottom: 1px solid rgba(15, 86, 113, 0.1);
   }
 
@@ -574,12 +908,13 @@
   .module-info {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 2px;
   }
 
   .module-name {
     font-weight: 600;
     color: #1f2937;
+    font-size: 0.85rem;
   }
 
   .module-status {
@@ -606,13 +941,13 @@
 
   /* Consultation Activity */
   .consultation-activity {
-    padding: 20px;
+    padding: 10px;
   }
 
   .activity-item {
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 12px;
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 6px;
     border: 1px solid rgba(15, 86, 113, 0.1);
     background: #f8fafc;
   }
@@ -625,45 +960,47 @@
   .activity-info {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 3px;
   }
 
   .patient-name {
     font-weight: 600;
     color: #1f2937;
+    font-size: 0.8rem;
   }
 
   .consultation-type {
     color: #0f5671;
-    font-size: 0.9rem;
+    font-size: 0.7rem;
   }
 
   .activity-details {
     display: flex;
-    gap: 15px;
-    font-size: 0.85rem;
+    gap: 6px;
+    font-size: 0.7rem;
     color: #64748b;
+    flex-wrap: wrap;
   }
 
   /* Work Groups Styles */
   .work-groups {
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    margin-top: 15px;
+    gap: 6px;
+    margin-top: 8px;
   }
 
   .group-item {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 6px;
+    padding: 8px;
     transition: all 0.3s ease;
   }
 
   .group-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.05);
     border-color: #3b82f6;
   }
 
@@ -888,11 +1225,100 @@
     border-radius: 10px;
     background: #f8fafc;
     border: 1px solid rgba(15, 86, 113, 0.1);
+    transition: all 0.2s ease;
   }
 
   .schedule-item.current {
     background: #dcfce7;
     border-color: #22c55e;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
+  }
+
+  .schedule-item.completed {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    opacity: 0.7;
+  }
+
+  .schedule-item.upcoming {
+    background: #fef3c7;
+    border-color: #f59e0b;
+  }
+
+  /* Grupos de asignación */
+  .group-assignment {
+    animation: fadeIn 0.3s ease;
+  }
+
+  .group-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .group-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .group-name {
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 14px;
+  }
+
+  .group-members {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  /* Estados de status indicator mejorados */
+  .status-indicator.inactive {
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+  }
+
+  .status-indicator.active {
+    background: #f0fdf4;
+    color: #22c55e;
+    border: 1px solid #bbf7d0;
+  }
+
+  /* Indicador de estado para grupos */
+  .group-status-indicator {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #f0fdf4;
+    color: #22c55e;
+    border: 1px solid #bbf7d0;
+  }
+
+  .group-status-indicator.inactive {
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+  }
+
+  .group-status-indicator.active {
+    background: #f0fdf4;
+    color: #22c55e;
+    border: 1px solid #bbf7d0;
+  }
+
+  /* Animación para nuevos elementos */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .time-slot {
@@ -1147,37 +1573,7 @@
     }
   }
 
-    /* Estilos para elementos con inline styles */
-    #userName {
-      font-weight: bold;
-      margin-left: 8px;
-    }
-    
-    #userDropdown {
-      display: none;
-      position: fixed;
-      top: 40px;
-      right: 0;
-      background: white;
-      color: #333;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      min-width: 180px;
-      z-index: 1000;
-    }
-    
-    #startServiceBtn, #verPerfilBtn, #logoutBtn {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      background: none;
-      cursor: pointer;
-      text-align: left;
-    }
-    
-    #startServiceBtn:hover, #verPerfilBtn:hover, #logoutBtn:hover {
-      background-color: #f3f4f6;
-    }
+    /* Los estilos del dropdown ahora están en headerComponent.js */
 
     /* Botón Reportes inactivo (solo usar el submenu) */
     .disabled-menu-btn {
@@ -1325,24 +1721,46 @@
       margin-top: 0;
     }
   </style>
+  
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 </head>
 <body>
 
+  <!-- Header individual estático -->
   <header>
-    <div class="icon" id="userIcon"><span id="userName"></span>
-      <div id="userDropdown">
-        <button id="startServiceBtn">Iniciar servicio</button>
-        <button id="logoutBtn">Cerrar sesión</button>
+    <div class="nav-container">
+      <div class="nav-left">
+        <!-- Espacio reservado para mantener simetría -->
+      </div>
+      <div class="nav-center">
+        <h1>Medical Developer</h1>
+      </div>
+      <div class="nav-right">
+        <div class="user-info" id="userIcon">
+          <span id="userName">Usuario</span>
+        </div>
+        <div class="user-dropdown" id="userDropdown" style="display: none;">
+          <div class="dropdown-header">
+            <div class="user-avatar">
+              <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="user-details">
+              <div class="user-name" id="dropdownUserName">Usuario</div>
+              <div class="user-role" id="dropdownUserRole">Rol no definido</div>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-options">
+            <a href="#" class="dropdown-option" id="logoutBtn">
+              <i class="fas fa-sign-out-alt"></i>
+              <span>Cerrar sesión</span>
+            </a>
+          </div>
+        </div>
       </div>
     </div>
-    <!-- hamburguesa visible en mobile -->
-    <div class="hamburger" id="hamburger" aria-label="menu" role="button">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-    <h1>Medical Developer</h1>
   </header>
 
   <!-- Sidebar + main content layout -->
@@ -1372,22 +1790,21 @@
           <button data-category="operaciones-control"><span class="menu-icon">⚙️</span> <span>Operaciones / Control</span></button>
           <div class="submenu" aria-hidden="true">
             <a href="pages/categoria-operaciones-control.html?compact=1#registro-entradas-salidas-section"><i class="fas fa-door-open"></i> Registro de Entradas/Salidas</a>
-            <a href="pages/categoria-operaciones-control.html?compact=1#mesas-salud-section"><i class="fas fa-map-marker-alt"></i> Módulos de Salud</a>
           </div>
         </div>
         <div class="menu-item">
           <button data-category="reportes" aria-disabled="true" tabindex="-1" class="disabled-menu-btn">📊 <span>Reportes</span></button>
           <div class="submenu" aria-hidden="true">
-            <a href="pages/categoria-reportes.html?section=estadisticas" data-section="estadisticas" id="link-reportes-estadisticas"><i class="fas fa-chart-pie"></i> Estadísticas</a>
-            <a href="pages/categoria-reportes.html?section=actividades" data-section="actividades" id="link-reportes-actividades"><i class="fas fa-history"></i> Registro de actividades</a>
-            <a href="pages/categoria-reportes.html?section=exportacion" data-section="exportacion" id="link-reportes-exportacion"><i class="fas fa-file-export"></i> Exportar datos</a>
+            <a href="pages/categoria-reportes.html?compact=1#estadisticas" data-section="estadisticas" id="link-reportes-estadisticas"><i class="fas fa-chart-pie"></i> Estadísticas</a>
+            <a href="pages/categoria-reportes.html?compact=1#actividades" data-section="actividades" id="link-reportes-actividades"><i class="fas fa-history"></i> Registro de actividades</a>
+            <a href="pages/categoria-reportes.html?compact=1#exportacion" data-section="exportacion" id="link-reportes-exportacion"><i class="fas fa-file-export"></i> Exportar datos</a>
           </div>
         </div>
         <div class="menu-item" data-disabled="true">
           <button data-category="gestion" id="btnGestion" aria-disabled="true" tabindex="-1">📚 <i class="fas fa-cogs"></i><span>Gestión Administrativa</span></button>
           <div class="submenu" aria-hidden="true">
-            <a href="pages/categoria-gestion.html?section=modulos" id="link-gestion-modulos"><i class="fas fa-hospital"></i> Gestionar Módulos</a>
-            <a href="pages/categoria-gestion.html?section=grupos" id="link-gestion-grupos"><i class="fas fa-users"></i> Gestionar Grupos</a>
+            <a href="pages/categoria-gestion.html?compact=1#modulos" id="link-gestion-modulos"><i class="fas fa-hospital"></i> Gestionar Módulos</a>
+            <a href="pages/categoria-gestion.html?compact=1#grupos" id="link-gestion-grupos"><i class="fas fa-users"></i> Gestionar Grupos</a>
           </div>
         </div>
         <!-- Botón persistente de Salir -->
@@ -1468,45 +1885,23 @@
         </div>
       </div>
 
-      <div class="admin-grid">
-        <!-- Módulos Activos -->
-        <div class="dashboard-card">
-          <div class="card-header">
-            <h3><i class="fas fa-puzzle-piece"></i> Módulos Activos</h3>
-            <span class="status-indicator active">En línea</span>
-          </div>
-          <div class="modules-list">
-            <div class="module-item">
-              <div class="module-info">
-                <span class="module-name">Gestión de Pacientes</span>
-                <span class="module-status active">Activo</span>
-              </div>
-              <div class="module-stats">18 registros hoy</div>
-            </div>
-            <div class="module-item">
-              <div class="module-info">
-                <span class="module-name">Control de Operaciones</span>
-                <span class="module-status active">Activo</span>
-              </div>
-              <div class="module-stats">5 operaciones</div>
-            </div>
-            <div class="module-item">
-              <div class="module-info">
-                <span class="module-name">Reportes Médicos</span>
-                <span class="module-status active">Activo</span>
-              </div>
-              <div class="module-stats">3 reportes generados</div>
-            </div>
-            <div class="module-item">
-              <div class="module-info">
-                <span class="module-name">Gestión de Personal</span>
-                <span class="module-status maintenance">Mantenimiento</span>
-              </div>
-              <div class="module-stats">Actualización 15:30</div>
-            </div>
+      <!-- Módulos de Salud - Ancho completo -->
+      <div class="dashboard-card" style="margin-bottom: 25px;">
+        <div class="card-header">
+          <h3><i class="fas fa-hospital-alt"></i> Módulos de Salud</h3>
+          <span class="status-indicator active">En línea</span>
+        </div>
+        <div class="modules-horizontal-grid" id="dashboard-modulos-list">
+          <!-- Los módulos se cargarán dinámicamente aquí -->
+          <div style="text-align: center; padding: 20px; color: #64748b;">
+            <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+            Cargando módulos...
           </div>
         </div>
+      </div>
 
+      <!-- Grid para Grupos y Actividad -->
+      <div class="admin-grid">
         <!-- Actividad en Consulta -->
         <div class="dashboard-card">
           <div class="card-header">
@@ -1554,70 +1949,13 @@
         <div class="dashboard-card">
           <div class="card-header">
             <h3><i class="fas fa-users-cog"></i> Grupos de Trabajo</h3>
-            <button class="manage-btn">Gestionar</button>
+            <button class="manage-btn" id="btn-gestionar-grupos">Gestionar</button>
           </div>
-          <div class="work-groups">
-            <div class="group-item">
-              <div class="group-header">
-                <div class="group-name">
-                  <span class="group-title">Grupo Alpha</span>
-                  <span class="member-count">5 miembros</span>
-                </div>
-                <div class="group-assignment">
-                  <span class="assigned-module">Consulta Externa - Medicina General</span>
-                  <span class="group-schedule">08:00 - 16:00</span>
-                </div>
-              </div>
-              <div class="group-members">
-                <div class="member-avatars">
-                  <div class="member-avatar" title="Dr. Ana López - Supervisor">AL</div>
-                  <div class="member-avatar" title="Juan Martínez - Practicante">JM</div>
-                  <div class="member-avatar" title="María Rodríguez - Enfermera">MR</div>
-                  <div class="member-avatar" title="Carlos Fernández - Técnico">CF</div>
-                  <div class="member-avatar more" title="Ver más miembros">+1</div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="group-item">
-              <div class="group-header">
-                <div class="group-name">
-                  <span class="group-title">Grupo Beta</span>
-                  <span class="member-count">4 miembros</span>
-                </div>
-                <div class="group-assignment">
-                  <span class="assigned-module">Urgencias - Medicina de Emergencia</span>
-                  <span class="group-schedule">06:00 - 14:00</span>
-                </div>
-              </div>
-              <div class="group-members">
-                <div class="member-avatars">
-                  <div class="member-avatar" title="Dr. Luis García - Supervisor">LG</div>
-                  <div class="member-avatar" title="Sofia Torres - Practicante">ST</div>
-                  <div class="member-avatar" title="Roberto Silva - Enfermero">RS</div>
-                  <div class="member-avatar" title="Ana Morales - Técnica">AM</div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="group-item">
-              <div class="group-header">
-                <div class="group-name">
-                  <span class="group-title">Grupo Gamma</span>
-                  <span class="member-count">3 miembros</span>
-                </div>
-                <div class="group-assignment">
-                  <span class="assigned-module">Pediatría - Medicina Infantil</span>
-                  <span class="group-schedule">14:00 - 22:00</span>
-                </div>
-              </div>
-              <div class="group-members">
-                <div class="member-avatars">
-                  <div class="member-avatar" title="Dra. Carmen Vega - Supervisor">CV</div>
-                  <div class="member-avatar" title="Pedro Jiménez - Practicante">PJ</div>
-                  <div class="member-avatar" title="Isabel Ruiz - Enfermera">IR</div>
-                </div>
-              </div>
+          <div class="work-groups" id="dashboard-grupos-list">
+            <!-- Los grupos se cargarán dinámicamente aquí -->
+            <div style="text-align: center; padding: 20px; color: #64748b;">
+              <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+              Cargando grupos...
             </div>
           </div>
         </div>
@@ -1657,6 +1995,21 @@
                 <i class="fas fa-map-marker-alt"></i>
                 <span>Edificio A - Piso 2 - Consultorios 201-205</span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mi Grupo de Trabajo -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h3><i class="fas fa-users"></i> Mi Grupo de Trabajo</h3>
+            <span class="group-status-indicator">Activo</span>
+          </div>
+          <div class="work-groups" id="practitioner-group-info">
+            <!-- El grupo se cargará dinámicamente aquí -->
+            <div style="text-align: center; padding: 20px; color: #64748b;">
+              <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+              Cargando información del grupo...
             </div>
           </div>
         </div>
@@ -1823,11 +2176,14 @@
 
   <script type="module">
     import { AuthGuard } from './js/middleware/authGuard.js';
+    import './js/utils/userDisplayGlobal.js'; // Cargar PRIMERO para que esté disponible globalmente
     import { initGlobalController } from './js/controllers/globalController.js';
+    // HeaderComponent eliminado, ahora usamos header individual
     import './js/views/MenuInicio.js';
     import './js/utils/eventBusManager.js';      // Event Bus monitoring
     import './js/utils/performanceMonitor.js';   // Performance monitoring
     import './js/utils/architectureValidator.js'; // Architecture validation
+    import './dropdown-debug-tool.js'; // Debug tool para dropdown
     
     document.addEventListener('DOMContentLoaded', () => {
       console.log('MenuInicio: Página cargada con herramientas de desarrollo habilitadas');
@@ -1836,8 +2192,16 @@
         console.log('MenuInicio: Sesión válida, navegación habilitada');
         console.log('Debug commands: EventBusDebug, PerformanceDebug, ArchitectureDebug');
         
-        // Initialize global controller for user display and logout
-        initGlobalController();
+        // Esperar un momento para que userDisplayGlobal esté completamente cargado
+        setTimeout(() => {
+          // Initialize header individual - COMENTADO: causa conflicto con userDisplayGlobal.js
+          // initIndividualHeader();
+          
+          // Initialize global controller ONLY para event bus listeners después del header
+          setTimeout(() => {
+            initGlobalController();
+          }, 100);
+        }, 50);
         
       } else {
         console.error('MenuInicio: Sesión inválida');
@@ -2222,31 +2586,504 @@
       console.log('📊 Cargando datos del administrador...');
       try {
         updateModuleStatus();
+        updateWorkGroups();
         updateConsultationActivity();
         updateTeamAssignments();
+        setupAdminDashboardEventListeners();
         console.log('✅ Datos del administrador cargados exitosamente');
       } catch (error) {
         console.error('❌ Error cargando datos del administrador:', error);
       }
     }
 
-    function loadPractitionerData() {
-      // Cargar datos específicos del practicante
+    async function loadPractitionerData() {
       console.log('📊 Cargando datos del practicante...');
       try {
-        updatePractitionerAssignment();
+        // Cargar datos de asignación (módulo y grupo)
+        await updatePractitionerAssignment();
+        
+        // Actualizar horario y tiempo restante
         updateSchedule();
+        
+        // Cargar checklist
         loadChecklist();
+        
+        // Cargar observaciones recientes
         loadRecentObservations();
+        
+        // Actualizar cada minuto el tiempo restante
+        setInterval(() => {
+          const timeRemaining = calculateTimeRemaining();
+          const tiempoElement = document.getElementById('tiempo-restante');
+          if (tiempoElement) {
+            tiempoElement.textContent = timeRemaining;
+          }
+          
+          // Actualizar estado de las actividades cada minuto
+          updateScheduleActivities();
+        }, 60000); // 1 minuto
+        
         console.log('✅ Datos del practicante cargados exitosamente');
       } catch (error) {
         console.error('❌ Error cargando datos del practicante:', error);
       }
     }
 
-    function updateModuleStatus() {
-      // Simular actualización de estado de módulos
-      console.log('Updating module status...');
+    async function updateModuleStatus() {
+      console.log('📍 Actualizando estado de módulos de salud...');
+      
+      try {
+    // Importar el modelo de gestión dinámicamente
+    const { gestionModel } = await import('./js/models/gestionModel.js');
+    const { authModel } = await import('./js/models/storageModel.js');
+    
+    // Obtener los módulos reales
+    const modulos = gestionModel.getModulos();
+    console.log('🏥 Módulos encontrados:', modulos.length);
+    
+    // Obtener el contenedor de la lista de módulos
+    const modulosContainer = document.getElementById('dashboard-modulos-list');
+    if (!modulosContainer) {
+      console.error('❌ No se encontró el contenedor dashboard-modulos-list');
+      return;
+    }
+    
+    // Función auxiliar para contar practicantes en un grupo
+    function contarPracticantesEnGrupo(grupoId) {
+      if (!grupoId) return 0;
+      const usuarios = authModel.getAllUsers();
+      return usuarios.filter(usuario => 
+        usuario.rol === 'practicante' && 
+        usuario.grupoId === grupoId &&
+        usuario.activo !== false
+      ).length;
+    }
+    
+    // Función auxiliar para formatear ubicación
+    function formatearUbicacion(modulo) {
+      if (modulo.lugar) {
+        return modulo.lugar;
+      } else if (modulo.ubicacion) {
+        return modulo.ubicacion;
+      }
+      return 'Sin ubicación';
+    }
+    
+    // Función auxiliar para formatear coordenadas
+    function formatearCoordenadas(modulo) {
+      if (modulo.latitud && modulo.longitud) {
+        return `Lat: ${modulo.latitud}, Lng: ${modulo.longitud}`;
+      }
+      return '';
+    }        if (modulos.length === 0) {
+          modulosContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #64748b;">
+              <i class="fas fa-hospital" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+              <p>No hay módulos de salud configurados</p>
+            </div>
+          `;
+          return;
+        }
+        
+        // Renderizar los módulos en formato horizontal (como operaciones control)
+        const modulosHTML = `
+          <div style="
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 10px 0;
+          ">
+            ${modulos.map(modulo => {
+              // Determinar color del estado
+              let statusColor = '#10b981'; // Verde por defecto (activo)
+              let statusBgColor = 'rgba(16, 185, 129, 0.1)';
+              let statusIcon = '<i class="fas fa-check-circle"></i>';
+              
+              const estadoLower = modulo.estado.toLowerCase();
+              if (estadoLower.includes('inactivo')) {
+                statusColor = '#f59e0b'; // Naranja
+                statusBgColor = 'rgba(245, 158, 11, 0.1)';
+                statusIcon = '<i class="fas fa-exclamation-triangle"></i>';
+              } else if (estadoLower.includes('mantenimiento')) {
+                statusColor = '#6366f1'; // Indigo
+                statusBgColor = 'rgba(99, 102, 241, 0.1)';
+                statusIcon = '<i class="fas fa-tools"></i>';
+              } else if (estadoLower.includes('emergencia')) {
+                statusColor = '#ef4444'; // Rojo
+                statusBgColor = 'rgba(239, 68, 68, 0.1)';
+                statusIcon = '<i class="fas fa-exclamation-circle"></i>';
+              }
+              
+              // Obtener información del grupo asignado
+              let grupoAsignado = null;
+              if (modulo.grupoAsignadoId) {
+                grupoAsignado = gestionModel.getGrupoById(modulo.grupoAsignadoId);
+              }
+              
+              return `
+                <div style="
+                  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+                  border-radius: 16px;
+                  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+                  padding: 20px;
+                  transition: all 0.3s ease;
+                  border: 1px solid rgba(226, 232, 240, 0.6);
+                  overflow: hidden;
+                  position: relative;
+                  width: 280px;
+                  flex-shrink: 0;
+                " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 25px rgba(0,0,0,0.1)';" 
+                   onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.05)';">
+                  
+                  ${modulo.tipo ? `
+                    <div style="
+                      position: absolute;
+                      top: 12px;
+                      right: 12px;
+                      background: #e2e8f0;
+                      color: #475569;
+                      font-size: 0.7rem;
+                      padding: 3px 8px;
+                      border-radius: 30px;
+                      font-weight: 500;
+                    ">
+                      ${modulo.tipo}
+                    </div>
+                  ` : ''}
+                  
+                  <h3 style="
+                    margin-top: 0;
+                    margin-bottom: 15px;
+                    color: #1e40af;
+                    font-size: 1.5rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                  ">
+                    <i class="fas fa-hospital" style="color: #3b82f6;"></i> ${modulo.nombre}
+                  </h3>
+                  
+                  <div style="
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 15px;
+                    gap: 8px;
+                  ">
+                    <i class="fas fa-map-marker-alt" style="color: #64748b;"></i>
+                    <div style=
+                      color: #334155;
+                      font-weight: 500;
+                    ">
+                      <div>${formatearUbicacion(modulo)}</div>
+                      ${formatearCoordenadas(modulo) ? `<div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">${formatearCoordenadas(modulo)}</div>` : ''}
+                    </div>
+                  </div>
+                  
+                  <div style="
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 6px 12px;
+                    border-radius: 30px;
+                    font-weight: 500;
+                    font-size: 0.9rem;
+                    margin-bottom: 20px;
+                    color: ${statusColor};
+                    background-color: ${statusBgColor};
+                    gap: 6px;
+                  ">
+                    ${statusIcon}
+                    <span>${modulo.estado}</span>
+                  </div>
+                  
+                  <div style="
+                    background: ${grupoAsignado ? 'rgba(96, 165, 250, 0.08)' : 'rgba(226, 232, 240, 0.5)'};
+                    border-radius: 12px;
+                    padding: 15px;
+                    margin-top: 10px;
+                  ">
+                    <h4 style="
+                      margin-top: 0;
+                      margin-bottom: 12px;
+                      color: #334155;
+                      font-size: 1.1rem;
+                      border-bottom: 1px solid rgba(203, 213, 225, 0.5);
+                      padding-bottom: 8px;
+                      display: flex;
+                      align-items: center;
+                      gap: 8px;
+                    ">
+                      <i class="fas fa-users" style="color: #3b82f6;"></i> Equipo Asignado
+                    </h4>
+                    
+                    ${grupoAsignado ? `
+                      <div style="font-size: 0.95rem;">
+                        <div style="
+                          display: flex;
+                          align-items: center;
+                          margin-bottom: 8px;
+                        ">
+                          <div style="
+                            width: 24px;
+                            color: #60a5fa;
+                          "><i class="fas fa-user-friends"></i></div>
+                          <div style="
+                            color: #334155;
+                            font-weight: 500;
+                          ">${grupoAsignado.nombre}</div>
+                        </div>
+                        
+                        <div style="
+                          display: flex;
+                          align-items: center;
+                          margin-bottom: 8px;
+                        ">
+                          <div style="
+                            width: 24px;
+                            color: #60a5fa;
+                          "><i class="fas fa-clock"></i></div>
+                          <div style="
+                            color: #334155;
+                          ">Turno: <strong>${grupoAsignado.turno}</strong></div>
+                        </div>
+                        
+                        <div style="
+                          display: flex;
+                          align-items: center;
+                          margin-bottom: 8px;
+                        ">
+                          <div style="
+                            width: 24px;
+                            color: #60a5fa;
+                          "><i class="fas fa-calendar-alt"></i></div>
+                          <div style="
+                            color: #334155;
+                          ">Horario: <strong>${grupoAsignado.horario}</strong></div>
+                        </div>
+                        
+                        <div style="
+                          display: flex;
+                          align-items: center;
+                        ">
+                          <div style="
+                            width: 24px;
+                            color: #60a5fa;
+                          "><i class="fas fa-user-md"></i></div>
+                          <div style="
+                            color: #334155;
+                          ">Miembros: <strong>${contarPracticantesEnGrupo(grupoAsignado.id)}</strong></div>
+                        </div>
+                      </div>
+                    ` : `
+                      <div style="
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        padding: 10px;
+                      ">
+                        <i class="fas fa-user-slash" style="
+                          font-size: 1.5rem;
+                          color: #94a3b8;
+                          margin-bottom: 8px;
+                        "></i>
+                        <p style="
+                          color: #64748b;
+                          margin: 0;
+                          text-align: center;
+                        ">Sin grupo asignado</p>
+                      </div>
+                    `}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+        
+        modulosContainer.innerHTML = modulosHTML;
+        console.log('✅ Módulos de salud actualizados en el dashboard');
+        
+      } catch (error) {
+        console.error('❌ Error al cargar módulos de salud:', error);
+        const modulosContainer = document.getElementById('dashboard-modulos-list');
+        if (modulosContainer) {
+          modulosContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #ef4444;">
+              <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+              Error al cargar módulos
+            </div>
+          `;
+        }
+      }
+    }
+
+    async function updateWorkGroups() {
+      console.log('👥 Actualizando grupos de trabajo...');
+      
+      try {
+        // Importar los modelos necesarios
+        const { gestionModel } = await import('./js/models/gestionModel.js');
+        const { authModel } = await import('./js/models/storageModel.js');
+        
+        // Obtener los grupos reales
+        const grupos = gestionModel.getGrupos();
+        console.log('👥 Grupos encontrados:', grupos.length);
+        
+        // Obtener el contenedor de la lista de grupos
+        const gruposContainer = document.getElementById('dashboard-grupos-list');
+        if (!gruposContainer) {
+          console.error('❌ No se encontró el contenedor dashboard-grupos-list');
+          return;
+        }
+        
+        // Función auxiliar para obtener usuarios de un grupo
+        function obtenerUsuariosDeGrupo(grupoId) {
+          const usuarios = authModel.getAllUsers();
+          return usuarios.filter(usuario => 
+            usuario.grupoId === grupoId && 
+            usuario.activo !== false
+          );
+        }
+        
+        // Función auxiliar para obtener módulo asignado al grupo
+        function obtenerModuloAsignado(grupoId) {
+          const modulos = gestionModel.getModulos();
+          return modulos.find(modulo => modulo.grupoAsignadoId === grupoId);
+        }
+        
+        // Función auxiliar para generar iniciales del nombre
+        function generarIniciales(nombre) {
+          if (!nombre) return '??';
+          const palabras = nombre.split(' ').filter(p => p.length > 0);
+          if (palabras.length >= 2) {
+            return (palabras[0][0] + palabras[1][0]).toUpperCase();
+          } else if (palabras.length === 1) {
+            return palabras[0].substring(0, 2).toUpperCase();
+          }
+          return '??';
+        }
+        
+        // Array de colores para los avatares
+        const coloresAvatares = [
+          'linear-gradient(135deg, #06b6d4, #0891b2)',
+          'linear-gradient(135deg, #10b981, #059669)',
+          'linear-gradient(135deg, #f59e0b, #d97706)',
+          'linear-gradient(135deg, #ef4444, #dc2626)',
+          'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+          'linear-gradient(135deg, #ec4899, #db2777)',
+          'linear-gradient(135deg, #6366f1, #4f46e5)'
+        ];
+        
+        if (grupos.length === 0) {
+          gruposContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #64748b;">
+              <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+              <p>No hay grupos de trabajo configurados</p>
+            </div>
+          `;
+          return;
+        }
+        
+        // Renderizar los grupos
+        let gruposHTML = '';
+        
+        grupos.forEach((grupo, index) => {
+          const usuariosDelGrupo = obtenerUsuariosDeGrupo(grupo.id);
+          const moduloAsignado = obtenerModuloAsignado(grupo.id);
+          const numMiembros = usuariosDelGrupo.length;
+          
+          // Crear avatares de los miembros
+          let avataresHTML = '';
+          const maxAvatarsVisibles = 4;
+          
+          usuariosDelGrupo.slice(0, maxAvatarsVisibles).forEach((usuario, userIndex) => {
+            const iniciales = generarIniciales(usuario.nombre);
+            const colorIndex = userIndex % coloresAvatares.length;
+            const colorFondo = coloresAvatares[colorIndex];
+            
+            avataresHTML += `
+              <div class="member-avatar" 
+                   title="${usuario.nombre} - ${usuario.rol === 'admin' ? 'Administrador' : 'Practicante'}"
+                   style="background: ${colorFondo};">
+                ${iniciales}
+              </div>
+            `;
+          });
+          
+          // Si hay más miembros de los que se muestran, agregar un avatar "+N"
+          if (numMiembros > maxAvatarsVisibles) {
+            const restantes = numMiembros - maxAvatarsVisibles;
+            avataresHTML += `
+              <div class="member-avatar more" title="Ver más miembros (+${restantes})">
+                +${restantes}
+              </div>
+            `;
+          }
+          
+          // Si no hay miembros, mostrar mensaje
+          if (numMiembros === 0) {
+            avataresHTML = `
+              <div style="color: #64748b; font-size: 0.9rem; font-style: italic;">
+                Sin miembros asignados
+              </div>
+            `;
+          }
+          
+          gruposHTML += `
+            <div class="group-item">
+              <div class="group-header">
+                <div class="group-name">
+                  <span class="group-title">${grupo.nombre}</span>
+                  <span class="member-count">${numMiembros} miembro${numMiembros !== 1 ? 's' : ''}</span>
+                </div>
+                <div class="group-assignment">
+                  <span class="assigned-module">
+                    ${moduloAsignado ? moduloAsignado.nombre : 'Sin módulo asignado'}
+                  </span>
+                  <span class="group-schedule">${grupo.horario}</span>
+                </div>
+              </div>
+              <div class="group-members">
+                <div class="member-avatars">
+                  ${avataresHTML}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        
+        gruposContainer.innerHTML = gruposHTML;
+        console.log('✅ Grupos de trabajo actualizados en el dashboard');
+        
+      } catch (error) {
+        console.error('❌ Error al cargar grupos de trabajo:', error);
+        const gruposContainer = document.getElementById('dashboard-grupos-list');
+        if (gruposContainer) {
+          gruposContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #ef4444;">
+              <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+              Error al cargar grupos
+            </div>
+          `;
+        }
+      }
+    }
+
+    function setupAdminDashboardEventListeners() {
+      console.log('🔧 Configurando event listeners del dashboard de administrador...');
+      
+      // Botón "Gestionar" grupos
+      const btnGestionarGrupos = document.getElementById('btn-gestionar-grupos');
+      if (btnGestionarGrupos) {
+        btnGestionarGrupos.addEventListener('click', function() {
+          console.log('🔗 Navegando a gestión de grupos...');
+          
+          // Navegar a la página de gestión administrativa con la sección de grupos
+          window.location.href = 'pages/categoria-gestion.html?compact=1#grupos';
+        });
+        console.log('✅ Event listener del botón "Gestionar grupos" configurado');
+      } else {
+        console.warn('⚠️ Botón "Gestionar grupos" no encontrado');
+      }
     }
 
     function updateConsultationActivity() {
@@ -2259,33 +3096,836 @@
       console.log('Updating team assignments...');
     }
 
-    function updatePractitionerAssignment() {
-      // Simular actualización de asignación del practicante
-      console.log('Updating practitioner assignment...');
+    async function updatePractitionerAssignment() {
+      console.log('📋 Actualizando asignación del practicante...');
+      
+      try {
+        // Importar modelos dinámicamente
+        const { authModel } = await import('./js/models/storageModel.js');
+        const { gestionModel } = await import('./js/models/gestionModel.js');
+        
+        // Obtener usuario actual
+        const currentUser = authModel.getCurrentUser();
+        console.log('👤 Usuario actual:', currentUser);
+        
+        if (!currentUser || currentUser.rol !== 'practicante') {
+          console.warn('⚠️ Usuario no es practicante o no está autenticado');
+          console.log('Rol del usuario:', currentUser?.rol);
+          return;
+        }
+        
+        console.log('🏷️ GrupoId del usuario:', currentUser.grupoId);
+        console.log('🏥 ModuloId del usuario:', currentUser.moduloId);
+        
+        // Obtener datos del módulo asignado
+        await updateAssignedModule(currentUser);
+        
+        // Obtener datos del grupo asignado
+        await updateAssignedGroup(currentUser);
+        
+        console.log('✅ Asignación del practicante actualizada');
+      } catch (error) {
+        console.error('❌ Error actualizando asignación del practicante:', error);
+      }
+    }
+
+    async function updateAssignedModule(currentUser) {
+      try {
+        const { gestionModel } = await import('./js/models/gestionModel.js');
+        
+        // Buscar módulo asignado al practicante
+        const modulos = gestionModel.getModulos();
+        let moduloAsignado = null;
+        
+        // Si el usuario tiene un módulo asignado específicamente
+        if (currentUser.moduloId) {
+          moduloAsignado = modulos.find(m => m.id === currentUser.moduloId);
+        }
+        
+        // Si no tiene módulo específico, buscar por grupo
+        if (!moduloAsignado && currentUser.grupoId) {
+          // Buscar módulo que tenga el mismo grupo asignado
+          moduloAsignado = modulos.find(m => 
+            m.grupoAsignado === currentUser.grupoId || 
+            (m.practicantes && m.practicantes.includes(currentUser.id))
+          );
+        }
+        
+        // Si no encuentra módulo, usar uno por defecto
+        if (!moduloAsignado && modulos.length > 0) {
+          moduloAsignado = modulos[0]; // Primer módulo disponible
+        }
+        
+        // Actualizar la interfaz del módulo
+        const moduleNameElement = document.querySelector('.module-name');
+        const supervisorElement = document.querySelector('.supervisor');
+        const locationElement = document.querySelector('.location-info span');
+        const statusElement = document.querySelector('.assignment-details .status-indicator');
+        
+        if (moduloAsignado) {
+          if (moduleNameElement) {
+            moduleNameElement.textContent = moduloAsignado.nombre || 'Módulo sin nombre';
+          }
+          
+          if (supervisorElement) {
+            supervisorElement.textContent = `Supervisor: ${moduloAsignado.supervisor || 'Por asignar'}`;
+          }
+          
+          if (locationElement) {
+            const ubicacion = moduloAsignado.lugar || moduloAsignado.ubicacion || 'Ubicación no especificada';
+            locationElement.textContent = ubicacion;
+          }
+          
+          if (statusElement) {
+            statusElement.textContent = moduloAsignado.estado === 'activo' ? 'Activo' : 'Inactivo';
+            statusElement.className = `status-indicator ${moduloAsignado.estado === 'activo' ? 'active' : 'inactive'}`;
+          }
+        } else {
+          // Sin módulo asignado
+          console.log('⚠️ No se encontró módulo asignado para el usuario');
+          if (moduleNameElement) {
+            moduleNameElement.textContent = 'Sin módulo asignado';
+          }
+          if (supervisorElement) {
+            supervisorElement.textContent = 'Supervisor: Por asignar';
+          }
+          if (locationElement) {
+            locationElement.textContent = 'Ubicación por confirmar';
+          }
+          if (statusElement) {
+            statusElement.textContent = 'Sin asignar';
+            statusElement.className = 'status-indicator inactive';
+          }
+        }
+        
+      } catch (error) {
+        console.error('❌ Error actualizando módulo asignado:', error);
+      }
+    }
+
+    async function updateAssignedGroup(currentUser) {
+      try {
+        console.log('👥 Actualizando grupo asignado para:', currentUser.usuario || currentUser.nombre);
+        
+        // Obtener el contenedor del grupo del practicante
+        const groupContainer = document.getElementById('practitioner-group-info');
+        const groupStatusIndicator = document.querySelector('.group-status-indicator');
+        
+        console.log('📦 Contenedor encontrado:', !!groupContainer);
+        console.log('🚦 Indicador de estado encontrado:', !!groupStatusIndicator);
+        
+        if (!groupContainer) {
+          console.warn('⚠️ No se encontró el contenedor del grupo del practicante');
+          return;
+        }
+        
+        console.log('🔍 Verificando grupoId:', currentUser.grupoId);
+        console.log('👤 Datos completos del usuario:', JSON.stringify(currentUser, null, 2));
+        
+        if (currentUser.grupoId) {
+          const { authModel } = await import('./js/models/storageModel.js');
+          const { gestionModel } = await import('./js/models/gestionModel.js');
+          
+          // Obtener información del grupo de múltiples fuentes
+          let miembrosGrupo = [];
+          let infoGrupo = null;
+          
+          // 1. Buscar en usuarios por grupoId
+          const usuarios = authModel.getAllUsers();
+          console.log('👥 Total de usuarios en el sistema:', usuarios.length);
+          
+          miembrosGrupo = usuarios.filter(u => 
+            u.grupoId === currentUser.grupoId && 
+            u.activo !== false
+          );
+          
+          console.log('🔍 Miembros del grupo ' + currentUser.grupoId + ':', miembrosGrupo.length);
+          console.log('📝 Miembros encontrados:', miembrosGrupo.map(u => ({
+            nombre: u.nombre || u.usuario,
+            rol: u.rol,
+            grupoId: u.grupoId
+          })));
+          
+          // 2. Buscar información del grupo en gestionModel
+          const gruposDisponibles = gestionModel.getGrupos();
+          console.log('📋 Grupos disponibles en gestionModel:', gruposDisponibles);
+          
+          // Buscar por diferentes formatos de ID
+          infoGrupo = gruposDisponibles.find(g => 
+            g.id === currentUser.grupoId || 
+            g.id === currentUser.grupoId.toUpperCase() ||
+            g.nombre?.toLowerCase().includes(currentUser.grupoId.toLowerCase())
+          );
+          
+          console.log('🎯 Info del grupo encontrada:', infoGrupo);
+          
+          // 3. Si no hay grupos en gestionModel, crear uno básico
+          if (!infoGrupo) {
+            infoGrupo = {
+              id: currentUser.grupoId,
+              nombre: `Grupo ${currentUser.grupoId.replace('grupo-', '').toUpperCase()}`,
+              turno: getCurrentShift(),
+              horario: getCurrentShiftTime()
+            };
+            console.log('🔧 Grupo creado dinámicamente:', infoGrupo);
+          }
+          
+          // 4. Si no hay miembros pero sí usuarios con el mismo grupoId
+          if (miembrosGrupo.length === 0) {
+            // Buscar usuarios que puedan estar en el grupo con otros formatos de ID
+            const posiblesMiembros = usuarios.filter(u => {
+              const userGroupId = u.grupoId?.toLowerCase();
+              const targetGroupId = currentUser.grupoId?.toLowerCase();
+              return userGroupId === targetGroupId || 
+                     userGroupId?.includes(targetGroupId) ||
+                     targetGroupId?.includes(userGroupId);
+            });
+            
+            if (posiblesMiembros.length > 0) {
+              miembrosGrupo = posiblesMiembros;
+              console.log('🔍 Miembros encontrados con búsqueda flexible:', miembrosGrupo.length);
+            }
+          }
+          
+          // 5. Si aún no hay miembros, al menos incluir al usuario actual
+          if (miembrosGrupo.length === 0) {
+            miembrosGrupo = [currentUser];
+            console.log('👤 Solo se incluye el usuario actual como miembro');
+          }
+          
+          // Obtener módulos para encontrar el asignado al grupo
+          const modulos = gestionModel.getModulos();
+          console.log('🏥 Total de módulos:', modulos.length);
+          
+          const moduloAsignado = modulos.find(m => 
+            m.grupoAsignado === currentUser.grupoId ||
+            m.grupoAsignadoId === currentUser.grupoId ||
+            (m.practicantes && m.practicantes.includes(currentUser.id))
+          );
+          
+          console.log('🎯 Módulo asignado encontrado:', moduloAsignado ? moduloAsignado.nombre : 'Ninguno');
+          
+          // Separar miembros por rol
+          const practicantes = miembrosGrupo.filter(u => u.rol === 'practicante');
+          const supervisores = miembrosGrupo.filter(u => u.rol === 'supervisor' || u.rol === 'administrador');
+          
+          // Crear el HTML del grupo con el estilo del dashboard de administrador
+          const groupHTML = `
+            <div class="group-item">
+              <div class="group-header">
+                <div class="group-name">
+                  <div class="group-title">${infoGrupo.nombre}</div>
+                  <div class="member-count">${miembrosGrupo.length} miembros total</div>
+                </div>
+                <div class="group-assignment">
+                  ${moduloAsignado ? 
+                    `<div class="assigned-module">${moduloAsignado.nombre || 'Módulo sin nombre'}</div>` :
+                    `<div class="assigned-module" style="background: #6b7280; color: white;">Sin módulo asignado</div>`
+                  }
+                  <div class="group-schedule">${infoGrupo.turno || getCurrentShift()}</div>
+                </div>
+              </div>
+              
+              <div class="group-members">
+                <div style="margin-bottom: 12px;">
+                  <h5 style="margin: 0 0 8px 0; font-size: 0.9rem; color: #374151; font-weight: 600;">
+                    <i class="fas fa-user-graduate" style="margin-right: 6px; color: #3b82f6;"></i>
+                    Practicantes (${practicantes.length})
+                  </h5>
+                  <div class="member-avatars">
+                    ${practicantes.map(practicante => {
+                      const initials = (practicante.nombre || practicante.usuario || 'U')
+                        .split(' ')
+                        .map(n => n.charAt(0))
+                        .join('')
+                        .substring(0, 2)
+                        .toUpperCase();
+                      
+                      const isCurrentUser = practicante.id === currentUser.id;
+                      
+                      return `
+                        <div class="member-avatar" 
+                             style="${isCurrentUser ? 'background: linear-gradient(135deg, #10b981, #059669); border: 2px solid #065f46;' : ''}"
+                             title="${practicante.nombre || practicante.usuario} ${isCurrentUser ? '(Tú)' : ''}">
+                          ${initials}
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                </div>
+                
+                ${supervisores.length > 0 ? `
+                  <div>
+                    <h5 style="margin: 0 0 8px 0; font-size: 0.9rem; color: #374151; font-weight: 600;">
+                      <i class="fas fa-user-tie" style="margin-right: 6px; color: #8b5cf6;"></i>
+                      Supervisores (${supervisores.length})
+                    </h5>
+                    <div class="member-avatars">
+                      ${supervisores.map(supervisor => {
+                        const initials = (supervisor.nombre || supervisor.usuario || 'S')
+                          .split(' ')
+                          .map(n => n.charAt(0))
+                          .join('')
+                          .substring(0, 2)
+                          .toUpperCase();
+                        
+                        return `
+                          <div class="member-avatar" 
+                               style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);"
+                               title="${supervisor.nombre || supervisor.usuario}">
+                            ${initials}
+                          </div>
+                        `;
+                      }).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+          
+          console.log('📝 HTML del grupo generado:', groupHTML.substring(0, 100) + '...');
+          groupContainer.innerHTML = groupHTML;
+          console.log('✅ HTML del grupo insertado en el contenedor');
+          
+          // Actualizar indicador de estado
+          if (groupStatusIndicator) {
+            groupStatusIndicator.textContent = 'Activo';
+            groupStatusIndicator.className = 'group-status-indicator active';
+            console.log('✅ Indicador de estado actualizado');
+          }
+          
+        } else {
+          // Sin grupo asignado - intentar asignar automáticamente o crear información básica
+          console.log('⚠️ Usuario no tiene grupoId asignado');
+          
+          // Intentar asignar automáticamente a un grupo
+          const grupoAsignado = await tryAutoAssignGroup(currentUser);
+          
+          if (grupoAsignado) {
+            console.log('✅ Grupo asignado automáticamente:', grupoAsignado);
+            // Actualizar el usuario con el nuevo grupo
+            currentUser.grupoId = grupoAsignado.id;
+            
+            // Recursivamente llamar esta función con el usuario actualizado
+            return await updateAssignedGroup(currentUser);
+          }
+          
+          // Si no se pudo asignar, mostrar mensaje de sin grupo
+          groupContainer.innerHTML = `
+            <div style="text-align: center; padding: 30px; color: #6b7280;">
+              <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+              <p style="margin: 0; font-size: 1rem;">No tienes un grupo asignado</p>
+              <p style="margin: 8px 0 0 0; font-size: 0.85rem; opacity: 0.7;">Contacta a tu supervisor para ser asignado a un grupo</p>
+              <button onclick="requestGroupAssignment()" style="
+                margin-top: 15px; 
+                padding: 8px 16px; 
+                background: #3b82f6; 
+                color: white; 
+                border: none; 
+                border-radius: 6px; 
+                cursor: pointer;
+                font-size: 0.85rem;
+              ">
+                Solicitar Asignación
+              </button>
+            </div>
+          `;
+          
+          // Actualizar indicador de estado
+          if (groupStatusIndicator) {
+            groupStatusIndicator.textContent = 'Sin asignar';
+            groupStatusIndicator.className = 'group-status-indicator inactive';
+          }
+        }
+        
+      } catch (error) {
+        console.error('❌ Error actualizando grupo asignado:', error);
+        
+        const groupContainer = document.getElementById('practitioner-group-info');
+        if (groupContainer) {
+          groupContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #ef4444;">
+              <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+              Error cargando información del grupo
+            </div>
+          `;
+        }
+      }
     }
 
     function updateSchedule() {
-      // Actualizar horario con datos reales
+      console.log('📅 Actualizando horario del practicante...');
+      
+      try {
+        // Actualizar fecha actual
+        const now = new Date();
+        const dateElement = document.querySelector('.date-today');
+        if (dateElement) {
+          const options = { 
+            day: '2-digit', 
+            month: 'short', 
+            year: 'numeric' 
+          };
+          dateElement.textContent = now.toLocaleDateString('es-ES', options);
+        }
+        
+        // Actualizar tiempo restante
+        const timeRemaining = calculateTimeRemaining();
+        const tiempoElement = document.getElementById('tiempo-restante');
+        if (tiempoElement) {
+          tiempoElement.textContent = timeRemaining;
+        }
+        
+        // Actualizar turno actual
+        const turnoElement = document.getElementById('turno-actual');
+        if (turnoElement) {
+          const turnoActual = getCurrentShift();
+          turnoElement.textContent = turnoActual;
+        }
+        
+        // Actualizar actividades del horario
+        updateScheduleActivities();
+        
+      } catch (error) {
+        console.error('❌ Error actualizando horario:', error);
+      }
+    }
+
+    function getCurrentShift() {
       const now = new Date();
-      const timeRemaining = calculateTimeRemaining();
-      document.getElementById('tiempo-restante').textContent = timeRemaining;
+      const currentHour = now.getHours();
+      
+      if (currentHour >= 6 && currentHour < 14) {
+        return 'Turno Matutino';
+      } else if (currentHour >= 14 && currentHour < 22) {
+        return 'Turno Vespertino';
+      } else {
+        return 'Turno Nocturno';
+      }
+    }
+
+    function updateScheduleActivities() {
+      const scheduleContainer = document.querySelector('.schedule-info');
+      if (!scheduleContainer) return;
+      
+      const now = new Date();
+      const currentHour = now.getHours();
+      
+      // Definir actividades basadas en el turno actual
+      let activities = [];
+      
+      if (currentHour >= 6 && currentHour < 14) {
+        // Turno Matutino
+        activities = [
+          {
+            time: '06:00 - 08:00',
+            activity: 'Preparación y Revista',
+            status: currentHour < 8 ? (currentHour >= 6 ? 'current' : 'upcoming') : 'completed'
+          },
+          {
+            time: '08:00 - 12:00',
+            activity: 'Consulta Externa',
+            status: currentHour < 12 ? (currentHour >= 8 ? 'current' : 'upcoming') : 'completed'
+          },
+          {
+            time: '12:00 - 13:00',
+            activity: 'Descanso',
+            status: currentHour < 13 ? (currentHour >= 12 ? 'current' : 'upcoming') : 'completed'
+          },
+          {
+            time: '13:00 - 14:00',
+            activity: 'Reportes y Entrega',
+            status: currentHour < 14 ? (currentHour >= 13 ? 'current' : 'upcoming') : 'completed'
+          }
+        ];
+      } else if (currentHour >= 14 && currentHour < 22) {
+        // Turno Vespertino
+        activities = [
+          {
+            time: '14:00 - 15:00',
+            activity: 'Recepción de Turno',
+            status: currentHour < 15 ? (currentHour >= 14 ? 'current' : 'upcoming') : 'completed'
+          },
+          {
+            time: '15:00 - 19:00',
+            activity: 'Rondas Médicas',
+            status: currentHour < 19 ? (currentHour >= 15 ? 'current' : 'upcoming') : 'completed'
+          },
+          {
+            time: '19:00 - 20:00',
+            activity: 'Cena y Descanso',
+            status: currentHour < 20 ? (currentHour >= 19 ? 'current' : 'upcoming') : 'completed'
+          },
+          {
+            time: '20:00 - 22:00',
+            activity: 'Documentación',
+            status: currentHour < 22 ? (currentHour >= 20 ? 'current' : 'upcoming') : 'completed'
+          }
+        ];
+      } else {
+        // Turno Nocturno
+        activities = [
+          {
+            time: '22:00 - 24:00',
+            activity: 'Recepción Nocturna',
+            status: (currentHour >= 22 || currentHour < 2) ? 'current' : 'upcoming'
+          },
+          {
+            time: '00:00 - 04:00',
+            activity: 'Vigilancia y Emergencias',
+            status: (currentHour >= 0 && currentHour < 4) ? 'current' : 'upcoming'
+          },
+          {
+            time: '04:00 - 06:00',
+            activity: 'Preparación Matutina',
+            status: (currentHour >= 4 && currentHour < 6) ? 'current' : 'upcoming'
+          }
+        ];
+      }
+      
+      // Generar HTML de las actividades
+      const activitiesHTML = activities.map(activity => {
+        const statusText = activity.status === 'current' ? 'En curso' : 
+                          activity.status === 'completed' ? 'Completado' : 'Programado';
+        
+        return `
+          <div class="schedule-item ${activity.status}">
+            <div class="time-slot">${activity.time}</div>
+            <div class="activity">${activity.activity}</div>
+            <div class="status">${statusText}</div>
+          </div>
+        `;
+      }).join('');
+      
+      scheduleContainer.innerHTML = activitiesHTML;
     }
 
     function calculateTimeRemaining() {
-      // Simular cálculo de tiempo restante en el turno
-      const hours = Math.floor(Math.random() * 8);
-      const minutes = Math.floor(Math.random() * 60);
-      return `${hours}h ${minutes}m restantes`;
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      
+      let endHour = 0;
+      let shiftName = '';
+      
+      // Determinar fin del turno actual
+      if (currentHour >= 6 && currentHour < 14) {
+        // Turno Matutino: 6:00 - 14:00
+        endHour = 14;
+        shiftName = 'Matutino';
+      } else if (currentHour >= 14 && currentHour < 22) {
+        // Turno Vespertino: 14:00 - 22:00
+        endHour = 22;
+        shiftName = 'Vespertino';
+      } else {
+        // Turno Nocturno: 22:00 - 6:00 (del día siguiente)
+        if (currentHour >= 22) {
+          endHour = 24 + 6; // 6:00 del día siguiente
+        } else {
+          endHour = 6; // Ya es del día siguiente
+        }
+        shiftName = 'Nocturno';
+      }
+      
+      // Calcular tiempo restante
+      let hoursRemaining, minutesRemaining;
+      
+      if (shiftName === 'Nocturno' && currentHour >= 22) {
+        // Caso especial para turno nocturno después de las 22:00
+        const totalMinutesInShift = 8 * 60; // 8 horas
+        const minutesElapsed = (currentHour - 22) * 60 + currentMinute;
+        const minutesLeft = totalMinutesInShift - minutesElapsed;
+        
+        hoursRemaining = Math.floor(minutesLeft / 60);
+        minutesRemaining = minutesLeft % 60;
+      } else if (shiftName === 'Nocturno' && currentHour < 6) {
+        // Caso especial para turno nocturno antes de las 6:00
+        const minutesLeft = (6 - currentHour) * 60 - currentMinute;
+        hoursRemaining = Math.floor(minutesLeft / 60);
+        minutesRemaining = minutesLeft % 60;
+      } else {
+        // Caso normal
+        const minutesLeft = (endHour - currentHour) * 60 - currentMinute;
+        hoursRemaining = Math.floor(minutesLeft / 60);
+        minutesRemaining = minutesLeft % 60;
+      }
+      
+      // Asegurar que no sean negativos
+      if (hoursRemaining < 0 || minutesRemaining < 0) {
+        return 'Turno finalizado';
+      }
+      
+      return `${hoursRemaining}h ${minutesRemaining}m restantes`;
+    }
+
+    function getCurrentShiftTime() {
+      const now = new Date();
+      const currentHour = now.getHours();
+      
+      if (currentHour >= 6 && currentHour < 14) {
+        return '06:00 - 14:00';
+      } else if (currentHour >= 14 && currentHour < 22) {
+        return '14:00 - 22:00';
+      } else {
+        return '22:00 - 06:00';
+      }
+    }
+
+    async function tryAutoAssignGroup(currentUser) {
+      try {
+        console.log('🔄 Intentando asignación automática de grupo...');
+        
+        const { gestionModel } = await import('./js/models/gestionModel.js');
+        const { authModel } = await import('./js/models/storageModel.js');
+        
+        // Obtener grupos existentes
+        const gruposExistentes = gestionModel.getGrupos();
+        console.log('📋 Grupos existentes:', gruposExistentes);
+        
+        // Si hay grupos existentes, asignar al primero
+        if (gruposExistentes.length > 0) {
+          const grupoSeleccionado = gruposExistentes[0];
+          
+          // Actualizar el usuario en localStorage
+          const usuarios = authModel.getAllUsers();
+          const userIndex = usuarios.findIndex(u => u.id === currentUser.id);
+          
+          if (userIndex !== -1) {
+            usuarios[userIndex].grupoId = grupoSeleccionado.id;
+            localStorage.setItem('usuarios', JSON.stringify(usuarios));
+            
+            // También actualizar el usuario actual en sessionStorage
+            currentUser.grupoId = grupoSeleccionado.id;
+            authModel.setCurrentUser(currentUser);
+            
+            console.log('✅ Usuario asignado automáticamente al grupo:', grupoSeleccionado.id);
+            return grupoSeleccionado;
+          }
+        }
+        
+        // Si no hay grupos, crear uno nuevo
+        const nuevoGrupo = {
+          id: 'grupo-auto-1',
+          nombre: 'Grupo Automático 1',
+          turno: getCurrentShift(),
+          horario: getCurrentShiftTime()
+        };
+        
+        // Guardar el nuevo grupo
+        const gruposActualizados = [...gruposExistentes, nuevoGrupo];
+        localStorage.setItem('grupos', JSON.stringify(gruposActualizados));
+        
+        // Asignar el usuario al nuevo grupo
+        const usuarios = authModel.getAllUsers();
+        const userIndex = usuarios.findIndex(u => u.id === currentUser.id);
+        
+        if (userIndex !== -1) {
+          usuarios[userIndex].grupoId = nuevoGrupo.id;
+          localStorage.setItem('usuarios', JSON.stringify(usuarios));
+          
+          currentUser.grupoId = nuevoGrupo.id;
+          authModel.setCurrentUser(currentUser);
+          
+          console.log('✅ Grupo creado y usuario asignado:', nuevoGrupo.id);
+          return nuevoGrupo;
+        }
+        
+        return null;
+      } catch (error) {
+        console.error('❌ Error en asignación automática:', error);
+        return null;
+      }
+    }
+
+    function requestGroupAssignment() {
+      alert('Solicitud enviada. Un supervisor te asignará a un grupo pronto.');
+      // Aquí podrías enviar una notificación real o crear un ticket
     }
 
     function loadChecklist() {
-      // Cargar estado del checklist desde localStorage o API
-      console.log('Loading checklist data...');
+      console.log('📋 Cargando estado del checklist...');
+      try {
+        // Cargar estado guardado del checklist
+        const checklistData = JSON.parse(localStorage.getItem('checklistData') || '{}');
+        
+        // Aplicar estados guardados a los elementos del checklist
+        const checklistItems = document.querySelectorAll('.checklist-item');
+        
+        checklistItems.forEach(item => {
+          const checkbox = item.querySelector('input[type="checkbox"]');
+          const itemName = item.querySelector('.item-name').textContent;
+          
+          if (checklistData[itemName]) {
+            checkbox.checked = checklistData[itemName].checked;
+            
+            // Aplicar estilo visual según el estado
+            if (checkbox.checked) {
+              item.style.background = '#f0f9ff';
+            } else {
+              item.style.background = '#fef3c7';
+            }
+          }
+        });
+        
+        // Calcular estadísticas del checklist
+        updateChecklistStats();
+        
+      } catch (error) {
+        console.error('❌ Error cargando checklist:', error);
+      }
+    }
+
+    function updateChecklistStats() {
+      const totalItems = document.querySelectorAll('.checklist-item').length;
+      const checkedItems = document.querySelectorAll('.checklist-item input[type="checkbox"]:checked').length;
+      const percentage = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
+      
+      // Actualizar o crear indicador de progreso
+      let progressIndicator = document.querySelector('.checklist-progress');
+      
+      if (!progressIndicator) {
+        const checklistHeader = document.querySelector('.checklist-content').closest('.dashboard-card').querySelector('.card-header');
+        if (checklistHeader) {
+          progressIndicator = document.createElement('div');
+          progressIndicator.className = 'checklist-progress';
+          progressIndicator.style.cssText = `
+            font-size: 12px;
+            color: #6b7280;
+            margin-left: auto;
+          `;
+          checklistHeader.appendChild(progressIndicator);
+        }
+      }
+      
+      if (progressIndicator) {
+        progressIndicator.textContent = `${checkedItems}/${totalItems} (${percentage}%)`;
+        
+        // Cambiar color según el progreso
+        if (percentage >= 80) {
+          progressIndicator.style.color = '#22c55e';
+        } else if (percentage >= 50) {
+          progressIndicator.style.color = '#f59e0b';
+        } else {
+          progressIndicator.style.color = '#ef4444';
+        }
+      }
     }
 
     function loadRecentObservations() {
-      // Cargar observaciones recientes
-      console.log('Loading recent observations...');
+      console.log('📝 Cargando observaciones recientes...');
+      try {
+        // Cargar observaciones guardadas
+        const observations = JSON.parse(localStorage.getItem('practitionerObservations') || '[]');
+        
+        // Buscar o crear sección de observaciones
+        let observationsSection = document.querySelector('.recent-observations');
+        
+        if (!observationsSection && observations.length > 0) {
+          // Crear sección de observaciones si hay datos
+          const practitionerGrid = document.querySelector('.practitioner-grid');
+          if (practitionerGrid) {
+            const observationsHTML = `
+              <div class="dashboard-card recent-observations">
+                <div class="card-header">
+                  <h3><i class="fas fa-sticky-note"></i> Observaciones Recientes</h3>
+                  <button class="add-observation-btn" style="padding: 4px 8px; font-size: 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                    <i class="fas fa-plus"></i> Agregar
+                  </button>
+                </div>
+                <div class="observations-list">
+                  <!-- Se llenarán dinámicamente -->
+                </div>
+              </div>
+            `;
+            practitionerGrid.insertAdjacentHTML('beforeend', observationsHTML);
+            observationsSection = document.querySelector('.recent-observations');
+          }
+        }
+        
+        if (observationsSection) {
+          updateObservationsList(observations);
+          
+          // Añadir evento al botón de agregar observación
+          const addBtn = observationsSection.querySelector('.add-observation-btn');
+          if (addBtn) {
+            addBtn.addEventListener('click', showAddObservationModal);
+          }
+        }
+        
+      } catch (error) {
+        console.error('❌ Error cargando observaciones:', error);
+      }
+    }
+
+    function updateObservationsList(observations) {
+      const observationsList = document.querySelector('.observations-list');
+      if (!observationsList) return;
+      
+      if (observations.length === 0) {
+        observationsList.innerHTML = `
+          <div style="text-align: center; padding: 20px; color: #6b7280;">
+            <i class="fas fa-clipboard" style="font-size: 1.5rem; margin-bottom: 8px; opacity: 0.5;"></i>
+            <p>No hay observaciones registradas</p>
+          </div>
+        `;
+        return;
+      }
+      
+      // Mostrar las 3 observaciones más recientes
+      const recentObservations = observations.slice(-3).reverse();
+      
+      const observationsHTML = recentObservations.map(obs => `
+        <div class="observation-item" style="
+          padding: 12px;
+          margin-bottom: 8px;
+          background: #f8fafc;
+          border-radius: 8px;
+          border-left: 3px solid #3b82f6;
+        ">
+          <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">
+            ${new Date(obs.timestamp).toLocaleString('es-ES')}
+          </div>
+          <div style="color: #374151; line-height: 1.4;">
+            ${obs.text}
+          </div>
+        </div>
+      `).join('');
+      
+      observationsList.innerHTML = observationsHTML;
+    }
+
+    function showAddObservationModal() {
+      const observationText = prompt('Ingrese su observación:');
+      if (observationText && observationText.trim()) {
+        addNewObservation(observationText.trim());
+      }
+    }
+
+    function addNewObservation(text) {
+      try {
+        const observations = JSON.parse(localStorage.getItem('practitionerObservations') || '[]');
+        
+        const newObservation = {
+          id: Date.now(),
+          text: text,
+          timestamp: new Date().toISOString()
+        };
+        
+        observations.push(newObservation);
+        
+        // Mantener solo las últimas 10 observaciones
+        if (observations.length > 10) {
+          observations.splice(0, observations.length - 10);
+        }
+        
+        localStorage.setItem('practitionerObservations', JSON.stringify(observations));
+        updateObservationsList(observations);
+        
+        console.log('✅ Observación agregada exitosamente');
+      } catch (error) {
+        console.error('❌ Error agregando observación:', error);
+      }
     }
 
     // ========= CHECKLIST FUNCTIONALITY =========
@@ -2471,9 +4111,156 @@
   </script>
   
   <script>
+    // Función para inicializar header individual
+    function initIndividualHeader() {
+      const userIcon = document.getElementById('userIcon');
+      const userDropdown = document.getElementById('userDropdown');
+      const logoutOption = document.getElementById('logoutBtn');
+      
+      // Obtener información del usuario
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      
+      // Actualizar información del usuario
+      if (currentUser.nombre) {
+        document.getElementById('userName').textContent = currentUser.nombre;
+        document.getElementById('dropdownUserName').textContent = currentUser.nombre;
+      }
+      
+      if (currentUser.role) {
+        document.getElementById('dropdownUserRole').textContent = currentUser.role;
+      }
+      
+      // Toggle dropdown
+      userIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = userDropdown.style.display === 'block';
+        userDropdown.style.display = isVisible ? 'none' : 'block';
+      });
+      
+      // Cerrar dropdown al hacer clic fuera
+      document.addEventListener('click', (e) => {
+        if (!userIcon.contains(e.target) && !userDropdown.contains(e.target)) {
+          userDropdown.style.display = 'none';
+        }
+      });
+      
+      // Manejar logout
+      logoutOption.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        if (typeof window.showLogoutConfirmationModal === 'function') {
+          window.showLogoutConfirmationModal();
+        } else {
+          // Fallback básico
+          if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('userSession');
+            window.location.href = 'index.html';
+          }
+        }
+        
+        userDropdown.style.display = 'none';
+      });
+    }
+
+    // Hacer disponible globalmente
+    window.initIndividualHeader = initIndividualHeader;
+
+    // Función para mostrar el modal elegante de confirmación de logout
+    function showLogoutConfirmationModal() {
+      const modal = document.getElementById('logoutModal');
+      const cancelBtn = document.getElementById('logoutCancelBtn');
+      const confirmBtn = document.getElementById('logoutConfirmBtn');
+      
+      // Mostrar modal
+      modal.style.display = 'flex';
+      
+      // Enfocar el botón de cancelar por defecto
+      setTimeout(() => {
+        cancelBtn.focus();
+      }, 100);
+      
+      // Handler para cancelar
+      const cancelHandler = () => {
+        modal.style.display = 'none';
+        cleanup();
+      };
+      
+      // Handler para confirmar logout
+      const confirmHandler = () => {
+        modal.style.display = 'none';
+        performLogout();
+        cleanup();
+      };
+      
+      // Handler para tecla ESC
+      const escHandler = (e) => {
+        if (e.key === 'Escape') {
+          cancelHandler();
+        }
+      };
+      
+      // Handler para click en overlay
+      const overlayHandler = (e) => {
+        if (e.target.classList.contains('logout-modal-overlay')) {
+          cancelHandler();
+        }
+      };
+      
+      // Agregar event listeners
+      cancelBtn.addEventListener('click', cancelHandler);
+      confirmBtn.addEventListener('click', confirmHandler);
+      document.addEventListener('keydown', escHandler);
+      modal.addEventListener('click', overlayHandler);
+      
+      // Función para limpiar event listeners
+      function cleanup() {
+        cancelBtn.removeEventListener('click', cancelHandler);
+        confirmBtn.removeEventListener('click', confirmHandler);
+        document.removeEventListener('keydown', escHandler);
+        modal.removeEventListener('click', overlayHandler);
+      }
+    }
+    
+    // Función para realizar el logout
+    function performLogout() {
+      console.log('🚪 Cerrando sesión...');
+      
+      // Limpiar localStorage
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('userSession');
+      localStorage.removeItem('usuarioActual');
+      localStorage.removeItem('sessionData');
+      
+      // Emitir evento de logout si hay EventBus disponible
+      if (typeof window.EventBus !== 'undefined') {
+        window.EventBus.emit('user:logout', {
+          userId: 'current',
+          timestamp: Date.now(),
+          reason: 'manual'
+        });
+      }
+      
+      // Redireccionar al login
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 100);
+    }
+    
+    // Hacer funciones disponibles globalmente
+    window.showLogoutConfirmationModal = showLogoutConfirmationModal;
+    window.performLogout = performLogout;
+  </script>
+  
+  <script>
     // Previene cualquier handler que intente navegar desde el botón de 'Reportes'
     document.addEventListener('click', function(e) {
       const btn = e.target.closest && e.target.closest('button[data-category="reportes"]');
+      const userIconClick = e.target.closest && e.target.closest('#userIcon');
+      
+      // No interferir con clicks del userIcon
+      if (userIconClick) return;
+      
       if (btn) {
         e.preventDefault();
         e.stopPropagation();
@@ -2481,5 +4268,37 @@
       }
     }, true);
   </script>
+
+  <!-- Modal elegante de confirmación de logout -->
+  <div id="logoutModal" class="logout-modal" style="display: none;">
+    <div class="logout-modal-overlay">
+      <div class="logout-modal-content">
+        <div class="logout-modal-header">
+          <div class="logout-icon">
+            <i class="fas fa-sign-out-alt"></i>
+          </div>
+          <h3>Confirmar cierre de sesión</h3>
+        </div>
+        
+        <div class="logout-modal-body">
+          <p>¿Estás seguro de que deseas cerrar sesión?</p>
+          <p class="logout-subtitle">Perderás el acceso a tu cuenta hasta que vuelvas a iniciar sesión.</p>
+        </div>
+        
+        <div class="logout-modal-footer">
+          <button type="button" class="logout-btn-cancel" id="logoutCancelBtn">
+            <i class="fas fa-times"></i>
+            Cancelar
+          </button>
+          <button type="button" class="logout-btn-confirm" id="logoutConfirmBtn">
+            <i class="fas fa-check"></i>
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
 </body>
 </html>

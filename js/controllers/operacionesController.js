@@ -57,7 +57,6 @@ export function initOperationsController() {
               targetSectionEl.classList.remove('hidden');
 
               if (hash === 'registro-entradas-salidas') mostrarTodosLosRegistros();
-              else if (hash === 'mesas-salud') cargarMesasSalud();
 
               activated = true;
             } else if (targetBtn) {
@@ -203,10 +202,6 @@ function setupSidebarNavigation() {
           // ocultar contenedor de mesas
           const mg = document.getElementById('mesasGrid'); if (mg) mg.classList.add('hidden');
           mostrarTodosLosRegistros();
-        } else if (targetSectionId === 'mesas-salud') {
-          // ocultar contenedor de registro
-          const re = document.getElementById('registroESLista'); if (re) re.classList.add('hidden');
-          cargarMesasSalud();
         }
       } else {
         console.error(`No se encontró la sección: ${targetSectionId}-section`);
@@ -295,26 +290,6 @@ function mostrarTodosLosRegistros() {
     renderRegistroEntradasSalidas(historial, container);
     
     console.log('Todos los registros mostrados exitosamente');
-}
-
-function cargarMesasSalud() {
-  const container = document.getElementById('mesasGrid');
-  if (container) {
-    // Asegurar que solo este contenedor está visible
-    container.classList.remove('hidden');
-    const re = document.getElementById('registroESLista');
-    if (re) {
-      re.classList.add('hidden');
-      // Limpiar también el HTML del registro para evitar solapamientos visuales al volver
-      re.innerHTML = '';
-    }
-
-    const modulos = gestionModel.getModulos();
-    // Emitir evento indicando que las mesas fueron cargadas. Usamos 'mesas' por consistencia,
-    // pero el listener acepta 'modulos' también para compatibilidad con versiones previas.
-    eventBus.emit(EVENT_NAMES.DATA_LOADED, { type: 'mesas', count: modulos.length });
-    renderModulos(modulos, container);
-  }
 }
 
 /**

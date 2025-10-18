@@ -15,13 +15,29 @@ export function initUsersController() {
   setupNewUserForm();
   initUserView(); // Inicializar vista de usuario
 
-  // Activa la primera sección por defecto.
-  const firstButton = document.querySelector('.sidebar-menu button');
-  if (firstButton) {
-    firstButton.click();
-  }
+  // Comentado: no activar automáticamente para permitir navegación manual
+  // const firstButton = document.querySelector('.sidebar-menu button');
+  // if (firstButton) {
+  //   firstButton.click();
+  // }
   
   console.log('UsersController: Inicialización completada');
+  
+  // Hacer disponible globalmente para depuración
+  window.UsersController = {
+    createUser: (userData) => {
+      console.log('UsersController.createUser llamado con:', userData);
+      const success = authModel.addUser(userData);
+      if (success) {
+        eventBus.emit(EVENT_NAMES.USER_CREATED, { user: userData });
+        const usuarioActual = obtenerUsuarioActual();
+        mostrarMensaje('success', '✅ Usuario Registrado', 
+          `${userData.nombre} ha sido registrado exitosamente.\nID: ${userData.id}`, 4000);
+        return true;
+      }
+      return false;
+    }
+  };
 }
 
 /**
@@ -59,6 +75,12 @@ function setupSidebarNavigation() {
   const sections = document.querySelectorAll('.content-area .form-section');
   const defaultSection = document.getElementById('default-section');
 
+  // Verificar si ya hay listeners del sistema HTML
+  if (window.location.search.includes('compact=1') || window.location.hash) {
+    console.log('UsersController: Sistema HTML manejando navegación, omitiendo setup');
+    return;
+  }
+
   sidebarButtons.forEach(button => {
     button.addEventListener('click', () => {
       const targetSectionId = button.getAttribute('data-section');
@@ -66,7 +88,10 @@ function setupSidebarNavigation() {
 
       // Oculta todo.
       sidebarButtons.forEach(btn => btn.classList.remove('active'));
-      sections.forEach(sec => sec.classList.remove('active'));
+      sections.forEach(sec => {
+        sec.classList.remove('active');
+        sec.style.display = 'none';
+      });
       if (defaultSection) defaultSection.style.display = 'none';
 
       // Muestra lo necesario.
@@ -74,6 +99,7 @@ function setupSidebarNavigation() {
       const activeSection = document.getElementById(`${targetSectionId}-section`);
       if (activeSection) {
         activeSection.classList.add('active');
+        activeSection.style.display = 'block';
 
         // Si se selecciona "Personal", carga la lista de usuarios.
         if (targetSectionId === 'personal') {
@@ -142,13 +168,9 @@ function setupNewUserForm() {
           gestionModel.asignarUsuarioAGrupo(userData.grupoId, userData.id);
         }
         
-        if (typeof mostrarMensaje === 'function') {
-          const usuarioActual = typeof obtenerUsuarioActual === 'function' ? obtenerUsuarioActual() : { nombre: 'Administrador' };
-          mostrarMensaje('success', '✅ Usuario Registrado', 
-            `${userData.nombre} ha sido registrado exitosamente en el sistema.\nMatrícula/ID: ${userData.id}\nRol: ${userData.rol}\n\nRegistrado por: ${usuarioActual.nombre}`, 6000);
-        } else {
-          alert('¡Usuario Registrado! El usuario ha sido registrado correctamente.');
-        }
+        const usuarioActual = obtenerUsuarioActual();
+        mostrarMensaje('success', '✅ Usuario Registrado', 
+          `${userData.nombre} ha sido registrado exitosamente en el sistema.\nMatrícula/ID: ${userData.id}\nRol: ${userData.rol}\n\nRegistrado por: ${usuarioActual.nombre}`, 6000);
         formUsuario.reset();
         
         // Vuelve a la sección de personal para ver al nuevo usuario
@@ -220,4 +242,92 @@ function cargarGruposEnFormulario() {
   if (valorSeleccionado) {
     grupoSelect.value = valorSeleccionado;
   }
+}
+
+/**
+ * Sistema de mensajes personalizados para usuarios
+ */
+function mostrarMensaje(tipo, titulo, mensaje, duracion = 5000) {
+  // Crear container si no existe
+  let container = document.getElementById('message-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'message-container';
+    container.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      max-width: 400px;
+    `;
+    document.body.appendChild(container);
+  }
+
+  const messageEl = document.createElement('div');
+  messageEl.className = `custom-message ${tipo}`;
+  messageEl.style.cssText = `
+    background: ${tipo === 'success' ? '#10b981' : tipo === 'error' ? '#ef4444' : '#f59e0b'};
+    color: white;
+    padding: 16px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: messageSlideIn 0.3s ease-out;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  `;
+  
+  const iconos = {
+    success: '✅',
+    error: '❌', 
+    warning: '⚠️',
+    info: 'ℹ️'
+  };
+
+  messageEl.innerHTML = `
+    <div style="font-size: 20px; flex-shrink: 0;">${iconos[tipo] || 'ℹ️'}</div>
+    <div style="flex: 1;">
+      <div style="font-weight: bold; margin-bottom: 4px;">${titulo}</div>
+      <div style="font-size: 14px; line-height: 1.4; white-space: pre-line;">${mensaje}</div>
+    </div>
+    <button style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; flex-shrink: 0;" onclick="this.parentElement.remove()">×</button>
+  `;
+
+  // Añadir estilos de animación si no existen
+  if (!document.getElementById('message-styles')) {
+    const style = document.createElement('style');
+    style.id = 'message-styles';
+    style.textContent = `
+      @keyframes messageSlideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  container.appendChild(messageEl);
+
+  // Auto-cerrar después del tiempo especificado
+  if (duracion > 0) {
+    setTimeout(() => {
+      if (messageEl.parentNode) {
+        messageEl.style.animation = 'messageSlideIn 0.3s ease-in reverse';
+        setTimeout(() => {
+          if (messageEl.parentNode) {
+            messageEl.remove();
+          }
+        }, 300);
+      }
+    }, duracion);
+  }
+}
+
+/**
+ * Obtener usuario actual para mensajes
+ */
+function obtenerUsuarioActual() {
+  const usuarioActual = authModel.getCurrentUser();
+  return usuarioActual || { nombre: 'Administrador' };
 }

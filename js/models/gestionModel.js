@@ -73,23 +73,39 @@ function inicializarDatos() {
         localStorage.setItem(MODULOS_KEY, JSON.stringify([
             { 
                 id: "M01", 
-                nombre: "Módulo 1", 
-                grupoAsignadoId: "G001", 
+                nombre: "Consulta Externa - Medicina General", 
+                grupoAsignado: "grupo-1", 
+                grupoAsignadoId: "grupo-1", 
                 ubicacion: "latitud: 21.1619, longitud: -86.8515, Facultad de Medicina - UAT", 
                 latitud: "21.1619",
                 longitud: "-86.8515",
-                lugar: "Facultad de Medicina - UAT",
-                estado: "Activo" 
+                lugar: "Facultad de Medicina - UAT - Edificio A, Piso 2",
+                estado: "activo",
+                supervisor: "Dr. Carlos López"
             },
             { 
                 id: "M02", 
-                nombre: "Módulo 2", 
+                nombre: "Emergencias", 
+                grupoAsignado: null,
                 grupoAsignadoId: null, 
                 ubicacion: "latitud: 21.1620, longitud: -86.8516, Hospital General", 
                 latitud: "21.1620",
                 longitud: "-86.8516",
-                lugar: "Hospital General",
-                estado: "Inactivo" 
+                lugar: "Hospital General - Planta Baja",
+                estado: "activo",
+                supervisor: "Dra. Ana Martínez"
+            },
+            { 
+                id: "M03", 
+                nombre: "Pediatría", 
+                grupoAsignado: "grupo-2",
+                grupoAsignadoId: "grupo-2", 
+                ubicacion: "latitud: 21.1618, longitud: -86.8514, Centro de Salud Infantil", 
+                latitud: "21.1618",
+                longitud: "-86.8514",
+                lugar: "Centro de Salud Infantil - Piso 1",
+                estado: "activo",
+                supervisor: "Dr. Miguel Rodríguez"
             }
         ]));
     }
