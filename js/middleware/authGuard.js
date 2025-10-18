@@ -170,12 +170,12 @@ export class AuthGuard {
         }
         
         // Verificar si el estado del usuario es activo
-        if (usuarioEnBD.estado !== 'activo') {
+        /*if (usuarioEnBD.estado !== 'activo') {
             console.error('AuthGuard: Usuario inactivo, cerrando sesión');
             alert('Su cuenta ha sido desactivada. Contacte al administrador.');
             AuthGuard.logout();
             return false;
-        }
+        }*/
         
         console.log('AuthGuard: Sesión validada exitosamente');
         return true;

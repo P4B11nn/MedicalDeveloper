@@ -25,9 +25,18 @@ if (!localStorage.getItem(ACTIVITY_LOG_KEY)) {
 }
 
 export const authModel = {
-  getUsers: () => JSON.parse(localStorage.getItem(USERS_KEY)) || [],
+  // Helper: ordenar por nombre + apellidos (locale 'es', case-insensitive)
+  _sortUsersByName: (arr) => {
+    return (arr || []).slice().sort((a, b) => {
+      const nameA = ((a.nombre || '') + ' ' + (a.apellidos || '')).trim().toLowerCase();
+      const nameB = ((b.nombre || '') + ' ' + (b.apellidos || '')).trim().toLowerCase();
+      return nameA.localeCompare(nameB, 'es', { sensitivity: 'base' });
+    });
+  },
+
+  getUsers: () => authModel._sortUsersByName(JSON.parse(localStorage.getItem(USERS_KEY)) || []),
   
-  getAllUsers: () => JSON.parse(localStorage.getItem(USERS_KEY)) || [],
+  getAllUsers: () => authModel._sortUsersByName(JSON.parse(localStorage.getItem(USERS_KEY)) || []),
   
   validateUser: (matriculaOId, contrasena) => {
     const usuarios = authModel.getUsers();

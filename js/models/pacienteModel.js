@@ -42,8 +42,16 @@ if (!localStorage.getItem(HISTORIAL_KEY)) {
 }
 
 export const pacienteModel = {
+  // Helper de ordenación: por nombre + apellidos (locale 'es', case-insensitive)
+  _sortByName: (arr) => {
+    return arr.slice().sort((a, b) => {
+      const nameA = ((a.nombre || '') + ' ' + (a.apellidos || '')).trim().toLowerCase();
+      const nameB = ((b.nombre || '') + ' ' + (b.apellidos || '')).trim().toLowerCase();
+      return nameA.localeCompare(nameB, 'es', { sensitivity: 'base' });
+    });
+  },
   // Pacientes
-  getPacientes: () => read(PACIENTES_KEY),
+  getPacientes: () => pacienteModel._sortByName(read(PACIENTES_KEY)),
 
   getPaciente: (id) => {
     if (!id) return null;
