@@ -364,19 +364,11 @@ function mostrarTodosLosRegistros() {
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
           <div style="background: white; padding: 10px; border-radius: 6px; text-align: center;">
             <div style="font-size: 24px; font-weight: bold; color: #059669;">🔐 ${registrosJWT.length}</div>
-            <div style="font-size: 12px; color: #6b7280;">Registros JWT</div>
-          </div>
-          <div style="background: white; padding: 10px; border-radius: 6px; text-align: center;">
-            <div style="font-size: 24px; font-weight: bold; color: #6b7280;">🔓 ${registrosLegacy.length}</div>
-            <div style="font-size: 12px; color: #6b7280;">Registros Legacy</div>
-          </div>
-          <div style="background: white; padding: 10px; border-radius: 6px; text-align: center;">
-            <div style="font-size: 24px; font-weight: bold; color: #dc2626;">⚡ ${registrosActivos.length}</div>
-            <div style="font-size: 12px; color: #6b7280;">Sesiones Activas</div>
+            <div style="font-size: 12px; color: #6b7280;">Registros de Asistencia</div>
           </div>
           <div style="background: white; padding: 10px; border-radius: 6px; text-align: center;">
             <div style="font-size: 24px; font-weight: bold; color: #059669;">🔐 ${registrosJWTActivos.length}</div>
-            <div style="font-size: 12px; color: #6b7280;">JWT Activas</div>
+            <div style="font-size: 12px; color: #6b7280;">Sesiones Activas</div>
           </div>
         </div>
         <div style="margin-top: 10px; padding: 8px; background: rgba(59, 130, 246, 0.1); border-radius: 4px; font-size: 12px; color: #1e40af;">

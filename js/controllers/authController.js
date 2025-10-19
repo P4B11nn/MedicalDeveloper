@@ -69,23 +69,16 @@ function handleLogin() {
     // LOGIN CON JWT
     // ================================
     console.log('🔐 Iniciando login con JWT...');
-    
     try {
       const jwtResult = authModel.loginWithJWT(matriculaOId, contrasena);
-      
       if (jwtResult.success) {
         console.log('✅ Login JWT exitoso');
         console.log('👤 Usuario:', jwtResult.usuario.nombre);
         console.log('🏷️ Rol:', jwtResult.usuario.rol);
         console.log('🆔 ID:', jwtResult.usuario.id);
-        
-        // Manejar fallback si JWT tuvo problemas técnicos
         if (jwtResult.fallback) {
           console.warn('⚠️ Login con fallback:', jwtResult.warning);
-          // No mostrar error al usuario, pero registrar en consola
         }
-        
-        // Verificar que el token se guardó correctamente (solo si no es fallback)
         if (!jwtResult.fallback) {
           setTimeout(() => {
             const tokenInfo = authModel.getJWTInfo();
@@ -94,8 +87,6 @@ function handleLogin() {
               console.log('⏰ Válido hasta:', new Date(tokenInfo.payload.exp * 1000).toLocaleString());
               console.log('🕐 Tiempo restante:', tokenInfo.timeFormatted);
               console.log('🔑 JTI (Token ID):', tokenInfo.payload.jti);
-              
-              // Abrir panel de control JWT automáticamente
               if (typeof window.showJWTPanel === 'function') {
                 console.log('📱 Abriendo panel de control JWT...');
                 window.showJWTPanel();
@@ -103,22 +94,21 @@ function handleLogin() {
             }
           }, 1000);
         }
-        
         // Registrar actividad
         authModel.registrarActividad({
           accion: jwtResult.fallback ? 'login_fallback' : 'login_jwt',
           descripcion: `Login ${jwtResult.fallback ? 'fallback' : 'JWT'} exitoso como ${jwtResult.usuario.rol}`
         });
-        
+        // REGISTRAR ENTRADA EN HISTORIAL DE E/S (igual que test login JWT)
+        import('../models/operacionesModel.js').then(({ registrarEntrada }) => {
+          registrarEntrada(jwtResult.usuario);
+        });
         // Redirigir al menú principal
         console.log('🔗 Redirigiendo a menuInicio.html...');
         window.location.href = '/menuInicio.html';
-        return; // Salir aquí para evitar mostrar errores
-        
+        return;
       } else {
         console.error('❌ Login JWT falló:', jwtResult.error);
-        
-        // Solo mostrar error si realmente falló la autenticación de credenciales
         if (jwtResult.error.includes('Credenciales inválidas')) {
           if (typeof mostrarMensaje === 'function') {
             mostrarMensaje('error', '❌ Credenciales Incorrectas', 'Usuario o contraseña incorrectos');
@@ -127,15 +117,12 @@ function handleLogin() {
           }
           return;
         } else {
-          // Para otros errores técnicos, continuar con login legacy
           console.warn('⚠️ Error técnico en JWT, continuando con login legacy');
         }
       }
     } catch (error) {
       console.error('❌ Error crítico en login JWT:', error);
-      // No mostrar el error al usuario, continuar con el flujo legacy
     }
-    
   } else {
     // ================================
     // LOGIN LEGACY (localStorage)
@@ -143,40 +130,33 @@ function handleLogin() {
     console.log('🔓 Usando sistema de login legacy...');
     const usuarioValido = authModel.validateUser(matriculaOId, contrasena);
     console.log('Usuario validado:', usuarioValido ? 'Válido' : 'Inválido');
-    
     if (usuarioValido) {
       const userData = {
         nombre: usuarioValido.nombre,
         rol: usuarioValido.rol,
         id: usuarioValido.id,
         matricula: usuarioValido.matricula,
-        contrasena: usuarioValido.contrasena,  // Incluir contraseña para validación futura
+        contrasena: usuarioValido.contrasena,
         apellidos: usuarioValido.apellidos || '',
         estado: usuarioValido.estado || 'activo'
       };
-      
       console.log('✅ Login legacy exitoso');
       console.log('👤 Usuario:', userData.nombre);
       console.log('🏷️ Rol:', userData.rol);
       console.log('🆔 ID:', userData.id);
-      
-      // Registrar la actividad de inicio de sesión
       authModel.registrarActividad({
         accion: 'login_legacy',
         descripcion: `Login legacy como ${usuarioValido.rol}`
       });
-      
-      // Guardar información del usuario actual
       authModel.setCurrentUser(userData);
-      
-      // Verificar que se guardó correctamente
       const usuarioGuardado = authModel.getCurrentUser();
       console.log('📝 Usuario guardado en localStorage:', usuarioGuardado);
-      
-      // Redireccionar al menú principal usando redirección directa
+      // REGISTRAR ENTRADA EN HISTORIAL DE E/S (igual que test login JWT)
+      import('../models/operacionesModel.js').then(({ registrarEntrada }) => {
+        registrarEntrada(userData);
+      });
       console.log('🔗 Redirigiendo a menuInicio.html...');
       try {
-        // Redirigir directamente usando window.location
         window.location.href = '/menuInicio.html';
       } catch (error) {
         console.error('Error al redirigir:', error);
@@ -188,7 +168,6 @@ function handleLogin() {
       }
     } else {
       console.error('❌ Login legacy falló: credenciales inválidas');
-      
       if (typeof mostrarMensaje === 'function') {
         mostrarMensaje('error', '❌ Credenciales Incorrectas', 'ID/Matrícula o contraseña incorrecta. Verifica tus datos e intenta nuevamente.');
       } else {

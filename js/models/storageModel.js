@@ -107,31 +107,13 @@ export const authModel = {
   getCurrentUser: () => JSON.parse(localStorage.getItem(CURRENT_USER_KEY)),
 
   logout: () => {
-    // Registrar salida antes de eliminar el usuario actual
+    // Registrar solo la actividad de logout, sin registrar salida en operaciones/asistencia
     const usuario = authModel.getCurrentUser();
     if (usuario) {
       authModel.registrarActividad({
         accion: 'logout',
         descripcion: 'Cierre de sesión'
       });
-      
-      // Registrar salida en el sistema de operaciones
-      try {
-        // Importar dinámicamente el modelo de operaciones para evitar dependencias circulares
-        import('../models/operacionesModel.js').then(({ registrarSalida }) => {
-          console.log('🚪 Registrando salida Legacy automática...');
-          const resultadoSalida = registrarSalida(usuario.matricula || usuario.id);
-          if (resultadoSalida) {
-            console.log('✅ Salida Legacy registrada exitosamente');
-          } else {
-            console.warn('⚠️ No se pudo registrar la salida automáticamente');
-          }
-        }).catch(error => {
-          console.error('❌ Error importando operacionesModel para salida Legacy:', error);
-        });
-      } catch (error) {
-        console.error('❌ Error registrando salida Legacy automática:', error);
-      }
     }
     localStorage.removeItem(CURRENT_USER_KEY);
     // También limpiar JWT si está habilitado
@@ -292,22 +274,7 @@ export const authModel = {
         descripcion: `Inicio de sesión JWT: ${usuario.nombre} (${usuario.rol})`
       });
       
-      // Registrar entrada en el sistema de operaciones
-      try {
-        import('../models/operacionesModel.js').then(({ registrarEntrada }) => {
-          console.log('🚪 Registrando entrada JWT automática...');
-          const resultadoEntrada = registrarEntrada(usuario);
-          if (resultadoEntrada) {
-            console.log('✅ Entrada JWT registrada exitosamente');
-          } else {
-            console.warn('⚠️ No se pudo registrar la entrada automáticamente');
-          }
-        }).catch(error => {
-          console.error('❌ Error importando operacionesModel:', error);
-        });
-      } catch (error) {
-        console.error('❌ Error registrando entrada automática:', error);
-      }
+      // Ya no registrar entrada en operaciones/asistencia aquí. Solo registrar actividad de login.
       
       console.log('🔐 === LOGIN JWT COMPLETADO EXITOSAMENTE ===');
       return { usuario, token, success: true };
@@ -590,10 +557,7 @@ export const authModel = {
     return registro;
   },
   
-  // Método antiguo para compatibilidad
-  obtenerRegistros: (filtro = {}) => {
-    return authModel.getActividades(filtro);
-  },
+  // ...existing code...
   
   // Nuevo método para obtener actividades
   getActividades: (filtro = {}) => {

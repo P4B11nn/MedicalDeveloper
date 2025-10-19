@@ -263,7 +263,6 @@ export function renderRegistroEntradasSalidas(historial, container) {
           <th>Matrícula</th>
           <th>Módulo</th>
           <th>Rol</th>
-          <th>Sistema Auth</th>
           <th>Entrada</th>
           <th>Salida</th>
           <th>Duración</th>
@@ -302,14 +301,6 @@ export function renderRegistroEntradasSalidas(historial, container) {
               <td>${s.matricula || '-'}</td>
               <td>${obtenerEtiquetaModulo(s.modulo || s.mesa || s.moduloId || s.grupoId)}</td>
               <td>${s.rol === 'admin' ? '🛡️ Administrador' : '👨‍⚕️ Practicante'}</td>
-              <td>
-                <span 
-                  style="color: ${authColor}; font-weight: bold; cursor: help;" 
-                  title="${securityInfo}"
-                >
-                  ${authIcon} ${authText}
-                </span>
-              </td>
               <td>${entradaFmt}</td>
               <td>${salidaDisplay}</td>
               <td>

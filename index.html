@@ -214,21 +214,24 @@
   
   <script type="module">
     import { initAuthController } from "./js/controllers/authController.js";
+    import { authModel } from "./js/models/storageModel.js";
     import "./js/utils/jwtControlPanel.js";
-    
+
     document.addEventListener("DOMContentLoaded", () => {
+      // Forzar modo JWT activo siempre que se cargue la página principal
+      authModel.setJWTEnabled(true);
       console.log("Inicializando controlador de autenticación directamente");
       initAuthController();
-      
+
       // Mostrar comandos disponibles en consola después de un momento
       setTimeout(() => {
         if (typeof authModel !== 'undefined') {
           // Hacer authModel disponible globalmente
           window.authModel = authModel;
-          
+
           // Actualizar indicador inmediatamente con estado real
           updateAuthModeIndicator();
-          
+
           console.log('🔐 === COMANDOS JWT DISPONIBLES ===');
           console.log('💡 Panel de control: showJWTPanel()');
           console.log('💡 Estado JWT: authModel.isJWTEnabled()');
@@ -240,26 +243,26 @@
           console.log('🎯 Estado JWT actual:', authModel.isJWTEnabled() ? 'HABILITADO 🔐' : 'DESHABILITADO 🔓');
         }
       }, 3000);
-      
+
       // Actualizar indicador de estado JWT
       setTimeout(() => {
         updateAuthModeIndicator();
-        
+
         // Actualizar cada 2 segundos para detectar cambios más rápido
         setInterval(updateAuthModeIndicator, 2000);
-        
+
         // Escuchar cambios en localStorage
         window.addEventListener('storage', (e) => {
           if (e.key === 'jwtEnabled') {
             updateAuthModeIndicator();
           }
         });
-        
+
         // Escuchar eventos personalizados de JWT
         window.addEventListener('jwtStatusChanged', () => {
           updateAuthModeIndicator();
         });
-        
+
       }, 1000);
     });
     

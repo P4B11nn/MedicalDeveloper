@@ -229,34 +229,12 @@ export const reporteModel = {
     });
   },
   
-  // Generar reporte de actividad del sistema
+  // Generar reporte de actividad del sistema (solo registros de storageModel)
   getReporteActividades: (filtro = {}) => {
-    let actividades = authModel.getActividades();
-    
-    // Aplicar filtros
-    if (filtro.fechaInicio && filtro.fechaFin) {
-      const fechaInicio = new Date(filtro.fechaInicio);
-      const fechaFin = new Date(filtro.fechaFin);
-      fechaFin.setHours(23, 59, 59); // Para incluir todo el día final
-      
-      actividades = actividades.filter(a => {
-        const fechaActividad = new Date(a.fecha);
-        return fechaActividad >= fechaInicio && fechaActividad <= fechaFin;
-      });
-    }
-    
-    if (filtro.usuario) {
-      actividades = actividades.filter(a => a.usuario === filtro.usuario);
-    }
-    
-    if (filtro.accion) {
-      actividades = actividades.filter(a => a.accion.toLowerCase().includes(filtro.accion.toLowerCase()));
-    }
-    
-    // Ordenar por fecha más reciente primero
-    actividades = actividades.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-    
-    return actividades;
+  // Usar solo los registros generados por storageModel/authModel con JWT
+  const actividades = authModel.getActividades(filtro);
+  // Filtrar solo los registros con sistemaAuth: 'JWT'
+  return actividades.filter(a => a.sistemaAuth === 'JWT');
   },
   
   // Exportar a CSV un conjunto de datos

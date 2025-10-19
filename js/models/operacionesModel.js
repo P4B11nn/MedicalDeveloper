@@ -86,8 +86,19 @@ export function registrarEntrada(usuario) {
     import('./storageModel.js').then(({ authModel }) => {
       try {
         let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-
         const now = new Date();
+
+        // Cerrar cualquier registro abierto anterior para este usuario
+        historial.forEach(reg => {
+          if (reg.matricula === usuario.matricula && reg.salida === null) {
+            reg.salida = now.toLocaleString();
+            reg.salidaIso = now.toISOString();
+            reg.salidaTimestamp = now.getTime();
+            reg.duracion = 'Cerrado automáticamente por nueva entrada';
+            reg.salidaConTokenValido = false;
+          }
+        });
+
         const registro = {
           id: `ES${Date.now()}`,
           nombre: usuario.nombre,
@@ -95,7 +106,6 @@ export function registrarEntrada(usuario) {
           modulo: usuario.modulo || usuario.moduloId || usuario.mesa || 'No asignada',
           grupoId: usuario.grupoId || null,
           rol: usuario.rol,
-          // Guardamos tanto la representación legible como formatos ISO/timestamp para cálculos robustos
           entrada: now.toLocaleString(),
           entradaIso: now.toISOString(),
           entradaTimestamp: now.getTime(),
@@ -115,7 +125,6 @@ export function registrarEntrada(usuario) {
             registro.tokenExpiracion = tokenInfo.payload.exp;
             registro.tiempoSesionRestante = tokenInfo.timeLeft;
             registro.autenticacionSegura = true;
-            
             // Logs mejorados para JWT
             console.log('🔐 OperacionesModel: Entrada JWT registrada para', usuario.nombre);
             console.log('🔑 Token ID:', tokenInfo.payload.jti);
@@ -128,7 +137,6 @@ export function registrarEntrada(usuario) {
 
         historial.push(registro);
         localStorage.setItem('servicioHistorial', JSON.stringify(historial));
-
         return registro;
       } catch (error) {
         console.error('Error registrando entrada:', error);
@@ -136,10 +144,19 @@ export function registrarEntrada(usuario) {
       }
     }).catch(err => {
       console.warn('No se pudo importar authModel para registro de entrada:', err);
-      
       // Fallback sin información JWT
       let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
       const now = new Date();
+      // Cerrar cualquier registro abierto anterior para este usuario
+      historial.forEach(reg => {
+        if (reg.matricula === usuario.matricula && reg.salida === null) {
+          reg.salida = now.toLocaleString();
+          reg.salidaIso = now.toISOString();
+          reg.salidaTimestamp = now.getTime();
+          reg.duracion = 'Cerrado automáticamente por nueva entrada';
+          reg.salidaConTokenValido = false;
+        }
+      });
       const registro = {
         id: `ES${Date.now()}`,
         nombre: usuario.nombre,
@@ -157,7 +174,6 @@ export function registrarEntrada(usuario) {
         sistemaAuth: 'Legacy',
         autenticacionSegura: false
       };
-
       historial.push(registro);
       localStorage.setItem('servicioHistorial', JSON.stringify(historial));
       console.log('🔓 OperacionesModel: Entrada Legacy (fallback) registrada para', usuario.nombre);
@@ -178,100 +194,77 @@ export function registrarSalida(usuarioId) {
     import('./storageModel.js').then(({ authModel }) => {
       try {
         let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-
-        // Buscar el registro de entrada activo más reciente
-        const registroActivo = historial
-          .filter(r => r.matricula === usuarioId && r.salida === null)
-          .sort((a, b) => new Date(b.entrada) - new Date(a.entrada))[0];
-
-        if (!registroActivo) return null;
-
         const salidaTime = new Date();
-
-        // Intentar usar valores guardados (timestamp o ISO) para evitar problemas con formatos locales
-        let entradaMs = null;
-        if (registroActivo.entradaTimestamp) {
-          entradaMs = Number(registroActivo.entradaTimestamp);
-        } else if (registroActivo.entradaIso) {
-          const parsed = Date.parse(registroActivo.entradaIso);
-          entradaMs = isNaN(parsed) ? null : parsed;
-        } else if (registroActivo.entrada) {
-          const parsed = Date.parse(registroActivo.entrada);
-          entradaMs = isNaN(parsed) ? null : parsed;
-        }
-
-        let duracionStr = 'N/A';
-        if (entradaMs !== null) {
-          const duracionMs = salidaTime.getTime() - entradaMs;
-          if (!isNaN(duracionMs) && duracionMs >= 0) {
-            const horas = Math.floor(duracionMs / (1000 * 60 * 60));
-            const minutos = Math.floor((duracionMs % (1000 * 60 * 60)) / (1000 * 60));
-            duracionStr = `${horas}h ${minutos}m`;
+        let registrosCerrados = 0;
+        historial.forEach(registro => {
+          if (registro.matricula === usuarioId && registro.salida === null) {
+            // Calcular duración
+            let entradaMs = registro.entradaTimestamp || Date.parse(registro.entradaIso) || Date.parse(registro.entrada);
+            let duracionStr = 'N/A';
+            if (entradaMs) {
+              const duracionMs = salidaTime.getTime() - entradaMs;
+              const horas = Math.floor(duracionMs / (1000 * 60 * 60));
+              const minutos = Math.floor((duracionMs % (1000 * 60 * 60)) / (1000 * 60));
+              duracionStr = `${horas}h ${minutos}m`;
+            }
+            registro.salida = salidaTime.toLocaleString();
+            registro.salidaIso = salidaTime.toISOString();
+            registro.salidaTimestamp = salidaTime.getTime();
+            registro.duracion = duracionStr;
+            // Actualizar información JWT si está disponible
+            if (authModel.isJWTEnabled()) {
+              const tokenInfo = authModel.getJWTInfo();
+              if (tokenInfo && tokenInfo.valid) {
+                registro.tokenSalida = tokenInfo.payload.jti;
+                registro.tiempoSesionAlSalir = tokenInfo.timeLeft;
+                registro.salidaConTokenValido = true;
+                console.log('🔐 OperacionesModel: Salida JWT registrada para', registro.nombre);
+                console.log('🔑 Token ID al salir:', tokenInfo.payload.jti);
+                console.log('⏰ Tiempo de sesión restante al salir:', tokenInfo.timeFormatted);
+              } else {
+                registro.salidaConTokenValido = false;
+                console.log('⚠️ OperacionesModel: Salida con token JWT inválido para', registro.nombre);
+              }
+            } else {
+              registro.salidaConTokenValido = false;
+              console.log('🔓 OperacionesModel: Salida Legacy registrada para', registro.nombre);
+            }
+            registrosCerrados++;
           }
-        }
-
-        registroActivo.salida = salidaTime.toLocaleString();
-        registroActivo.salidaIso = salidaTime.toISOString();
-        registroActivo.salidaTimestamp = salidaTime.getTime();
-        registroActivo.duracion = duracionStr;
-
-        // Actualizar información JWT si está disponible
-        if (authModel.isJWTEnabled()) {
-          const tokenInfo = authModel.getJWTInfo();
-          if (tokenInfo && tokenInfo.valid) {
-            registroActivo.tokenSalida = tokenInfo.payload.jti;
-            registroActivo.tiempoSesionAlSalir = tokenInfo.timeLeft;
-            registroActivo.salidaConTokenValido = true;
-            
-            console.log('🔐 OperacionesModel: Salida JWT registrada para', registroActivo.nombre);
-            console.log('🔑 Token ID al salir:', tokenInfo.payload.jti);
-            console.log('⏰ Tiempo de sesión restante al salir:', tokenInfo.timeFormatted);
-          } else {
-            registroActivo.salidaConTokenValido = false;
-            console.log('⚠️ OperacionesModel: Salida con token JWT inválido para', registroActivo.nombre);
-          }
-        } else {
-          registroActivo.salidaConTokenValido = false;
-          console.log('🔓 OperacionesModel: Salida Legacy registrada para', registroActivo.nombre);
-        }
-
+        });
         localStorage.setItem('servicioHistorial', JSON.stringify(historial));
-        return registroActivo;
+        return registrosCerrados > 0 ? true : null;
       } catch (error) {
         console.error('Error registrando salida:', error);
         return null;
       }
     }).catch(err => {
       console.warn('No se pudo importar authModel para registro de salida:', err);
-      
       // Fallback sin información JWT
       let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-      const registroActivo = historial
-        .filter(r => r.matricula === usuarioId && r.salida === null)
-        .sort((a, b) => new Date(b.entrada) - new Date(a.entrada))[0];
-
-      if (!registroActivo) return null;
-
       const salidaTime = new Date();
-      let entradaMs = registroActivo.entradaTimestamp || Date.parse(registroActivo.entrada);
-      let duracionStr = 'N/A';
-      
-      if (entradaMs) {
-        const duracionMs = salidaTime.getTime() - entradaMs;
-        const horas = Math.floor(duracionMs / (1000 * 60 * 60));
-        const minutos = Math.floor((duracionMs % (1000 * 60 * 60)) / (1000 * 60));
-        duracionStr = `${horas}h ${minutos}m`;
-      }
-
-      registroActivo.salida = salidaTime.toLocaleString();
-      registroActivo.salidaIso = salidaTime.toISOString();
-      registroActivo.salidaTimestamp = salidaTime.getTime();
-      registroActivo.duracion = duracionStr;
-      registroActivo.salidaConTokenValido = false;
-
+      let registrosCerrados = 0;
+      historial.forEach(registro => {
+        if (registro.matricula === usuarioId && registro.salida === null) {
+          let entradaMs = registro.entradaTimestamp || Date.parse(registro.entradaIso) || Date.parse(registro.entrada);
+          let duracionStr = 'N/A';
+          if (entradaMs) {
+            const duracionMs = salidaTime.getTime() - entradaMs;
+            const horas = Math.floor(duracionMs / (1000 * 60 * 60));
+            const minutos = Math.floor((duracionMs % (1000 * 60 * 60)) / (1000 * 60));
+            duracionStr = `${horas}h ${minutos}m`;
+          }
+          registro.salida = salidaTime.toLocaleString();
+          registro.salidaIso = salidaTime.toISOString();
+          registro.salidaTimestamp = salidaTime.getTime();
+          registro.duracion = duracionStr;
+          registro.salidaConTokenValido = false;
+          registrosCerrados++;
+          console.log('🔓 OperacionesModel: Salida Legacy (fallback) registrada para', registro.nombre);
+        }
+      });
       localStorage.setItem('servicioHistorial', JSON.stringify(historial));
-      console.log('🔓 OperacionesModel: Salida Legacy (fallback) registrada para', registroActivo.nombre);
-      return registroActivo;
+      return registrosCerrados > 0 ? true : null;
     });
   } catch (error) {
     console.error('Error registrando salida:', error);
