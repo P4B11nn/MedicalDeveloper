@@ -254,7 +254,7 @@ export function renderRegistroEntradasSalidas(historial, container) {
     return;
   }
 
-  // Crea la tabla de registros.
+  // Crea la tabla de registros con información JWT.
   container.innerHTML = `
     <table class="tabla-registros">
       <thead>
@@ -263,8 +263,10 @@ export function renderRegistroEntradasSalidas(historial, container) {
           <th>Matrícula</th>
           <th>Módulo</th>
           <th>Rol</th>
+          <th>Sistema Auth</th>
           <th>Entrada</th>
           <th>Salida</th>
+          <th>Duración</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -273,7 +275,26 @@ export function renderRegistroEntradasSalidas(historial, container) {
           const entradaFmt = formatDateTime(s.entrada) || '';
           const salidaFmt = formatDateTime(s.salida) || '';
           // Mostrar solo la fecha/hora en Salida si existe; si no existe, dejar vacío
-          const salidaDisplay = salidaFmt ? salidaFmt : '';
+          const salidaDisplay = salidaFmt ? salidaFmt : '<span style="color: #059669; font-weight: bold;">En servicio</span>';
+          
+          // Determinar sistema de autenticación y seguridad
+          const sistemaAuth = s.sistemaAuth || 'Legacy';
+          const esJWT = sistemaAuth === 'JWT';
+          const authIcon = esJWT ? '🔐' : '🔓';
+          const authColor = esJWT ? '#059669' : '#6b7280';
+          const authText = esJWT ? 'JWT' : 'Legacy';
+          
+          // Información de seguridad para tooltip
+          let securityInfo = `Sistema: ${sistemaAuth}`;
+          if (esJWT && s.tokenId) {
+            securityInfo += `\nToken ID: ${s.tokenId}`;
+            if (s.tiempoSesionRestante) {
+              securityInfo += `\nTiempo sesión: ${s.tiempoSesionRestante}h`;
+            }
+          }
+          if (s.autenticacionSegura === true) {
+            securityInfo += '\nAutenticación: Segura';
+          }
 
           return `
             <tr>
@@ -281,8 +302,25 @@ export function renderRegistroEntradasSalidas(historial, container) {
               <td>${s.matricula || '-'}</td>
               <td>${obtenerEtiquetaModulo(s.modulo || s.mesa || s.moduloId || s.grupoId)}</td>
               <td>${s.rol === 'admin' ? '🛡️ Administrador' : '👨‍⚕️ Practicante'}</td>
+              <td>
+                <span 
+                  style="color: ${authColor}; font-weight: bold; cursor: help;" 
+                  title="${securityInfo}"
+                >
+                  ${authIcon} ${authText}
+                </span>
+              </td>
               <td>${entradaFmt}</td>
               <td>${salidaDisplay}</td>
+              <td>
+                ${s.duracion ? 
+                  (s.duracion === 'En servicio' ? 
+                    '<span style="color: #059669; font-weight: bold;">En servicio</span>' : 
+                    s.duracion
+                  ) : 
+                  'Calculando...'
+                }
+              </td>
               <td>
                 <button
                   class="delete-registro-btn"

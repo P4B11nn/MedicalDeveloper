@@ -27,7 +27,28 @@ export class AuthGuard {
     static checkAuthentication() {
         const currentPath = window.location.pathname;
         const fileName = currentPath.split('/').pop() || 'index.html';
-        const usuarioActual = authModel.getCurrentUser();
+        
+        // Verificar si JWT está habilitado y manejar la autenticación correspondiente
+        let usuarioActual;
+        if (authModel.isJWTEnabled()) {
+            console.log('AuthGuard: JWT habilitado, verificando token');
+            
+            // Verificar si la sesión JWT es válida
+            if (authModel.isJWTSessionValid()) {
+                usuarioActual = authModel.getCurrentUserFromJWT();
+                console.log('AuthGuard: Usuario obtenido de JWT:', usuarioActual);
+                
+                // Intentar renovar token si es necesario
+                authModel.renewJWTIfNeeded();
+            } else {
+                console.warn('AuthGuard: Sesión JWT inválida o expirada');
+                usuarioActual = null;
+            }
+        } else {
+            // Usar sistema legacy
+            usuarioActual = authModel.getCurrentUser();
+            console.log('AuthGuard: Usando sistema legacy, usuario:', usuarioActual);
+        }
         
         console.log(`AuthGuard: Verificando ruta "${fileName}"`);
         console.log('AuthGuard: Usuario actual:', usuarioActual);
@@ -64,11 +85,24 @@ export class AuthGuard {
         
         console.log(`AuthGuard: Acceso autorizado para rol "${usuarioActual.rol}"`);
         
-        // Registrar actividad de acceso exitoso
-        authModel.registrarActividad({
-            accion: 'page_access',
-            descripcion: `Acceso a página: ${fileName}`
-        });
+        // Registrar actividad de acceso exitoso con información JWT si está habilitado
+        const actividadData = {
+            accion: authModel.isJWTEnabled() ? 'page_access_jwt' : 'page_access_legacy',
+            descripcion: `Acceso a página: ${fileName}`,
+            sistemaAuth: authModel.isJWTEnabled() ? 'JWT' : 'Legacy'
+        };
+        
+        // Si JWT está habilitado, agregar información del token
+        if (authModel.isJWTEnabled()) {
+            const tokenInfo = authModel.getJWTInfo();
+            if (tokenInfo && tokenInfo.valid) {
+                actividadData.tokenId = tokenInfo.payload.jti;
+                actividadData.tokenExp = new Date(tokenInfo.payload.exp * 1000).toISOString();
+                actividadData.tiempoRestante = tokenInfo.timeLeft;
+            }
+        }
+        
+        authModel.registrarActividad(actividadData);
         
         // Emitir evento de acceso exitoso
         eventBus.emit(EVENT_NAMES.USER_LOGIN, { user: usuarioActual, page: fileName });
@@ -105,10 +139,25 @@ export class AuthGuard {
         
         // Detectar cambios en localStorage (logout desde otra pestaña)
         window.addEventListener('storage', (e) => {
+            // Manejar logout legacy
             if (e.key === 'usuarioActual' && e.newValue === null) {
-                console.log('AuthGuard: Sesión cerrada en otra pestaña, redirigiendo');
+                console.log('AuthGuard: Sesión legacy cerrada en otra pestaña, redirigiendo');
                 eventBus.emit(EVENT_NAMES.SESSION_EXPIRED, { reason: 'external_logout' });
                 AuthGuard.redirectToLogin();
+            }
+            
+            // Manejar logout JWT
+            if (e.key === 'jwtToken' && e.newValue === null && authModel.isJWTEnabled()) {
+                console.log('AuthGuard: Token JWT eliminado en otra pestaña, redirigiendo');
+                eventBus.emit(EVENT_NAMES.SESSION_EXPIRED, { reason: 'jwt_token_removed' });
+                AuthGuard.redirectToLogin();
+            }
+            
+            // Manejar deshabilitado de JWT
+            if (e.key === 'jwtEnabled' && e.newValue === 'false') {
+                console.log('AuthGuard: JWT deshabilitado en otra pestaña');
+                // Recargar la página para usar el sistema legacy
+                window.location.reload();
             }
         });
         
@@ -121,18 +170,30 @@ export class AuthGuard {
     static logout() {
         console.log('AuthGuard: Cerrando sesión');
         
-        const usuario = authModel.getCurrentUser();
+        // Obtener usuario antes del logout
+        let usuario;
+        if (authModel.isJWTEnabled()) {
+            usuario = authModel.getCurrentUserFromJWT();
+        } else {
+            usuario = authModel.getCurrentUser();
+        }
+        
         if (usuario) {
             authModel.registrarActividad({
                 accion: 'logout',
-                descripcion: 'Cierre de sesión manual'
+                descripcion: `Cierre de sesión manual (${authModel.isJWTEnabled() ? 'JWT' : 'Legacy'})`
             });
             
             // Emitir evento de logout antes de limpiar la sesión
             eventBus.emit(EVENT_NAMES.USER_LOGOUT, { user: usuario, timestamp: new Date().toISOString() });
         }
         
-        authModel.logout();
+        // Logout según el sistema activo
+        if (authModel.isJWTEnabled()) {
+            authModel.logoutJWT();
+        } else {
+            authModel.logout();
+        }
         
         // Emitir evento de limpieza de página
         eventBus.emit(EVENT_NAMES.PAGE_UNLOAD, { reason: 'logout' });
@@ -141,7 +202,12 @@ export class AuthGuard {
     }
 
     static getCurrentUserRole() {
-        const usuario = authModel.getCurrentUser();
+        let usuario;
+        if (authModel.isJWTEnabled()) {
+            usuario = authModel.getCurrentUserFromJWT();
+        } else {
+            usuario = authModel.getCurrentUser();
+        }
         return usuario ? usuario.rol : null;
     }
 
@@ -155,34 +221,52 @@ export class AuthGuard {
     }
 
     static validateSession() {
-        const usuario = authModel.getCurrentUser();
-        if (!usuario) {
-            console.warn('AuthGuard: No hay sesión activa');
-            return false;
+        let usuario;
+        if (authModel.isJWTEnabled()) {
+            // Validación JWT
+            if (!authModel.isJWTSessionValid()) {
+                console.warn('AuthGuard: Sesión JWT inválida');
+                return false;
+            }
+            
+            usuario = authModel.getCurrentUserFromJWT();
+            if (!usuario) {
+                console.warn('AuthGuard: No se pudo obtener usuario de JWT');
+                return false;
+            }
+            
+            // Renovar token automáticamente si es necesario
+            authModel.renewJWTIfNeeded();
+            
+        } else {
+            // Validación legacy
+            usuario = authModel.getCurrentUser();
+            if (!usuario) {
+                console.warn('AuthGuard: No hay sesión legacy activa');
+                return false;
+            }
+            
+            // Verificar si el usuario aún existe en la base de datos
+            const usuarioEnBD = authModel.validateUser(usuario.matricula || usuario.id, usuario.contrasena);
+            if (!usuarioEnBD) {
+                console.error('AuthGuard: Usuario no encontrado en base de datos, cerrando sesión');
+                AuthGuard.logout();
+                return false;
+            }
         }
         
-        // Verificar si el usuario aún existe en la base de datos
-        const usuarioEnBD = authModel.validateUser(usuario.matricula || usuario.id, usuario.contrasena);
-        if (!usuarioEnBD) {
-            console.error('AuthGuard: Usuario no encontrado en base de datos, cerrando sesión');
-            AuthGuard.logout();
-            return false;
-        }
-        
-        // Verificar si el estado del usuario es activo
-        /*if (usuarioEnBD.estado !== 'activo') {
-            console.error('AuthGuard: Usuario inactivo, cerrando sesión');
-            alert('Su cuenta ha sido desactivada. Contacte al administrador.');
-            AuthGuard.logout();
-            return false;
-        }*/
-        
-        console.log('AuthGuard: Sesión validada exitosamente');
+        console.log(`AuthGuard: Sesión ${authModel.isJWTEnabled() ? 'JWT' : 'legacy'} validada exitosamente`);
         return true;
     }
 
     static hasPermission(requiredRoles) {
-        const usuario = authModel.getCurrentUser();
+        let usuario;
+        if (authModel.isJWTEnabled()) {
+            usuario = authModel.getCurrentUserFromJWT();
+        } else {
+            usuario = authModel.getCurrentUser();
+        }
+        
         if (!usuario) return false;
         
         return Array.isArray(requiredRoles) ? 

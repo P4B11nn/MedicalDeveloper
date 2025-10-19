@@ -373,6 +373,23 @@
     .control-panel { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     .btn-export { background: linear-gradient(135deg, #10b981, #34d399); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s ease; }
     .btn-export:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+    
+    .btn-delete-legacy { 
+      background: linear-gradient(135deg, #dc2626, #ef4444); 
+      color: white; 
+      border: none; 
+      padding: 8px 15px; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      font-size: 0.9rem; 
+      transition: all 0.3s ease; 
+      margin-left: 10px;
+    }
+    .btn-delete-legacy:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+    }
     .tabla-registros { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); }
     .tabla-registros th { background: linear-gradient(135deg, #7dd3fc, #fef3c7); color: #1f2937; text-align: left; padding: 15px; font-weight: 600; }
     .tabla-registros td { padding: 12px 15px; border-bottom: 1px solid rgba(125, 211, 252, 0.2); }
@@ -502,6 +519,7 @@
               <option value="practicante">Practicante</option>
             </select>
             <!--<button id="btnExportarTodo" class="btn-export">📥 Exportar a CSV</button>-->
+            <button id="btnEliminarLegacy" class="btn-delete-legacy" title="Eliminar todos los registros Legacy (sin JWT)">🗑️ Limpiar Legacy</button>
           </div>
           <div id="registroESLista" class="hidden"></div>
         </div>

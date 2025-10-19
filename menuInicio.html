@@ -4300,6 +4300,29 @@
     </div>
   </div>
   
+  <!-- JWT Control Panel -->
+  <script type="module">
+    // Importar panel de control JWT
+    import('./js/utils/jwtControlPanel.js').catch(error => {
+      console.warn('Panel JWT no disponible:', error);
+    });
+    
+    // Mostrar información del token si JWT está activo
+    setTimeout(() => {
+      if (typeof authModel !== 'undefined' && authModel.isJWTEnabled()) {
+        console.log('🔐 === INFORMACIÓN DE SESIÓN JWT ACTIVA ===');
+        const tokenInfo = authModel.getJWTInfo();
+        if (tokenInfo && tokenInfo.valid) {
+          console.log('✅ Sesión JWT válida');
+          console.log('👤 Usuario:', tokenInfo.payload.nombre);
+          console.log('🏷️ Rol:', tokenInfo.payload.rol);
+          console.log('⏰ Expira en:', tokenInfo.timeFormatted);
+          console.log('🔑 Token ID:', tokenInfo.payload.jti);
+          console.log('💡 Presiona Ctrl+Shift+J para abrir el panel de control JWT');
+        }
+      }
+    }, 2000);
+  </script>
 
 </body>
 </html>
