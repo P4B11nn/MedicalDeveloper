@@ -866,6 +866,14 @@
       transform: scale(1.05);
     }
 
+    /* Contenedor de botones de acción */
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    }
+
     /* Estilos para nuevos badges */
     .age-badge {
       background: linear-gradient(135deg, #e3f2fd, #bbdefb);
@@ -886,6 +894,138 @@
       font-weight: bold;
       border: 1px solid #ffb74d;
       letter-spacing: 0.5px;
+    }
+
+    /* Estilos para comparación de cambios */
+    .cambios-container {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      border: 1px solid #e9ecef;
+    }
+
+    .cambio-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 15px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border-left: 4px solid;
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .cambio-item.nuevo {
+      border-left-color: #10b981;
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    }
+
+    .cambio-item.modificado {
+      border-left-color: #3b82f6;
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    }
+
+    .cambio-item.eliminado {
+      border-left-color: #ef4444;
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+    }
+
+    .cambio-campo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: #374151;
+      min-width: 200px;
+    }
+
+    .cambio-valores {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      justify-content: flex-end;
+    }
+
+    .valor-anterior {
+      padding: 6px 12px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 6px;
+      color: #dc2626;
+      font-weight: 500;
+      text-decoration: line-through;
+      opacity: 0.8;
+    }
+
+    .valor-nuevo {
+      padding: 6px 12px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 6px;
+      color: #059669;
+      font-weight: 600;
+    }
+
+    .cambio-flecha {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .sin-cambios {
+      text-align: center;
+      color: #6b7280;
+      font-style: italic;
+      padding: 20px;
+    }
+
+    /* Responsive para comparación de cambios */
+    @media (max-width: 768px) {
+      .cambio-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      
+      .cambio-valores {
+        justify-content: flex-start;
+        width: 100%;
+      }
+      
+      .cambio-campo {
+        min-width: unset;
+      }
+    }
+
+    /* Estilos para textos de ayuda en formularios */
+    .form-text {
+      font-size: 0.775em;
+      color: #6c757d;
+      margin-top: 4px;
+      display: block;
+      line-height: 1.3;
+    }
+
+    .text-muted {
+      color: #6c757d !important;
+    }
+
+    /* Mejorar la apariencia de los inputs con validación */
+    input[type="number"]:invalid {
+      border-color: #dc3545;
+    }
+
+    input[type="number"]:valid {
+      border-color: #28a745;
+    }
+
+    input[type="text"]:invalid {
+      border-color: #dc3545;
+    }
+
+    input[type="text"]:valid {
+      border-color: #28a745;
     }
   </style>
 </head>
@@ -1210,7 +1350,7 @@
                     <span id="modalIMC" class="medical-value imc">-</span>
                   </div>
                   <div class="medical-item">
-                    <label>Frecuencia Resp.:</label>
+                    <label>Frecuencia Respiratoria:</label>
                     <span id="modalFrecuencia" class="medical-value frequency">-</span>
                   </div>
                 </div>
@@ -1318,27 +1458,32 @@
                   <div class="form-row">
                     <div class="form-group col-md-6">
                       <label for="editTemperatura">Temperatura Corporal (°C):</label>
-                      <input type="number" id="editTemperatura" name="temperatura" step="0.1" min="30" max="45">
+                      <input type="number" id="editTemperatura" name="temperatura" step="0.1" min="35.0" max="42.0">
+                      <small class="form-text text-muted">Rango normal: 36.0 - 37.5°C</small>
                     </div>
                     <div class="form-group col-md-6">
                       <label for="editPresion">Presión Arterial (mmHg):</label>
-                      <input type="text" id="editPresion" name="presion" placeholder="Ej: 120/80">
+                      <input type="text" id="editPresion" name="presion" placeholder="Ej: 120/80" pattern="[0-9]{2,3}/[0-9]{2,3}">
+                      <small class="form-text text-muted">Formato: sistólica/diastólica</small>
                     </div>
                   </div>
                   <div class="form-row">
                     <div class="form-group col-md-6">
                       <label for="editPeso">Peso (kg):</label>
-                      <input type="number" id="editPeso" name="peso" step="0.1" min="20" max="300">
+                      <input type="number" id="editPeso" name="peso" step="0.1" min="30.0" max="200.0">
+                      <small class="form-text text-muted">Rango: 30 - 200 kg</small>
                     </div>
                     <div class="form-group col-md-6">
                       <label for="editTalla">Talla (cm):</label>
-                      <input type="number" id="editTalla" name="talla" min="50" max="250">
+                      <input type="number" id="editTalla" name="talla" min="140" max="220">
+                      <small class="form-text text-muted">Rango: 140 - 220 cm</small>
                     </div>
                   </div>
                   <div class="form-row">
                     <div class="form-group col-md-6">
-                      <label for="editFrecuencia">Frecuencia Respiratoria (rpm):</label>
-                      <input type="number" id="editFrecuencia" name="frecuenciaRespiratoria" min="10" max="40">
+                      <label for="editFrecuenciaRespiratoria">Frecuencia Respiratoria (rpm):</label>
+                      <input type="number" id="editFrecuenciaRespiratoria" name="frecuenciaRespiratoria" min="10" max="40">
+                      <small class="form-text text-muted">Respiraciones por minuto - Rango normal: 12-20 rpm</small>
                     </div>
                   </div>
                   <div class="form-row">
@@ -1360,6 +1505,115 @@
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+
+        <!-- Modal para historial médico -->
+        <div id="modalHistorialMedico" class="modal" style="display: none;">
+          <div class="modal-content modal-large">
+            <div class="modal-header">
+              <h3 id="modalHistorialTitulo">Historial Médico</h3>
+              <span id="modalHistorialSubtitulo" class="modal-subtitle">Detalles del registro</span>
+              <button type="button" class="modal-close" onclick="cerrarModalHistorialMedico()">&times;</button>
+            </div>
+            <div class="modal-body modal-scrollable">
+              <!-- Información Personal -->
+              <div class="info-section">
+                <h4><i class="fas fa-user"></i> Información del Paciente</h4>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <label>Matrícula:</label>
+                    <span id="modalHistorialMatricula">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Grado:</label>
+                    <span id="modalHistorialGrado">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Grupo:</label>
+                    <span id="modalHistorialGrupo">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Facultad:</label>
+                    <span id="modalHistorialFacultad">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Teléfono:</label>
+                    <span id="modalHistorialTelefono">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Datos Médicos -->
+              <div class="info-section">
+                <h4><i class="fas fa-heartbeat"></i> Datos Médicos</h4>
+                <div class="medical-grid">
+                  <div class="medical-item">
+                    <label>Temperatura:</label>
+                    <span id="modalHistorialTemperatura" class="medical-value temperature">-</span>
+                  </div>
+                  <div class="medical-item">
+                    <label>Presión Arterial:</label>
+                    <span id="modalHistorialPresion" class="medical-value pressure">-</span>
+                  </div>
+                  <div class="medical-item">
+                    <label>Peso:</label>
+                    <span id="modalHistorialPeso" class="medical-value weight">-</span>
+                  </div>
+                  <div class="medical-item">
+                    <label>Talla:</label>
+                    <span id="modalHistorialTalla" class="medical-value height">-</span>
+                  </div>
+                  <div class="medical-item">
+                    <label>IMC:</label>
+                    <span id="modalHistorialIMC" class="medical-value imc">-</span>
+                  </div>
+                  <div class="medical-item">
+                    <label>Frecuencia Respiratoria:</label>
+                    <span id="modalHistorialFrecuencia" class="medical-value frequency">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Exámenes Complementarios -->
+              <div class="info-section">
+                <h4><i class="fas fa-stethoscope"></i> Exámenes Complementarios</h4>
+                <div class="exam-item">
+                  <label>Examen de Vista:</label>
+                  <div id="modalHistorialExamenVista" class="exam-result">-</div>
+                </div>
+                <div class="exam-item">
+                  <label>Examen de Oído:</label>
+                  <div id="modalHistorialExamenOido" class="exam-result">-</div>
+                </div>
+              </div>
+
+              <!-- Comparación de Cambios (solo para actualizaciones) -->
+              <div id="seccionComparacionCambios" class="info-section" style="display: none;">
+                <h4><i class="fas fa-exchange-alt"></i> Cambios Detectados</h4>
+                <div id="listaCambios" class="cambios-container">
+                  <!-- Los cambios se cargarán dinámicamente -->
+                </div>
+              </div>
+
+              <!-- Información del Registro -->
+              <div class="info-section">
+                <h4><i class="fas fa-info-circle"></i> Información del Registro</h4>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <label>Registrado por:</label>
+                    <span id="modalHistorialUsuario">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Fecha y hora:</label>
+                    <span id="modalHistorialFecha">-</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn-secondary" onclick="cerrarModalHistorialMedico()">Cerrar</button>
+            </div>
           </div>
         </div>
 
@@ -1386,8 +1640,8 @@
         <!-- Ingresar Datos Médicos -->
         <div id="ingresar-datos-medicos-section" class="form-section">
           <div class="section-header">
-            <h2>Ingresar Datos Médicos</h2>
-            <p class="muted-text">Selecciona un paciente para ingresar o actualizar sus datos médicos</p>
+            <h2>Gestionar Datos Médicos</h2>
+            <p class="muted-text">Selecciona un paciente para ingresar nuevos datos médicos o actualizar los existentes</p>
           </div>
           
           <!-- Pacientes con datos médicos pendientes -->
@@ -1404,6 +1658,7 @@
               <option value="">Seleccione un paciente...</option>
               <!-- Los pacientes se cargarán dinámicamente -->
             </select>
+            <small class="form-text text-muted">Puedes seleccionar cualquier paciente para agregar o actualizar sus datos médicos</small>
           </div>
           
           <!-- Información del paciente seleccionado -->
@@ -1427,29 +1682,34 @@
                 <div class="form-row">
                 <div class="form-group col-md-6">
                   <label for="temperatura">Temperatura Corporal (°C):</label>
-                  <input type="number" id="temperatura" name="temperatura" placeholder="Ej: 36.5" step="0.1" min="30" max="45">
+                  <input type="number" id="temperatura" name="temperatura" placeholder="Ej: 36.5" step="0.1" min="35.0" max="42.0">
+                  <small class="form-text text-muted">Rango normal: 36.0 - 37.5°C</small>
                 </div>
                 <div class="form-group col-md-6">
                   <label for="presion">Presión Arterial (mmHg):</label>
-                  <input type="text" id="presion" name="presion" placeholder="Ej: 120/80">
+                  <input type="text" id="presion" name="presion" placeholder="Ej: 120/80" pattern="[0-9]{2,3}/[0-9]{2,3}">
+                  <small class="form-text text-muted">Formato: sistólica/diastólica (ej: 120/80)</small>
                 </div>
               </div>
               
               <div class="form-row">
                 <div class="form-group col-md-6">
                   <label for="peso">Peso (kg):</label>
-                  <input type="number" id="peso" name="peso" placeholder="Ej: 70.5" step="0.1" min="20" max="300">
+                  <input type="number" id="peso" name="peso" placeholder="Ej: 70.5" step="0.1" min="30.0" max="200.0">
+                  <small class="form-text text-muted">Rango: 30 - 200 kg</small>
                 </div>
                 <div class="form-group col-md-6">
                   <label for="talla">Talla (cm):</label>
-                  <input type="number" id="talla" name="talla" placeholder="Ej: 170" min="100" max="250">
+                  <input type="number" id="talla" name="talla" placeholder="Ej: 170" min="140" max="220">
+                  <small class="form-text text-muted">Rango: 140 - 220 cm</small>
                 </div>
               </div>
               
               <div class="form-row">
                 <div class="form-group col-md-6">
-                  <label for="frecuencia">Frecuencia Respiratoria (rpm):</label>
-                  <input type="number" id="frecuencia" name="frecuencia" placeholder="Ej: 18" min="10" max="40">
+                  <label for="frecuenciaRespiratoria">Frecuencia Respiratoria (rpm):</label>
+                  <input type="number" id="frecuenciaRespiratoria" name="frecuenciaRespiratoria" placeholder="Ej: 18" min="10" max="40">
+                  <small class="form-text text-muted">Respiraciones por minuto - Rango normal: 12-20 rpm</small>
                 </div>
                 <div class="form-group col-md-6">
                   <label for="examenVista">Examen de Vista (opcional):</label>
@@ -1467,7 +1727,7 @@
                   ❌ Cancelar
                 </button>
                 <button type="submit" class="btn-primary">
-                  💾 Guardar Datos Médicos
+                  💾 Registrar Datos Médicos
                 </button>
               </div>
               </div>
@@ -1480,7 +1740,7 @@
           <div class="section-header">
             <h2>Historial Médico Completo</h2>
             <div class="search-container">
-              <input type="text" class="search-input" placeholder="Buscar en historial..." id="buscarHistorial">
+              <input type="text" class="search-input" placeholder="Buscar por matrícula..." id="buscarHistorial">
             </div>
           </div>
           
@@ -1809,6 +2069,7 @@
           cerrarModalCarrera();
           if (window.cerrarModalVerPaciente) cerrarModalVerPaciente();
           if (window.cerrarModalEditarPaciente) cerrarModalEditarPaciente();
+          if (window.cerrarModalHistorialMedico) cerrarModalHistorialMedico();
         }
       });
       
@@ -1819,6 +2080,7 @@
           if (e.target.id === 'modalNuevaCarrera') cerrarModalCarrera();
           if (e.target.id === 'modalVerPaciente' && window.cerrarModalVerPaciente) cerrarModalVerPaciente();
           if (e.target.id === 'modalEditarPaciente' && window.cerrarModalEditarPaciente) cerrarModalEditarPaciente();
+          if (e.target.id === 'modalHistorialMedico' && window.cerrarModalHistorialMedico) cerrarModalHistorialMedico();
         }
       });
     });

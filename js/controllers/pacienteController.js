@@ -182,6 +182,7 @@ export function handlePacienteSubmit(event) {
     // Agregar información del usuario que registra
     const usuarioActual = obtenerUsuarioActual();
     nuevoPaciente.usuarioRegistro = usuarioActual.nombre;
+    nuevoPaciente.fechaRegistro = nuevoPaciente.fechaRegistro || new Date().toISOString();
     
     // Guardar el paciente
     const pacienteGuardado = pacienteModel.addPaciente(nuevoPaciente);
@@ -229,26 +230,91 @@ function handleDatosMedicosSubmit(event) {
   const presion = formData.get('presion')?.trim();
   const peso = formData.get('peso')?.trim();
   const talla = formData.get('talla')?.trim();
-  const frecuencia = formData.get('frecuencia')?.trim();
+  const frecuenciaRespiratoria = formData.get('frecuenciaRespiratoria')?.trim();
   const examenVista = formData.get('examenVista')?.trim();
   const examenOido = formData.get('examenOido')?.trim();
   
-  const hayDatos = temperatura || presion || peso || talla || frecuencia || examenVista || examenOido;
+  const hayDatos = temperatura || presion || peso || talla || frecuenciaRespiratoria || examenVista || examenOido;
   
   if (!hayDatos) {
     mostrarMensaje('warning', '⚠️ Datos Requeridos', 'Por favor ingresa al menos un dato médico antes de guardar (temperatura, presión, peso, etc.).');
     return;
   }
   
-  // Validar datos específicos y mostrar advertencias si es necesario
+  // Validaciones mejoradas con límites realistas
   let advertencias = [];
-  if (temperatura && (parseFloat(temperatura) < 30 || parseFloat(temperatura) > 45)) {
-    advertencias.push(`Temperatura: ${temperatura}°C (rango normal: 30-45°C)`);
+  let errores = [];
+  
+  // Validar temperatura
+  if (temperatura) {
+    const temp = parseFloat(temperatura);
+    if (temp < 35.0 || temp > 42.0) {
+      errores.push(`Temperatura: ${temperatura}°C está fuera del rango válido (35.0-42.0°C)`);
+    } else if (temp < 36.0 || temp > 37.5) {
+      advertencias.push(`Temperatura: ${temperatura}°C fuera del rango normal (36.0-37.5°C)`);
+    }
   }
   
-  if (peso && (parseFloat(peso) < 20 || parseFloat(peso) > 300)) {
-    advertencias.push(`Peso: ${peso}kg (rango normal: 20-300kg)`);
+  // Validar presión arterial
+  if (presion) {
+    const presionPattern = /^(\d{2,3})\/(\d{2,3})$/;
+    const match = presion.match(presionPattern);
+    if (!match) {
+      errores.push(`Presión arterial: Formato inválido. Use el formato sistólica/diastólica (ej: 120/80)`);
+    } else {
+      const sistolica = parseInt(match[1]);
+      const diastolica = parseInt(match[2]);
+      if (sistolica < 70 || sistolica > 200) {
+        errores.push(`Presión sistólica: ${sistolica} está fuera del rango válido (70-200 mmHg)`);
+      } else if (diastolica < 40 || diastolica > 120) {
+        errores.push(`Presión diastólica: ${diastolica} está fuera del rango válido (40-120 mmHg)`);
+      } else if (sistolica < 90 || sistolica > 140 || diastolica < 60 || diastolica > 90) {
+        advertencias.push(`Presión arterial: ${presion} mmHg fuera del rango normal (90-140/60-90 mmHg)`);
+      }
+    }
   }
+  
+  // Validar peso
+  if (peso) {
+    const pesoNum = parseFloat(peso);
+    if (pesoNum < 30.0 || pesoNum > 200.0) {
+      errores.push(`Peso: ${peso}kg está fuera del rango válido (30-200kg)`);
+    } else if (pesoNum < 45.0 || pesoNum > 120.0) {
+      advertencias.push(`Peso: ${peso}kg fuera del rango típico para adultos (45-120kg)`);
+    }
+  }
+  
+  // Validar talla
+  if (talla) {
+    const tallaNum = parseInt(talla);
+    if (tallaNum < 140 || tallaNum > 220) {
+      errores.push(`Talla: ${talla}cm está fuera del rango válido (140-220cm)`);
+    } else if (tallaNum < 150 || tallaNum > 200) {
+      advertencias.push(`Talla: ${talla}cm fuera del rango típico para adultos (150-200cm)`);
+    }
+  }
+  
+  // Validar frecuencia respiratoria
+  if (frecuenciaRespiratoria) {
+    const frecuencia = parseInt(frecuenciaRespiratoria);
+    if (frecuencia < 10 || frecuencia > 40) {
+      errores.push(`Frecuencia respiratoria: ${frecuencia} rpm está fuera del rango válido (10-40 rpm)`);
+    } else if (frecuencia < 12 || frecuencia > 20) {
+      advertencias.push(`Frecuencia respiratoria: ${frecuencia} rpm fuera del rango normal (12-20 rpm)`);
+    }
+  }
+  
+  // Si hay errores críticos, no permitir continuar
+  if (errores.length > 0) {
+    mostrarMensaje('error', '❌ Datos Inválidos', 
+      'Por favor corrige los siguientes errores antes de continuar:\n\n' + 
+      errores.map(error => `• ${error}`).join('\n'));
+    return;
+  }
+  
+  // Determinar si es actualización o registro inicial
+  const esActualizacion = paciente.status === 'completo';
+  const tipoActividad = esActualizacion ? 'Actualización' : 'Registro Inicial';
   
   // Crear objeto de datos médicos
   const usuarioActual = obtenerUsuarioActual();
@@ -257,7 +323,7 @@ function handleDatosMedicosSubmit(event) {
     presion: presion || null,
     peso: peso || null,
     talla: talla || null,
-    frecuenciaRespiratoria: frecuencia || null,
+    frecuenciaRespiratoria: frecuenciaRespiratoria || null,
     examenVista: examenVista || null,
     examenOido: examenOido || null,
     usuarioMedico: usuarioActual.nombre,
@@ -278,36 +344,43 @@ function handleDatosMedicosSubmit(event) {
     
     if (pacienteActualizado) {
       // También guardar en historial médico para seguimiento
-      const registroHistorial = {
-        pacienteId: pacienteSeleccionado,
-        tipo: 'Datos Médicos Registrados',
-        temperatura: datosMedicos.temperatura,
-        presion: datosMedicos.presion,
-        peso: datosMedicos.peso,
-        talla: datosMedicos.talla,
-        frecuenciaRespiratoria: datosMedicos.frecuenciaRespiratoria,
-        fecha: new Date().toISOString()
-      };
-      
-      pacienteModel.addRegistroHistorial(registroHistorial);
+        const registroHistorial = {
+          pacienteId: pacienteSeleccionado,
+          tipo: tipoActividad,
+          temperatura: datosMedicos.temperatura,
+          presion: datosMedicos.presion,
+          peso: datosMedicos.peso,
+          talla: datosMedicos.talla,
+          frecuenciaRespiratoria: datosMedicos.frecuenciaRespiratoria,
+          usuarioRegistro: usuarioActual.nombre,
+          fecha: new Date().toISOString()
+        };      pacienteModel.addRegistroHistorial(registroHistorial);
       
       // Mostrar mensaje de éxito detallado
-      const datosGuardados = Object.entries(datosMedicos)
-        .filter(([key, value]) => value !== null && value !== '' && !['usuarioMedico', 'fechaRegistroMedico'].includes(key))
-        .map(([key, value]) => {
-          const labels = {
-            temperatura: 'Temperatura',
-            presion: 'Presión Arterial', 
-            peso: 'Peso',
-            talla: 'Talla',
-            frecuenciaRespiratoria: 'Frecuencia Respiratoria',
-            examenVista: 'Examen de Vista',
-            examenOido: 'Examen de Oído'
-          };
-          return `• ${labels[key]}: ${value}`;
-        }).join('\n');
-      
-      let mensajeFinal = `Datos registrados para ${paciente.nombre} ${paciente.apellidos || ''}:\n${datosGuardados}`;
+        const datosGuardados = Object.entries(datosMedicos)
+          .filter(([key, value]) => value !== null && value !== '' && !['usuarioMedico', 'fechaRegistroMedico'].includes(key))
+          .map(([key, value]) => {
+            const labels = {
+              temperatura: 'Temperatura',
+              presion: 'Presión Arterial', 
+              peso: 'Peso',
+              talla: 'Talla',
+              frecuenciaRespiratoria: 'Frecuencia Respiratoria',
+              examenVista: 'Examen de Vista',
+              examenOido: 'Examen de Oído'
+            };
+            const unidades = {
+              temperatura: '°C',
+              presion: 'mmHg',
+              peso: 'kg',
+              talla: 'cm',
+              frecuenciaRespiratoria: 'rpm',
+              examenVista: '',
+              examenOido: ''
+            };
+            const unidad = unidades[key] || '';
+            return `• ${labels[key]}: ${value}${unidad}`;
+          }).join('\n');      let mensajeFinal = `${tipoActividad} realizada para ${paciente.nombre} ${paciente.apellidos || ''}:\n${datosGuardados}`;
       
       if (advertencias.length > 0) {
         mensajeFinal += '\n\n⚠️ Advertencias:\n' + advertencias.map(adv => `• ${adv}`).join('\n');
@@ -315,7 +388,10 @@ function handleDatosMedicosSubmit(event) {
       
       mensajeFinal += `\n\nRegistrado por: ${usuarioActual.nombre}`;
       
-      mostrarMensaje('success', '✅ Datos Médicos Guardados', mensajeFinal, 8000);
+      const tipoMensaje = esActualizacion ? 'info' : 'success';
+      const iconoMensaje = esActualizacion ? '🔄 Datos Actualizados' : '✅ Datos Médicos Guardados';
+      
+      mostrarMensaje(tipoMensaje, iconoMensaje, mensajeFinal, 8000);
       
       // Limpiar formulario
       event.target.reset();
@@ -483,22 +559,26 @@ function renderDatosMedicosForm() {
   const pacientesSinDatos = pacienteModel.getPacientesSinDatosMedicos();
   const todosLosPacientes = pacienteModel.getPacientes();
   
-  // Actualizar selector de pacientes - solo mostrar los que no tienen datos médicos
+  // Actualizar selector de pacientes - mostrar TODOS los pacientes con indicador de estado
   const selector = document.getElementById('seleccionarPaciente');
   if (selector) {
-    if (pacientesSinDatos.length === 0) {
-      selector.innerHTML = '<option value="">No hay pacientes sin datos médicos</option>';
+    if (todosLosPacientes.length === 0) {
+      selector.innerHTML = '<option value="">No hay pacientes registrados</option>';
     } else {
       selector.innerHTML = '<option value="">Seleccione un paciente...</option>' +
-        pacientesSinDatos.map(p => `
-          <option value="${p.id}">
-            ${p.nombre} ${p.apellidos || ''} - ${p.matricula} (Sin datos médicos)
-          </option>
-        `).join('');
+        todosLosPacientes.map(p => {
+          const tieneDatos = p.status === 'completo';
+          const estadoTexto = tieneDatos ? '✅ Datos completos' : '⚠️ Sin datos médicos';
+          return `
+            <option value="${p.id}">
+              ${p.nombre} ${p.apellidos || ''} - ${p.matricula} (${estadoTexto})
+            </option>
+          `;
+        }).join('');
     }
   }
   
-  // Actualizar cards de pacientes pendientes
+  // Actualizar cards de pacientes pendientes - solo mostrar los que no tienen datos médicos
   const pendingAlert = document.querySelector('.pending-alert .flex-gap-20');
   if (pendingAlert) {
     if (pacientesSinDatos.length === 0) {
@@ -528,10 +608,52 @@ function renderHistorialCompleto() {
   const historial = pacienteModel.getHistorialMedico();
   const pacientes = pacienteModel.getPacientes();
   
+  // Crear registros del historial basado en datos médicos de pacientes
+  const registrosHistorial = [];
+  
+  pacientes.forEach(paciente => {
+    if (paciente.datosMedicos && paciente.datosMedicos.fechaRegistroMedico) {
+      // Registro inicial - usar información preservada o actual si no hay historial
+      const fechaInicial = paciente.fechaRegistroInicial || paciente.datosMedicos.fechaRegistroMedico;
+      const usuarioInicial = paciente.usuarioRegistroInicial || paciente.datosMedicos.usuarioMedico;
+      
+      registrosHistorial.push({
+        id: `inicial-${paciente.id}`,
+        pacienteId: paciente.id,
+        paciente: paciente,
+        fecha: fechaInicial,
+        tipo: 'Registro Inicial',
+        usuarioRegistro: usuarioInicial || 'Sistema',
+        datosMedicos: paciente.datosMedicos,
+        isInicial: true
+      });
+      
+      // Registros de actualizaciones si existen
+      if (paciente.historialCambios && paciente.historialCambios.length > 0) {
+        paciente.historialCambios.forEach((cambio, index) => {
+          registrosHistorial.push({
+            id: `actualizacion-${paciente.id}-${index}`,
+            pacienteId: paciente.id,
+            paciente: paciente,
+            fecha: cambio.fecha,
+            tipo: 'Actualización',
+            usuarioRegistro: cambio.usuario || 'Sistema',
+            datosMedicos: cambio.datos,
+            datosActuales: paciente.datosMedicos,
+            isActualizacion: true
+          });
+        });
+      }
+    }
+  });
+  
+  // Ordenar por fecha (más reciente primero)
+  registrosHistorial.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+  
   const tableBody = document.querySelector('#historial-medico-completo-section tbody');
   if (!tableBody) return;
   
-  if (historial.length === 0) {
+  if (registrosHistorial.length === 0) {
     tableBody.innerHTML = `
       <tr>
         <td colspan="5" style="text-align: center; padding: 40px; color: #666;">
@@ -542,10 +664,22 @@ function renderHistorialCompleto() {
     return;
   }
   
-  tableBody.innerHTML = historial.map(registro => {
-    const paciente = pacientes.find(p => p.id === registro.pacienteId);
+  tableBody.innerHTML = registrosHistorial.map(registro => {
     const fecha = new Date(registro.fecha);
-    const inicial = paciente?.nombre?.charAt(0).toUpperCase() || 'P';
+    const inicial = registro.paciente?.nombre?.charAt(0).toUpperCase() || 'P';
+    
+    // Colores y estilos para tipos de actividad
+    let tipoBadge, tipoColor;
+    if (registro.isInicial) {
+      tipoBadge = '<span class="badge badge-success" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #065f46; border: 1px solid #10b981;">📋 Registro Inicial</span>';
+      tipoColor = '#10b981';
+    } else if (registro.isActualizacion) {
+      tipoBadge = '<span class="badge badge-info" style="background: linear-gradient(135deg, #dbeafe, #bfdbfe); color: #1e40af; border: 1px solid #3b82f6;">🔄 Actualización</span>';
+      tipoColor = '#3b82f6';
+    } else {
+      tipoBadge = '<span class="badge badge-secondary" style="background: linear-gradient(135deg, #f3f4f6, #e5e7eb); color: #374151; border: 1px solid #6b7280;">📝 Registro</span>';
+      tipoColor = '#6b7280';
+    }
     
     return `
       <tr>
@@ -557,25 +691,32 @@ function renderHistorialCompleto() {
           <div class="flex-center">
             <span class="small-avatar">${inicial}</span>
             <div>
-              <div class="fw-600">${paciente?.nombre || 'Desconocido'} ${paciente?.apellidos || ''}</div>
-              <div class="muted-text small-text">ID: ${registro.pacienteId}</div>
+              <div class="fw-600">${registro.paciente?.nombre || 'Desconocido'} ${registro.paciente?.apellidos || ''}</div>
+              <div class="muted-text small-text">Matrícula: ${registro.paciente?.matricula || 'N/A'}</div>
             </div>
           </div>
         </td>
         <td>
-          <span class="badge badge-success">🟢 ${registro.tipo}</span>
-          <div class="muted-text tiny-text mt-2">${registro.temperatura ? `Temp: ${registro.temperatura}°C` : 'Datos médicos registrados'}</div>
+          ${tipoBadge}
+          <div class="muted-text tiny-text mt-2">
+            ${registro.datosMedicos?.temperatura ? `Temp: ${registro.datosMedicos.temperatura}°C` : 'Datos médicos registrados'}
+          </div>
         </td>
         <td>
           <div>
-            <div class="fw-600">Sistema</div>
-            <div class="muted-text small-text">Registro automático</div>
+            <div class="fw-600" style="color: ${tipoColor};">${registro.usuarioRegistro || 'Sistema'}</div>
+            <div class="muted-text small-text">${registro.isInicial ? 'Registro médico inicial' : 'Actualización de seguimiento'}</div>
           </div>
         </td>
         <td class="text-center">
-          <button class="btn-icon" title="Ver detalles">
-            <i class="fas fa-eye"></i>
-          </button>
+          <div class="action-buttons">
+            <button class="btn-icon" title="Ver detalles" onclick="verDetallesHistorialMedico('${registro.id}', '${registro.pacienteId}', ${registro.isActualizacion})">
+              <i class="fas fa-eye" style="color: ${tipoColor};"></i>
+            </button>
+            <button class="btn-icon btn-danger" title="Eliminar registro" onclick="eliminarRegistroHistorial('${registro.id}', '${registro.pacienteId}', ${registro.isActualizacion}, '${registro.paciente?.nombre || 'Paciente'}')">
+              <i class="fas fa-trash" style="color: #dc2626;"></i>
+            </button>
+          </div>
         </td>
       </tr>
     `;
@@ -597,8 +738,16 @@ function filtrarHistorial(searchTerm) {
   const term = searchTerm.toLowerCase();
   
   rows.forEach(row => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(term) ? '' : 'none';
+    // Buscar específicamente por matrícula en lugar de todo el texto
+    const matriculaCell = row.querySelector('td:nth-child(2) .muted-text');
+    const matriculaText = matriculaCell ? matriculaCell.textContent.toLowerCase() : '';
+    
+    // Extraer solo el número/texto de matrícula (después de "Matrícula: ")
+    const matricula = matriculaText.replace('matrícula: ', '').trim();
+    
+    // Mostrar fila si la matrícula contiene el término de búsqueda
+    const matches = matricula.includes(term);
+    row.style.display = matches ? '' : 'none';
   });
 }
 
@@ -638,6 +787,50 @@ function cargarDatosPaciente(pacienteId) {
       select.value = paciente.id;
     }
   }
+  
+  // Cargar datos médicos existentes en el formulario si los tiene
+  if (paciente.datosMedicos) {
+    const dm = paciente.datosMedicos;
+    
+    // Llenar los campos del formulario con los datos existentes
+    const temperatura = document.getElementById('temperatura');
+    const presion = document.getElementById('presion');
+    const peso = document.getElementById('peso');
+    const talla = document.getElementById('talla');
+    const frecuenciaRespiratoria = document.getElementById('frecuenciaRespiratoria');
+    const examenVista = document.getElementById('examenVista');
+    const examenOido = document.getElementById('examenOido');
+    
+    if (temperatura) temperatura.value = dm.temperatura || '';
+    if (presion) presion.value = dm.presion || '';
+    if (peso) peso.value = dm.peso || '';
+    if (talla) talla.value = dm.talla || '';
+    if (frecuenciaRespiratoria) frecuenciaRespiratoria.value = dm.frecuenciaRespiratoria || '';
+    if (examenVista) examenVista.value = dm.examenVista || '';
+    if (examenOido) examenOido.value = dm.examenOido || '';
+    
+    // Mostrar indicador de que ya tiene datos médicos
+    const submitButton = document.querySelector('#datos-medicos-form button[type="submit"]');
+    if (submitButton) {
+      submitButton.innerHTML = '🔄 Actualizar Datos Médicos';
+      submitButton.style.background = '#f59e0b'; // Color naranja/amarillo para actualización
+      submitButton.style.borderColor = '#f59e0b';
+    }
+  } else {
+    // Limpiar el formulario si no tiene datos médicos
+    const form = document.getElementById('datos-medicos-form');
+    if (form) {
+      form.reset();
+    }
+    
+    // Restaurar el botón a su estado original
+    const submitButton = document.querySelector('#datos-medicos-form button[type="submit"]');
+    if (submitButton) {
+      submitButton.innerHTML = '💾 Registrar Datos Médicos';
+      submitButton.style.background = ''; // Restaurar estilo original
+      submitButton.style.borderColor = '';
+    }
+  }
 }
 
 function cargarDatosPacienteSelect(pacienteId) {
@@ -649,6 +842,182 @@ function cargarDatosPacienteSelect(pacienteId) {
       infoSection.style.display = 'none';
     }
   }
+}
+
+function verDetallesHistorialMedico(registroId, pacienteId, isActualizacion) {
+  const paciente = pacienteModel.getPaciente(pacienteId);
+  if (!paciente) {
+    mostrarMensaje('error', '❌ Error', 'No se pudo encontrar el paciente solicitado.');
+    return;
+  }
+  
+  // Obtener datos para mostrar
+  let datosAMostrar, datosAnteriores, fechaRegistro, usuarioRegistro;
+  
+  if (isActualizacion && paciente.historialCambios) {
+    // Es una actualización, buscar en el historial de cambios
+    const partes = registroId.split('-');
+    const index = parseInt(partes[partes.length - 1]);
+    const cambio = paciente.historialCambios[index];
+    
+    if (cambio) {
+      datosAMostrar = cambio.datos; // Los datos de esa actualización específica
+      fechaRegistro = cambio.fecha;
+      usuarioRegistro = cambio.usuario;
+      
+      // Para la comparación, obtener los datos anteriores
+      if (index > 0) {
+        // Comparar con la actualización anterior
+        datosAnteriores = paciente.historialCambios[index - 1].datos;
+      } else {
+        // Si es la primera actualización, comparar con el registro inicial
+        datosAnteriores = {
+          temperatura: paciente.datosMedicos.temperatura,
+          presion: paciente.datosMedicos.presion,
+          peso: paciente.datosMedicos.peso,
+          talla: paciente.datosMedicos.talla,
+          frecuenciaRespiratoria: paciente.datosMedicos.frecuenciaRespiratoria,
+          examenVista: paciente.datosMedicos.examenVista,
+          examenOido: paciente.datosMedicos.examenOido
+        };
+        
+        // Obtener datos iniciales para comparación
+        const registroInicial = {
+          ...datosAnteriores,
+          fechaRegistroMedico: paciente.fechaRegistroInicial,
+          usuarioMedico: paciente.usuarioRegistroInicial
+        };
+        datosAnteriores = registroInicial;
+      }
+    }
+  } else {
+    // Es registro inicial
+    datosAMostrar = paciente.datosMedicos;
+    fechaRegistro = paciente.fechaRegistroInicial || paciente.datosMedicos.fechaRegistroMedico;
+    usuarioRegistro = paciente.usuarioRegistroInicial || paciente.datosMedicos.usuarioMedico;
+    datosAnteriores = null;
+  }
+  
+  if (!datosAMostrar) {
+    mostrarMensaje('error', '❌ Error', 'No se encontraron datos médicos para este registro.');
+    return;
+  }
+  
+  // Llenar el modal con la información
+  llenarModalHistorialMedico(paciente, datosAMostrar, datosAnteriores, isActualizacion, fechaRegistro, usuarioRegistro);
+  
+  // Mostrar modal
+  mostrarModalHistorialMedico();
+}
+
+function llenarModalHistorialMedico(paciente, datosActuales, datosAnteriores, isActualizacion, fechaRegistro, usuarioRegistro) {
+  // Título del modal
+  const tipoRegistro = isActualizacion ? 'Actualización de Seguimiento' : 'Registro Inicial';
+  document.getElementById('modalHistorialTitulo').textContent = `${tipoRegistro} - ${paciente.nombre} ${paciente.apellidos || ''}`;
+  document.getElementById('modalHistorialSubtitulo').textContent = `${paciente.matricula} • ${abreviarFacultad(paciente.facultad)}`;
+  
+  // Información del paciente (igual que el modal de ver paciente)
+  document.getElementById('modalHistorialMatricula').textContent = paciente.matricula;
+  document.getElementById('modalHistorialGrado').textContent = paciente.grado;
+  document.getElementById('modalHistorialGrupo').textContent = paciente.grupo;
+  document.getElementById('modalHistorialFacultad').textContent = paciente.facultad;
+  document.getElementById('modalHistorialTelefono').textContent = paciente.telefono;
+  
+  // Datos médicos actuales
+  if (datosActuales) {
+    document.getElementById('modalHistorialTemperatura').textContent = datosActuales.temperatura ? `${datosActuales.temperatura}°C` : '-';
+    document.getElementById('modalHistorialPresion').textContent = datosActuales.presion || '-';
+    document.getElementById('modalHistorialPeso').textContent = datosActuales.peso ? `${datosActuales.peso} kg` : '-';
+    document.getElementById('modalHistorialTalla').textContent = datosActuales.talla ? `${datosActuales.talla} cm` : '-';
+    
+    // Calcular IMC
+    if (datosActuales.peso && datosActuales.talla) {
+      const peso = parseFloat(datosActuales.peso);
+      const talla = parseFloat(datosActuales.talla) / 100;
+      const imc = (peso / (talla * talla)).toFixed(1);
+      document.getElementById('modalHistorialIMC').textContent = imc;
+    } else {
+      document.getElementById('modalHistorialIMC').textContent = '-';
+    }
+    
+    document.getElementById('modalHistorialFrecuencia').textContent = datosActuales.frecuenciaRespiratoria ? `${datosActuales.frecuenciaRespiratoria} rpm` : '-';
+    document.getElementById('modalHistorialExamenVista').textContent = datosActuales.examenVista || 'No registrado';
+    document.getElementById('modalHistorialExamenOido').textContent = datosActuales.examenOido || 'No registrado';
+    
+    // Información del registro - usar fecha y usuario correctos
+    document.getElementById('modalHistorialUsuario').textContent = usuarioRegistro || 'Sistema';
+    document.getElementById('modalHistorialFecha').textContent = new Date(fechaRegistro).toLocaleString('es-ES');
+  }
+  
+  // Sección de comparación (solo para actualizaciones)
+  const seccionComparacion = document.getElementById('seccionComparacionCambios');
+  if (isActualizacion && datosAnteriores) {
+    seccionComparacion.style.display = 'block';
+    
+    // Generar comparación de cambios
+    const cambios = compararDatosMedicos(datosAnteriores, datosActuales);
+    const listaCambios = document.getElementById('listaCambios');
+    
+    if (cambios.length > 0) {
+      listaCambios.innerHTML = cambios.map(cambio => `
+        <div class="cambio-item ${cambio.tipo}">
+          <div class="cambio-campo">
+            <i class="fas ${cambio.icono}"></i>
+            <strong>${cambio.campo}:</strong>
+          </div>
+          <div class="cambio-valores">
+            <span class="valor-anterior">${cambio.anterior}</span>
+            <i class="fas fa-arrow-right cambio-flecha"></i>
+            <span class="valor-nuevo">${cambio.nuevo}</span>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      listaCambios.innerHTML = '<div class="sin-cambios">No se detectaron cambios en los datos médicos</div>';
+    }
+  } else {
+    seccionComparacion.style.display = 'none';
+  }
+}
+
+function compararDatosMedicos(datosAnteriores, datosActuales) {
+  const cambios = [];
+  
+  const campos = {
+    temperatura: { nombre: 'Temperatura', icono: 'fa-thermometer-half', unidad: '°C' },
+    presion: { nombre: 'Presión Arterial', icono: 'fa-heartbeat', unidad: 'mmHg' },
+    peso: { nombre: 'Peso', icono: 'fa-weight', unidad: 'kg' },
+    talla: { nombre: 'Talla', icono: 'fa-ruler-vertical', unidad: 'cm' },
+    frecuenciaRespiratoria: { nombre: 'Frecuencia Respiratoria', icono: 'fa-lungs', unidad: 'rpm' },
+    examenVista: { nombre: 'Examen de Vista', icono: 'fa-eye', unidad: '' },
+    examenOido: { nombre: 'Examen de Oído', icono: 'fa-ear-listen', unidad: '' }
+  };
+  
+  Object.keys(campos).forEach(campo => {
+    const valorAnterior = datosAnteriores[campo] || 'No registrado';
+    const valorActual = datosActuales[campo] || 'No registrado';
+    
+    if (valorAnterior !== valorActual) {
+      const config = campos[campo];
+      cambios.push({
+        campo: config.nombre,
+        icono: config.icono,
+        anterior: valorAnterior === 'No registrado' ? valorAnterior : `${valorAnterior}${config.unidad}`,
+        nuevo: valorActual === 'No registrado' ? valorActual : `${valorActual}${config.unidad}`,
+        tipo: valorAnterior === 'No registrado' ? 'nuevo' : (valorActual === 'No registrado' ? 'eliminado' : 'modificado')
+      });
+    }
+  });
+  
+  return cambios;
+}
+
+function mostrarModalHistorialMedico() {
+  document.getElementById('modalHistorialMedico').style.display = 'flex';
+}
+
+function cerrarModalHistorialMedico() {
+  document.getElementById('modalHistorialMedico').style.display = 'none';
 }
 
 function verDetallesPaciente(pacienteId) {
@@ -711,12 +1080,11 @@ function llenarModalVerPaciente(paciente) {
   }
   
   // Información del registro
-  const usuarioActual = obtenerUsuarioActual();
-  document.getElementById('modalUsuarioRegistro').textContent = paciente.usuarioRegistro || usuarioActual.nombre;
+  document.getElementById('modalUsuarioRegistro').textContent = paciente.usuarioRegistro || 'Sistema';
   document.getElementById('modalFechaRegistro').textContent = new Date(paciente.fechaRegistro).toLocaleString('es-ES');
   
   if (paciente.datosMedicos && paciente.status === 'completo') {
-    document.getElementById('modalUsuarioMedico').textContent = paciente.datosMedicos.usuarioMedico || usuarioActual.nombre;
+    document.getElementById('modalUsuarioMedico').textContent = paciente.datosMedicos.usuarioMedico || 'Sistema';
     document.getElementById('modalUltimaActualizacion').textContent = new Date(paciente.datosMedicos.fechaRegistroMedico).toLocaleString('es-ES');
   } else {
     document.getElementById('modalUsuarioMedico').textContent = 'Sin datos médicos';
@@ -948,15 +1316,28 @@ function mostrarConfirmacion(titulo, mensaje, callback, tipo = 'warning') {
 }
 
 function obtenerUsuarioActual() {
-  // Simular obtener usuario actual - en un sistema real vendría del auth
-  const usuarios = [
-    { id: 'admin', nombre: 'Dr. González', rol: 'Médico General' },
-    { id: 'enfermera1', nombre: 'Enf. María López', rol: 'Enfermera' },
-    { id: 'recepcion', nombre: 'Ana Martínez', rol: 'Recepcionista' }
-  ];
+  // Obtener usuario real del localStorage (sesión activa)
+  let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
   
-  // Por ahora devolver el primer usuario (Dr. González)
-  return usuarios[0];
+  // Si currentUser está vacío, intentar con usuarioActual
+  if (!currentUser.nombre && !currentUser.name) {
+    currentUser = JSON.parse(localStorage.getItem('usuarioActual') || '{}');
+  }
+  
+  // Si aún no hay datos, intentar con userSession
+  if (!currentUser.nombre && !currentUser.name) {
+    const userSession = JSON.parse(localStorage.getItem('userSession') || '{}');
+    if (userSession.user) {
+      currentUser = userSession.user;
+    }
+  }
+  
+  // Devolver el usuario con nombre normalizado
+  return {
+    id: currentUser.id || currentUser.usuario || 'unknown',
+    nombre: currentUser.nombre || currentUser.name || currentUser.usuario || 'Usuario Anónimo',
+    rol: currentUser.rol || currentUser.role || 'sin-rol'
+  };
 }
 
 // Funciones para manejar modales
@@ -999,7 +1380,7 @@ function llenarFormularioEdicion(paciente) {
     document.getElementById('editPresion').value = dm.presion || '';
     document.getElementById('editPeso').value = dm.peso || '';
     document.getElementById('editTalla').value = dm.talla || '';
-    document.getElementById('editFrecuencia').value = dm.frecuenciaRespiratoria || '';
+    document.getElementById('editFrecuenciaRespiratoria').value = dm.frecuenciaRespiratoria || '';
     document.getElementById('editExamenVista').value = dm.examenVista || '';
     document.getElementById('editExamenOido').value = dm.examenOido || '';
   }
@@ -1040,6 +1421,7 @@ function handleEditarPacienteSubmit(event) {
   };
   
   // Datos médicos actualizados
+  const usuarioActual = obtenerUsuarioActual();
   const datosMedicos = {
     temperatura: formData.get('temperatura') || null,
     presion: formData.get('presion') || null,
@@ -1048,6 +1430,7 @@ function handleEditarPacienteSubmit(event) {
     frecuenciaRespiratoria: formData.get('frecuenciaRespiratoria') || null,
     examenVista: formData.get('examenVista') || null,
     examenOido: formData.get('examenOido') || null,
+    usuarioMedico: usuarioActual.nombre,
     fechaRegistroMedico: new Date().toISOString()
   };
   
@@ -1074,7 +1457,7 @@ function handleEditarPacienteSubmit(event) {
       
       const usuarioActual = obtenerUsuarioActual();
       mostrarMensaje('success', '✅ Paciente Actualizado', 
-        `Los datos de ${pacienteData.nombre} ${pacienteData.apellidos || ''} han sido actualizados exitosamente.\n\nActualizado por: ${usuarioActual.nombre}`, 5000);
+        `Los datos de ${datosPersonales.nombre} ${datosPersonales.apellidos || ''} han sido actualizados exitosamente.\n\nActualizado por: ${usuarioActual.nombre}`, 5000);
       
       // Cerrar modal y actualizar vistas
       cerrarModalEditarPaciente();
@@ -1088,6 +1471,96 @@ function handleEditarPacienteSubmit(event) {
   } catch (error) {
     console.error('Error al editar paciente:', error);
     mostrarMensaje('error', '❌ Error del Sistema', 'Error interno al actualizar el paciente. Contacta al administrador.');
+  }
+}
+
+function eliminarRegistroHistorial(registroId, pacienteId, isActualizacion, nombrePaciente) {
+  // Mostrar confirmación antes de eliminar
+  const confirmacion = confirm(
+    `⚠️ ¿Está seguro de que desea eliminar este registro médico?\n\n` +
+    `👤 Paciente: ${nombrePaciente}\n` +
+    `📋 Tipo: ${isActualizacion ? 'Actualización' : 'Registro Inicial'}\n\n` +
+    `⚠️ ADVERTENCIA: Esta acción no se puede deshacer.`
+  );
+  
+  if (!confirmacion) {
+    return; // Usuario canceló
+  }
+  
+  try {
+    const paciente = pacienteModel.getPaciente(pacienteId);
+    if (!paciente) {
+      mostrarMensaje('error', '❌ Error', 'No se pudo encontrar el paciente.');
+      return;
+    }
+    
+    let eliminacionExitosa = false;
+    
+    if (isActualizacion) {
+      // Eliminar de historial de cambios
+      if (paciente.historialCambios && paciente.historialCambios.length > 0) {
+        const partes = registroId.split('-');
+        const index = parseInt(partes[partes.length - 1]);
+        
+        if (index >= 0 && index < paciente.historialCambios.length) {
+          paciente.historialCambios.splice(index, 1);
+          eliminacionExitosa = pacienteModel.updatePaciente(pacienteId, paciente);
+        }
+      }
+    } else {
+      // Es registro inicial - eliminar datos médicos completamente
+      const confirmacionRegistroInicial = confirm(
+        `⚠️ ATENCIÓN: Está eliminando el REGISTRO INICIAL de datos médicos.\n\n` +
+        `Esto significa que:\n` +
+        `• Se eliminarán todos los datos médicos del paciente\n` +
+        `• Se eliminarán todas las actualizaciones relacionadas\n` +
+        `• El paciente volverá al estado "sin datos médicos"\n\n` +
+        `¿Continuar con la eliminación?`
+      );
+      
+      if (!confirmacionRegistroInicial) {
+        return;
+      }
+      
+      // Eliminar todos los datos médicos y historial
+      paciente.datosMedicos = null;
+      paciente.historialCambios = [];
+      paciente.status = 'sin_datos_medicos';
+      paciente.fechaRegistroInicial = null;
+      paciente.usuarioRegistroInicial = null;
+      
+      eliminacionExitosa = pacienteModel.updatePaciente(pacienteId, paciente);
+    }
+    
+    if (eliminacionExitosa) {
+      const usuarioActual = obtenerUsuarioActual();
+      const tipoRegistro = isActualizacion ? 'actualización' : 'registro inicial';
+      
+      // Mostrar mensaje de éxito
+      mostrarMensaje('success', '✅ Registro Eliminado', 
+        `El ${tipoRegistro} de ${nombrePaciente} ha sido eliminado exitosamente.\n\nEliminado por: ${usuarioActual.nombre}`, 4000);
+      
+      // Registrar la actividad de eliminación
+      pacienteModel.addRegistroHistorial({
+        pacienteId: pacienteId,
+        tipo: 'Registro Eliminado',
+        descripcion: `${tipoRegistro} eliminado por ${usuarioActual.nombre}`,
+        usuarioRegistro: usuarioActual.nombre,
+        fecha: new Date().toISOString()
+      });
+      
+      // Actualizar vistas
+      renderHistorialCompleto();
+      renderPacientesList();
+      renderDatosMedicosForm();
+      
+    } else {
+      mostrarMensaje('error', '❌ Error al Eliminar', 'No se pudo eliminar el registro. Intenta nuevamente.');
+    }
+    
+  } catch (error) {
+    console.error('Error al eliminar registro del historial:', error);
+    mostrarMensaje('error', '❌ Error del Sistema', 'Error interno al eliminar el registro. Contacta al administrador.');
   }
 }
 
@@ -1106,3 +1579,7 @@ window.mostrarModalVerPaciente = mostrarModalVerPaciente;
 window.cerrarModalVerPaciente = cerrarModalVerPaciente;
 window.abrirModalEditarPaciente = abrirModalEditarPaciente;
 window.cerrarModalEditarPaciente = cerrarModalEditarPaciente;
+window.verDetallesHistorialMedico = verDetallesHistorialMedico;
+window.eliminarRegistroHistorial = eliminarRegistroHistorial;
+window.mostrarModalHistorialMedico = mostrarModalHistorialMedico;
+window.cerrarModalHistorialMedico = cerrarModalHistorialMedico;

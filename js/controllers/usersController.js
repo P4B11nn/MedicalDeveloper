@@ -27,15 +27,49 @@ export function initUsersController() {
   window.UsersController = {
     createUser: (userData) => {
       console.log('UsersController.createUser llamado con:', userData);
+      
+      // Generar ID automático antes de crear el usuario
+      if (!userData.id) {
+        userData.id = authModel.generateUserId();
+      }
+      
       const success = authModel.addUser(userData);
       if (success) {
         eventBus.emit(EVENT_NAMES.USER_CREATED, { user: userData });
         const usuarioActual = obtenerUsuarioActual();
         mostrarMensaje('success', '✅ Usuario Registrado', 
-          `${userData.nombre} ha sido registrado exitosamente.\nID: ${userData.id}`, 4000);
+          `${userData.nombre} ha sido registrado exitosamente.\n\n🆔 ID generado: ${userData.id}\n👤 Rol: ${userData.rol}`, 5000);
         return true;
       }
       return false;
+    },
+    
+    // Funciones de utilidad para gestión de usuarios
+    generateUserId: () => authModel.generateUserId(),
+    cleanupIncorrectUserIds: () => authModel.cleanupIncorrectUserIds(),
+    getAllUsers: () => authModel.getAllUsers(),
+    
+    // Función para mostrar información de usuarios
+    showUserInfo: () => {
+      const usuarios = authModel.getAllUsers();
+      console.table(usuarios.map(u => ({
+        ID: u.id,
+        Nombre: u.nombre,
+        Apellidos: u.apellidos,
+        Matricula: u.matricula,
+        Rol: u.rol,
+        Estado: u.estado,
+        'ID Válido': /^U\d+$/.test(u.id) ? '✅' : '❌'
+      })));
+      
+      const usuariosInvalidos = usuarios.filter(u => !/^U\d+$/.test(u.id));
+      if (usuariosInvalidos.length > 0) {
+        console.warn(`⚠️ Encontrados ${usuariosInvalidos.length} usuarios con IDs incorretos:`);
+        console.table(usuariosInvalidos.map(u => ({ ID: u.id, Nombre: u.nombre, Rol: u.rol })));
+        console.log('💡 Ejecuta UsersController.cleanupIncorrectUserIds() para eliminarlos');
+      } else {
+        console.log('✅ Todos los usuarios tienen IDs válidos');
+      }
     }
   };
 }
@@ -150,12 +184,19 @@ function setupNewUserForm() {
         delete userData.grupoId; // Eliminar si no se seleccionó ningún grupo
       }
       
-      console.log('UsersController: Datos del usuario:', userData);
+      // Generar ID automático
+      userData.id = authModel.generateUserId();
+      
+      console.log('UsersController: Datos del usuario (con ID generado):', userData);
 
       const success = authModel.addUser(userData);
 
       if (success) {
         console.log('UsersController: Usuario creado exitosamente');
+        
+        // Mostrar mensaje de éxito con el ID generado
+        mostrarMensaje('success', '✅ Usuario Registrado', 
+          `${userData.nombre} ${userData.apellidos || ''} ha sido registrado exitosamente.\n\n🆔 ID generado: ${userData.id}\n👤 Rol: ${userData.rol}\n📧 Matrícula: ${userData.matricula}`, 6000);
         
         // Emitir evento de usuario creado
         eventBus.emit(EVENT_NAMES.USER_CREATED, {

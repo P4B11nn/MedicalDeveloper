@@ -141,11 +141,35 @@ export const pacienteModel = {
     const idx = lista.findIndex(p => p.id === pacienteId || p.matricula === pacienteId);
     if (idx === -1) return null;
     
-    // Actualizar datos médicos
-    lista[idx].datosMedicos = {
-      ...datosMedicos,
-      fechaRegistroMedico: new Date().toISOString()
-    };
+    const paciente = lista[idx];
+    const esActualizacion = paciente.status === 'completo';
+    
+    if (esActualizacion) {
+      // Si es una actualización, guardar la información de la actualización en el historial
+      lista[idx].historialCambios = lista[idx].historialCambios || [];
+      
+      // Guardar información de esta actualización en el historial
+      lista[idx].historialCambios.push({
+        fecha: datosMedicos.fechaRegistroMedico,
+        usuario: datosMedicos.usuarioMedico,
+        datos: {...datosMedicos} // Los nuevos datos de esta actualización
+      });
+      
+      // Actualizar datos médicos actuales con los nuevos datos
+      lista[idx].datosMedicos = {
+        ...datosMedicos
+      };
+      
+    } else {
+      // Si es el primer registro, simplemente actualizar los datos médicos
+      lista[idx].datosMedicos = {
+        ...datosMedicos
+      };
+      
+      // Guardar información del registro inicial
+      lista[idx].fechaRegistroInicial = datosMedicos.fechaRegistroMedico;
+      lista[idx].usuarioRegistroInicial = datosMedicos.usuarioMedico;
+    }
     
     // Cambiar status a 'completo' cuando se registren los datos médicos
     lista[idx].status = 'completo';

@@ -6,12 +6,10 @@ const CURRENT_USER_KEY = 'usuarioActual';
 const ACTIVITY_LOG_KEY = 'registroActividad';
 
 // Datos iniciales para asegurar que siempre haya usuarios de prueba
+// NOTA: Estos usuarios tienen IDs temporales y deberían ser reemplazados por usuarios con IDs dinámicos
 const usuariosFijos = [
-  { id: 'admin', nombre: 'Administrador', apellidos: '', matricula: 'admin', contrasena: 'admin123', rol: 'admin', estado: 'activo' },
-  { id: 'pract', nombre: 'Practicante', apellidos: 'Principal', matricula: 'pract', contrasena: 'pract123', rol: 'practicante', estado: 'activo', grupoId: 'grupo-1', activo: true },
-  { id: 'pract2', nombre: 'Ana', apellidos: 'Vázquez', matricula: 'pract2', contrasena: 'pract123', rol: 'practicante', estado: 'activo', grupoId: 'grupo-1', activo: true },
-  { id: 'pract3', nombre: 'Miguel', apellidos: 'Rodríguez', matricula: 'pract3', contrasena: 'pract123', rol: 'practicante', estado: 'activo', grupoId: 'grupo-1', activo: true },
-  { id: 'super1', nombre: 'Dr. Carlos', apellidos: 'López', matricula: 'super1', contrasena: 'super123', rol: 'supervisor', estado: 'activo', grupoId: 'grupo-1', activo: true }
+  { id: 'U12345678', nombre: 'Administrador', apellidos: 'Sistema', matricula: 'admin', contrasena: 'admin123', rol: 'admin', estado: 'activo' },
+  { id: 'U87654321', nombre: 'Practicante', apellidos: 'Principal', matricula: 'pract', contrasena: 'pract123', rol: 'practicante', estado: 'activo', grupoId: 'grupo-1', activo: true }
 ];
 
 // Inicializar usuarios si no existen
@@ -37,6 +35,56 @@ export const authModel = {
   getUsers: () => authModel._sortUsersByName(JSON.parse(localStorage.getItem(USERS_KEY)) || []),
   
   getAllUsers: () => authModel._sortUsersByName(JSON.parse(localStorage.getItem(USERS_KEY)) || []),
+  
+  // Generar ID único automático para usuarios
+  generateUserId: () => {
+    const usuarios = authModel.getUsers();
+    let newId;
+    let attempts = 0;
+    const maxAttempts = 100;
+    
+    do {
+      // Generar número aleatorio de 8 dígitos
+      const randomNumber = Math.floor(10000000 + Math.random() * 90000000);
+      newId = `U${randomNumber}`;
+      attempts++;
+      
+      if (attempts >= maxAttempts) {
+        // Fallback: usar timestamp + random para asegurar unicidad
+        newId = `U${Date.now()}${Math.floor(Math.random() * 1000)}`;
+        break;
+      }
+    } while (usuarios.some(u => u.id === newId));
+    
+    return newId;
+  },
+  
+  // Función para limpiar usuarios con IDs incorretos (no dinámicos)
+  cleanupIncorrectUserIds: () => {
+    const usuarios = authModel.getUsers();
+    const usuariosValidos = usuarios.filter(u => {
+      // Mantener solo usuarios con IDs en formato "U" seguido de números
+      return /^U\d+$/.test(u.id);
+    });
+    
+    const usuariosEliminados = usuarios.length - usuariosValidos.length;
+    
+    if (usuariosEliminados > 0) {
+      localStorage.setItem(USERS_KEY, JSON.stringify(usuariosValidos));
+      console.log(`🧹 Limpieza completada: ${usuariosEliminados} usuarios con IDs incorretos eliminados`);
+      
+      // Registrar la limpieza
+      authModel.registrarActividad({
+        accion: 'cleanup',
+        descripcion: `Limpieza automática: ${usuariosEliminados} usuarios con IDs incorretos eliminados`
+      });
+      
+      return usuariosEliminados;
+    }
+    
+    console.log('✅ No se encontraron usuarios con IDs incorretos');
+    return 0;
+  },
   
   validateUser: (matriculaOId, contrasena) => {
     const usuarios = authModel.getUsers();
@@ -134,8 +182,15 @@ export const authModel = {
 
   addUser: (newUser) => {
     const usuarios = authModel.getUsers();
-    if (usuarios.some(u => u.matricula === newUser.matricula || u.id === newUser.id)) {
-      alert('Error: La matrícula o el ID ya existen.');
+    
+    // Generar ID automático si no existe
+    if (!newUser.id) {
+      newUser.id = authModel.generateUserId();
+    }
+    
+    // Verificar que la matrícula no exista (el ID ya es único por generación)
+    if (usuarios.some(u => u.matricula === newUser.matricula)) {
+      alert('Error: La matrícula ya existe.');
       return false;
     }
     
