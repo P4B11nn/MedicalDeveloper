@@ -17,7 +17,7 @@ export function initOperationsController() {
   setupSimpleExport();
 
   // Activar la primera sección por defecto
-  setTimeout(() => {
+  setTimeout(async () => {
     const firstButton = document.querySelector('.sidebar-menu button[data-section]');
     if (firstButton) {
       console.log('Activando primera sección:', firstButton.getAttribute('data-section'));
@@ -27,16 +27,16 @@ export function initOperationsController() {
     }
     
     // Mostrar todos los registros sin filtros
-    mostrarTodosLosRegistros();
+    await mostrarTodosLosRegistros();
   }, 100);
 
   // Hacer disponibles funciones de debug
   window.OperationsDebug = {
-    limpiarRegistros: () => {
+    limpiarRegistros: async () => {
       const confirmacion = confirm('¿Estás seguro de que deseas limpiar TODOS los registros?\n\nEsta acción no se puede deshacer.');
       if (confirmacion) {
         limpiarRegistros();
-        mostrarTodosLosRegistros();
+        await mostrarTodosLosRegistros();
         console.log('OperationsDebug: Registros limpiados');
         alert('Registros limpiados exitosamente');
       }
@@ -68,12 +68,12 @@ function setupEventListeners() {
   });
   
   // Escuchar eventos de datos cargados
-  eventBus.on(EVENT_NAMES.DATA_LOADED, (data) => {
+  eventBus.on(EVENT_NAMES.DATA_LOADED, async (data) => {
     console.log('OperationsController: Datos cargados', data);
     if (data.type === 'registro') {
       refreshRegistroView();
     } else if (data.type === 'mesas') {
-      refreshMesasView();
+      await refreshMesasView();
     }
   });
 }
@@ -85,7 +85,7 @@ function setupSidebarNavigation() {
   console.log(`Configurando navegación lateral: ${sidebarButtons.length} botones, ${sections.length} secciones`);
 
   sidebarButtons.forEach((button, index) => {
-    button.addEventListener('click', () => {
+    button.addEventListener('click', async () => {
       const targetSectionId = button.getAttribute('data-section');
       console.log(`Clic en sección: ${targetSectionId}`);
       
@@ -103,9 +103,9 @@ function setupSidebarNavigation() {
         
         // Renderizar contenido según la sección
         if (targetSectionId === 'registro-entradas-salidas') {
-          mostrarTodosLosRegistros();
+          await mostrarTodosLosRegistros();
         } else if (targetSectionId === 'mesas-salud') {
-          cargarMesasSalud();
+          await cargarMesasSalud();
         }
       } else {
         console.error(`No se encontró la sección: ${targetSectionId}-section`);
@@ -162,7 +162,7 @@ function setupSimpleExport() {
     console.log('Configuración de exportación simplificada completada');
 }
 
-function mostrarTodosLosRegistros() {
+async function mostrarTodosLosRegistros() {
     console.log('Mostrando todos los registros de entradas/salidas...');
     const container = document.getElementById('registroESLista');
     
@@ -172,8 +172,8 @@ function mostrarTodosLosRegistros() {
     }
     
     // Obtener todos los registros reales de actividad
-    const historial = getRegistroEntradasSalidas();
-    console.log(`Registros obtenidos: ${historial.length}`);
+    const historial = await getRegistroEntradasSalidas();
+    console.log('Registros obtenidos:', historial);
     
     // Renderizar todos los registros sin filtros
     renderRegistroEntradasSalidas(historial, container);
@@ -181,15 +181,20 @@ function mostrarTodosLosRegistros() {
     console.log('Todos los registros mostrados exitosamente');
 }
 
-function cargarMesasSalud() {
+async function cargarMesasSalud() {
   const container = document.getElementById('mesasGrid');
   if (container) {
-    const modulos = gestionModel.getModulos();
-    eventBus.emit(EVENT_NAMES.DATA_LOADED, { 
-      type: 'modulos', 
-      count: modulos.length 
-    });
-    renderModulos(modulos, container);
+    try {
+      const modulos = await gestionModel.getModulos();
+      eventBus.emit(EVENT_NAMES.DATA_LOADED, { 
+        type: 'modulos', 
+        count: modulos ? modulos.length : 0
+      });
+      await renderModulos(modulos, container);
+    } catch (error) {
+      console.error('Error cargando módulos de salud:', error);
+      await renderModulos([], container);
+    }
   }
 }
 
@@ -233,11 +238,11 @@ function refreshRegistroView() {
 /**
  * Refrescar vista de módulos
  */
-function refreshMesasView() {
+async function refreshMesasView() {
   const container = document.getElementById('mesasGrid');
   if (container) {
-    const modulos = gestionModel.getModulos();
-    renderModulos(modulos, container);
+    const modulos = await gestionModel.getModulos();
+    await renderModulos(modulos, container);
     console.log('OperationsController: Vista de módulos refrescada');
   }
 }

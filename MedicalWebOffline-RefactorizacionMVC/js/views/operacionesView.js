@@ -3,6 +3,34 @@ import { eliminarRegistro } from '../models/operacionesModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
 
 /**
+ * Formatea las coordenadas de geolocalización para mostrar
+ */
+function formatearCoordenadas(localizacion) {
+  if (!localizacion) return 'N/A, N/A';
+  
+  let lat, lng;
+  
+  // Manejar diferentes formatos de GeoPoint de Firebase
+  if (localizacion._lat !== undefined && localizacion._long !== undefined) {
+    // Formato interno de Firebase GeoPoint
+    lat = localizacion._lat;
+    lng = localizacion._long;
+  } else if (localizacion.latitude !== undefined && localizacion.longitude !== undefined) {
+    // Formato público de Firebase GeoPoint
+    lat = localizacion.latitude;
+    lng = localizacion.longitude;
+  } else if (localizacion.lat !== undefined && localizacion.lng !== undefined) {
+    // Formato personalizado
+    lat = localizacion.lat;
+    lng = localizacion.lng;
+  } else {
+    return 'N/A, N/A';
+  }
+  
+  return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+}
+
+/**
  * Shows a mini modal for operation actions
  */
 function showOperationMiniModal(title, content, actions = []) {
@@ -178,7 +206,13 @@ function setupDeleteButtons(container) {
 export function renderRegistroEntradasSalidas(historial, container) {
   if (!container) return;
 
-  if (!historial || historial.length === 0) {
+  // Validar que historial sea un array
+  if (!Array.isArray(historial)) {
+    console.warn('OperacionesView: historial no es un array:', historial);
+    historial = [];
+  }
+
+  if (historial.length === 0) {
     container.innerHTML = `
       <div style="text-align: center; color: #6b7280; font-size: 1.1rem; padding: 20px;">
         No hay registros que coincidan con los filtros.
@@ -247,10 +281,11 @@ export function renderRegistroEntradasSalidas(historial, container) {
  * @param {Array} modulos - Los datos de los módulos a mostrar.
  * @param {HTMLElement} container - El elemento <div> donde se insertarán las tarjetas.
  */
-export function renderModulos(modulos, container) {
+export async function renderModulos(modulos, container) {
   if (!container) return;
 
-  if (!modulos || modulos.length === 0) {
+  // Validar que modulos sea un array válido
+  if (!modulos || !Array.isArray(modulos) || modulos.length === 0) {
     container.innerHTML = `
       <div style="
         text-align: center; 
@@ -267,41 +302,58 @@ export function renderModulos(modulos, container) {
   }
 
   // Importamos gestionModel para poder obtener información de grupos
-  import('../models/gestionModel.js').then(({ gestionModel }) => {
-    // Creamos un contenedor con estilo de cuadrícula para los módulos
-    container.innerHTML = `
-      <div style="
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 20px;
-        padding: 10px 0;
-      ">
-        ${modulos.map(modulo => {
-          let statusClass = modulo.estado.toLowerCase().replace(' ', '-');
-          let grupoAsignado = null;
-          
-          // Definir colores según el estado
+  const { gestionModel } = await import('../models/gestionModel.js');
+
+  // Necesitamos hacer esta función async para obtener información de grupos
+  const modulosConGrupos = await Promise.all(modulos.map(async (modulo) => {
+    console.log('DEBUG - Datos del módulo:', modulo);
+    console.log('DEBUG - Localización:', modulo.localizacion);
+    console.log('DEBUG - Tipo de localización:', typeof modulo.localizacion);
+    
+    // Convertir el campo 'activo' boolean al formato de estado anterior
+    const estado = modulo.activo ? 'activo' : 'inactivo';
+    let statusClass = estado.toLowerCase().replace(' ', '-');
+    let grupoAsignado = null;
+    
+    // Buscar información del grupo asignado, si existe
+    if (modulo.grupoAsignadoId) {
+      try {
+        grupoAsignado = await gestionModel.getGrupoById(modulo.grupoAsignadoId);
+        console.log('DEBUG - Grupo asignado:', grupoAsignado);
+      } catch (error) {
+        console.warn('Error obteniendo grupo:', error);
+      }
+    }
+    
+    return { ...modulo, grupoAsignado, statusClass };
+  }));
+
+  // Creamos un contenedor con estilo de cuadrícula para los módulos
+  container.innerHTML = `
+    <div style="
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      padding: 10px 0;
+    ">
+      ${modulosConGrupos.map(modulo => {
+          // Definir colores según el estado  
           let statusColor = '#10b981'; // Verde por defecto (activo)
           let statusBgColor = 'rgba(16, 185, 129, 0.1)';
           let statusIcon = 'fa-check-circle';
           
-          if (statusClass.includes('inactivo')) {
+          if (modulo.statusClass.includes('inactivo')) {
             statusColor = '#f59e0b'; // Naranja
             statusBgColor = 'rgba(245, 158, 11, 0.1)';
             statusIcon = 'fa-exclamation-triangle';
-          } else if (statusClass.includes('mantenimiento')) {
+          } else if (modulo.statusClass.includes('mantenimiento')) {
             statusColor = '#6366f1'; // Indigo
             statusBgColor = 'rgba(99, 102, 241, 0.1)';
             statusIcon = 'fa-tools';
-          } else if (statusClass.includes('emergencia')) {
+          } else if (modulo.statusClass.includes('emergencia')) {
             statusColor = '#ef4444'; // Rojo
             statusBgColor = 'rgba(239, 68, 68, 0.1)';
             statusIcon = 'fa-exclamation-circle';
-          }
-          
-          // Buscar información del grupo asignado, si existe
-          if (modulo.grupoAsignadoId) {
-            grupoAsignado = gestionModel.getGrupoById(modulo.grupoAsignadoId);
           }
 
           return `
@@ -358,7 +410,9 @@ export function renderModulos(modulos, container) {
                 <span style="
                   color: #334155;
                   font-weight: 500;
-                ">${modulo.ubicacion}</span>
+                ">${modulo.localizacion ? 
+                    formatearCoordenadas(modulo.localizacion) 
+                    : 'Sin localización'}</span>
               </div>
               
               <div style="
@@ -373,11 +427,11 @@ export function renderModulos(modulos, container) {
                 background-color: ${statusBgColor};
               ">
                 <i class="fas ${statusIcon}" style="margin-right: 8px;"></i>
-                ${modulo.estado}
+                ${modulo.activo ? 'Activo' : 'Inactivo'}
               </div>
               
               <div style="
-                background: ${grupoAsignado ? 'rgba(96, 165, 250, 0.08)' : 'rgba(226, 232, 240, 0.5)'};
+                background: ${modulo.grupoAsignado ? 'rgba(96, 165, 250, 0.08)' : 'rgba(226, 232, 240, 0.5)'};
                 border-radius: 12px;
                 padding: 15px;
                 margin-top: 10px;
@@ -397,7 +451,7 @@ export function renderModulos(modulos, container) {
                   Equipo Asignado
                 </h4>
                 
-                ${grupoAsignado ? `
+                ${modulo.grupoAsignado ? `
                   <div style="font-size: 0.95rem;">
                     <div style="
                       display: flex;
@@ -411,7 +465,7 @@ export function renderModulos(modulos, container) {
                       <div style="
                         color: #334155;
                         font-weight: 500;
-                      ">${grupoAsignado.nombre}</div>
+                      ">${modulo.grupoAsignado.nombre}</div>
                     </div>
                     
                     <div style="
@@ -425,7 +479,7 @@ export function renderModulos(modulos, container) {
                       "><i class="fas fa-clock"></i></div>
                       <div style="
                         color: #334155;
-                      ">Turno: <strong>${grupoAsignado.turno}</strong></div>
+                      ">Turno: <strong>${modulo.grupoAsignado.turno}</strong></div>
                     </div>
                     
                     <div style="
@@ -439,7 +493,7 @@ export function renderModulos(modulos, container) {
                       "><i class="fas fa-calendar-alt"></i></div>
                       <div style="
                         color: #334155;
-                      ">Horario: <strong>${grupoAsignado.horario}</strong></div>
+                      ">Horario: <strong>${modulo.grupoAsignado.horario}</strong></div>
                     </div>
                     
                     <div style="
@@ -452,7 +506,7 @@ export function renderModulos(modulos, container) {
                       "><i class="fas fa-user-md"></i></div>
                       <div style="
                         color: #334155;
-                      ">Miembros: <strong>${grupoAsignado.miembros.length}</strong></div>
+                      ">Miembros: <strong>${modulo.grupoAsignado.miembros ? modulo.grupoAsignado.miembros.length : 0}</strong></div>
                     </div>
                   </div>
                 ` : `
@@ -480,5 +534,4 @@ export function renderModulos(modulos, container) {
         }).join('')}
       </div>
     `;
-  });
 }

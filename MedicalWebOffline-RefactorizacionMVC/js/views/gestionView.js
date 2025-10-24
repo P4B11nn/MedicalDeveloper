@@ -180,19 +180,19 @@ export async function renderGestionModulos(container) {
             tablaModulos.parentNode.replaceChild(nuevaTabla, tablaModulos);
             
             // Añadir nuevo evento con delegación
-            nuevaTabla.addEventListener('click', (e) => {
+            nuevaTabla.addEventListener('click', async (e) => {
                 const target = e.target.closest('button');
                 if (!target) return;
                 
                 if (target.classList.contains('edit-modulo')) {
                     const moduloId = target.dataset.id;
                     console.log('GestionView: Solicitando edición de módulo', moduloId);
-                    const modulo = gestionModel.getModuloById(moduloId);
+                    const modulo = await gestionModel.getModuloById(moduloId);
                     renderFormModulo(modulo);
                 }
                 else if (target.classList.contains('delete-modulo')) {
                     const moduloId = target.dataset.id;
-                    const modulo = gestionModel.getModuloById(moduloId);
+                    const modulo = await gestionModel.getModuloById(moduloId);
                     console.log('GestionView: Solicitando eliminación de módulo', moduloId);
                     
                     modalUtil.confirmarAccion({
@@ -211,7 +211,7 @@ export async function renderGestionModulos(container) {
                 else if (target.classList.contains('assign-grupo')) {
                     const moduloId = target.dataset.moduloid;
                     console.log('GestionView: Solicitando asignación de grupo para módulo', moduloId);
-                    mostrarModalAsignarGrupo(moduloId);
+                    await mostrarModalAsignarGrupo(moduloId);
                 }
             });
         }
@@ -376,6 +376,60 @@ export async function renderGestionGrupos(container) {
 }
 
 /**
+ * Formatea la localización para mostrar en la tabla
+ */
+function formatearLocalizacion(localizacion) {
+    if (!localizacion) return 'No especificada';
+    
+    console.log('Formateando localización:', localizacion, typeof localizacion);
+    
+    // Manejar GeoPoint de Firebase (tiene latitude y longitude)
+    if (localizacion.latitude !== undefined && localizacion.longitude !== undefined) {
+        return `${localizacion.latitude.toFixed(6)}°, ${localizacion.longitude.toFixed(6)}°`;
+    }
+    
+    // Manejar objeto simple con lat y lng
+    if (localizacion.lat !== undefined && localizacion.lng !== undefined) {
+        return `${localizacion.lat.toFixed(6)}°, ${localizacion.lng.toFixed(6)}°`;
+    }
+    
+    // Para compatibilidad con datos antiguos (formato string)
+    if (typeof localizacion === 'string') {
+        return localizacion;
+    }
+    
+    console.warn('Formato de localización desconocido:', localizacion);
+    return 'Formato inválido';
+}
+
+/**
+ * Formatea el horario para mostrar en la tabla
+ */
+function formatearHorario(horario) {
+    if (!horario) return 'No especificado';
+    
+    // Obtener días activos
+    const diasActivos = [];
+    const diasSemana = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+    
+    for (const dia of diasSemana) {
+        if (horario[dia] && horario[dia].activo !== false) {
+            if (horario[dia].inicio && horario[dia].fin) {
+                diasActivos.push(`${dia.charAt(0).toUpperCase()}: ${horario[dia].inicio}-${horario[dia].fin}`);
+            }
+        }
+    }
+    
+    if (diasActivos.length === 0) return 'Sin horario definido';
+    
+    // Mostrar solo los primeros 2 días para no saturar la tabla
+    const resumen = diasActivos.slice(0, 2).join('<br>');
+    const restantes = diasActivos.length > 2 ? `<br><small>+${diasActivos.length - 2} más</small>` : '';
+    
+    return resumen + restantes;
+}
+
+/**
  * Renderiza la tabla de módulos
  */
 function renderTablaModulos(modulos, grupos) {
@@ -385,7 +439,8 @@ function renderTablaModulos(modulos, grupos) {
                 <tr>
                     <th>ID</th>
                     <th>Nombre</th>
-                    <th>Ubicación</th>
+                    <th>Localización</th>
+                    <th>Horario</th>
                     <th>Estado</th>
                     <th>Grupo Asignado</th>
                     <th>Acciones</th>
@@ -401,10 +456,15 @@ function renderTablaModulos(modulos, grupos) {
                         <tr>
                             <td>${modulo.id}</td>
                             <td>${modulo.nombre}</td>
-                            <td>${modulo.ubicacion}</td>
                             <td>
-                                <span class="badge ${getEstadoClass(modulo.estado)}">
-                                    ${modulo.estado}
+                                <small>${formatearLocalizacion(modulo.localizacion || modulo.ubicacion)}</small>
+                            </td>
+                            <td>
+                                <small>${formatearHorario(modulo.horario)}</small>
+                            </td>
+                            <td>
+                                <span class="badge ${modulo.activo !== undefined ? (modulo.activo ? 'badge-success' : 'badge-danger') : getEstadoClass(modulo.estado)}">
+                                    ${modulo.activo !== undefined ? (modulo.activo ? 'Activo' : 'Inactivo') : modulo.estado}
                                 </span>
                             </td>
                             <td>
@@ -573,21 +633,85 @@ export function renderFormModulo(modulo = null) {
                     </div>
                     
                     <div class="form-group" style="margin-bottom: 20px;">
-                        <label for="modulo-ubicacion" style="display: block; margin-bottom: 8px; font-weight: 500;">Ubicación:</label>
-                        <input type="text" id="modulo-ubicacion" required value="${modulo?.ubicacion || ''}" style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            border: 1px solid #d1d5db;
-                            border-radius: 8px;
-                            background-color: #f9fafb;
-                            font-size: 16px;
-                            box-sizing: border-box;
-                        ">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Localización:</label>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label for="modulo-lat" style="display: block; margin-bottom: 4px; font-size: 14px; color: #6b7280;">Latitud:</label>
+                                <input type="number" id="modulo-lat" step="any" required 
+                                       value="${modulo?.localizacion?.latitude || modulo?.localizacion?.lat || ''}" 
+                                       placeholder="25.686613"
+                                       style="
+                                    width: 100%;
+                                    padding: 8px 10px;
+                                    border: 1px solid #d1d5db;
+                                    border-radius: 6px;
+                                    background-color: #f9fafb;
+                                    font-size: 14px;
+                                    box-sizing: border-box;
+                                ">
+                            </div>
+                            <div>
+                                <label for="modulo-lng" style="display: block; margin-bottom: 4px; font-size: 14px; color: #6b7280;">Longitud:</label>
+                                <input type="number" id="modulo-lng" step="any" required 
+                                       value="${modulo?.localizacion?.longitude || modulo?.localizacion?.lng || ''}" 
+                                       placeholder="-100.316113"
+                                       style="
+                                    width: 100%;
+                                    padding: 8px 10px;
+                                    border: 1px solid #d1d5db;
+                                    border-radius: 6px;
+                                    background-color: #f9fafb;
+                                    font-size: 14px;
+                                    box-sizing: border-box;
+                                ">
+                            </div>
+                        </div>
+                        <small style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">
+                            💡 Consejo: Usa Google Maps para obtener coordenadas precisas
+                        </small>
                     </div>
                     
                     <div class="form-group" style="margin-bottom: 20px;">
-                        <label for="modulo-estado" style="display: block; margin-bottom: 8px; font-weight: 500;">Estado:</label>
-                        <select id="modulo-estado" style="
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Horario de Atención:</label>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 14px;">
+                            ${['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].map(dia => `
+                                <div style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px;">
+                                    <div style="display: flex; align-items: center; margin-bottom: 6px;">
+                                        <input type="checkbox" id="horario-${dia}" checked style="margin-right: 6px;">
+                                        <label for="horario-${dia}" style="font-weight: 500; text-transform: capitalize;">${dia}:</label>
+                                    </div>
+                                    <div style="display: flex; gap: 4px; align-items: center;">
+                                        <input type="time" id="horario-${dia}-inicio" value="${modulo?.horario?.[dia]?.inicio || '08:00'}" style="
+                                            flex: 1; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;
+                                        ">
+                                        <span style="font-size: 12px;">-</span>
+                                        <input type="time" id="horario-${dia}-fin" value="${modulo?.horario?.[dia]?.fin || '17:00'}" style="
+                                            flex: 1; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;
+                                        ">
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div style="margin-top: 8px; padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb;">
+                            <div style="display: flex; align-items: center;">
+                                <input type="checkbox" id="horario-domingo" ${modulo?.horario?.domingo?.activo ? 'checked' : ''} style="margin-right: 6px;">
+                                <label for="horario-domingo" style="font-weight: 500;">Domingo (opcional):</label>
+                            </div>
+                            <div style="display: flex; gap: 4px; align-items: center; margin-top: 6px;">
+                                <input type="time" id="horario-domingo-inicio" value="${modulo?.horario?.domingo?.inicio || '09:00'}" style="
+                                    flex: 1; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;
+                                ">
+                                <span style="font-size: 12px;">-</span>
+                                <input type="time" id="horario-domingo-fin" value="${modulo?.horario?.domingo?.fin || '12:00'}" style="
+                                    flex: 1; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;
+                                ">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label for="modulo-activo" style="display: block; margin-bottom: 8px; font-weight: 500;">Estado:</label>
+                        <select id="modulo-activo" style="
                             width: 100%;
                             padding: 10px 12px;
                             border: 1px solid #d1d5db;
@@ -596,9 +720,8 @@ export function renderFormModulo(modulo = null) {
                             font-size: 16px;
                             box-sizing: border-box;
                         ">
-                            <option value="Activo" ${modulo?.estado === 'Activo' ? 'selected' : ''}>Activo</option>
-                            <option value="Inactivo" ${modulo?.estado === 'Inactivo' ? 'selected' : ''}>Inactivo</option>
-                            <option value="En mantenimiento" ${modulo?.estado === 'En mantenimiento' ? 'selected' : ''}>En mantenimiento</option>
+                            <option value="true" ${(modulo?.activo === true || modulo?.estado === 'Activo') ? 'selected' : ''}>Activo</option>
+                            <option value="false" ${(modulo?.activo === false || modulo?.estado === 'Inactivo') ? 'selected' : ''}>Inactivo</option>
                         </select>
                     </div>
                     
@@ -665,24 +788,56 @@ export function renderFormModulo(modulo = null) {
         if (!formModulo) return;
         
         const nombre = formModulo.querySelector('#modulo-nombre').value.trim();
-        const ubicacion = formModulo.querySelector('#modulo-ubicacion').value.trim();
-        const estado = formModulo.querySelector('#modulo-estado').value;
+        const lat = parseFloat(formModulo.querySelector('#modulo-lat').value);
+        const lng = parseFloat(formModulo.querySelector('#modulo-lng').value);
+        const activo = formModulo.querySelector('#modulo-activo').value === 'true';
         
         // Validar datos
-        if (!nombre || !ubicacion) {
+        if (!nombre || isNaN(lat) || isNaN(lng)) {
             modalUtil.mostrarAlerta({
                 title: 'Campos incompletos',
-                message: 'Nombre y ubicación son campos obligatorios',
+                message: 'Nombre, latitud y longitud son campos obligatorios',
                 type: 'warning'
             });
             return;
         }
         
+        // Validar rangos de coordenadas
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            modalUtil.mostrarAlerta({
+                title: 'Coordenadas inválidas',
+                message: 'Latitud debe estar entre -90 y 90, Longitud entre -180 y 180',
+                type: 'warning'
+            });
+            return;
+        }
+        
+        // Recopilar horario
+        const horario = {};
+        const diasSemana = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+        
+        for (const dia of diasSemana) {
+            const checkbox = formModulo.querySelector(`#horario-${dia}`);
+            const inicio = formModulo.querySelector(`#horario-${dia}-inicio`);
+            const fin = formModulo.querySelector(`#horario-${dia}-fin`);
+            
+            if (checkbox && checkbox.checked && inicio && fin) {
+                horario[dia] = {
+                    inicio: inicio.value,
+                    fin: fin.value,
+                    activo: true
+                };
+            } else {
+                horario[dia] = { activo: false };
+            }
+        }
+        
         // Datos a guardar
         const moduloData = {
             nombre,
-            ubicacion,
-            estado
+            localizacion: { lat, lng },
+            horario,
+            activo
         };
         
         let resultado;
@@ -974,14 +1129,20 @@ function getEstadoClass(estado) {
 /**
  * Muestra un modal para asignar un grupo a un módulo
  */
-function mostrarModalAsignarGrupo(moduloId) {
-    const modulo = gestionModel.getModuloById(moduloId);
-    const grupos = gestionModel.getGrupos();
-    
-    if (!modulo) {
-        console.error('GestionView: No se encontró el módulo', moduloId);
-        return;
-    }
+async function mostrarModalAsignarGrupo(moduloId) {
+    try {
+        const modulo = await gestionModel.getModuloById(moduloId);
+        const grupos = await gestionModel.getGrupos();
+        
+        if (!modulo) {
+            console.error('GestionView: No se encontró el módulo', moduloId);
+            return;
+        }
+        
+        if (!Array.isArray(grupos)) {
+            console.error('GestionView: Los grupos no son un array válido', grupos);
+            return;
+        }
     
     // Eliminar modal anterior si existe
     document.getElementById('asignar-grupo-modal')?.remove();
@@ -1279,6 +1440,15 @@ function mostrarModalAsignarGrupo(moduloId) {
             });
         }
     });
+    
+    } catch (error) {
+        console.error('GestionView: Error cargando datos para asignar grupo:', error);
+        modalUtil.mostrarAlerta({
+            title: 'Error',
+            message: 'No se pudieron cargar los datos necesarios para asignar el grupo.',
+            type: 'error'
+        });
+    }
 }
 
 /**

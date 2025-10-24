@@ -41,12 +41,15 @@ export const pacienteModel = {
             throw error;
         }
 
+        // Verificar conexión
+        const isOnline = window.ConnectionManager ? window.ConnectionManager.online : navigator.onLine;
+        
         try {
             console.log('Iniciando proceso de creación del paciente...');
             const pacienteConDefaults = {
                 status: 'activo',
                 fechaRegistro: new Date().toISOString(),
-                createdAt: serverTimestamp(),
+                createdAt: isOnline ? serverTimestamp() : new Date(),
                 lastUpdate: Date.now(),
                 ...pacienteData,
                 // Convertir valores numéricos solo si están presentes
@@ -58,21 +61,39 @@ export const pacienteModel = {
 
             console.log('Datos finales del paciente:', pacienteConDefaults);
 
-            // 2. Usar el ID personalizado proporcionado en lugar de generar uno automático
-            console.log('Guardando en Firestore con ID:', pacienteData.id);
-            await setDoc(doc(db, 'pacientes', pacienteData.id), pacienteConDefaults);
-            console.log('Paciente guardado exitosamente en Firestore');
+            if (isOnline) {
+                // Modo online: guardar en Firestore
+                console.log('Guardando en Firestore con ID:', pacienteData.id);
+                await setDoc(doc(db, 'pacientes', pacienteData.id), pacienteConDefaults);
+                console.log('Paciente guardado exitosamente en Firestore');
 
-            // 3. Registrar actividad
-            console.log('Registrando actividad...');
-            await authModel.registrarActividad({
-                accion: 'create_paciente',
-                descripcion: `Se registró al paciente ${pacienteData.nombre} (${pacienteData.matricula}) con ID ${pacienteData.id}`,
-                pacienteId: pacienteData.id
-            });
-            console.log('Actividad registrada');
+                // Registrar actividad
+                console.log('Registrando actividad...');
+                await authModel.registrarActividad({
+                    accion: 'create_paciente',
+                    descripcion: `Se registró al paciente ${pacienteData.nombre} (${pacienteData.matricula}) con ID ${pacienteData.id}`,
+                    pacienteId: pacienteData.id
+                });
+                console.log('Actividad registrada');
+            } else {
+                // Modo offline: guardar en localStorage
+                console.log('🔄 Sin conexión - Guardando paciente offline');
+                const { offlineStorage } = await import('./storageModel.js');
+                offlineStorage.savePatientOffline(pacienteConDefaults);
+                
+                // Agregar a cola de operaciones pendientes
+                if (window.ConnectionManager) {
+                    window.ConnectionManager.addPendingOperation({
+                        type: 'create_patient',
+                        data: pacienteConDefaults,
+                        description: `Crear paciente: ${pacienteData.nombre} (${pacienteData.matricula})`
+                    });
+                }
+                
+                console.log('Paciente guardado offline y agregado a cola de sincronización');
+            }
 
-            const resultado = { success: true, id: pacienteData.id };
+            const resultado = { success: true, id: pacienteData.id, isOffline: !isOnline };
             console.log('Retornando resultado:', resultado);
             return resultado;
 
@@ -87,26 +108,61 @@ export const pacienteModel = {
     },
 
     /**
-     * Obtiene todos los pacientes desde Firestore.
-     * @returns {Promise<Array>} Un array con todos los pacientes.
+     * Obtiene todos los pacientes desde Firestore y localStorage.
+     * @returns {Promise<Array>} Un array con todos los pacientes (online + offline).
      */
     async getPacientes(includeInactive = false) {
-        try {
-            let q = collection(db, 'pacientes');
-            if (!includeInactive) {
-                q = query(q, where('status', '==', 'activo'));
-            }
+        const isOnline = window.ConnectionManager ? window.ConnectionManager.online : navigator.onLine;
+        let onlinePatients = [];
+        
+        // Intentar obtener pacientes online
+        if (isOnline) {
+            try {
+                let q = collection(db, 'pacientes');
+                if (!includeInactive) {
+                    q = query(q, where('status', '==', 'activo'));
+                }
 
-            const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-        } catch (error) {
-            console.error('Error al obtener pacientes:', error);
-            if (error.code === 'unavailable') {
-                console.log('Usando datos en cache offline para pacientes');
+                const snapshot = await getDocs(q);
+                onlinePatients = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    isOffline: false
+                }));
+                
+                console.log(`📊 ${onlinePatients.length} pacientes obtenidos de Firestore`);
+            } catch (error) {
+                console.error('Error al obtener pacientes online:', error);
+                if (error.code === 'unavailable') {
+                    console.log('🔄 Usando solo datos offline para pacientes');
+                }
             }
+        }
+        
+        // Obtener pacientes offline y combinar
+        try {
+            const { offlineStorage } = await import('./storageModel.js');
+            const allPatients = offlineStorage.getAllPatients(onlinePatients);
+            
+            const offlineCount = allPatients.length - onlinePatients.length;
+            if (offlineCount > 0) {
+                console.log(`📱 ${offlineCount} pacientes adicionales desde almacenamiento offline`);
+            }
+            
+            // Mostrar estado de conexión si hay datos offline
+            if (!isOnline && allPatients.length > 0) {
+                console.log('📵 Trabajando en modo offline con datos locales');
+            }
+            
+            return allPatients;
+        } catch (error) {
+            console.error('Error combinando datos online/offline:', error);
+            
+            // Si falla todo, retornar solo los datos online
+            if (onlinePatients.length > 0) {
+                return onlinePatients;
+            }
+            
             throw new Error('No se pudieron obtener los pacientes: ' + error.message);
         }
     },

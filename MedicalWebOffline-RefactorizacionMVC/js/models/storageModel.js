@@ -625,6 +625,124 @@ export const authModel = {
     }
 };
 
+// --- FUNCIONALIDAD OFFLINE ---
+export const offlineStorage = {
+    // Claves para localStorage
+    OFFLINE_PATIENTS_KEY: 'offline_patients',
+    OFFLINE_MEDICAL_RECORDS_KEY: 'offline_medical_records',
+    OFFLINE_PENDING_OPERATIONS_KEY: 'offline_pending_operations',
+
+    // Guardar paciente en localStorage
+    savePatientOffline(patient) {
+        try {
+            const patients = this.getOfflinePatients();
+            const patientId = patient.id || `offline_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            patient.id = patientId;
+            patient.isOffline = true;
+            patient.timestamp = new Date().toISOString();
+            
+            patients[patientId] = patient;
+            localStorage.setItem(this.OFFLINE_PATIENTS_KEY, JSON.stringify(patients));
+            
+            console.log('👤 Paciente guardado offline:', patientId);
+            return patient;
+        } catch (error) {
+            console.error('Error guardando paciente offline:', error);
+            throw error;
+        }
+    },
+
+    // Obtener pacientes offline
+    getOfflinePatients() {
+        try {
+            const stored = localStorage.getItem(this.OFFLINE_PATIENTS_KEY);
+            return stored ? JSON.parse(stored) : {};
+        } catch (error) {
+            console.error('Error obteniendo pacientes offline:', error);
+            return {};
+        }
+    },
+
+    // Obtener todos los pacientes (online + offline)
+    getAllPatients(onlinePatients = []) {
+        const offlinePatients = this.getOfflinePatients();
+        const allPatients = [...onlinePatients];
+        
+        // Agregar pacientes offline que no estén duplicados
+        Object.values(offlinePatients).forEach(offlinePatient => {
+            const exists = onlinePatients.find(p => p.matricula === offlinePatient.matricula);
+            if (!exists) {
+                allPatients.push(offlinePatient);
+            }
+        });
+        
+        return allPatients;
+    },
+
+    // Guardar registro médico offline
+    saveMedicalRecordOffline(record) {
+        try {
+            const records = this.getOfflineMedicalRecords();
+            const recordId = record.id || `offline_record_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            
+            record.id = recordId;
+            record.isOffline = true;
+            record.timestamp = new Date().toISOString();
+            
+            records[recordId] = record;
+            localStorage.setItem(this.OFFLINE_MEDICAL_RECORDS_KEY, JSON.stringify(records));
+            
+            console.log('🏥 Registro médico guardado offline:', recordId);
+            return record;
+        } catch (error) {
+            console.error('Error guardando registro médico offline:', error);
+            throw error;
+        }
+    },
+
+    // Obtener registros médicos offline
+    getOfflineMedicalRecords() {
+        try {
+            const stored = localStorage.getItem(this.OFFLINE_MEDICAL_RECORDS_KEY);
+            return stored ? JSON.parse(stored) : {};
+        } catch (error) {
+            console.error('Error obteniendo registros médicos offline:', error);
+            return {};
+        }
+    },
+
+    // Limpiar datos offline después de sincronizar
+    clearOfflineData(type) {
+        try {
+            switch (type) {
+                case 'patients':
+                    localStorage.removeItem(this.OFFLINE_PATIENTS_KEY);
+                    break;
+                case 'medical_records':
+                    localStorage.removeItem(this.OFFLINE_MEDICAL_RECORDS_KEY);
+                    break;
+                case 'all':
+                    localStorage.removeItem(this.OFFLINE_PATIENTS_KEY);
+                    localStorage.removeItem(this.OFFLINE_MEDICAL_RECORDS_KEY);
+                    localStorage.removeItem(this.OFFLINE_PENDING_OPERATIONS_KEY);
+                    break;
+            }
+            console.log(`🧹 Datos offline limpiados: ${type}`);
+        } catch (error) {
+            console.error('Error limpiando datos offline:', error);
+        }
+    },
+
+    // Verificar si hay datos offline pendientes
+    hasPendingOfflineData() {
+        const patients = this.getOfflinePatients();
+        const records = this.getOfflineMedicalRecords();
+        
+        return Object.keys(patients).length > 0 || Object.keys(records).length > 0;
+    }
+};
+
 // Inicializar listener de cambios de autenticación
 onAuthStateChanged(auth, (user) => {
     if (user) {

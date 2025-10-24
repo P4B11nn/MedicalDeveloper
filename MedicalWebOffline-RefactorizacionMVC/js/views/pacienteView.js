@@ -65,7 +65,10 @@ export async function renderPacientesRegistrados() {
                 <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #7dd3fc, #fef3c7); display: flex; align-items: center; justify-content: center; font-weight: bold; color: #1f2937;">
                   ${paciente.nombre.charAt(0).toUpperCase()}
                 </div>
-                <span>${paciente.nombre}</span>
+                <div>
+                  <span>${paciente.nombre}</span>
+                  ${paciente.isOffline ? '<br><span style="color: #f59e0b; font-size: 0.75rem;"><i class="fas fa-wifi" style="margin-right: 4px;"></i>Sin sincronizar</span>' : ''}
+                </div>
               </div>
             </td>
             <td>${paciente.grado || 'N/A'}</td>
@@ -1470,3 +1473,76 @@ window.PacienteView.renderDatosMedicos = renderDatosMedicos;
 window.PacienteView.renderHistorialMedicoCompleto = renderHistorialMedicoCompleto;
 
 console.log('PacienteView: Módulo cargado correctamente');
+
+// Escuchar eventos de conexión
+if (window.EventBus) {
+  // Cuando se pierde la conexión
+  window.EventBus.subscribe('connection:offline', () => {
+    console.log('📵 PacienteView: Modo offline activado');
+    mostrarMensajeConexion('📵 Sin conexión - Los cambios se guardarán localmente', 'warning');
+  });
+
+  // Cuando se restaura la conexión
+  window.EventBus.subscribe('connection:online', () => {
+    console.log('🌐 PacienteView: Conexión restaurada');
+    mostrarMensajeConexion('🌐 Conexión restaurada - Sincronizando datos...', 'success');
+    
+    // Recargar datos después de un breve delay
+    setTimeout(async () => {
+      try {
+        await renderPacientesRegistrados();
+        mostrarMensajeConexion('✅ Datos sincronizados correctamente', 'success');
+      } catch (error) {
+        console.error('Error recargando datos:', error);
+        mostrarMensajeConexion('⚠️ Error al sincronizar datos', 'error');
+      }
+    }, 2000);
+  });
+}
+
+function mostrarMensajeConexion(mensaje, tipo = 'info') {
+  // Crear o actualizar elemento de mensaje
+  let messageElement = document.getElementById('paciente-connection-message');
+  
+  if (!messageElement) {
+    messageElement = document.createElement('div');
+    messageElement.id = 'paciente-connection-message';
+    messageElement.style.cssText = `
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      padding: 12px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    document.body.appendChild(messageElement);
+  }
+
+  const colors = {
+    success: 'linear-gradient(135deg, #10b981, #059669)',
+    warning: 'linear-gradient(135deg, #f59e0b, #d97706)',
+    error: 'linear-gradient(135deg, #ef4444, #dc2626)',
+    info: 'linear-gradient(135deg, #3b82f6, #2563eb)'
+  };
+
+  messageElement.style.background = colors[tipo];
+  messageElement.innerHTML = mensaje;
+  messageElement.style.opacity = '1';
+  messageElement.style.transform = 'translateX(-50%) translateY(0)';
+
+  // Auto-ocultar después de 4 segundos (excepto warnings)
+  if (tipo !== 'warning') {
+    setTimeout(() => {
+      messageElement.style.opacity = '0';
+      messageElement.style.transform = 'translateX(-50%) translateY(-10px)';
+    }, 4000);
+  }
+}

@@ -11,7 +11,8 @@ import {
     query,
     where,
     serverTimestamp,
-    setDoc
+    setDoc,
+    GeoPoint
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
 // --- CONSTANTES ---
@@ -43,17 +44,35 @@ async function inicializarDatos() {
         if (modulosSnapshot.empty) {
             console.log('Inicializando datos de ejemplo para módulos...');
             await setDoc(doc(modulosCollection, 'M01'), {
-                nombre: "Módulo 1",
+                nombre: "Módulo Medicina General",
                 grupoAsignadoId: "G001",
-                ubicacion: "Planta Baja, Ala A",
-                estado: "Activo",
+                localizacion: new GeoPoint(25.686613, -100.316113), // Monterrey, México (ejemplo)
+                horario: {
+                    lunes: { inicio: '08:00', fin: '17:00' },
+                    martes: { inicio: '08:00', fin: '17:00' },
+                    miercoles: { inicio: '08:00', fin: '17:00' },
+                    jueves: { inicio: '08:00', fin: '17:00' },
+                    viernes: { inicio: '08:00', fin: '17:00' },
+                    sabado: { inicio: '08:00', fin: '12:00' },
+                    domingo: { activo: false }
+                },
+                activo: true,
                 createdAt: serverTimestamp()
             });
             await setDoc(doc(modulosCollection, 'M02'), {
-                nombre: "Módulo 2", 
+                nombre: "Módulo Especialidades", 
                 grupoAsignadoId: null,
-                ubicacion: "Primer Piso, Ala B",
-                estado: "Inactivo",
+                localizacion: new GeoPoint(25.687613, -100.315113), // Ubicación cercana (ejemplo)
+                horario: {
+                    lunes: { inicio: '09:00', fin: '18:00' },
+                    martes: { inicio: '09:00', fin: '18:00' },
+                    miercoles: { inicio: '09:00', fin: '18:00' },
+                    jueves: { inicio: '09:00', fin: '18:00' },
+                    viernes: { inicio: '09:00', fin: '16:00' },
+                    sabado: { activo: false },
+                    domingo: { activo: false }
+                },
+                activo: false,
                 createdAt: serverTimestamp()
             });
         }
@@ -352,8 +371,13 @@ export const gestionModel = {
     createModulo: async (modulo) => {
         try {
             // Validar campos requeridos
-            if (!modulo.nombre || !modulo.ubicacion) {
-                throw new Error('Nombre y ubicación son campos obligatorios');
+            if (!modulo.nombre || !modulo.localizacion) {
+                throw new Error('Nombre y localización son campos obligatorios');
+            }
+            
+            // Validar que la localización tenga lat y lng
+            if (!modulo.localizacion.lat || !modulo.localizacion.lng) {
+                throw new Error('La localización debe incluir latitud y longitud');
             }
             
             // Generar ID único (formato M01, M02, etc.)
@@ -364,10 +388,20 @@ export const gestionModel = {
             const newId = `M${String(lastId + 1).padStart(2, '0')}`;
             
             // Crear módulo con valores por defecto
+            console.log('Creando GeoPoint con:', modulo.localizacion);
             const newModulo = {
                 nombre: modulo.nombre,
-                ubicacion: modulo.ubicacion,
-                estado: modulo.estado || 'Inactivo',
+                localizacion: new GeoPoint(modulo.localizacion.lat, modulo.localizacion.lng),
+                horario: modulo.horario || {
+                    lunes: { inicio: '08:00', fin: '17:00' },
+                    martes: { inicio: '08:00', fin: '17:00' },
+                    miercoles: { inicio: '08:00', fin: '17:00' },
+                    jueves: { inicio: '08:00', fin: '17:00' },
+                    viernes: { inicio: '08:00', fin: '17:00' },
+                    sabado: { inicio: '08:00', fin: '12:00' },
+                    domingo: { activo: false }
+                },
+                activo: modulo.activo !== undefined ? modulo.activo : true,
                 grupoAsignadoId: modulo.grupoAsignadoId || null,
                 createdAt: serverTimestamp()
             };
