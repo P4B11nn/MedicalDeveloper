@@ -1,5 +1,5 @@
 // js/controllers/operacionesController.js
-import { getRegistroEntradasSalidas, exportarDatosCSV, limpiarRegistros, eliminarRegistrosLegacy } from '../models/operacionesModel.js';
+import { getRegistroEntradasSalidas, exportarDatosCSV, limpiarRegistros } from '../models/operacionesModel.js';
 import { renderRegistroEntradasSalidas, renderModulos, renderAsistencia, obtenerEtiquetaModulo } from '../views/operacionesView.js';
 import { gestionModel } from '../models/gestionModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
@@ -181,9 +181,6 @@ function setupEventListeners() {
     handleExportRequest(data);
   });
   
-  // Configurar botón de eliminar registros Legacy
-  setupDeleteLegacyButton();
-  
   // Escuchar eventos de datos cargados (se usan 'modulos'; se mantiene compatibilidad con 'mesas')
   eventBus.on(EVENT_NAMES.DATA_LOADED, (data) => {
     console.log('OperationsController: Datos cargados', data);
@@ -337,17 +334,6 @@ function mostrarTodosLosRegistros() {
     const historial = getRegistroEntradasSalidas();
     console.log(`Registros obtenidos: ${historial.length}`);
 
-    // Calcular estadísticas JWT
-    const registrosJWT = historial.filter(r => r.sistemaAuth === 'JWT');
-    const registrosLegacy = historial.filter(r => r.sistemaAuth === 'Legacy' || !r.sistemaAuth);
-    const registrosActivos = historial.filter(r => !r.salida);
-    const registrosJWTActivos = registrosActivos.filter(r => r.sistemaAuth === 'JWT');
-
-    console.log(`📊 Estadísticas de registros:`);
-    console.log(`🔐 Registros JWT: ${registrosJWT.length}`);
-    console.log(`🔓 Registros Legacy: ${registrosLegacy.length}`);
-    console.log(`⚡ Sesiones activas: ${registrosActivos.length} (JWT: ${registrosJWTActivos.length})`);
-
     // Asegurar que sólo el contenedor de registro esté visible.
     if (container) container.classList.remove('hidden');
 
@@ -357,35 +343,15 @@ function mostrarTodosLosRegistros() {
     const buscarInput = document.getElementById('buscarRegistro'); if (buscarInput) buscarInput.classList.add('hidden');
     const rolSelect = document.getElementById('filtroRol'); if (rolSelect) rolSelect.classList.add('hidden');
 
-    // Agregar estadísticas antes de la tabla
-    const estadisticasHTML = `
-      <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border-radius: 8px; padding: 15px; margin-bottom: 20px; border-left: 4px solid #0ea5e9;">
-        <h3 style="margin: 0 0 10px 0; color: #0c4a6e; font-size: 16px;">📊 Estadísticas del Sistema</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-          <div style="background: white; padding: 10px; border-radius: 6px; text-align: center;">
-            <div style="font-size: 24px; font-weight: bold; color: #059669;">🔐 ${registrosJWT.length}</div>
-            <div style="font-size: 12px; color: #6b7280;">Registros de Asistencia</div>
-          </div>
-          <div style="background: white; padding: 10px; border-radius: 6px; text-align: center;">
-            <div style="font-size: 24px; font-weight: bold; color: #059669;">🔐 ${registrosJWTActivos.length}</div>
-            <div style="font-size: 12px; color: #6b7280;">Sesiones Activas</div>
-          </div>
-        </div>
-        <div style="margin-top: 10px; padding: 8px; background: rgba(59, 130, 246, 0.1); border-radius: 4px; font-size: 12px; color: #1e40af;">
-          💡 Los registros JWT proporcionan mayor seguridad y trazabilidad. Token IDs y tiempos de sesión visibles en tooltips.
-        </div>
-      </div>
-    `;
-
-    // Crear un contenedor temporal para las estadísticas y la tabla
-    const contenidoCompleto = estadisticasHTML + '<div id="tabla-registros-container"></div>';
-    container.innerHTML = contenidoCompleto;
-
     // Renderizar la tabla en el contenedor específico
-    const tablaContainer = container.querySelector('#tabla-registros-container');
+    const tablaContainer = document.createElement('div');
+    tablaContainer.id = 'tabla-registros-container';
+    container.innerHTML = '';
+    container.appendChild(tablaContainer);
+    
     renderRegistroEntradasSalidas(historial, tablaContainer);
     
-    console.log('Todos los registros mostrados exitosamente con estadísticas JWT');
+    console.log('Todos los registros mostrados exitosamente');
 }
 
 /**
@@ -411,103 +377,6 @@ function handleExportRequest(data) {
       });
     }
   }
-}
-
-/**
- * Eliminar todos los registros Legacy del sistema
- */
-export function eliminarTodosLosRegistrosLegacy() {
-  console.log('🗑️ Iniciando eliminación de registros Legacy...');
-  
-  // Confirmar con el usuario
-  const confirmacion = confirm(
-    '⚠️ ATENCIÓN: Vas a eliminar TODOS los registros Legacy (sin JWT) del sistema.\n\n' +
-    'Esta acción NO se puede deshacer.\n\n' +
-    '🔐 Solo se mantendrán los registros con autenticación JWT.\n\n' +
-    '¿Estás seguro de continuar?'
-  );
-  
-  if (!confirmacion) {
-    console.log('❌ Eliminación cancelada por el usuario');
-    return;
-  }
-  
-  // Segunda confirmación para mayor seguridad
-  const confirmacionFinal = confirm(
-    '🚨 ÚLTIMA CONFIRMACIÓN\n\n' +
-    'Se eliminarán PERMANENTEMENTE todos los registros Legacy.\n\n' +
-    'Escribe "ELIMINAR" en la siguiente ventana para continuar:'
-  );
-  
-  if (!confirmacionFinal) {
-    console.log('❌ Eliminación cancelada en confirmación final');
-    return;
-  }
-  
-  const palabraConfirmacion = prompt('Escribe "ELIMINAR" para confirmar:');
-  if (palabraConfirmacion !== 'ELIMINAR') {
-    alert('❌ Palabra de confirmación incorrecta. Operación cancelada.');
-    console.log('❌ Eliminación cancelada - palabra incorrecta');
-    return;
-  }
-  
-  try {
-    const resultado = eliminarRegistrosLegacy();
-    
-    if (resultado.exito) {
-      alert(
-        '✅ ELIMINACIÓN COMPLETADA\n\n' +
-        `🗑️ Registros eliminados: ${resultado.registrosEliminados}\n` +
-        `🗑️ Actividades eliminadas: ${resultado.actividadesEliminadas}\n\n` +
-        `🔐 Registros JWT restantes: ${resultado.registrosRestantes}\n` +
-        `🔐 Actividades JWT restantes: ${resultado.actividadesRestantes}`
-      );
-      
-      // Refrescar la vista
-      mostrarTodosLosRegistros();
-      
-      console.log('✅ Eliminación Legacy completada exitosamente');
-    } else {
-      alert(`❌ Error durante la eliminación: ${resultado.error}`);
-      console.error('❌ Error en eliminación Legacy:', resultado.error);
-    }
-    
-  } catch (error) {
-    console.error('❌ Error crítico eliminando registros Legacy:', error);
-    alert(`❌ Error crítico: ${error.message}`);
-  }
-}
-
-/**
- * Configurar el botón de eliminar registros Legacy
- */
-function setupDeleteLegacyButton() {
-  // Usar un timeout para asegurar que el DOM esté listo
-  setTimeout(() => {
-    const btnEliminarLegacy = document.getElementById('btnEliminarLegacy');
-    if (btnEliminarLegacy) {
-      btnEliminarLegacy.addEventListener('click', () => {
-        console.log('🗑️ Botón eliminar Legacy presionado');
-        eliminarTodosLosRegistrosLegacy();
-      });
-      console.log('✅ Event listener configurado para botón eliminar Legacy');
-    } else {
-      console.log('⚠️ Botón eliminar Legacy no encontrado, reintentando en 1 segundo...');
-      // Reintentar una vez más después de 1 segundo
-      setTimeout(() => {
-        const btnEliminarLegacy2 = document.getElementById('btnEliminarLegacy');
-        if (btnEliminarLegacy2) {
-          btnEliminarLegacy2.addEventListener('click', () => {
-            console.log('🗑️ Botón eliminar Legacy presionado (segundo intento)');
-            eliminarTodosLosRegistrosLegacy();
-          });
-          console.log('✅ Event listener configurado para botón eliminar Legacy (segundo intento)');
-        } else {
-          console.error('❌ No se pudo encontrar el botón eliminar Legacy después de 2 intentos');
-        }
-      }, 1000);
-    }
-  }, 500);
 }
 
 /**

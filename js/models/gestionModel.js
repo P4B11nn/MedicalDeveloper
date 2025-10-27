@@ -1,151 +1,97 @@
 // js/models/gestionModel.js
+import { db } from './firebaseConfig.js';
+import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, query, where, GeoPoint } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
 import { authModel } from './storageModel.js';
+import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
 
-const GRUPOS_KEY = 'grupos';
-const MODULOS_KEY = 'modulos';
-
-// 🔧 CONFIGURACIÓN: Cambiar a true para usar IDs aleatorios
-const USE_RANDOM_IDS = false;
-
-/**
- * Genera un ID aleatorio para grupos o módulos
- * @param {string} prefix - Prefijo ('G' para grupos, 'M' para módulos)
- * @returns {string} ID aleatorio único
- */
-function generateRandomId(prefix) {
-    const timestamp = Date.now().toString(36);
-    const randomPart = Math.random().toString(36).substr(2, 5);
-    return `${prefix}_${timestamp}_${randomPart}`;
-}
-
-/**
- * Genera un ID secuencial tradicional
- * @param {Array} items - Array de elementos existentes
- * @param {string} prefix - Prefijo ('G' para grupos, 'M' para módulos)
- * @returns {string} ID secuencial
- */
-function generateSequentialId(items, prefix) {
-    if (prefix === 'G') {
-        const lastId = items.length > 0 
-            ? Math.max(...items.map(g => {
-                const match = g.id.match(/^G(\d+)$/);
-                return match ? parseInt(match[1]) : 0;
-            })) 
-            : 0;
-        return `G${String(lastId + 1).padStart(3, '0')}`;
-    } else if (prefix === 'M') {
-        const lastId = items.length > 0 
-            ? Math.max(...items.map(m => {
-                const match = m.id.match(/^M(\d+)$/);
-                return match ? parseInt(match[1]) : 0;
-            })) 
-            : 0;
-        return `M${String(lastId + 1).padStart(2, '0')}`;
-    }
-    return `${prefix}001`;
-}
-
-/**
- * Genera un ID único (aleatorio o secuencial según configuración)
- * @param {Array} items - Array de elementos existentes
- * @param {string} prefix - Prefijo ('G' para grupos, 'M' para módulos)
- * @returns {string} ID único
- */
-function generateUniqueId(items, prefix) {
-    if (USE_RANDOM_IDS) {
-        let newId;
-        do {
-            newId = generateRandomId(prefix);
-        } while (items.some(item => item.id === newId));
-        return newId;
-    } else {
-        return generateSequentialId(items, prefix);
-    }
-}
-
-function inicializarDatos() {
-    if (!localStorage.getItem(GRUPOS_KEY)) {
-        localStorage.setItem(GRUPOS_KEY, JSON.stringify([
-            { id: "G001", nombre: "Grupo Alpha", turno: "Matutino", horario: "08:00 - 16:00" }
-        ]));
-    }
-    if (!localStorage.getItem(MODULOS_KEY)) {
-        localStorage.setItem(MODULOS_KEY, JSON.stringify([
-            { 
-                id: "M01", 
-                nombre: "Consulta Externa - Medicina General", 
-                grupoAsignado: "grupo-1", 
-                grupoAsignadoId: "grupo-1", 
-                ubicacion: "latitud: 21.1619, longitud: -86.8515, Facultad de Medicina - UAT", 
-                latitud: "21.1619",
-                longitud: "-86.8515",
-                lugar: "Facultad de Medicina - UAT - Edificio A, Piso 2",
-                estado: "activo",
-                supervisor: "Dr. Carlos López"
-            },
-            { 
-                id: "M02", 
-                nombre: "Emergencias", 
-                grupoAsignado: null,
-                grupoAsignadoId: null, 
-                ubicacion: "latitud: 21.1620, longitud: -86.8516, Hospital General", 
-                latitud: "21.1620",
-                longitud: "-86.8516",
-                lugar: "Hospital General - Planta Baja",
-                estado: "activo",
-                supervisor: "Dra. Ana Martínez"
-            },
-            { 
-                id: "M03", 
-                nombre: "Pediatría", 
-                grupoAsignado: "grupo-2",
-                grupoAsignadoId: "grupo-2", 
-                ubicacion: "latitud: 21.1618, longitud: -86.8514, Centro de Salud Infantil", 
-                latitud: "21.1618",
-                longitud: "-86.8514",
-                lugar: "Centro de Salud Infantil - Piso 1",
-                estado: "activo",
-                supervisor: "Dr. Miguel Rodríguez"
-            }
-        ]));
-    }
-}
-inicializarDatos();
+// Colecciones de Firebase
+const MODULOS_COLLECTION = 'modulos';
+const GRUPOS_COLLECTION = 'grupos';
 
 export const gestionModel = {
     // --- Lógica de Grupos ---
-    getGrupos: () => JSON.parse(localStorage.getItem(GRUPOS_KEY)) || [],
-    getGrupoById: (id) => gestionModel.getGrupos().find(g => g.id === id),
+
+    /**
+     * Obtiene todos los grupos desde Firebase
+     * @returns {Promise<Array>} Array de grupos
+     */
+    getGrupos: async () => {
+        try {
+            const gruposRef = collection(db, GRUPOS_COLLECTION);
+            const snapshot = await getDocs(gruposRef);
+            const grupos = [];
+            
+            snapshot.forEach(doc => {
+                grupos.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            
+            return grupos;
+        } catch (error) {
+            console.error('Error al obtener grupos:', error);
+            return [];
+        }
+    },
+
+    /**
+     * Obtiene un grupo por su ID desde Firebase
+     * @param {string} id - ID del grupo
+     * @returns {Promise<Object|null>} El grupo encontrado o null
+     */
+    getGrupoById: async (id) => {
+        try {
+            const grupoRef = doc(db, GRUPOS_COLLECTION, id);
+            const grupoSnap = await getDoc(grupoRef);
+            
+            if (grupoSnap.exists()) {
+                return {
+                    id: grupoSnap.id,
+                    ...grupoSnap.data()
+                };
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error al obtener grupo por ID:', error);
+            return null;
+        }
+    },
     
     /**
-     * Crea un nuevo grupo
+     * Crea un nuevo grupo en Firebase
      * @param {Object} grupo - Datos del grupo a crear
-     * @returns {Object} El grupo creado con su ID
+     * @returns {Promise<Object>} El grupo creado con su ID
      */
-    createGrupo: (grupo) => {
+    createGrupo: async (grupo) => {
         try {
-            const grupos = gestionModel.getGrupos();
-            
             // Validar campos requeridos
             if (!grupo.nombre || !grupo.turno || !grupo.horario) {
                 throw new Error('Nombre, turno y horario son campos obligatorios');
             }
-            
-            // Generar ID único (formato configurable)
-            const newId = generateUniqueId(grupos, 'G');
-            
-            // Crear grupo con valores por defecto
-            const newGrupo = {
-                id: newId,
+
+            // Preparar datos del grupo
+            const grupoData = {
                 nombre: grupo.nombre,
                 turno: grupo.turno,
-                horario: grupo.horario
+                horario: grupo.horario,
+                miembros: [], // Array de IDs de usuarios asignados
+                createdAt: new Date(),
+                updatedAt: new Date()
             };
-            
-            // Guardar en localStorage
-            grupos.push(newGrupo);
-            localStorage.setItem(GRUPOS_KEY, JSON.stringify(grupos));
-            
+
+            // Crear documento en Firebase
+            const docRef = await addDoc(collection(db, GRUPOS_COLLECTION), grupoData);
+
+            const newGrupo = {
+                id: docRef.id,
+                ...grupoData
+            };
+
+            // Emitir evento de grupo creado
+            eventBus.emit(EVENT_NAMES.GROUP_CREATED, { group: newGrupo });
+
             return newGrupo;
         } catch (error) {
             console.error('Error al crear grupo:', error);
@@ -154,37 +100,45 @@ export const gestionModel = {
     },
     
     /**
-     * Actualiza un grupo existente
+     * Actualiza un grupo existente en Firebase
      * @param {string} id - ID del grupo a actualizar
      * @param {Object} datosActualizados - Nuevos datos del grupo
-     * @returns {boolean} true si la actualización fue exitosa
+     * @returns {Promise<boolean>} true si la actualización fue exitosa
      */
-    updateGrupo: (id, datosActualizados) => {
+    updateGrupo: async (id, datosActualizados) => {
         try {
-            const grupos = gestionModel.getGrupos();
-            const grupoIndex = grupos.findIndex(g => g.id === id);
+            // Verificar que el grupo existe
+            const grupoRef = doc(db, GRUPOS_COLLECTION, id);
+            const grupoSnap = await getDoc(grupoRef);
             
-            if (grupoIndex === -1) {
+            if (!grupoSnap.exists()) {
                 throw new Error(`Grupo con ID ${id} no encontrado`);
             }
-            
+
             // Validar campos requeridos
             if (datosActualizados.nombre === '' || 
                 datosActualizados.turno === '' || 
                 datosActualizados.horario === '') {
                 throw new Error('Nombre, turno y horario son campos obligatorios');
             }
-            
-            // Actualizar grupo manteniendo el ID y los campos no actualizados
-            grupos[grupoIndex] = {
-                ...grupos[grupoIndex],
+
+            // Preparar datos de actualización
+            const updateData = {
                 ...datosActualizados,
-                id // Asegurar que el ID no cambie
+                updatedAt: new Date()
             };
-            
-            // Guardar cambios
-            localStorage.setItem(GRUPOS_KEY, JSON.stringify(grupos));
-            
+
+            // Actualizar en Firebase
+            await updateDoc(grupoRef, updateData);
+
+            // Emitir evento de grupo actualizado
+            const updatedGrupo = {
+                id: id,
+                ...grupoSnap.data(),
+                ...updateData
+            };
+            eventBus.emit(EVENT_NAMES.GROUP_UPDATED, { group: updatedGrupo });
+
             return true;
         } catch (error) {
             console.error('Error al actualizar grupo:', error);
@@ -193,50 +147,57 @@ export const gestionModel = {
     },
     
     /**
-     * Elimina un grupo
+     * Elimina un grupo de Firebase
      * @param {string} id - ID del grupo a eliminar
-     * @returns {boolean} true si la eliminación fue exitosa
+     * @returns {Promise<boolean>} true si la eliminación fue exitosa
      */
-    deleteGrupo: (id) => {
+    deleteGrupo: async (id) => {
         try {
-            let grupos = gestionModel.getGrupos();
-            const grupoIndex = grupos.findIndex(g => g.id === id);
+            // Verificar que el grupo existe
+            const grupoRef = doc(db, GRUPOS_COLLECTION, id);
+            const grupoSnap = await getDoc(grupoRef);
             
-            if (grupoIndex === -1) {
+            if (!grupoSnap.exists()) {
                 throw new Error(`Grupo con ID ${id} no encontrado`);
             }
-            
+
             // Verificar si hay módulos asociados a este grupo
-            const modulos = gestionModel.getModulos();
-            const modulosAsociados = modulos.filter(m => m.grupoAsignadoId === id);
+            const modulosRef = collection(db, MODULOS_COLLECTION);
+            const modulosQuery = query(modulosRef, where('grupoAsignadoId', '==', id));
+            const modulosSnapshot = await getDocs(modulosQuery);
             
-            if (modulosAsociados.length > 0) {
+            if (!modulosSnapshot.empty) {
                 // Actualizar módulos que usan este grupo
-                modulosAsociados.forEach(modulo => {
-                    gestionModel.updateModulo(modulo.id, { grupoAsignadoId: null });
+                const updatePromises = [];
+                modulosSnapshot.forEach(moduloDoc => {
+                    const moduloRef = doc(db, MODULOS_COLLECTION, moduloDoc.id);
+                    updatePromises.push(updateDoc(moduloRef, { 
+                        grupoAsignadoId: null,
+                        updatedAt: new Date()
+                    }));
                 });
-                console.warn(`Se han actualizado ${modulosAsociados.length} módulos que usaban este grupo`);
+                await Promise.all(updatePromises);
+                console.warn(`Se han actualizado ${modulosSnapshot.size} módulos que usaban este grupo`);
             }
-            
-            // 🔧 SOLUCIÓN: Desasignar usuarios del grupo eliminado
-            const usuarios = authModel.getAllUsers();
+
+            // Desasignar usuarios del grupo eliminado
+            const usuarios = await authModel.getAllUsers();
             const usuariosAfectados = usuarios.filter(u => u.grupoId === id);
             
             if (usuariosAfectados.length > 0) {
-                usuariosAfectados.forEach((usuario) => {
-                    const userIndex = usuarios.findIndex(u => u.id === usuario.id);
-                    if (userIndex !== -1) {
-                        const updatedUser = { ...usuario, grupoId: null };
-                        authModel.updateUser(userIndex, updatedUser);
-                    }
-                });
+                for (const usuario of usuariosAfectados) {
+                    const updatedUser = { ...usuario, grupoId: null };
+                    await authModel.updateUser(usuario.uid, updatedUser);
+                }
                 console.warn(`Se han desasignado ${usuariosAfectados.length} usuarios del grupo eliminado`);
             }
-            
-            // Eliminar grupo
-            grupos.splice(grupoIndex, 1);
-            localStorage.setItem(GRUPOS_KEY, JSON.stringify(grupos));
-            
+
+            // Eliminar grupo de Firebase
+            await deleteDoc(grupoRef);
+
+            // Emitir evento de grupo eliminado
+            eventBus.emit(EVENT_NAMES.GROUP_DELETED, { id: id });
+
             return true;
         } catch (error) {
             console.error('Error al eliminar grupo:', error);
@@ -248,127 +209,216 @@ export const gestionModel = {
      * Asigna un usuario a un grupo
      * @param {string} grupoId - ID del grupo
      * @param {string} usuarioId - ID del usuario
-     * @returns {boolean} true si la asignación fue exitosa
+     * @returns {Promise<boolean>} true si la asignación fue exitosa
      */
-    asignarUsuarioAGrupo: (grupoId, usuarioId) => {
+    asignarUsuarioAGrupo: async (grupoId, usuarioId) => {
         try {
             // Verificar que el grupo existe
-            const grupo = gestionModel.getGrupoById(grupoId);
+            const grupo = await gestionModel.getGrupoById(grupoId);
             if (!grupo) {
                 throw new Error(`Grupo con ID ${grupoId} no encontrado`);
             }
-            
+
             // Obtener todos los usuarios
-            const usuarios = authModel.getAllUsers();
-            const usuarioIndex = usuarios.findIndex(u => u.id === usuarioId);
-            
+            const usuarios = await authModel.getAllUsers();
+            const usuarioIndex = usuarios.findIndex(u => u.uid === usuarioId);
+
             if (usuarioIndex === -1) {
                 throw new Error(`Usuario con ID ${usuarioId} no encontrado`);
             }
-            
+
             // Verificar que es un practicante
             if (usuarios[usuarioIndex].rol !== 'practicante') {
                 throw new Error('Solo se pueden asignar practicantes a grupos');
             }
-            
+
             // Asignar el grupo al usuario
             const usuarioActualizado = { ...usuarios[usuarioIndex], grupoId: grupoId };
-            const resultado = authModel.updateUser(usuarioIndex, usuarioActualizado);
-            
+            const resultado = authModel.updateUser(usuarios[usuarioIndex].uid, usuarioActualizado);
+
             if (resultado) {
+                // Actualizar el array de miembros en el grupo de Firebase
+                const grupoRef = doc(db, GRUPOS_COLLECTION, grupoId);
+                const currentMiembros = grupo.miembros || [];
+                if (!currentMiembros.includes(usuarioId)) {
+                    await updateDoc(grupoRef, {
+                        miembros: [...currentMiembros, usuarioId],
+                        updatedAt: new Date()
+                    });
+                }
+
                 console.log(`✅ Usuario ${usuarioId} asignado al grupo ${grupoId}`);
             }
-            
+
             return resultado;
         } catch (error) {
             console.error('Error al asignar usuario a grupo:', error);
             return false;
         }
     },
-    
+
     /**
      * Quita un usuario de un grupo
      * @param {string} grupoId - ID del grupo
      * @param {string} usuarioId - ID del usuario
-     * @returns {boolean} true si la eliminación fue exitosa
+     * @returns {Promise<boolean>} true si la eliminación fue exitosa
      */
-    quitarUsuarioDeGrupo: (grupoId, usuarioId) => {
+    quitarUsuarioDeGrupo: async (grupoId, usuarioId) => {
         try {
             // Verificar que el grupo existe
-            const grupo = gestionModel.getGrupoById(grupoId);
+            const grupo = await gestionModel.getGrupoById(grupoId);
             if (!grupo) {
                 throw new Error(`Grupo con ID ${grupoId} no encontrado`);
             }
-            
+
             // Obtener todos los usuarios
-            const usuarios = authModel.getAllUsers();
-            const usuarioIndex = usuarios.findIndex(u => u.id === usuarioId);
-            
+            const usuarios = await authModel.getAllUsers();
+            const usuarioIndex = usuarios.findIndex(u => u.uid === usuarioId);
+
             if (usuarioIndex === -1) {
                 throw new Error(`Usuario con ID ${usuarioId} no encontrado`);
             }
-            
+
             // Verificar que el usuario está asignado a este grupo
             if (usuarios[usuarioIndex].grupoId !== grupoId) {
                 console.warn(`El usuario ${usuarioId} no está asignado al grupo ${grupoId}`);
                 return false;
             }
-            
+
             // Quitar la asignación del grupo (establecer grupoId como null)
             const usuarioActualizado = { ...usuarios[usuarioIndex], grupoId: null };
-            const resultado = authModel.updateUser(usuarioIndex, usuarioActualizado);
-            
+            const resultado = authModel.updateUser(usuarios[usuarioIndex].uid, usuarioActualizado);
+
             if (resultado) {
+                // Actualizar el array de miembros en el grupo de Firebase
+                const grupoRef = doc(db, GRUPOS_COLLECTION, grupoId);
+                const currentMiembros = grupo.miembros || [];
+                const updatedMiembros = currentMiembros.filter(id => id !== usuarioId);
+
+                await updateDoc(grupoRef, {
+                    miembros: updatedMiembros,
+                    updatedAt: new Date()
+                });
+
                 console.log(`✅ Usuario ${usuarioId} removido del grupo ${grupoId}`);
             }
-            
+
             return resultado;
         } catch (error) {
             console.error('Error al quitar usuario de grupo:', error);
             return false;
         }
+    },    // --- Lógica de Módulos ---
+
+    /**
+     * Obtiene todos los módulos desde Firebase
+     * @returns {Promise<Array>} Array de módulos
+     */
+    getModulos: async () => {
+        try {
+            const modulosRef = collection(db, MODULOS_COLLECTION);
+            const snapshot = await getDocs(modulosRef);
+            const modulos = [];
+            
+            snapshot.forEach(doc => {
+                const moduloData = doc.data();
+                // Migrar estructura antigua a nueva si es necesario
+                const moduloMigrado = migrarEstructuraHorario(moduloData);
+                
+                // Convertir GeoPoint a formato legible para la vista
+                const moduloConUbicacion = convertirGeoPointALegible(moduloMigrado);
+                
+                modulos.push({
+                    id: doc.id,
+                    ...moduloConUbicacion
+                });
+            });
+            
+            return modulos;
+        } catch (error) {
+            console.error('Error al obtener módulos:', error);
+            return [];
+        }
     },
 
-    // --- Lógica de Módulos ---
-    getModulos: () => JSON.parse(localStorage.getItem(MODULOS_KEY)) || [],
-    getModuloById: (id) => gestionModel.getModulos().find(m => m.id === id),
-    
     /**
-     * Crea un nuevo módulo
-     * @param {Object} modulo - Datos del módulo a crear
-     * @returns {Object} El módulo creado con su ID
+     * Obtiene un módulo por su ID desde Firebase
+     * @param {string} id - ID del módulo
+     * @returns {Promise<Object|null>} El módulo encontrado o null
      */
-    createModulo: (modulo) => {
+    getModuloById: async (id) => {
         try {
-            const modulos = gestionModel.getModulos();
+            const moduloRef = doc(db, MODULOS_COLLECTION, id);
+            const moduloSnap = await getDoc(moduloRef);
             
-            // Validar campos requeridos
-            if (!modulo.nombre || !modulo.ubicacion) {
-                throw new Error('Nombre, ubicación y horario de atención son campos obligatorios');
+            if (moduloSnap.exists()) {
+                const moduloData = moduloSnap.data();
+                // Migrar estructura antigua a nueva si es necesario
+                const moduloMigrado = migrarEstructuraHorario(moduloData);
+                
+                // Convertir GeoPoint a formato legible para la vista
+                const moduloConUbicacion = convertirGeoPointALegible(moduloMigrado);
+                
+                return {
+                    id: moduloSnap.id,
+                    ...moduloConUbicacion
+                };
             }
             
-            // Generar ID único (formato configurable)
-            const newId = generateUniqueId(modulos, 'M');
-            
-            // Crear módulo con valores por defecto
-            const newModulo = {
-                id: newId,
-                nombre: modulo.nombre,
-                ubicacion: modulo.ubicacion,
-                latitud: modulo.latitud || null,
-                longitud: modulo.longitud || null,
-                lugar: modulo.lugar || modulo.ubicacion,
+            return null;
+        } catch (error) {
+            console.error('Error al obtener módulo por ID:', error);
+            return null;
+        }
+    },
+    
+    /**
+     * Crea un nuevo módulo en Firebase
+     * @param {Object} modulo - Datos del módulo a crear
+     * @returns {Promise<Object>} El módulo creado con su ID
+     */
+    createModulo: async (modulo) => {
+        try {
+            // Validar campos requeridos
+            if (!modulo.nombre || !modulo.nombreLugar) {
+                throw new Error('Nombre y nombre del lugar son campos obligatorios');
+            }
+
+            // Asegurar que el nombre sea una cadena de texto
+            const nombreModulo = typeof modulo.nombre === 'string' ? 
+                modulo.nombre.trim() : 
+                String(modulo.nombre || '').trim();
+
+            // Preparar datos del módulo con nueva estructura de horario
+            const moduloData = {
+                nombre: nombreModulo,
+                nombreLugar: modulo.nombreLugar,
+                // Ubicación como GeoPoint si se proporcionan coordenadas
+                ubicacion: (modulo.latitud && modulo.longitud) ? 
+                    new GeoPoint(parseFloat(modulo.latitud), parseFloat(modulo.longitud)) : null,
                 estado: modulo.estado || 'Inactivo',
                 grupoAsignadoId: modulo.grupoAsignadoId || null,
+                // Nueva estructura: horario como mapa por día
+                horarioPorDia: modulo.horarioPorDia || {},
+                // Mantener compatibilidad con campos antiguos (se migrarán gradualmente)
                 horaInicio: modulo.horaInicio || null,
                 horaFin: modulo.horaFin || null,
-                diasAtencion: modulo.diasAtencion || []
+                diasAtencion: modulo.diasAtencion || [],
+                createdAt: new Date(),
+                updatedAt: new Date()
             };
-            
-            // Guardar en localStorage
-            modulos.push(newModulo);
-            localStorage.setItem(MODULOS_KEY, JSON.stringify(modulos));
-            
+
+            // Crear documento en Firebase
+            const docRef = await addDoc(collection(db, MODULOS_COLLECTION), moduloData);
+
+            const newModulo = {
+                id: docRef.id,
+                ...moduloData
+            };
+
+            // Emitir evento de módulo creado
+            eventBus.emit(EVENT_NAMES.MODULE_CREATED, { module: newModulo });
+
             return newModulo;
         } catch (error) {
             console.error('Error al crear módulo:', error);
@@ -377,35 +427,74 @@ export const gestionModel = {
     },
     
     /**
-     * Actualiza un módulo existente
+     * Actualiza un módulo existente en Firebase
      * @param {string} id - ID del módulo a actualizar
      * @param {Object} datosActualizados - Nuevos datos del módulo
-     * @returns {boolean} true si la actualización fue exitosa
+     * @returns {Promise<boolean>} true si la actualización fue exitosa
      */
-    updateModulo: (id, datosActualizados) => {
+    updateModulo: async (id, datosActualizados) => {
         try {
-            const modulos = gestionModel.getModulos();
-            const moduloIndex = modulos.findIndex(m => m.id === id);
+            // Verificar que el módulo existe
+            const moduloRef = doc(db, MODULOS_COLLECTION, id);
+            const moduloSnap = await getDoc(moduloRef);
             
-            if (moduloIndex === -1) {
+            if (!moduloSnap.exists()) {
                 throw new Error(`Módulo con ID ${id} no encontrado`);
             }
-            
+
             // Validar campos requeridos si están presentes
-            if (datosActualizados.nombre === '' || datosActualizados.ubicacion === '') {
-                throw new Error('Nombre y ubicación no pueden estar vacíos');
+            if (datosActualizados.nombre === '' || datosActualizados.nombreLugar === '') {
+                throw new Error('Nombre y nombre del lugar no pueden estar vacíos');
             }
-            
-            // Actualizar módulo manteniendo el ID y los campos no actualizados
-            modulos[moduloIndex] = {
-                ...modulos[moduloIndex],
+
+            // Asegurar que el nombre sea una cadena de texto si se está actualizando
+            if (datosActualizados.nombre !== undefined) {
+                datosActualizados.nombre = typeof datosActualizados.nombre === 'string' ? 
+                    datosActualizados.nombre.trim() : 
+                    String(datosActualizados.nombre || '').trim();
+            }
+
+            // Preparar datos de actualización con nueva estructura de horario
+            const updateData = {
                 ...datosActualizados,
-                id // Asegurar que el ID no cambie
+                updatedAt: new Date()
             };
-            
-            // Guardar cambios
-            localStorage.setItem(MODULOS_KEY, JSON.stringify(modulos));
-            
+
+            // Si se están actualizando coordenadas, crear GeoPoint
+            if (datosActualizados.latitud !== undefined || datosActualizados.longitud !== undefined) {
+                const currentData = moduloSnap.data();
+                const lat = datosActualizados.latitud !== undefined ? datosActualizados.latitud : 
+                           (currentData.ubicacion?.latitude || null);
+                const lng = datosActualizados.longitud !== undefined ? datosActualizados.longitud : 
+                           (currentData.ubicacion?.longitude || null);
+                
+                if (lat && lng) {
+                    updateData.ubicacion = new GeoPoint(parseFloat(lat), parseFloat(lng));
+                } else {
+                    updateData.ubicacion = null;
+                }
+                
+                // Remover campos antiguos
+                delete updateData.latitud;
+                delete updateData.longitud;
+            }
+
+            // Si se está actualizando horarioPorDia, asegurar que sea un objeto válido
+            if (datosActualizados.horarioPorDia !== undefined) {
+                updateData.horarioPorDia = datosActualizados.horarioPorDia || {};
+            }
+
+            // Actualizar en Firebase
+            await updateDoc(moduloRef, updateData);
+
+            // Emitir evento de módulo actualizado
+            const updatedModulo = {
+                id: id,
+                ...moduloSnap.data(),
+                ...updateData
+            };
+            eventBus.emit(EVENT_NAMES.MODULE_UPDATED, { module: updatedModulo });
+
             return true;
         } catch (error) {
             console.error('Error al actualizar módulo:', error);
@@ -414,23 +503,26 @@ export const gestionModel = {
     },
     
     /**
-     * Elimina un módulo
+     * Elimina un módulo de Firebase
      * @param {string} id - ID del módulo a eliminar
-     * @returns {boolean} true si la eliminación fue exitosa
+     * @returns {Promise<boolean>} true si la eliminación fue exitosa
      */
-    deleteModulo: (id) => {
+    deleteModulo: async (id) => {
         try {
-            let modulos = gestionModel.getModulos();
-            const moduloIndex = modulos.findIndex(m => m.id === id);
+            // Verificar que el módulo existe
+            const moduloRef = doc(db, MODULOS_COLLECTION, id);
+            const moduloSnap = await getDoc(moduloRef);
             
-            if (moduloIndex === -1) {
+            if (!moduloSnap.exists()) {
                 throw new Error(`Módulo con ID ${id} no encontrado`);
             }
-            
-            // Eliminar módulo
-            modulos.splice(moduloIndex, 1);
-            localStorage.setItem(MODULOS_KEY, JSON.stringify(modulos));
-            
+
+            // Eliminar módulo de Firebase
+            await deleteDoc(moduloRef);
+
+            // Emitir evento de módulo eliminado
+            eventBus.emit(EVENT_NAMES.MODULE_DELETED, { id: id });
+
             return true;
         } catch (error) {
             console.error('Error al eliminar módulo:', error);
@@ -442,28 +534,91 @@ export const gestionModel = {
      * Asigna un grupo a un módulo
      * @param {string} moduloId - ID del módulo
      * @param {string} grupoId - ID del grupo
-     * @returns {boolean} true si la asignación fue exitosa
+     * @returns {Promise<boolean>} true si la asignación fue exitosa
      */
-    asignarGrupoAModulo: (moduloId, grupoId) => {
+    asignarGrupoAModulo: async (moduloId, grupoId) => {
         try {
             // Verificar que existan tanto el módulo como el grupo
-            const modulo = gestionModel.getModuloById(moduloId);
-            const grupo = gestionModel.getGrupoById(grupoId);
-            
+            const modulo = await gestionModel.getModuloById(moduloId);
+            const grupo = grupoId ? await gestionModel.getGrupoById(grupoId) : null;
+
             if (!modulo) {
                 throw new Error(`Módulo con ID ${moduloId} no encontrado`);
             }
-            
+
             if (!grupo && grupoId !== null) {
                 throw new Error(`Grupo con ID ${grupoId} no encontrado`);
             }
-            
-            // Actualizar la asignación
-            return gestionModel.updateModulo(moduloId, { grupoAsignadoId: grupoId });
-            
+
+            // Actualizar la asignación en Firebase
+            const resultado = await gestionModel.updateModulo(moduloId, { grupoAsignadoId: grupoId });
+
+            return resultado;
         } catch (error) {
             console.error('Error al asignar grupo a módulo:', error);
             return false;
         }
     }
 };
+
+/**
+ * Migra la estructura antigua de horario a la nueva estructura horarioPorDia
+ * @param {Object} moduloData - Datos del módulo desde Firebase
+ * @returns {Object} Datos del módulo con estructura migrada
+ */
+function migrarEstructuraHorario(moduloData) {
+    // Si ya tiene la nueva estructura, devolver como está
+    if (moduloData.horarioPorDia && Object.keys(moduloData.horarioPorDia).length > 0) {
+        return moduloData;
+    }
+
+    // Si tiene la estructura antigua, migrar
+    if (moduloData.diasAtencion && moduloData.diasAtencion.length > 0 && 
+        moduloData.horaInicio && moduloData.horaFin) {
+        
+        console.log(`Migrando módulo "${moduloData.nombre}" a nueva estructura de horario`);
+        
+        const horarioPorDia = {};
+        moduloData.diasAtencion.forEach(dia => {
+            horarioPorDia[dia] = {
+                inicio: moduloData.horaInicio,
+                fin: moduloData.horaFin
+            };
+        });
+
+        // Retornar datos migrados
+        return {
+            ...moduloData,
+            horarioPorDia: horarioPorDia
+        };
+    }
+
+    // Si no tiene ninguna estructura de horario, devolver como está
+    return moduloData;
+}
+
+/**
+ * Convierte un GeoPoint de Firebase a un formato legible para la vista
+ * @param {Object} moduloData - Datos del módulo desde Firebase
+ * @returns {Object} Datos del módulo con ubicación legible
+ */
+function convertirGeoPointALegible(moduloData) {
+    const moduloConUbicacion = { ...moduloData };
+    
+    // Si tiene un GeoPoint, convertirlo a campos separados para la vista
+    if (moduloData.ubicacion && typeof moduloData.ubicacion === 'object' && 
+        moduloData.ubicacion.latitude !== undefined && moduloData.ubicacion.longitude !== undefined) {
+        moduloConUbicacion.latitud = moduloData.ubicacion.latitude;
+        moduloConUbicacion.longitud = moduloData.ubicacion.longitude;
+    } else {
+        moduloConUbicacion.latitud = null;
+        moduloConUbicacion.longitud = null;
+    }
+    
+    // Asegurar que tenga nombreLugar (antes era 'lugar')
+    if (!moduloConUbicacion.nombreLugar && moduloData.lugar) {
+        moduloConUbicacion.nombreLugar = moduloData.lugar;
+    }
+    
+    return moduloConUbicacion;
+}

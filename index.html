@@ -189,8 +189,8 @@
     <div class="login-container">
       <form id="loginForm" onsubmit="return false;">
         <div class="form-group">
-          <label for="matriculaInput">Matrícula:</label>
-          <input type="text" name="matricula" id="matriculaInput" required>
+          <label for="matriculaInput">Email:</label>
+          <input type="text" name="matricula" id="matriculaInput" placeholder="Ingresa tu email o" required>
         </div>
         
         <div class="form-group">
@@ -200,10 +200,6 @@
         
         <button type="button" id="btnLogin" class="btn-login">Inicio de sesión</button>
         
-        <!-- Indicador de estado JWT -->
-        <div id="jwt-status-indicator" style="margin-top: 10px; text-align: center; font-size: 12px; color: #666; opacity: 0.8;">
-          <span id="auth-mode-text">🔓 Modo Legacy</span>
-        </div>
       </form>
     </div>
   </div>
@@ -212,15 +208,26 @@
     <!-- No es necesario cargar templates vía router -->
   </div>
   
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+    // Hacer Firebase disponible globalmente para compatibilidad
+    window.firebase = {
+      initializeApp,
+      auth: { getAuth },
+      firestore: { getFirestore }
+    };
+  </script>
+  
   <script type="module">
     import { initAuthController } from "./js/controllers/authController.js";
     import { authModel } from "./js/models/storageModel.js";
-    import "./js/utils/jwtControlPanel.js";
 
     document.addEventListener("DOMContentLoaded", () => {
-      // Forzar modo JWT activo siempre que se cargue la página principal
-      authModel.setJWTEnabled(true);
-      console.log("Inicializando controlador de autenticación directamente");
+      console.log("Inicializando controlador de autenticación");
       initAuthController();
 
       // Mostrar comandos disponibles en consola después de un momento
@@ -229,81 +236,12 @@
           // Hacer authModel disponible globalmente
           window.authModel = authModel;
 
-          // Actualizar indicador inmediatamente con estado real
-          updateAuthModeIndicator();
-
-          console.log('🔐 === COMANDOS JWT DISPONIBLES ===');
-          console.log('💡 Panel de control: showJWTPanel()');
-          console.log('💡 Estado JWT: authModel.isJWTEnabled()');
-          console.log('💡 Info del token: authModel.getJWTInfo()');
-          console.log('💡 Activar JWT: authModel.setJWTEnabled(true)');
-          console.log('💡 Test login: authModel.loginWithJWT("admin", "admin123")');
-          console.log('🔐 ================================');
+          console.log('🔐 === COMANDOS DISPONIBLES ===');
           console.log('✅ authModel disponible globalmente en la consola');
-          console.log('🎯 Estado JWT actual:', authModel.isJWTEnabled() ? 'HABILITADO 🔐' : 'DESHABILITADO 🔓');
         }
       }, 3000);
-
-      // Actualizar indicador de estado JWT
-      setTimeout(() => {
-        updateAuthModeIndicator();
-
-        // Actualizar cada 2 segundos para detectar cambios más rápido
-        setInterval(updateAuthModeIndicator, 2000);
-
-        // Escuchar cambios en localStorage
-        window.addEventListener('storage', (e) => {
-          if (e.key === 'jwtEnabled') {
-            updateAuthModeIndicator();
-          }
-        });
-
-        // Escuchar eventos personalizados de JWT
-        window.addEventListener('jwtStatusChanged', () => {
-          updateAuthModeIndicator();
-        });
-
-      }, 1000);
     });
     
-    function updateAuthModeIndicator() {
-      const indicator = document.getElementById('auth-mode-text');
-      if (indicator) {
-        // Verificar si authModel está disponible y JWT habilitado
-        if (typeof authModel !== 'undefined') {
-          const jwtEnabled = authModel.isJWTEnabled();
-          if (jwtEnabled) {
-            indicator.innerHTML = '🔐 Modo JWT Activo';
-            indicator.style.color = '#059669';
-            indicator.style.fontWeight = 'bold';
-          } else {
-            indicator.innerHTML = '🔓 Modo Legacy';
-            indicator.style.color = '#6b7280';
-            indicator.style.fontWeight = 'normal';
-          }
-        } else {
-          // Si authModel no está disponible, verificar localStorage directamente
-          const jwtEnabledLS = localStorage.getItem('jwtEnabled');
-          if (jwtEnabledLS === 'true') {
-            indicator.innerHTML = '🔐 Modo JWT Activo';
-            indicator.style.color = '#059669';
-            indicator.style.fontWeight = 'bold';
-          } else {
-            indicator.innerHTML = '🔓 Modo Legacy';
-            indicator.style.color = '#6b7280';
-            indicator.style.fontWeight = 'normal';
-          }
-        }
-      }
-    }
-    
-    // Hacer la función global para que el panel JWT pueda usarla
-    window.updateAuthModeIndicator = updateAuthModeIndicator;
-    
-    // Función para forzar actualización del indicador
-    window.forceUpdateAuthIndicator = () => {
-      setTimeout(updateAuthModeIndicator, 100);
-    };
   </script>
 </body>
 </html>

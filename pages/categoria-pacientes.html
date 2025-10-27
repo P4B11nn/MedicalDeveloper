@@ -1058,6 +1058,10 @@
           </div>
           <div class="dropdown-divider"></div>
           <div class="dropdown-options">
+            <a href="#" class="dropdown-option" id="profileBtn">
+              <i class="fas fa-user"></i>
+              <span>Ver perfil</span>
+            </a>
             <a href="#" class="dropdown-option" id="logoutBtn">
               <i class="fas fa-sign-out-alt"></i>
               <span>Cerrar sesión</span>
@@ -1823,9 +1827,20 @@
     document.addEventListener('DOMContentLoaded', () => {
       if (AuthGuard.validateSession()) {
         // PRIMERO: Inicializar header component para que existan los elementos del DOM
-        // Inicializar header individual
-        initIndividualHeader();
-        console.log('Header component inicializado para Pacientes');
+        // Inicializar header individual - esperar a que los módulos estén cargados
+        const initHeaderWithRetry = (retries = 10) => {
+          if (typeof window.initUserDisplay === 'function') {
+            window.initUserDisplay();
+            console.log('Header component inicializado para Pacientes');
+          } else if (retries > 0) {
+            console.log(`Esperando initUserDisplay... (${11 - retries}/10)`);
+            setTimeout(() => initHeaderWithRetry(retries - 1), 100);
+          } else {
+            console.error('❌ initUserDisplay no disponible después de esperar');
+          }
+        };
+        
+        initHeaderWithRetry();
         
         // SEGUNDO: Inicializar GlobalController después de que el header esté listo
         setTimeout(() => {
@@ -1843,7 +1858,7 @@
           if (firstSection) {
             firstSection.click();
           }
-        }, 100);
+        }, 200);
       }
     });
 
@@ -2090,94 +2105,16 @@
     window.cerrarModalFacultad = cerrarModalFacultad;
     window.mostrarModalNuevaCarrera = mostrarModalNuevaCarrera;
     window.cerrarModalCarrera = cerrarModalCarrera;
-
-    // Función para inicializar header individual
-    function initIndividualHeader() {
-      const userIcon = document.getElementById('userIcon');
-      const userDropdown = document.getElementById('userDropdown');
-      const logoutOption = document.getElementById('logoutBtn');
-      
-      // Obtener información del usuario (intentar múltiples fuentes)
-      let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-      
-      // Si currentUser está vacío, intentar con usuarioActual
-      if (!currentUser.nombre && !currentUser.name) {
-        currentUser = JSON.parse(localStorage.getItem('usuarioActual') || '{}');
-      }
-      
-      // Función para obtener nombre para mostrar con rol
-      function getRoleDisplayName(role) {
-        switch (role) {
-          case 'admin': return 'Administrador';
-          case 'practicante': return 'Practicante';  
-          case 'supervisor': return 'Supervisor';
-          default: return 'Usuario';
-        }
-      }
-      
-      // Actualizar información del usuario
-      const displayName = currentUser.nombre || currentUser.name || 'Usuario';
-      const userRole = currentUser.rol || currentUser.role || 'sin-rol';
-      const roleDisplayName = getRoleDisplayName(userRole);
-      
-      // Actualizar elementos del DOM
-      const userNameElement = document.getElementById('userName');
-      const dropdownUserName = document.getElementById('dropdownUserName');
-      const dropdownUserRole = document.getElementById('dropdownUserRole');
-      
-      if (userNameElement) {
-        userNameElement.textContent = displayName;
-      }
-      
-      if (dropdownUserName) {
-        dropdownUserName.textContent = displayName;
-      }
-      
-      if (dropdownUserRole) {
-        dropdownUserRole.textContent = roleDisplayName;
-      }
-      
-      // Toggle dropdown
-      userIcon.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isVisible = userDropdown.style.display === 'block';
-        userDropdown.style.display = isVisible ? 'none' : 'block';
-      });
-      
-      // Cerrar dropdown al hacer clic fuera
-      document.addEventListener('click', (e) => {
-        if (!userIcon.contains(e.target) && !userDropdown.contains(e.target)) {
-          userDropdown.style.display = 'none';
-        }
-      });
-      
-      // Manejar logout
-      logoutOption.addEventListener('click', (e) => {
-        e.preventDefault();
-        
-        if (typeof window.showLogoutConfirmationModal === 'function') {
-          window.showLogoutConfirmationModal();
-        } else {
-          // Fallback básico
-          if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('userSession');
-            window.location.href = '../index.html';
-          }
-        }
-        
-        userDropdown.style.display = 'none';
-      });
-    }
-
-    // Hacer disponible globalmente
-    window.initIndividualHeader = initIndividualHeader;
   </script>
 
   <script type="module">
     import '../js/utils/userDisplayGlobal.js'; // Cargar userDisplayGlobal antes del header
     import '../categories-debug-tool.js'; // Debug tool para categorías
     import '../js/utils/debug-logout-modal.js'; // Debug tool para modal de logout
+    import { authModel } from '../js/models/storageModel.js'; // Importar authModel
+    
+    // Hacer authModel disponible globalmente
+    window.authModel = authModel;
     
     // La inicialización del header ahora se hace arriba en el script principal
   </script>

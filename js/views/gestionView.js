@@ -13,44 +13,68 @@ const datosIniciales = {
     modulos: [
         { 
             nombre: "Módulo Principal", 
-            ubicacion: "latitud: 21.1619, longitud: -86.8515, Facultad de Medicina - Entrada Principal", 
+            nombreLugar: "Facultad de Medicina - Entrada Principal",
             latitud: "21.1619",
             longitud: "-86.8515",
-            lugar: "Facultad de Medicina - Entrada Principal",
             estado: "Activo",
+            horarioPorDia: {
+                lunes: { inicio: "08:00", fin: "17:00" },
+                martes: { inicio: "08:00", fin: "17:00" },
+                miercoles: { inicio: "08:00", fin: "17:00" },
+                jueves: { inicio: "08:00", fin: "17:00" },
+                viernes: { inicio: "08:00", fin: "17:00" }
+            },
+            // Campos antiguos para compatibilidad
             horaInicio: "08:00",
             horaFin: "17:00",
             diasAtencion: ["lunes", "martes", "miercoles", "jueves", "viernes"]
         },
         { 
             nombre: "Módulo Pediatría", 
-            ubicacion: "latitud: 21.1620, longitud: -86.8516, Hospital Infantil", 
+            nombreLugar: "Hospital Infantil",
             latitud: "21.1620",
             longitud: "-86.8516",
-            lugar: "Hospital Infantil",
             estado: "Activo",
+            horarioPorDia: {
+                lunes: { inicio: "09:00", fin: "15:00" },
+                miercoles: { inicio: "09:00", fin: "15:00" },
+                viernes: { inicio: "09:00", fin: "15:00" }
+            },
+            // Campos antiguos para compatibilidad
             horaInicio: "09:00",
             horaFin: "15:00",
             diasAtencion: ["lunes", "miercoles", "viernes"]
         },
         { 
             nombre: "Módulo Urgencias", 
-            ubicacion: "latitud: 21.1621, longitud: -86.8517, Centro de Emergencias", 
+            nombreLugar: "Centro de Emergencias",
             latitud: "21.1621",
             longitud: "-86.8517",
-            lugar: "Centro de Emergencias",
             estado: "Activo",
+            horarioPorDia: {
+                lunes: { inicio: "00:00", fin: "23:59" },
+                martes: { inicio: "00:00", fin: "23:59" },
+                miercoles: { inicio: "00:00", fin: "23:59" },
+                jueves: { inicio: "00:00", fin: "23:59" },
+                viernes: { inicio: "00:00", fin: "23:59" },
+                sabado: { inicio: "00:00", fin: "23:59" }
+            },
+            // Campos antiguos para compatibilidad
             horaInicio: "00:00",
             horaFin: "23:59",
             diasAtencion: ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado"]
         },
         { 
             nombre: "Módulo Especialidades", 
-            ubicacion: "latitud: 21.1622, longitud: -86.8518, Clínica de Especialidades", 
+            nombreLugar: "Clínica de Especialidades",
             latitud: "21.1622",
             longitud: "-86.8518",
-            lugar: "Clínica de Especialidades",
             estado: "Inactivo",
+            horarioPorDia: {
+                martes: { inicio: "10:00", fin: "16:00" },
+                jueves: { inicio: "10:00", fin: "16:00" }
+            },
+            // Campos antiguos para compatibilidad
             horaInicio: "10:00",
             horaFin: "16:00",
             diasAtencion: ["martes", "jueves"]
@@ -133,17 +157,42 @@ export function init() {
 }
 
 // Función para inicializar datos de ejemplo si no existen
-export function inicializarDatosGestion() {
+export async function inicializarDatosGestion() {
     // Verificar si ya existen datos
-    const modulos = gestionModel.getModulos();
-    const grupos = gestionModel.getGrupos();
+    const modulos = await gestionModel.getModulos();
+    const grupos = await gestionModel.getGrupos();
     
     // Si no hay módulos, crear módulos de ejemplo
     if (modulos.length === 0) {
         console.log("GestionView: Inicializando módulos de ejemplo");
-        datosIniciales.modulos.forEach(modulo => {
-            gestionModel.createModulo(modulo);
-        });
+        for (const moduloData of datosIniciales.modulos) {
+            // Crear GeoPoint para la ubicación si hay coordenadas
+            let ubicacion = null;
+            if (moduloData.latitud && moduloData.longitud) {
+                const lat = parseFloat(moduloData.latitud);
+                const lng = parseFloat(moduloData.longitud);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    ubicacion = new firebase.firestore.GeoPoint(lat, lng);
+                }
+            }
+            
+            // Preparar datos del módulo con GeoPoint
+            const moduloParaCrear = {
+                nombre: moduloData.nombre,
+                nombreLugar: moduloData.nombreLugar,
+                ubicacion: ubicacion,
+                estado: moduloData.estado,
+                horarioPorDia: moduloData.horarioPorDia,
+                // Campos antiguos para compatibilidad
+                latitud: moduloData.latitud,
+                longitud: moduloData.longitud,
+                horaInicio: moduloData.horaInicio,
+                horaFin: moduloData.horaFin,
+                diasAtencion: moduloData.diasAtencion
+            };
+            
+            await gestionModel.createModulo(moduloParaCrear);
+        }
     }
     
     // Si no hay grupos, crear grupos de ejemplo
@@ -165,8 +214,10 @@ export function inicializarDatosGestion() {
 /**
  * Renderiza la sección de módulos
  */
-export function renderGestionModulos(container) {
-    const modulos = gestionModel.getModulos();
+export async function renderGestionModulos(container) {
+    const modulos = await gestionModel.getModulos();
+    const tablaModulosHTML = await renderTablaModulos(modulos);
+    
     container.innerHTML = `
         <h2 class="content-title">Módulos de Salud</h2>
         <button class="btn-primary" id="btnNuevoModulo">
@@ -176,7 +227,7 @@ export function renderGestionModulos(container) {
         <div id="lista-modulos" style="margin-top: 20px;">
             ${modulos.length === 0 ? 
                 '<div class="empty-message">No hay módulos registrados. Crea uno nuevo para comenzar.</div>' : 
-                renderTablaModulos(modulos)
+                tablaModulosHTML
             }
         </div>
     `;
@@ -204,19 +255,19 @@ export function renderGestionModulos(container) {
         tablaModulos.parentNode.replaceChild(nuevaTabla, tablaModulos);
         
         // Añadir nuevo evento con delegación
-        nuevaTabla.addEventListener('click', (e) => {
+        nuevaTabla.addEventListener('click', async (e) => {
             const target = e.target.closest('button');
             if (!target) return;
             
             if (target.classList.contains('edit-modulo')) {
                 const moduloId = target.dataset.id;
                 console.log('GestionView: Solicitando edición de módulo', moduloId);
-                const modulo = gestionModel.getModuloById(moduloId);
+                const modulo = await gestionModel.getModuloById(moduloId);
                 renderFormModulo(modulo);
             }
             else if (target.classList.contains('delete-modulo')) {
                 const moduloId = target.dataset.id;
-                const modulo = gestionModel.getModuloById(moduloId);
+                const modulo = await gestionModel.getModuloById(moduloId);
                 console.log('GestionView: Solicitando eliminación de módulo', moduloId);
                 
                 modalUtil.confirmarAccion({
@@ -244,7 +295,17 @@ export function renderGestionModulos(container) {
 /**
  * Renderiza la tabla de módulos
  */
-function renderTablaModulos(modulos) {
+async function renderTablaModulos(modulos) {
+    // Procesar cada módulo para obtener el grupo asignado
+    const modulosConGrupos = [];
+    for (const modulo of modulos) {
+        const grupoFormateado = await formatearGrupoAsignado(modulo.grupoAsignadoId);
+        modulosConGrupos.push({
+            ...modulo,
+            grupoFormateado
+        });
+    }
+
     return `
         <table class="data-table">
             <thead>
@@ -260,20 +321,20 @@ function renderTablaModulos(modulos) {
                 </tr>
             </thead>
             <tbody>
-                ${modulos.map(modulo => {
+                ${modulosConGrupos.map(modulo => {
                     return `
                         <tr>
                             <td>${modulo.id}</td>
                             <td>${modulo.nombre}</td>
                             <td>${formatearUbicacion(modulo)}</td>
-                            <td>${formatearHorarioAtencion(modulo.horaInicio, modulo.horaFin)}</td>
-                            <td>${formatearDiasAtencion(modulo.diasAtencion)}</td>
+                            <td>${formatearHorarioAtencion(modulo)}</td>
+                            <td>${formatearDiasAtencion(modulo)}</td>
                             <td>
                                 <span class="badge ${getEstadoClass(modulo.estado)}">
                                     ${modulo.estado}
                                 </span>
                             </td>
-                            <td>${formatearGrupoAsignado(modulo.grupoAsignadoId)}</td>
+                            <td>${modulo.grupoFormateado}</td>
                             <td class="actions">
                                 <button class="btn-icon assign-grupo" title="Asignar grupo" data-moduloid="${modulo.id}">
                                     <i class="fas fa-users"></i>
@@ -322,17 +383,20 @@ export function renderFormModulo(modulo = null) {
         justify-content: center;
         align-items: center;
         overflow-y: auto;
+        padding: 20px;
     `;
     
     formContainer.innerHTML = `
         <div class="modal-dialog" style="
             background: white;
-            max-width: 500px;
-            width: 90%;
-            margin: 40px auto;
+            max-width: 900px;
+            width: 95%;
+            margin: 20px auto;
             border-radius: 12px;
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
             position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
         ">
             <div class="modal-header" style="
                 padding: 15px 20px;
@@ -372,8 +436,22 @@ export function renderFormModulo(modulo = null) {
                     <div class="form-group" style="margin-bottom: 20px;">
                         <label style="display: block; margin-bottom: 8px; font-weight: 500;">Ubicación:</label>
                         
+                        <!-- Campo para nombre del lugar -->
+                        <div style="margin-bottom: 10px;">
+                            <label for="modulo-nombre-lugar" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #6b7280;">Nombre del lugar:</label>
+                            <input type="text" id="modulo-nombre-lugar" required placeholder="Facultad de Medicina" value="${modulo?.nombreLugar || modulo?.lugar || ''}" style="
+                                width: 100%;
+                                padding: 10px 12px;
+                                border: 1px solid #d1d5db;
+                                border-radius: 8px;
+                                background-color: #f9fafb;
+                                font-size: 16px;
+                                box-sizing: border-box;
+                            ">
+                        </div>
+                        
                         <!-- Campo para coordenadas -->
-                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div style="display: flex; gap: 10px;">
                             <div style="flex: 1;">
                                 <label for="modulo-latitud" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #6b7280;">Latitud:</label>
                                 <input type="number" id="modulo-latitud" step="any" placeholder="23.93292" value="${modulo?.latitud || ''}" style="
@@ -400,99 +478,80 @@ export function renderFormModulo(modulo = null) {
                             </div>
                         </div>
                         
-                        <!-- Campo para nombre del lugar -->
-                        <div>
-                            <label for="modulo-lugar" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #6b7280;">Nombre del lugar:</label>
-                            <input type="text" id="modulo-lugar" required placeholder="Facultad de Medicina" value="${modulo?.lugar || modulo?.ubicacion || ''}" style="
-                                width: 100%;
-                                padding: 10px 12px;
-                                border: 1px solid #d1d5db;
-                                border-radius: 8px;
-                                background-color: #f9fafb;
-                                font-size: 16px;
-                                box-sizing: border-box;
-                            ">
-                        </div>
-                        
                         <!-- Información de ayuda -->
                         <div style="margin-top: 8px; padding: 8px; background: #f0f9ff; border-radius: 6px; border-left: 3px solid #3b82f6;">
                             <small style="color: #1e40af; font-size: 0.85rem;">
                                 <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
-                                Las coordenadas son opcionales. Ejemplo: Lat: 23.93292, Lng: -90.9392
+                                Las coordenadas son opcionales. Se guardarán como GeoPoint en Firebase.
                             </small>
                         </div>
                     </div>
                     
                     <div class="form-group" style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Horario de Atención:</label>
-                        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center;">
-                            <div>
-                                <label for="modulo-hora-inicio" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #6b7280;">Hora de inicio:</label>
-                                <input type="time" id="modulo-hora-inicio" value="${modulo?.horaInicio || '08:00'}" style="
-                                    width: 100%;
-                                    padding: 10px 12px;
-                                    border: 1px solid #d1d5db;
-                                    border-radius: 8px;
-                                    background-color: #f9fafb;
-                                    font-size: 16px;
-                                    box-sizing: border-box;
-                                ">
+                        <label style="display: block; margin-bottom: 12px; font-weight: 500;">Horario de Atención por Día:</label>
+                        <div style="border: 1px solid #d1d5db; border-radius: 8px; padding: 16px; background: #f9fafb;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
+                                <!-- Lunes -->
+                                <div class="dia-horario" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                                    <input type="checkbox" id="dia-lunes-check" style="transform: scale(1.1);">
+                                    <label for="dia-lunes-check" style="font-weight: 500; min-width: 50px; font-size: 0.9rem;">Lunes</label>
+                                    <input type="time" id="lunes-inicio" value="${modulo?.horarioPorDia?.lunes?.inicio || '08:00'}" style="flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;">
+                                    <span style="color: #6b7280; font-size: 0.8rem;">a</span>
+                                    <input type="time" id="lunes-fin" value="${modulo?.horarioPorDia?.lunes?.fin || '17:00'}" style="flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;">
+                                </div>
+
+                                <!-- Martes -->
+                                <div class="dia-horario" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                                    <input type="checkbox" id="dia-martes-check" style="transform: scale(1.1);">
+                                    <label for="dia-martes-check" style="font-weight: 500; min-width: 50px; font-size: 0.9rem;">Martes</label>
+                                    <input type="time" id="martes-inicio" value="${modulo?.horarioPorDia?.martes?.inicio || '08:00'}" style="flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;">
+                                    <span style="color: #6b7280; font-size: 0.8rem;">a</span>
+                                    <input type="time" id="martes-fin" value="${modulo?.horarioPorDia?.martes?.fin || '17:00'}" style="flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;">
+                                </div>
+
+                                <!-- Miércoles -->
+                                <div class="dia-horario" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                                    <input type="checkbox" id="dia-miercoles-check" style="transform: scale(1.1);">
+                                    <label for="dia-miercoles-check" style="font-weight: 500; min-width: 50px; font-size: 0.9rem;">Miércoles</label>
+                                    <input type="time" id="miercoles-inicio" value="${modulo?.horarioPorDia?.miercoles?.inicio || '08:00'}" style="flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;">
+                                    <span style="color: #6b7280; font-size: 0.8rem;">a</span>
+                                    <input type="time" id="miercoles-fin" value="${modulo?.horarioPorDia?.miercoles?.fin || '17:00'}" style="flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;">
+                                </div>
+
+                                <!-- Jueves -->
+                                <div class="dia-horario" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                                    <input type="checkbox" id="dia-jueves-check" style="transform: scale(1.1);">
+                                    <label for="dia-jueves-check" style="font-weight: 500; min-width: 50px; font-size: 0.9rem;">Jueves</label>
+                                    <input type="time" id="jueves-inicio" value="${modulo?.horarioPorDia?.jueves?.inicio || '08:00'}" style="flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;">
+                                    <span style="color: #6b7280; font-size: 0.8rem;">a</span>
+                                    <input type="time" id="jueves-fin" value="${modulo?.horarioPorDia?.jueves?.fin || '17:00'}" style="flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;">
+                                </div>
+
+                                <!-- Viernes -->
+                                <div class="dia-horario" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                                    <input type="checkbox" id="dia-viernes-check" style="transform: scale(1.1);">
+                                    <label for="dia-viernes-check" style="font-weight: 500; min-width: 50px; font-size: 0.9rem;">Viernes</label>
+                                    <input type="time" id="viernes-inicio" value="${modulo?.horarioPorDia?.viernes?.inicio || '08:00'}" style="flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;">
+                                    <span style="color: #6b7280; font-size: 0.8rem;">a</span>
+                                    <input type="time" id="viernes-fin" value="${modulo?.horarioPorDia?.viernes?.fin || '17:00'}" style="flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;">
+                                </div>
+
+                                <!-- Sábado -->
+                                <div class="dia-horario" style="display: flex; align-items: center; gap: 8px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #e5e7eb;">
+                                    <input type="checkbox" id="dia-sabado-check" style="transform: scale(1.1);">
+                                    <label for="dia-sabado-check" style="font-weight: 500; min-width: 50px; font-size: 0.9rem;">Sábado</label>
+                                    <input type="time" id="sabado-inicio" value="${modulo?.horarioPorDia?.sabado?.inicio || '08:00'}" style="flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;">
+                                    <span style="color: #6b7280; font-size: 0.8rem;">a</span>
+                                    <input type="time" id="sabado-fin" value="${modulo?.horarioPorDia?.sabado?.fin || '17:00'}" style="flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.85rem;">
+                                </div>
                             </div>
-                            <span style="color: #6b7280; font-weight: 500; padding: 0 8px;">a</span>
-                            <div>
-                                <label for="modulo-hora-fin" style="display: block; margin-bottom: 4px; font-size: 0.9rem; color: #6b7280;">Hora de fin:</label>
-                                <input type="time" id="modulo-hora-fin" value="${modulo?.horaFin || '17:00'}" style="
-                                    width: 100%;
-                                    padding: 10px 12px;
-                                    border: 1px solid #d1d5db;
-                                    border-radius: 8px;
-                                    background-color: #f9fafb;
-                                    font-size: 16px;
-                                    box-sizing: border-box;
-                                ">
+
+                            <div style="margin-top: 12px; padding: 8px; background: #f0f9ff; border-radius: 6px; border-left: 3px solid #3b82f6;">
+                                <small style="color: #1e40af; font-size: 0.85rem;">
+                                    <i class="fas fa-info-circle" style="margin-right: 4px;"></i>
+                                    Selecciona los días y configura el horario de atención para cada día por separado
+                                </small>
                             </div>
-                        </div>
-                        <div style="margin-top: 4px;">
-                            <small style="color: #6b7280; font-size: 0.85rem;">
-                                <i class="fas fa-clock" style="margin-right: 4px;"></i>
-                                Define el horario de atención del módulo (hora de inicio y fin)
-                            </small>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group" style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 12px; font-weight: 500;">Días de Atención:</label>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-                            <label style="display: flex; align-items: center; padding: 8px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
-                                <input type="checkbox" name="dias-atencion" value="lunes" id="dia-lunes" ${modulo?.diasAtencion?.includes('lunes') ? 'checked' : ''} style="margin-right: 8px;">
-                                <span>Lunes</span>
-                            </label>
-                            <label style="display: flex; align-items: center; padding: 8px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
-                                <input type="checkbox" name="dias-atencion" value="martes" id="dia-martes" ${modulo?.diasAtencion?.includes('martes') ? 'checked' : ''} style="margin-right: 8px;">
-                                <span>Martes</span>
-                            </label>
-                            <label style="display: flex; align-items: center; padding: 8px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
-                                <input type="checkbox" name="dias-atencion" value="miercoles" id="dia-miercoles" ${modulo?.diasAtencion?.includes('miercoles') ? 'checked' : ''} style="margin-right: 8px;">
-                                <span>Miércoles</span>
-                            </label>
-                            <label style="display: flex; align-items: center; padding: 8px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
-                                <input type="checkbox" name="dias-atencion" value="jueves" id="dia-jueves" ${modulo?.diasAtencion?.includes('jueves') ? 'checked' : ''} style="margin-right: 8px;">
-                                <span>Jueves</span>
-                            </label>
-                            <label style="display: flex; align-items: center; padding: 8px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
-                                <input type="checkbox" name="dias-atencion" value="viernes" id="dia-viernes" ${modulo?.diasAtencion?.includes('viernes') ? 'checked' : ''} style="margin-right: 8px;">
-                                <span>Viernes</span>
-                            </label>
-                            <label style="display: flex; align-items: center; padding: 8px; background: #f9fafb; border-radius: 6px; cursor: pointer;">
-                                <input type="checkbox" name="dias-atencion" value="sabado" id="dia-sabado" ${modulo?.diasAtencion?.includes('sabado') ? 'checked' : ''} style="margin-right: 8px;">
-                                <span>Sábado</span>
-                            </label>
-                        </div>
-                        <div style="margin-top: 4px;">
-                            <small style="color: #6b7280; font-size: 0.85rem;">
-                                <i class="fas fa-calendar-alt" style="margin-right: 4px;"></i>
-                                Selecciona los días de la semana en que el módulo dará atención
-                            </small>
                         </div>
                     </div>
                     
@@ -549,10 +608,47 @@ export function renderFormModulo(modulo = null) {
     
     document.body.appendChild(formContainer);
     
-    // Configurar eventos del formulario
-    const cerrarBtn = document.getElementById('btnCerrarModuloX');
-    const cancelarBtn = document.getElementById('btnCancelarModulo');
-    const guardarBtn = document.getElementById('btnGuardarModulo');
+    // Configurar eventos para los checkboxes de días
+    const diasCheckboxes = formContainer.querySelectorAll('input[type="checkbox"][id$="-check"]');
+    diasCheckboxes.forEach(checkbox => {
+        const dia = checkbox.id.replace('-check', '').replace('dia-', '');
+        const inicioInput = formContainer.querySelector(`#${dia}-inicio`);
+        const finInput = formContainer.querySelector(`#${dia}-fin`);
+        const diaContainer = checkbox.closest('.dia-horario');
+
+        // Función para actualizar estado visual
+        const actualizarEstadoVisual = () => {
+            if (checkbox.checked) {
+                diaContainer.style.background = 'linear-gradient(135deg, #f0f9ff, #e0f2fe)';
+                diaContainer.style.borderColor = '#3b82f6';
+                inicioInput.disabled = false;
+                finInput.disabled = false;
+                inicioInput.style.opacity = '1';
+                finInput.style.opacity = '1';
+            } else {
+                diaContainer.style.background = '#f5f5f5';
+                diaContainer.style.borderColor = '#d1d5db';
+                inicioInput.disabled = true;
+                finInput.disabled = true;
+                inicioInput.style.opacity = '0.5';
+                finInput.style.opacity = '0.5';
+            }
+        };
+
+        // Estado inicial
+        if (modulo?.horarioPorDia?.[dia]?.inicio && modulo?.horarioPorDia?.[dia]?.fin) {
+            checkbox.checked = true;
+        }
+        actualizarEstadoVisual();
+
+        // Event listener
+        checkbox.addEventListener('change', actualizarEstadoVisual);
+    });
+    
+    // Obtener referencias a los botones
+    const cerrarBtn = formContainer.querySelector('#btnCerrarModuloX');
+    const cancelarBtn = formContainer.querySelector('#btnCancelarModulo');
+    const guardarBtn = formContainer.querySelector('#btnGuardarModulo');
     
     // Eventos para cerrar/cancelar
     cerrarBtn.addEventListener('click', () => {
@@ -571,27 +667,48 @@ export function renderFormModulo(modulo = null) {
     });
     
     // Evento para guardar
-    guardarBtn.addEventListener('click', () => {
+    guardarBtn.addEventListener('click', async () => {
         const formModulo = document.getElementById('form-modulo');
         if (!formModulo) return;
         
         const nombre = formModulo.querySelector('#modulo-nombre').value.trim();
         const latitud = formModulo.querySelector('#modulo-latitud').value.trim();
         const longitud = formModulo.querySelector('#modulo-longitud').value.trim();
-        const lugar = formModulo.querySelector('#modulo-lugar').value.trim();
+        const nombreLugar = formModulo.querySelector('#modulo-nombre-lugar').value.trim();
         const estado = formModulo.querySelector('#modulo-estado').value;
-        const horaInicio = formModulo.querySelector('#modulo-hora-inicio').value;
-        const horaFin = formModulo.querySelector('#modulo-hora-fin').value;
         
-        // Capturar días de atención seleccionados
-        const diasCheckboxes = formModulo.querySelectorAll('input[name="dias-atencion"]:checked');
-        const diasAtencion = Array.from(diasCheckboxes).map(checkbox => checkbox.value);
+        // Capturar horarios por día
+        const horarioPorDia = {};
+        const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        
+        dias.forEach(dia => {
+            const checkbox = formModulo.querySelector(`#dia-${dia}-check`);
+            const inicioInput = formModulo.querySelector(`#${dia}-inicio`);
+            const finInput = formModulo.querySelector(`#${dia}-fin`);
+            
+            if (checkbox && checkbox.checked && inicioInput && finInput) {
+                horarioPorDia[dia] = {
+                    inicio: inicioInput.value,
+                    fin: finInput.value
+                };
+            }
+        });
         
         // Validar datos
-        if (!nombre || !lugar) {
+        if (!nombre || !nombreLugar) {
             modalUtil.mostrarAlerta({
                 title: 'Campos incompletos',
-                message: 'Nombre y lugar son campos obligatorios',
+                message: 'Nombre y nombre del lugar son campos obligatorios',
+                type: 'warning'
+            });
+            return;
+        }
+        
+        // Validar que al menos un día esté configurado
+        if (Object.keys(horarioPorDia).length === 0) {
+            modalUtil.mostrarAlerta({
+                title: 'Horario requerido',
+                message: 'Debe configurar al menos un día de atención con su horario',
                 type: 'warning'
             });
             return;
@@ -608,36 +725,38 @@ export function renderFormModulo(modulo = null) {
         }
         
         // Construir la ubicación completa
-        let ubicacionCompleta = lugar;
+        let ubicacionCompleta = nombreLugar;
         if (latitud && longitud) {
-            ubicacionCompleta = `latitud: ${latitud}, longitud: ${longitud}, ${lugar}`;
+            ubicacionCompleta = `${nombreLugar} (${latitud}, ${longitud})`;
         }
         
         // Datos a guardar
         const moduloData = {
             nombre,
-            ubicacion: ubicacionCompleta,
+            nombreLugar: nombreLugar,
             latitud: latitud || null,
             longitud: longitud || null,
-            lugar: lugar,
             estado,
-            horaInicio: horaInicio || null,
-            horaFin: horaFin || null,
-            diasAtencion: diasAtencion
+            horarioPorDia: horarioPorDia,
+            // Mantener campos antiguos para compatibilidad (se pueden eliminar después)
+            ubicacion: ubicacionCompleta,
+            horaInicio: null,
+            horaFin: null,
+            diasAtencion: Object.keys(horarioPorDia)
         };
         
         let resultado;
         
         if (modulo) {
             // Actualizar módulo existente
-            resultado = gestionModel.updateModulo(modulo.id, moduloData);
+            resultado = await gestionModel.updateModulo(modulo.id, moduloData);
             if (resultado) {
                 eventBus.emit(EVENT_NAMES.MODULE_UPDATED, { module: resultado });
                 eventBus.emit('gestion-modulo-updated', { action: 'update', id: modulo.id });
             }
         } else {
             // Crear nuevo módulo
-            resultado = gestionModel.createModulo(moduloData);
+            resultado = await gestionModel.createModulo(moduloData);
             if (resultado) {
                 eventBus.emit(EVENT_NAMES.MODULE_CREATED, { module: resultado });
                 eventBus.emit('gestion-modulo-updated', { action: 'create', id: resultado.id });
@@ -827,7 +946,7 @@ export function renderFormGrupo(grupo = null) {
     });
     
     // Evento para guardar
-    guardarBtn.addEventListener('click', () => {
+    guardarBtn.addEventListener('click', async () => {
         const formGrupo = document.getElementById('form-grupo');
         if (!formGrupo) return;
         
@@ -856,14 +975,14 @@ export function renderFormGrupo(grupo = null) {
         
         if (grupo) {
             // Actualizar grupo existente
-            resultado = gestionModel.updateGrupo(grupo.id, grupoData);
+            resultado = await gestionModel.updateGrupo(grupo.id, grupoData);
             if (resultado) {
                 eventBus.emit(EVENT_NAMES.GROUP_UPDATED, { group: resultado });
                 eventBus.emit('gestion-grupo-updated', { action: 'update', id: grupo.id });
             }
         } else {
             // Crear nuevo grupo
-            resultado = gestionModel.createGrupo(grupoData);
+            resultado = await gestionModel.createGrupo(grupoData);
             if (resultado) {
                 eventBus.emit(EVENT_NAMES.GROUP_CREATED, { group: resultado });
                 eventBus.emit('gestion-grupo-updated', { action: 'create', id: resultado.id });
@@ -902,9 +1021,12 @@ export function renderFormGrupo(grupo = null) {
  * @returns {string} Ubicación formateada para mostrar
  */
 function formatearUbicacion(modulo) {
-    if (modulo.latitud && modulo.longitud && modulo.lugar) {
-        return `${modulo.lugar} (${modulo.latitud}, ${modulo.longitud})`;
+    if (modulo.latitud && modulo.longitud && modulo.nombreLugar) {
+        return `${modulo.nombreLugar} (${modulo.latitud}, ${modulo.longitud})`;
+    } else if (modulo.nombreLugar) {
+        return modulo.nombreLugar;
     } else if (modulo.lugar) {
+        // Fallback para datos antiguos
         return modulo.lugar;
     } else {
         return modulo.ubicacion || 'Sin ubicación';
@@ -913,20 +1035,34 @@ function formatearUbicacion(modulo) {
 
 /**
  * Formatea el horario de atención para mostrar en la tabla
- * @param {string} horaInicio - Hora de inicio en formato HH:MM
- * @param {string} horaFin - Hora de fin en formato HH:MM
+ * @param {Object} modulo - El objeto módulo con datos de horario
  * @returns {string} Horario formateado para mostrar
  */
-function formatearHorarioAtencion(horaInicio, horaFin) {
-    if (!horaInicio || !horaFin) {
-        return '<span style="color: #9ca3af;">No definido</span>';
+function formatearHorarioAtencion(modulo) {
+    // Priorizar la nueva estructura horarioPorDia
+    if (modulo.horarioPorDia && Object.keys(modulo.horarioPorDia).length > 0) {
+        const diasConHorario = Object.entries(modulo.horarioPorDia)
+            .filter(([dia, horario]) => horario && horario.inicio && horario.fin)
+            .map(([dia, horario]) => {
+                const diaNombre = dia.charAt(0).toUpperCase() + dia.slice(1);
+                return `${diaNombre}: ${horario.inicio}-${horario.fin}`;
+            });
+
+        if (diasConHorario.length > 0) {
+            return `<span style="color: #059669; font-weight: 500;" title="${diasConHorario.join(', ')}">${diasConHorario.length} día(s) configurado(s)</span>`;
+        }
     }
-    
-    try {
-        return `<span style="color: #059669; font-weight: 500;">${horaInicio} - ${horaFin}</span>`;
-    } catch (error) {
-        return '<span style="color: #dc2626;">Formato inválido</span>';
+
+    // Fallback a la estructura antigua para compatibilidad
+    if (modulo.horaInicio && modulo.horaFin) {
+        try {
+            return `<span style="color: #059669; font-weight: 500;">${modulo.horaInicio} - ${modulo.horaFin}</span>`;
+        } catch (error) {
+            return '<span style="color: #dc2626;">Formato inválido</span>';
+        }
     }
+
+    return '<span style="color: #9ca3af;">No definido</span>';
 }
 
 /**
@@ -949,13 +1085,13 @@ function getEstadoClass(estado) {
  * Muestra un modal para asignar un grupo a un módulo
  */
 function mostrarModalAsignarGrupo(moduloId) {
-    const modulo = gestionModel.getModuloById(moduloId);
-    const grupos = gestionModel.getGrupos();
-    
-    if (!modulo) {
-        console.error('GestionView: No se encontró el módulo', moduloId);
-        return;
-    }
+    gestionModel.getModuloById(moduloId).then(async modulo => {
+        const grupos = await gestionModel.getGrupos();
+        
+        if (!modulo) {
+            console.error('GestionView: No se encontró el módulo', moduloId);
+            return;
+        }
     
     // Eliminar modal anterior si existe
     document.getElementById('asignar-grupo-modal')?.remove();
@@ -1211,7 +1347,7 @@ function mostrarModalAsignarGrupo(moduloId) {
     });
     
     // Evento para guardar
-    guardarBtn.addEventListener('click', () => {
+    guardarBtn.addEventListener('click', async () => {
         const selectGrupo = document.getElementById('select-grupo-asignar');
         if (!selectGrupo) return;
         
@@ -1219,7 +1355,7 @@ function mostrarModalAsignarGrupo(moduloId) {
         const grupoAnteriorId = modulo.grupoAsignadoId;
         
         // Actualizar el módulo con el nuevo grupo
-        const resultado = gestionModel.asignarGrupoAModulo(moduloId, grupoId);
+        const resultado = await gestionModel.asignarGrupoAModulo(moduloId, grupoId);
         
         if (resultado) {
             eventBus.emit(EVENT_NAMES.GROUP_ASSIGNED, { 
@@ -1253,12 +1389,12 @@ function mostrarModalAsignarGrupo(moduloId) {
             });
         }
     });
+})
 }
-
 /**
  * Muestra un modal para asignar practicantes a un grupo
  */
-function mostrarModalAsignarPracticantes(grupoId) {
+async function mostrarModalAsignarPracticantes(grupoId) {
     // Usar authModel que ya está importado al inicio del archivo
     
     // Verificar que el usuario actual sea admin
@@ -1272,14 +1408,14 @@ function mostrarModalAsignarPracticantes(grupoId) {
         return;
     }
 
-    const grupo = gestionModel.getGrupoById(grupoId);
+    const grupo = await gestionModel.getGrupoById(grupoId);
     if (!grupo) {
         console.error('GestionView: No se encontró el grupo', grupoId);
         return;
     }
 
     // Obtener todos los usuarios
-    const todosLosUsuarios = authModel.getAllUsers();
+    const todosLosUsuarios = await authModel.getAllUsers();
     
     // Filtrar solo practicantes sin grupo asignado (excluyendo los ya asignados a este grupo)
     const practicantesSinGrupo = todosLosUsuarios.filter(usuario => 
@@ -1456,7 +1592,7 @@ function mostrarModalAsignarPracticantes(grupoId) {
                                         <strong>${practicante.nombre} ${practicante.apellidos || ''}</strong><br>
                                         <small style="color: #6b7280;">Matrícula: ${practicante.matricula}</small>
                                     </div>
-                                    <button class="btn-remove-practicante" data-usuario-id="${practicante.id}" style="
+                                    <button class="btn-remove-practicante" data-usuario-id="${practicante.uid}" style="
                                         background: #ef4444;
                                         color: white;
                                         border: none;
@@ -1500,7 +1636,7 @@ function mostrarModalAsignarPracticantes(grupoId) {
                     ` : `
                         <div id="practicantes-disponibles" style="max-height: 200px; overflow-y: auto;">
                             ${practicantesSinGrupo.map(practicante => `
-                                <div class="practicante-item" data-practicante-id="${practicante.id}">
+                                <div class="practicante-item" data-practicante-id="${practicante.uid}">
                                     <label style="
                                         display: flex;
                                         align-items: center;
@@ -1509,8 +1645,8 @@ function mostrarModalAsignarPracticantes(grupoId) {
                                     ">
                                         <input type="checkbox" 
                                                class="practicante-checkbox" 
-                                               id="practicante-${practicante.id}" 
-                                               value="${practicante.id}">
+                                               id="practicante-${practicante.uid}" 
+                                               value="${practicante.uid}">
                                         <div style="flex: 1;">
                                             <strong>${practicante.nombre} ${practicante.apellidos || ''}</strong><br>
                                             <small style="color: #6b7280;">
@@ -1598,18 +1734,28 @@ function mostrarModalAsignarPracticantes(grupoId) {
     });
 
     // Eventos para quitar practicantes asignados
-    modalContainer.addEventListener('click', (e) => {
+    modalContainer.addEventListener('click', async (e) => {
         if (e.target.closest('.btn-remove-practicante')) {
             const usuarioId = e.target.closest('.btn-remove-practicante').dataset.usuarioId;
-            const usuario = todosLosUsuarios.find(u => u.id === usuarioId);
+            const usuario = todosLosUsuarios.find(u => u.uid === usuarioId);
+            
+            if (!usuario) {
+                console.error('Usuario no encontrado con ID:', usuarioId);
+                modalUtil.mostrarAlerta({
+                    title: 'Error',
+                    message: 'No se pudo encontrar la información del usuario.',
+                    type: 'error'
+                });
+                return;
+            }
             
             modalUtil.confirmarAccion({
                 title: 'Quitar Practicante',
                 message: `¿Estás seguro de quitar a ${usuario.nombre} ${usuario.apellidos || ''} del grupo "${grupo.nombre}"?`,
-                onConfirm: () => {
+                onConfirm: async () => {
                     console.log(`🔄 Intentando quitar usuario ${usuarioId} del grupo ${grupoId}`);
                     // Solo quitar del grupo en el modelo de gestión
-                    const resultado = gestionModel.quitarUsuarioDeGrupo(grupoId, usuarioId);
+                    const resultado = await gestionModel.quitarUsuarioDeGrupo(grupoId, usuarioId);
                     console.log(`${resultado ? '✅' : '❌'} Resultado de eliminación:`, resultado);
                     
                     modalContainer.remove();
@@ -1633,7 +1779,7 @@ function mostrarModalAsignarPracticantes(grupoId) {
     });
 
     // Evento para guardar asignaciones
-    guardarBtn.addEventListener('click', () => {
+    guardarBtn.addEventListener('click', async () => {
         const checkboxes = modalContainer.querySelectorAll('.practicante-checkbox:checked');
         const practicantesSeleccionados = Array.from(checkboxes).map(cb => cb.value);
 
@@ -1649,15 +1795,15 @@ function mostrarModalAsignarPracticantes(grupoId) {
         // Asignar cada practicante seleccionado al grupo
         let asignacionesExitosas = 0;
         
-        practicantesSeleccionados.forEach(usuarioId => {
+        for (const usuarioId of practicantesSeleccionados) {
             console.log(`🔄 Intentando asignar usuario ${usuarioId} al grupo ${grupoId}`);
             // Solo asignar en el modelo de gestión
-            const resultado = gestionModel.asignarUsuarioAGrupo(grupoId, usuarioId);
+            const resultado = await gestionModel.asignarUsuarioAGrupo(grupoId, usuarioId);
             console.log(`${resultado ? '✅' : '❌'} Resultado de asignación:`, resultado);
             if (resultado) {
                 asignacionesExitosas++;
             }
-        });
+        }
 
         // Mostrar resultado en consola
         if (asignacionesExitosas > 0) {
@@ -1684,29 +1830,56 @@ function mostrarModalAsignarPracticantes(grupoId) {
 
 /**
  * Formatea los días de atención para mostrar en la tabla
- * @param {Array} diasAtencion - Array de días de atención
+ * @param {Object} modulo - El objeto módulo con datos de horario
  * @return {string} Texto formateado de los días
  */
-function formatearDiasAtencion(diasAtencion) {
-    if (!diasAtencion || diasAtencion.length === 0) {
-        return '<span style="color: #9ca3af;">No definido</span>';
+function formatearDiasAtencion(modulo) {
+    // Priorizar la nueva estructura horarioPorDia
+    if (modulo.horarioPorDia && Object.keys(modulo.horarioPorDia).length > 0) {
+        const diasConfigurados = Object.keys(modulo.horarioPorDia)
+            .filter(dia => modulo.horarioPorDia[dia] && modulo.horarioPorDia[dia].inicio && modulo.horarioPorDia[dia].fin);
+
+        if (diasConfigurados.length > 0) {
+            // Mapear nombres completos a abreviaturas
+            const abreviaturas = {
+                'lunes': 'L',
+                'martes': 'M',
+                'miercoles': 'X',
+                'jueves': 'J',
+                'viernes': 'V',
+                'sabado': 'S',
+                'domingo': 'D'
+            };
+
+            const diasAbrev = diasConfigurados
+                .map(dia => abreviaturas[dia] || dia.charAt(0).toUpperCase())
+                .join(', ');
+
+            return `<span style="color: #059669; font-weight: 500;">${diasAbrev}</span>`;
+        }
     }
-    
-    // Mapear nombres completos a abreviaturas
-    const abreviaturas = {
-        'lunes': 'L',
-        'martes': 'M',
-        'miercoles': 'X',
-        'jueves': 'J',
-        'viernes': 'V',
-        'sabado': 'S'
-    };
-    
-    const diasAbrev = diasAtencion
-        .map(dia => abreviaturas[dia] || dia)
-        .join(', ');
-    
-    return `<span style="color: #059669; font-weight: 500;">${diasAbrev}</span>`;
+
+    // Fallback a la estructura antigua para compatibilidad
+    if (modulo.diasAtencion && modulo.diasAtencion.length > 0) {
+        // Mapear nombres completos a abreviaturas
+        const abreviaturas = {
+            'lunes': 'L',
+            'martes': 'M',
+            'miercoles': 'X',
+            'jueves': 'J',
+            'viernes': 'V',
+            'sabado': 'S',
+            'domingo': 'D'
+        };
+
+        const diasAbrev = modulo.diasAtencion
+            .map(dia => abreviaturas[dia] || dia)
+            .join(', ');
+
+        return `<span style="color: #059669; font-weight: 500;">${diasAbrev}</span>`;
+    }
+
+    return '<span style="color: #9ca3af;">No definido</span>';
 }
 
 /**
@@ -1714,13 +1887,13 @@ function formatearDiasAtencion(diasAtencion) {
  * @param {string} grupoAsignadoId - ID del grupo asignado al módulo
  * @return {string} Texto formateado del grupo
  */
-function formatearGrupoAsignado(grupoAsignadoId) {
+async function formatearGrupoAsignado(grupoAsignadoId) {
     if (!grupoAsignadoId) {
         return '<span style="color: #9ca3af;">Sin grupo</span>';
     }
     
     // Obtener el grupo desde el modelo
-    const grupo = gestionModel.getGrupoById(grupoAsignadoId);
+    const grupo = await gestionModel.getGrupoById(grupoAsignadoId);
     
     if (!grupo) {
         return '<span style="color: #ef4444;">Grupo no encontrado</span>';
@@ -1730,12 +1903,14 @@ function formatearGrupoAsignado(grupoAsignadoId) {
 }
 
 /**
- * Renderiza la secci f3n de grupos
+ * Renderiza la sección de grupos
  */
-export function renderGestionGrupos(container) {
-    const grupos = gestionModel.getGrupos();
+export async function renderGestionGrupos(container) {
+    const grupos = await gestionModel.getGrupos();
     console.log('🔄 Renderizando grupos. Total de grupos:', grupos.length);
     console.log('📋 Datos de grupos:', grupos.map(g => ({id: g.id, nombre: g.nombre})));
+    
+    const tablaGrupos = await renderTablaGrupos(grupos);
     
     container.innerHTML = `
         <h2 class="content-title">Grupos</h2>
@@ -1746,7 +1921,7 @@ export function renderGestionGrupos(container) {
         <div id="lista-grupos" style="margin-top: 20px;">
             ${grupos.length === 0 ? 
                 '<div class="empty-message">No hay grupos registrados. Crea uno nuevo para comenzar.</div>' : 
-                renderTablaGrupos(grupos)
+                tablaGrupos
             }
         </div>
     `;
@@ -1761,31 +1936,31 @@ export function renderGestionGrupos(container) {
         });
     }
 
-    // Configurar delegaci f3n de eventos en la tabla
+    // Configurar delegación de eventos en la tabla
     const tabla = container.querySelector('.data-table');
     if (tabla) {
         const nuevaTabla = tabla.cloneNode(true);
         tabla.parentNode.replaceChild(nuevaTabla, tabla);
 
-        nuevaTabla.addEventListener('click', (e) => {
+        nuevaTabla.addEventListener('click', async (e) => {
             const target = e.target.closest('button');
             if (!target) return;
 
             if (target.classList.contains('edit-grupo')) {
                 const grupoId = target.dataset.id;
-                const grupo = gestionModel.getGrupoById(grupoId);
+                const grupo = await gestionModel.getGrupoById(grupoId);
                 renderFormGrupo(grupo);
             } else if (target.classList.contains('delete-grupo')) {
                 const grupoId = target.dataset.id;
-                const grupo = gestionModel.getGrupoById(grupoId);
+                const grupo = await gestionModel.getGrupoById(grupoId);
                 modalUtil.confirmarAccion({
                     title: 'Eliminar Grupo',
-                    message: `\u00BFEst\u00E1s seguro de eliminar el grupo "${grupo.nombre}"?`,
-                    onConfirm: () => {
-                        gestionModel.deleteGrupo(grupoId);
+                    message: `¿Estás seguro de eliminar el grupo "${grupo.nombre}"?`,
+                    onConfirm: async () => {
+                        await gestionModel.deleteGrupo(grupoId);
                         eventBus.emit(EVENT_NAMES.GROUP_DELETED, { id: grupoId });
-                        // Re-renderizar la secci\u00f3n activa
-                        renderGestionGrupos(container);
+                        // Re-renderizar la sección activa
+                        await renderGestionGrupos(container);
                     }
                 });
             } else if (target.classList.contains('assign-practicante')) {
@@ -1800,18 +1975,33 @@ export function renderGestionGrupos(container) {
 /**
  * Calcula el número de practicantes asignados a un grupo
  * @param {string} grupoId - ID del grupo
- * @returns {number} Número de practicantes asignados
+ * @returns {Promise<number>} Número de practicantes asignados
  */
-function calcularPracticantesEnGrupo(grupoId) {
-    const usuarios = authModel.getAllUsers();
-    return usuarios.filter(usuario => 
-        usuario.rol === 'practicante' && 
-        usuario.grupoId === grupoId &&
-        usuario.activo !== false
-    ).length;
+async function calcularPracticantesEnGrupo(grupoId) {
+    try {
+        const usuarios = await authModel.getAllUsers();
+        return usuarios.filter(usuario => 
+            usuario.rol === 'practicante' && 
+            usuario.grupoId === grupoId &&
+            usuario.activo !== false
+        ).length;
+    } catch (error) {
+        console.error('Error al calcular practicantes en grupo:', error);
+        return 0;
+    }
 }
 
-function renderTablaGrupos(grupos) {
+async function renderTablaGrupos(grupos) {
+    // Procesar cada grupo para obtener el número de practicantes
+    const gruposConPracticantes = [];
+    for (const grupo of grupos) {
+        const numPracticantes = await calcularPracticantesEnGrupo(grupo.id);
+        gruposConPracticantes.push({
+            ...grupo,
+            numPracticantes
+        });
+    }
+
     return `
         <table class="data-table">
             <thead>
@@ -1825,13 +2015,13 @@ function renderTablaGrupos(grupos) {
                 </tr>
             </thead>
             <tbody>
-                ${grupos.map(grupo => `
+                ${gruposConPracticantes.map(grupo => `
                     <tr>
                         <td>${grupo.id || ''}</td>
                         <td>${grupo.nombre}</td>
                         <td>${grupo.turno}</td>
                         <td>${grupo.horario}</td>
-                        <td>${calcularPracticantesEnGrupo(grupo.id)} practicante(s)</td>
+                        <td>${grupo.numPracticantes} practicante(s)</td>
                         <td class="actions">
                             <button class="btn-icon assign-practicante" title="Asignar practicante" data-grupoid="${grupo.id}">
                                 <i class="fas fa-user-plus"></i>

@@ -82,103 +82,39 @@ export function getRegistroEntradasSalidas() {
  */
 export function registrarEntrada(usuario) {
   try {
-    // Importar authModel para verificar JWT
-    import('./storageModel.js').then(({ authModel }) => {
-      try {
-        let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-        const now = new Date();
+    let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
+    const now = new Date();
 
-        // Cerrar cualquier registro abierto anterior para este usuario
-        historial.forEach(reg => {
-          if (reg.matricula === usuario.matricula && reg.salida === null) {
-            reg.salida = now.toLocaleString();
-            reg.salidaIso = now.toISOString();
-            reg.salidaTimestamp = now.getTime();
-            reg.duracion = 'Cerrado automáticamente por nueva entrada';
-            reg.salidaConTokenValido = false;
-          }
-        });
-
-        const registro = {
-          id: `ES${Date.now()}`,
-          nombre: usuario.nombre,
-          matricula: usuario.matricula,
-          modulo: usuario.modulo || usuario.moduloId || usuario.mesa || 'No asignada',
-          grupoId: usuario.grupoId || null,
-          rol: usuario.rol,
-          entrada: now.toLocaleString(),
-          entradaIso: now.toISOString(),
-          entradaTimestamp: now.getTime(),
-          salida: null,
-          salidaIso: null,
-          salidaTimestamp: null,
-          duracion: 'En servicio',
-          sistemaAuth: authModel.isJWTEnabled() ? 'JWT' : 'Legacy'
-        };
-
-        // Si JWT está habilitado, agregar información del token
-        if (authModel.isJWTEnabled()) {
-          const tokenInfo = authModel.getJWTInfo();
-          if (tokenInfo && tokenInfo.valid) {
-            registro.tokenId = tokenInfo.payload.jti;
-            registro.tokenEntrada = tokenInfo.payload.iat;
-            registro.tokenExpiracion = tokenInfo.payload.exp;
-            registro.tiempoSesionRestante = tokenInfo.timeLeft;
-            registro.autenticacionSegura = true;
-            // Logs mejorados para JWT
-            console.log('🔐 OperacionesModel: Entrada JWT registrada para', usuario.nombre);
-            console.log('🔑 Token ID:', tokenInfo.payload.jti);
-            console.log('⏰ Tiempo de sesión restante:', tokenInfo.timeFormatted);
-          }
-        } else {
-          registro.autenticacionSegura = false;
-          console.log('🔓 OperacionesModel: Entrada Legacy registrada para', usuario.nombre);
-        }
-
-        historial.push(registro);
-        localStorage.setItem('servicioHistorial', JSON.stringify(historial));
-        return registro;
-      } catch (error) {
-        console.error('Error registrando entrada:', error);
-        return null;
+    // Cerrar cualquier registro abierto anterior para este usuario
+    historial.forEach(reg => {
+      if (reg.matricula === usuario.matricula && reg.salida === null) {
+        reg.salida = now.toLocaleString();
+        reg.salidaIso = now.toISOString();
+        reg.salidaTimestamp = now.getTime();
+        reg.duracion = 'Cerrado automáticamente por nueva entrada';
+        reg.salidaConTokenValido = false;
       }
-    }).catch(err => {
-      console.warn('No se pudo importar authModel para registro de entrada:', err);
-      // Fallback sin información JWT
-      let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-      const now = new Date();
-      // Cerrar cualquier registro abierto anterior para este usuario
-      historial.forEach(reg => {
-        if (reg.matricula === usuario.matricula && reg.salida === null) {
-          reg.salida = now.toLocaleString();
-          reg.salidaIso = now.toISOString();
-          reg.salidaTimestamp = now.getTime();
-          reg.duracion = 'Cerrado automáticamente por nueva entrada';
-          reg.salidaConTokenValido = false;
-        }
-      });
-      const registro = {
-        id: `ES${Date.now()}`,
-        nombre: usuario.nombre,
-        matricula: usuario.matricula,
-        modulo: usuario.modulo || usuario.moduloId || usuario.mesa || 'No asignada',
-        grupoId: usuario.grupoId || null,
-        rol: usuario.rol,
-        entrada: now.toLocaleString(),
-        entradaIso: now.toISOString(),
-        entradaTimestamp: now.getTime(),
-        salida: null,
-        salidaIso: null,
-        salidaTimestamp: null,
-        duracion: 'En servicio',
-        sistemaAuth: 'Legacy',
-        autenticacionSegura: false
-      };
-      historial.push(registro);
-      localStorage.setItem('servicioHistorial', JSON.stringify(historial));
-      console.log('🔓 OperacionesModel: Entrada Legacy (fallback) registrada para', usuario.nombre);
-      return registro;
     });
+
+    const registro = {
+      id: `ES${Date.now()}`,
+      nombre: usuario.nombre,
+      matricula: usuario.matricula,
+      modulo: usuario.modulo || usuario.moduloId || usuario.mesa || 'No asignada',
+      grupoId: usuario.grupoId || null,
+      rol: usuario.rol,
+      entrada: now.toLocaleString(),
+      entradaIso: now.toISOString(),
+      entradaTimestamp: now.getTime(),
+      salida: null,
+      salidaIso: null,
+      salidaTimestamp: null,
+      duracion: 'En servicio'
+    };
+
+    historial.push(registro);
+    localStorage.setItem('servicioHistorial', JSON.stringify(historial));
+    return registro;
   } catch (error) {
     console.error('Error registrando entrada:', error);
     return null;
@@ -190,82 +126,30 @@ export function registrarEntrada(usuario) {
  */
 export function registrarSalida(usuarioId) {
   try {
-    // Importar authModel para verificar JWT
-    import('./storageModel.js').then(({ authModel }) => {
-      try {
-        let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-        const salidaTime = new Date();
-        let registrosCerrados = 0;
-        historial.forEach(registro => {
-          if (registro.matricula === usuarioId && registro.salida === null) {
-            // Calcular duración
-            let entradaMs = registro.entradaTimestamp || Date.parse(registro.entradaIso) || Date.parse(registro.entrada);
-            let duracionStr = 'N/A';
-            if (entradaMs) {
-              const duracionMs = salidaTime.getTime() - entradaMs;
-              const horas = Math.floor(duracionMs / (1000 * 60 * 60));
-              const minutos = Math.floor((duracionMs % (1000 * 60 * 60)) / (1000 * 60));
-              duracionStr = `${horas}h ${minutos}m`;
-            }
-            registro.salida = salidaTime.toLocaleString();
-            registro.salidaIso = salidaTime.toISOString();
-            registro.salidaTimestamp = salidaTime.getTime();
-            registro.duracion = duracionStr;
-            // Actualizar información JWT si está disponible
-            if (authModel.isJWTEnabled()) {
-              const tokenInfo = authModel.getJWTInfo();
-              if (tokenInfo && tokenInfo.valid) {
-                registro.tokenSalida = tokenInfo.payload.jti;
-                registro.tiempoSesionAlSalir = tokenInfo.timeLeft;
-                registro.salidaConTokenValido = true;
-                console.log('🔐 OperacionesModel: Salida JWT registrada para', registro.nombre);
-                console.log('🔑 Token ID al salir:', tokenInfo.payload.jti);
-                console.log('⏰ Tiempo de sesión restante al salir:', tokenInfo.timeFormatted);
-              } else {
-                registro.salidaConTokenValido = false;
-                console.log('⚠️ OperacionesModel: Salida con token JWT inválido para', registro.nombre);
-              }
-            } else {
-              registro.salidaConTokenValido = false;
-              console.log('🔓 OperacionesModel: Salida Legacy registrada para', registro.nombre);
-            }
-            registrosCerrados++;
-          }
-        });
-        localStorage.setItem('servicioHistorial', JSON.stringify(historial));
-        return registrosCerrados > 0 ? true : null;
-      } catch (error) {
-        console.error('Error registrando salida:', error);
-        return null;
-      }
-    }).catch(err => {
-      console.warn('No se pudo importar authModel para registro de salida:', err);
-      // Fallback sin información JWT
-      let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-      const salidaTime = new Date();
-      let registrosCerrados = 0;
-      historial.forEach(registro => {
-        if (registro.matricula === usuarioId && registro.salida === null) {
-          let entradaMs = registro.entradaTimestamp || Date.parse(registro.entradaIso) || Date.parse(registro.entrada);
-          let duracionStr = 'N/A';
-          if (entradaMs) {
-            const duracionMs = salidaTime.getTime() - entradaMs;
-            const horas = Math.floor(duracionMs / (1000 * 60 * 60));
-            const minutos = Math.floor((duracionMs % (1000 * 60 * 60)) / (1000 * 60));
-            duracionStr = `${horas}h ${minutos}m`;
-          }
-          registro.salida = salidaTime.toLocaleString();
-          registro.salidaIso = salidaTime.toISOString();
-          registro.salidaTimestamp = salidaTime.getTime();
-          registro.duracion = duracionStr;
-          registro.salidaConTokenValido = false;
-          registrosCerrados++;
-          console.log('🔓 OperacionesModel: Salida Legacy (fallback) registrada para', registro.nombre);
+    let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
+    const salidaTime = new Date();
+    let registrosCerrados = 0;
+    historial.forEach(registro => {
+      if (registro.matricula === usuarioId && registro.salida === null) {
+        // Calcular duración
+        let entradaMs = registro.entradaTimestamp || Date.parse(registro.entradaIso) || Date.parse(registro.entrada);
+        let duracionStr = 'N/A';
+        if (entradaMs) {
+          const duracionMs = salidaTime.getTime() - entradaMs;
+          const horas = Math.floor(duracionMs / (1000 * 60 * 60));
+          const minutos = Math.floor((duracionMs % (1000 * 60 * 60)) / (1000 * 60));
+          duracionStr = `${horas}h ${minutos}m`;
         }
-      });
-      localStorage.setItem('servicioHistorial', JSON.stringify(historial));
-      return registrosCerrados > 0 ? true : null;
+        registro.salida = salidaTime.toLocaleString();
+        registro.salidaIso = salidaTime.toISOString();
+        registro.salidaTimestamp = salidaTime.getTime();
+        registro.duracion = duracionStr;
+        console.log('OperacionesModel: Salida registrada para', registro.nombre);
+        registrosCerrados++;
+      }
     });
+    localStorage.setItem('servicioHistorial', JSON.stringify(historial));
+    return registrosCerrados > 0 ? true : null;
   } catch (error) {
     console.error('Error registrando salida:', error);
     return null;
@@ -452,64 +336,6 @@ export function registrarEntradaAsistencia(usuario) {
  */
 export function registrarSalidaAsistencia(matricula) {
   return registrarSalida(matricula);
-}
-
-/**
- * Elimina todos los registros que fueron generados con el modo Legacy (sin JWT)
- * @returns {Object} Resultado de la operación con estadísticas
- */
-export function eliminarRegistrosLegacy() {
-  try {
-    const historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-    const historialActividad = JSON.parse(localStorage.getItem('actividadHistorial')) || [];
-    
-    console.log('🗑️ Iniciando eliminación de registros Legacy...');
-    console.log(`📊 Estado inicial: ${historial.length} registros de operaciones, ${historialActividad.length} actividades`);
-    
-    // Filtrar registros de operaciones (entradas/salidas)
-    const registrosJWT = historial.filter(registro => {
-      // Mantener solo registros JWT o que tengan tokenId
-      return registro.sistemaAuth === 'JWT' || registro.tokenId;
-    });
-    
-    // Filtrar actividades
-    const actividadesJWT = historialActividad.filter(actividad => {
-      // Mantener solo actividades JWT o que tengan tokenId
-      return actividad.sistemaAuth === 'JWT' || actividad.tokenId;
-    });
-    
-    const registrosEliminados = historial.length - registrosJWT.length;
-    const actividadesEliminadas = historialActividad.length - actividadesJWT.length;
-    
-    // Guardar los registros filtrados
-    localStorage.setItem('servicioHistorial', JSON.stringify(registrosJWT));
-    localStorage.setItem('actividadHistorial', JSON.stringify(actividadesJWT));
-    
-    const resultado = {
-      exito: true,
-      registrosEliminados,
-      actividadesEliminadas,
-      registrosRestantes: registrosJWT.length,
-      actividadesRestantes: actividadesJWT.length
-    };
-    
-    console.log('✅ Eliminación completada:');
-    console.log(`   🗑️ Registros eliminados: ${registrosEliminados}`);
-    console.log(`   🗑️ Actividades eliminadas: ${actividadesEliminadas}`);
-    console.log(`   ✅ Registros restantes (JWT): ${registrosJWT.length}`);
-    console.log(`   ✅ Actividades restantes (JWT): ${actividadesJWT.length}`);
-    
-    return resultado;
-    
-  } catch (error) {
-    console.error('❌ Error eliminando registros Legacy:', error);
-    return {
-      exito: false,
-      error: error.message,
-      registrosEliminados: 0,
-      actividadesEliminadas: 0
-    };
-  }
 }
 
 /**

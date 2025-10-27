@@ -4,11 +4,11 @@ import { gestionModel } from '../models/gestionModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js'; // Importa EVENT_NAMES
 import * as modalUtil from '../utils/modalUtil.js'; // SOLUCIÓN LAG: Importación estática
 
-export function initGestionController() {
+export async function initGestionController() {
     console.log("Controlador de Gestión inicializado.");
     
     // Inicializar datos de ejemplo si no existen
-    inicializarDatosGestion();
+    await inicializarDatosGestion();
     
     setupSidebarNavigation();
     
@@ -60,7 +60,7 @@ export function initGestionController() {
 
 function setupSidebarNavigation() {
     document.querySelectorAll('.sidebar-menu button').forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', async () => {
             const sectionId = button.dataset.section;
             
             // Activar la sección correspondiente
@@ -84,9 +84,9 @@ function setupSidebarNavigation() {
             }
 
             if (sectionId === 'modulos') {
-                renderGestionModulos(document.getElementById('modulos-section'));
+                await renderGestionModulos(document.getElementById('modulos-section'));
             } else if (sectionId === 'grupos') {
-                renderGestionGrupos(document.getElementById('grupos-section'));
+                await renderGestionGrupos(document.getElementById('grupos-section'));
             }
         });
     });
@@ -100,10 +100,10 @@ function setupSidebarNavigation() {
 // para seguir el patrón MVC correctamente
 
 // La función asignarGrupo se mantiene para compatibilidad
-export function asignarGrupo(moduloId) {
+export async function asignarGrupo(moduloId) {
     // Obtener todos los grupos disponibles
-    const grupos = gestionModel.getGrupos();
-    const modulo = gestionModel.getModuloById(moduloId);
+    const grupos = await gestionModel.getGrupos();
+    const modulo = await gestionModel.getModuloById(moduloId);
     
     if (!modulo) {
         if (typeof mostrarMensaje === 'function') {
@@ -160,11 +160,11 @@ export function asignarGrupo(moduloId) {
         modalContainer.remove();
     });
     
-    document.getElementById('btnConfirmarAsignacion').addEventListener('click', () => {
+    document.getElementById('btnConfirmarAsignacion').addEventListener('click', async () => {
         const selectGrupo = document.getElementById('select-grupo');
         const grupoId = selectGrupo.value || null; // Si es vacío, asignar null
         
-        const resultado = gestionModel.asignarGrupoAModulo(moduloId, grupoId);
+        const resultado = await gestionModel.asignarGrupoAModulo(moduloId, grupoId);
         
         if (resultado) {
             // SOLUCIÓN EVENT BUS: Emite el evento específico
@@ -178,7 +178,7 @@ export function asignarGrupo(moduloId) {
                 grupoId
             }); // Mantener compatibilidad
             modalContainer.remove();
-            renderGestionModulos(document.getElementById('modulos-section'));
+            await renderGestionModulos(document.getElementById('modulos-section'));
             
             // Mostrar mensaje de éxito - Sin importación dinámica
             modalUtil.mostrarAlerta({

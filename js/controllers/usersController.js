@@ -3,6 +3,7 @@ import { authModel } from '../models/storageModel.js';
 import { init as initUserView, mostrarUsuarios } from '../views/userView.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
 import { gestionModel } from '../models/gestionModel.js';
+import { mostrarCredencialesUsuario } from '../utils/credentialsModal.js';
 
 /**
  * Función principal para inicializar la página de Usuarios y Personal.
@@ -116,7 +117,7 @@ function setupSidebarNavigation() {
   }
 
   sidebarButtons.forEach(button => {
-    button.addEventListener('click', () => {
+    button.addEventListener('click', async () => { // <-- Convertido a async
       const targetSectionId = button.getAttribute('data-section');
       console.log(`UsersController: Navegando a sección ${targetSectionId}`);
 
@@ -138,15 +139,15 @@ function setupSidebarNavigation() {
         // Si se selecciona "Personal", carga la lista de usuarios.
         if (targetSectionId === 'personal') {
           console.log('UsersController: Cargando lista de personal');
-          mostrarUsuarios();
-          
+          await mostrarUsuarios(); // <-- Usar await
+
           // Emitir evento de datos cargados
-          eventBus.emit(EVENT_NAMES.DATA_LOADED, { 
-            type: 'users', 
-            section: 'personal' 
+          eventBus.emit(EVENT_NAMES.DATA_LOADED, {
+            type: 'users',
+            section: 'personal'
           });
         }
-        
+
         // Si se selecciona "nuevo-usuario", preparar formulario
         if (targetSectionId === 'nuevo-usuario') {
           console.log('UsersController: Preparando formulario nuevo usuario');
@@ -155,137 +156,139 @@ function setupSidebarNavigation() {
           if (formUsuario) {
             formUsuario.reset();
           }
+          // Cargar grupos al acceder a la sección
+          await cargarGruposEnFormulario();
         }
       }
     });
   });
-}
-
-/**
+}/**
  * Configura el formulario para agregar un nuevo usuario.
  */
 function setupNewUserForm() {
-  console.log('UsersController: Configurando formulario nuevo usuario');
-  
-  const formUsuario = document.getElementById('formUsuario');
-  if (formUsuario) {
-    // Cargar los grupos disponibles en el selector
+    console.log('UsersController: Configurando formulario nuevo usuario');
+
+    const formUsuario = document.getElementById('formUsuario');
+    if (!formUsuario) return;
+
+    // Cargar grupos al inicializar el formulario
     cargarGruposEnFormulario();
-    
-    formUsuario.addEventListener('submit', function(e) {
-      e.preventDefault();
-      console.log('UsersController: Procesando envío de formulario');
-      
-      const formData = new FormData(formUsuario);
-      const userData = Object.fromEntries(formData.entries());
-      
-      // Procesar campos especiales
-      if (!userData.grupoId) {
-        delete userData.grupoId; // Eliminar si no se seleccionó ningún grupo
-      }
-      
-      // Generar ID automático
-      userData.id = authModel.generateUserId();
-      
-      console.log('UsersController: Datos del usuario (con ID generado):', userData);
 
-      const success = authModel.addUser(userData);
+    formUsuario.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submitButton = formUsuario.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
 
-      if (success) {
-        console.log('UsersController: Usuario creado exitosamente');
-        
-        // Mostrar mensaje de éxito con el ID generado
-        mostrarMensaje('success', '✅ Usuario Registrado', 
-          `${userData.nombre} ${userData.apellidos || ''} ha sido registrado exitosamente.\n\n🆔 ID generado: ${userData.id}\n👤 Rol: ${userData.rol}\n📧 Matrícula: ${userData.matricula}`, 6000);
-        
-        // Emitir evento de usuario creado
-        eventBus.emit(EVENT_NAMES.USER_CREATED, {
-          user: userData,
-          timestamp: new Date().toISOString()
-        });
-        
-        // Si el usuario se asignó a un grupo, actualizar el grupo también
-        if (userData.grupoId) {
-          gestionModel.asignarUsuarioAGrupo(userData.grupoId, userData.id);
+        try {
+            const formData = new FormData(formUsuario);
+            const userData = {
+                email: formData.get('email'), // Usar email completo
+                password: authModel.generateTemporaryPassword(), // Generar contraseña temporal
+                nombre: formData.get('nombre'),
+                apellidos: formData.get('apellidos'),
+                edad: parseInt(formData.get('edad')),
+                sexo: formData.get('sexo'),
+                matricula: formData.get('matricula'),
+                grupo_trabajo: formData.get('grupoId') || '',
+                rol: formData.get('rol')
+            };
+
+            // Validaciones
+            if (!userData.email?.includes('@')) {
+                throw new Error('Por favor ingresa un correo electrónico válido');
+            }
+
+            if (!userData.nombre || !userData.matricula || !userData.rol) {
+                throw new Error('Nombre, matrícula y rol son obligatorios');
+            }
+
+            // Crear usuario
+            const nuevoUsuario = await authModel.addUser(userData);
+            if (!nuevoUsuario) {
+                throw new Error('No se pudo crear el usuario');
+            }
+
+            // Mostrar modal con credenciales del usuario
+            mostrarCredencialesUsuario(nuevoUsuario);
+
+            eventBus.emit(EVENT_NAMES.USER_CREATED, {
+                success: true,
+                message: 'Usuario creado exitosamente',
+                user: nuevoUsuario
+            });
+
+            formUsuario.reset();
+            await cargarGruposEnFormulario(); // Recargar grupos después de limpiar
+
+        } catch (error) {
+            console.error('Error al crear usuario:', error);
+            eventBus.emit(EVENT_NAMES.ERROR, {
+                context: 'crear_usuario',
+                error: error.message
+            });
+            alert(error.message || 'Error al crear usuario');
+        } finally {
+            submitButton.disabled = false;
         }
-        
-        const usuarioActual = obtenerUsuarioActual();
-        mostrarMensaje('success', '✅ Usuario Registrado', 
-          `${userData.nombre} ha sido registrado exitosamente en el sistema.\nMatrícula/ID: ${userData.id}\nRol: ${userData.rol}\n\nRegistrado por: ${usuarioActual.nombre}`, 6000);
-        formUsuario.reset();
-        
-        // Vuelve a la sección de personal para ver al nuevo usuario
-        const personalButton = document.querySelector('button[data-section="personal"]');
-        if (personalButton) {
-          personalButton.click();
-        }
-      } else {
-        console.error('UsersController: Error al crear usuario');
-        eventBus.emit(EVENT_NAMES.DATA_ERROR, {
-          operation: 'create_user',
-          error: 'Failed to create user'
-        });
-      }
     });
-    
+
     // Suscribirse a eventos de actualización de grupos
-    eventBus.on('gestion-grupo-updated', () => {
-      cargarGruposEnFormulario();
+    eventBus.on('gestion-grupo-updated', async () => {
+        await cargarGruposEnFormulario();
     });
-    
+
     console.log('UsersController: Formulario configurado correctamente');
-  } else {
-    console.error('UsersController: Formulario de usuario no encontrado');
-  }
 }
 
 /**
  * Carga la lista de grupos disponibles en el formulario con información de módulos asignados
  */
-function cargarGruposEnFormulario() {
+async function cargarGruposEnFormulario() {
   const grupoSelect = document.getElementById('grupoId');
   if (!grupoSelect) return;
   
-  // Obtener lista de grupos y módulos
-  const grupos = gestionModel.getGrupos();
-  const modulos = gestionModel.getModulos();
-  
-  // Guardar el valor seleccionado actualmente
-  const valorSeleccionado = grupoSelect.value;
-  
-  // Limpiar opciones existentes excepto la primera
-  while (grupoSelect.options.length > 1) {
-    grupoSelect.remove(1);
-  }
-  
-  // Agregar los grupos como opciones con información de módulos
-  grupos.forEach(grupo => {
-    const option = document.createElement('option');
-    option.value = grupo.id;
+  try {
+    // Obtener lista de grupos y módulos de forma asíncrona
+    const grupos = await gestionModel.getGrupos();
+    const modulos = await gestionModel.getModulos();
     
-    // Buscar módulos asignados a este grupo
-    const modulosAsignados = modulos.filter(modulo => modulo.grupoAsignadoId === grupo.id);
+    // Guardar el valor seleccionado actualmente
+    const valorSeleccionado = grupoSelect.value;
     
-    let textoOption = `${grupo.nombre} (${grupo.turno} - ${grupo.horario})`;
-    
-    if (modulosAsignados.length > 0) {
-      const nombresModulos = modulosAsignados.map(m => m.nombre).join(', ');
-      textoOption += ` → ${nombresModulos}`;
-    } else {
-      textoOption += ' → Sin módulo asignado';
+    // Limpiar opciones existentes excepto la primera
+    while (grupoSelect.options.length > 1) {
+      grupoSelect.remove(1);
     }
     
-    option.textContent = textoOption;
-    grupoSelect.appendChild(option);
-  });
-  
-  // Restaurar el valor seleccionado si todavía existe
-  if (valorSeleccionado) {
-    grupoSelect.value = valorSeleccionado;
+    // Agregar los grupos como opciones con información de módulos
+    grupos.forEach(grupo => {
+      const option = document.createElement('option');
+      option.value = grupo.id;
+      
+      // Buscar módulos asignados a este grupo
+      const modulosAsignados = modulos.filter(modulo => modulo.grupoAsignadoId === grupo.id);
+      
+      let textoOption = `${grupo.nombre} (${grupo.turno} - ${grupo.horario})`;
+      
+      if (modulosAsignados.length > 0) {
+        const nombresModulos = modulosAsignados.map(m => m.nombre).join(', ');
+        textoOption += ` → ${nombresModulos}`;
+      } else {
+        textoOption += ' → Sin módulo asignado';
+      }
+      
+      option.textContent = textoOption;
+      grupoSelect.appendChild(option);
+    });
+    
+    // Restaurar el valor seleccionado si todavía existe
+    if (valorSeleccionado) {
+      grupoSelect.value = valorSeleccionado;
+    }
+  } catch (error) {
+    console.error('Error al cargar grupos en formulario:', error);
   }
-}
-
-/**
+}/**
  * Sistema de mensajes personalizados para usuarios
  */
 function mostrarMensaje(tipo, titulo, mensaje, duracion = 5000) {
@@ -372,3 +375,403 @@ function obtenerUsuarioActual() {
   const usuarioActual = authModel.getCurrentUser();
   return usuarioActual || { nombre: 'Administrador' };
 }
+
+/**
+ * Mostrar perfil del usuario actual
+ */
+export function showUserProfile() {
+  const currentUser = authModel.getCurrentUser();
+  if (!currentUser) {
+    alert('No se pudo obtener la información del usuario actual');
+    return;
+  }
+
+  // Crear modal de perfil
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+  `;
+
+  modal.innerHTML = `
+    <div class="modal-content" style="
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    ">
+      <div class="modal-header" style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 16px;
+      ">
+        <h2 style="margin: 0; color: #1f2937; font-size: 24px;">Mi Perfil</h2>
+        <button class="close-btn" style="
+          background: none;
+          border: none;
+          font-size: 24px;
+          cursor: pointer;
+          color: #6b7280;
+          padding: 4px;
+        ">&times;</button>
+      </div>
+      
+      <div class="profile-info">
+        <div class="info-section" style="margin-bottom: 20px;">
+          <h3 style="margin: 0 0 12px 0; color: #374151; font-size: 18px;">Información Personal</h3>
+          <div class="info-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="info-item">
+              <label style="display: block; font-weight: bold; color: #6b7280; font-size: 12px; text-transform: uppercase; margin-bottom: 4px;">Nombre</label>
+              <span style="color: #1f2937;">${currentUser.nombre || 'No especificado'}</span>
+            </div>
+            <div class="info-item">
+              <label style="display: block; font-weight: bold; color: #6b7280; font-size: 12px; text-transform: uppercase; margin-bottom: 4px;">Apellidos</label>
+              <span style="color: #1f2937;">${currentUser.apellidos || 'No especificado'}</span>
+            </div>
+            <div class="info-item">
+              <label style="display: block; font-weight: bold; color: #6b7280; font-size: 12px; text-transform: uppercase; margin-bottom: 4px;">Email</label>
+              <span style="color: #1f2937;">${currentUser.email || 'No especificado'}</span>
+            </div>
+            <div class="info-item">
+              <label style="display: block; font-weight: bold; color: #6b7280; font-size: 12px; text-transform: uppercase; margin-bottom: 4px;">Matrícula</label>
+              <span style="color: #1f2937;">${currentUser.matricula || 'No especificado'}</span>
+            </div>
+            <div class="info-item">
+              <label style="display: block; font-weight: bold; color: #6b7280; font-size: 12px; text-transform: uppercase; margin-bottom: 4px;">Edad</label>
+              <span style="color: #1f2937;">${currentUser.edad || 'No especificado'}</span>
+            </div>
+            <div class="info-item">
+              <label style="display: block; font-weight: bold; color: #6b7280; font-size: 12px; text-transform: uppercase; margin-bottom: 4px;">Sexo</label>
+              <span style="color: #1f2937;">${currentUser.sexo === 'M' ? 'Masculino' : currentUser.sexo === 'F' ? 'Femenino' : 'No especificado'}</span>
+            </div>
+            <div class="info-item">
+              <label style="display: block; font-weight: bold; color: #6b7280; font-size: 12px; text-transform: uppercase; margin-bottom: 4px;">Rol</label>
+              <span style="color: #1f2937;">${currentUser.rol === 'admin' ? 'Administrador' : currentUser.rol === 'practicante' ? 'Practicante' : currentUser.rol || 'No especificado'}</span>
+            </div>
+            <div class="info-item">
+              <label style="display: block; font-weight: bold; color: #6b7280; font-size: 12px; text-transform: uppercase; margin-bottom: 4px;">Grupo</label>
+              <span style="color: #1f2937;">${currentUser.grupo_trabajo || 'Sin asignar'}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="profile-actions" style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
+          <button id="changePasswordBtn" class="btn btn-primary" style="
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            width: 100%;
+          ">
+            <i class="fas fa-key" style="margin-right: 8px;"></i>
+            Cambiar Contraseña
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Event listeners
+  const closeBtn = modal.querySelector('.close-btn');
+  const changePasswordBtn = modal.querySelector('#changePasswordBtn');
+
+  closeBtn.addEventListener('click', () => {
+    modal.remove();
+  });
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+
+  changePasswordBtn.addEventListener('click', () => {
+    modal.remove();
+    showChangePasswordModal();
+  });
+}
+
+/**
+ * Mostrar modal para cambiar contraseña
+ */
+function showChangePasswordModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+  `;
+
+  modal.innerHTML = `
+    <div class="modal-content" style="
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    ">
+      <div class="modal-header" style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 16px;
+      ">
+        <h2 style="margin: 0; color: #1f2937; font-size: 20px;">Cambiar Contraseña</h2>
+        <button class="close-btn" style="
+          background: none;
+          border: none;
+          font-size: 24px;
+          cursor: pointer;
+          color: #6b7280;
+          padding: 4px;
+        ">&times;</button>
+      </div>
+      
+      <form id="changePasswordForm">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label for="currentPassword" style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">Contraseña Actual</label>
+          <input type="password" id="currentPassword" name="currentPassword" required style="
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+          ">
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label for="newPassword" style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">Nueva Contraseña</label>
+          <input type="password" id="newPassword" name="newPassword" required style="
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+          ">
+          <div id="passwordStrengthIndicator" class="password-strength" style="
+            margin-top: 8px;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+          ">
+            <div class="strength-bar" style="
+              height: 100%;
+              width: 0%;
+              transition: all 0.3s ease;
+              border-radius: 2px;
+            "></div>
+          </div>
+          <div id="passwordStrengthText" class="strength-text" style="
+            margin-top: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: none;
+          "></div>
+        </div>
+        
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label for="confirmPassword" style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">Confirmar Nueva Contraseña</label>
+          <input type="password" id="confirmPassword" name="confirmPassword" required style="
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            box-sizing: border-box;
+          ">
+        </div>
+        
+        <div class="form-actions" style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary cancel-btn" style="
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+          ">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+          ">Cambiar Contraseña</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  // Event listeners
+  const closeBtn = modal.querySelector('.close-btn');
+  const cancelBtn = modal.querySelector('.cancel-btn');
+  const form = modal.querySelector('#changePasswordForm');
+  const newPasswordInput = modal.querySelector('#newPassword');
+  const strengthIndicator = modal.querySelector('#passwordStrengthIndicator');
+  const strengthBar = modal.querySelector('.strength-bar');
+  const strengthText = modal.querySelector('#passwordStrengthText');
+
+  const closeModal = () => modal.remove();
+
+  closeBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
+  // Event listener para el indicador de fuerza de contraseña
+  newPasswordInput.addEventListener('input', (e) => {
+    const password = e.target.value;
+    const strength = calculatePasswordStrength(password);
+    
+    if (password.length > 0) {
+      strengthIndicator.style.display = 'block';
+      strengthText.style.display = 'block';
+      
+      let width, color, text;
+      switch (strength.level) {
+        case 'weak':
+          width = '33%';
+          color = '#ef4444';
+          text = 'Débil';
+          break;
+        case 'medium':
+          width = '66%';
+          color = '#f59e0b';
+          text = 'Media';
+          break;
+        case 'strong':
+          width = '100%';
+          color = '#10b981';
+          text = 'Fuerte';
+          break;
+        default:
+          width = '0%';
+          color = '#e5e7eb';
+          text = '';
+      }
+      
+      strengthBar.style.width = width;
+      strengthBar.style.backgroundColor = color;
+      strengthText.textContent = `Fuerza: ${text}`;
+      strengthText.style.color = color;
+    } else {
+      strengthIndicator.style.display = 'none';
+      strengthText.style.display = 'none';
+    }
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const currentPassword = form.currentPassword.value;
+    const newPassword = form.newPassword.value;
+    const confirmPassword = form.confirmPassword.value;
+    
+    // Validaciones
+    if (newPassword !== confirmPassword) {
+      alert('Las contraseñas nuevas no coinciden');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      alert('La nueva contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    
+    try {
+      const success = await authModel.changePassword(currentPassword, newPassword);
+      if (success) {
+        alert('Contraseña cambiada exitosamente');
+        closeModal();
+      } else {
+        alert('Error al cambiar la contraseña. Verifica tu contraseña actual.');
+      }
+    } catch (error) {
+      console.error('Error cambiando contraseña:', error);
+      alert('Error al cambiar la contraseña: ' + error.message);
+    }
+  });
+}
+
+/**
+ * Calcular la fuerza de una contraseña
+ * @param {string} password - La contraseña a evaluar
+ * @returns {object} - Objeto con el nivel de fuerza y puntaje
+ */
+function calculatePasswordStrength(password) {
+  let score = 0;
+  const checks = {
+    length: password.length >= 8,
+    lowercase: /[a-z]/.test(password),
+    uppercase: /[A-Z]/.test(password),
+    numbers: /\d/.test(password),
+    specialChars: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+  };
+
+  // Puntaje por cada criterio cumplido
+  Object.values(checks).forEach(check => {
+    if (check) score += 20;
+  });
+
+  // Determinar nivel
+  let level;
+  if (score < 40) {
+    level = 'weak';
+  } else if (score < 80) {
+    level = 'medium';
+  } else {
+    level = 'strong';
+  }
+
+  return { level, score, checks };
+}
+
+// Hacer disponible globalmente
+window.showUserProfile = showUserProfile;
+window.showChangePasswordModal = showChangePasswordModal;

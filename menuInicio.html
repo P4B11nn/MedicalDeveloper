@@ -1753,6 +1753,10 @@
           </div>
           <div class="dropdown-divider"></div>
           <div class="dropdown-options">
+            <a href="#" class="dropdown-option" id="profileBtn">
+              <i class="fas fa-user"></i>
+              <span>Ver perfil</span>
+            </a>
             <a href="#" class="dropdown-option" id="logoutBtn">
               <i class="fas fa-sign-out-alt"></i>
               <span>Cerrar sesión</span>
@@ -1770,8 +1774,8 @@
         <h3>Bienvenido</h3>
       </div>
       <div class="menu">
-        <div class="menu-item" data-disabled="true">
-          <button data-category="pacientes">👥 <span>Pacientes</span></button>
+        <div class="menu-item">
+          <button data-category="pacientes" data-disabled="true">👥 <span>Pacientes</span></button>
           <div class="submenu" aria-hidden="true">
             <a href="pages/categoria-pacientes.html?compact=1#pacientes-registrados-section"><i class="fas fa-user-check"></i> Ver pacientes registrados</a>
             <a href="pages/categoria-pacientes.html?compact=1#registro-paciente-section"><i class="fas fa-user-plus"></i> Registro de paciente</a>
@@ -1779,30 +1783,30 @@
             <a href="pages/categoria-pacientes.html?compact=1#historial-medico-completo-section"><i class="fas fa-file-medical"></i> Historial médico completo</a>
           </div>
         </div>
-        <div class="menu-item" data-disabled="true">
-          <button data-category="usuarios-personal">👤 <span>Usuarios y Personal</span></button>
+        <div class="menu-item">
+          <button data-category="usuarios-personal" data-disabled="true">👤 <span>Usuarios y Personal</span></button>
           <div class="submenu" aria-hidden="true">
             <a href="pages/categoria-usuarios-personal.html?compact=1#personal-section"><i class="fas fa-user"></i> Personal</a>
             <a href="pages/categoria-usuarios-personal.html?compact=1#nuevo-usuario-section"><i class="fas fa-user-plus"></i> Nuevo usuario</a>
           </div>
         </div>
         <div class="menu-item">
-          <button data-category="operaciones-control"><span class="menu-icon">⚙️</span> <span>Operaciones / Control</span></button>
+          <button data-category="operaciones-control" data-disabled="true"><span class="menu-icon">⚙️</span> <span>Operaciones / Control</span></button>
           <div class="submenu" aria-hidden="true">
             <a href="pages/categoria-operaciones-control.html?compact=1#registro-entradas-salidas-section"><i class="fas fa-door-open"></i> Registro de Entradas/Salidas</a>
             <a href="pages/categoria-operaciones-control.html?compact=1#asistencia-section"><i class="fas fa-user-check"></i> Asistencia</a>
           </div>
         </div>
         <div class="menu-item">
-          <button data-category="reportes" aria-disabled="true" tabindex="-1" class="disabled-menu-btn">📊 <span>Reportes</span></button>
+          <button data-category="reportes" data-disabled="true" aria-disabled="true" tabindex="-1" class="disabled-menu-btn">📊 <span>Reportes</span></button>
           <div class="submenu" aria-hidden="true">
             <a href="pages/categoria-reportes.html?compact=1#estadisticas" data-section="estadisticas" id="link-reportes-estadisticas"><i class="fas fa-chart-pie"></i> Estadísticas</a>
             <a href="pages/categoria-reportes.html?compact=1#actividades" data-section="actividades" id="link-reportes-actividades"><i class="fas fa-history"></i> Registro de actividades</a>
             <a href="pages/categoria-reportes.html?compact=1#exportacion" data-section="exportacion" id="link-reportes-exportacion"><i class="fas fa-file-export"></i> Exportar datos</a>
           </div>
         </div>
-        <div class="menu-item" data-disabled="true">
-          <button data-category="gestion" id="btnGestion" aria-disabled="true" tabindex="-1">📚 <i class="fas fa-cogs"></i><span>Gestión Administrativa</span></button>
+        <div class="menu-item">
+          <button data-category="gestion" data-disabled="true" id="btnGestion" aria-disabled="true" tabindex="-1">📚 <i class="fas fa-cogs"></i><span>Gestión Administrativa</span></button>
           <div class="submenu" aria-hidden="true">
             <a href="pages/categoria-gestion.html?compact=1#modulos" id="link-gestion-modulos"><i class="fas fa-hospital"></i> Gestionar Módulos</a>
             <a href="pages/categoria-gestion.html?compact=1#grupos" id="link-gestion-grupos"><i class="fas fa-users"></i> Gestionar Grupos</a>
@@ -1989,12 +1993,12 @@
           <div class="assignment-details">
             <div class="assignment-main">
               <div class="module-assigned">
-                <span class="module-name">Consulta Externa - Medicina General</span>
-                <span class="supervisor">Supervisor: Dr. Ana López</span>
+                <span class="module-name">Cargando módulo...</span>
+                <span class="supervisor">Supervisor: Cargando...</span>
               </div>
               <div class="location-info">
                 <i class="fas fa-map-marker-alt"></i>
-                <span>Edificio A - Piso 2 - Consultorios 201-205</span>
+                <span>Cargando ubicación...</span>
               </div>
             </div>
           </div>
@@ -2184,8 +2188,145 @@
     import './js/utils/eventBusManager.js';      // Event Bus monitoring
     import './js/utils/performanceMonitor.js';   // Performance monitoring
     import './js/utils/architectureValidator.js'; // Architecture validation
-    import './dropdown-debug-tool.js'; // Debug tool para dropdown
     
+    // Función para inicializar header individual
+    function initIndividualHeader() {
+      const userIcon = document.getElementById('userIcon');
+      const userDropdown = document.getElementById('userDropdown');
+      const logoutOption = document.getElementById('logoutBtn');
+      
+      // Obtener información del usuario
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      
+      // Actualizar información del usuario
+      if (currentUser.nombre) {
+        document.getElementById('userName').textContent = currentUser.nombre;
+        document.getElementById('dropdownUserName').textContent = currentUser.nombre;
+      }
+      
+      if (currentUser.role) {
+        document.getElementById('dropdownUserRole').textContent = currentUser.role;
+      }
+      
+      // Toggle dropdown
+      userIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = userDropdown.style.display === 'block';
+        userDropdown.style.display = isVisible ? 'none' : 'block';
+      });
+      
+      // Cerrar dropdown al hacer clic fuera
+      document.addEventListener('click', (e) => {
+        if (!userIcon.contains(e.target) && !userDropdown.contains(e.target)) {
+          userDropdown.style.display = 'none';
+        }
+      });
+      
+      // Manejar logout
+      logoutOption.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        if (typeof window.showLogoutConfirmationModal === 'function') {
+          window.showLogoutConfirmationModal();
+        } else {
+          // Fallback básico
+          if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('userSession');
+            window.location.href = 'index.html';
+          }
+        }
+        
+        userDropdown.style.display = 'none';
+      });
+    }
+
+    // Función para mostrar el modal elegante de confirmación de logout
+    function showLogoutConfirmationModal() {
+      const modal = document.getElementById('logoutModal');
+      const cancelBtn = document.getElementById('logoutCancelBtn');
+      const confirmBtn = document.getElementById('logoutConfirmBtn');
+      
+      // Mostrar modal
+      modal.style.display = 'flex';
+      
+      // Enfocar el botón de cancelar por defecto
+      setTimeout(() => {
+        cancelBtn.focus();
+      }, 100);
+      
+      // Handler para cancelar
+      const cancelHandler = () => {
+        modal.style.display = 'none';
+        cleanup();
+      };
+      
+      // Handler para confirmar logout
+      const confirmHandler = () => {
+        modal.style.display = 'none';
+        performLogout();
+        cleanup();
+      };
+      
+      // Handler para tecla ESC
+      const escHandler = (e) => {
+        if (e.key === 'Escape') {
+          cancelHandler();
+        }
+      };
+      
+      // Handler para click en overlay
+      const overlayHandler = (e) => {
+        if (e.target.classList.contains('logout-modal-overlay')) {
+          cancelHandler();
+        }
+      };
+      
+      // Agregar event listeners
+      cancelBtn.addEventListener('click', cancelHandler);
+      confirmBtn.addEventListener('click', confirmHandler);
+      document.addEventListener('keydown', escHandler);
+      modal.addEventListener('click', overlayHandler);
+      
+      // Función para limpiar event listeners
+      function cleanup() {
+        cancelBtn.removeEventListener('click', cancelHandler);
+        confirmBtn.removeEventListener('click', confirmHandler);
+        document.removeEventListener('keydown', escHandler);
+        modal.removeEventListener('click', overlayHandler);
+      }
+    }
+    
+    // Función para realizar el logout
+    function performLogout() {
+      console.log('🚪 Cerrando sesión...');
+      
+      // Limpiar localStorage
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('userSession');
+      localStorage.removeItem('usuarioActual');
+      localStorage.removeItem('sessionData');
+      
+      // Emitir evento de logout si hay EventBus disponible
+      if (typeof window.EventBus !== 'undefined') {
+        window.EventBus.emit('user:logout', {
+          userId: 'current',
+          timestamp: Date.now(),
+          reason: 'manual'
+        });
+      }
+      
+      // Redireccionar al login
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 100);
+    }
+    
+    // Hacer funciones disponibles globalmente
+    window.initIndividualHeader = initIndividualHeader;
+    window.showLogoutConfirmationModal = showLogoutConfirmationModal;
+    window.performLogout = performLogout;
+
     document.addEventListener('DOMContentLoaded', () => {
       console.log('MenuInicio: Página cargada con herramientas de desarrollo habilitadas');
       
@@ -2196,7 +2337,7 @@
         // Esperar un momento para que userDisplayGlobal esté completamente cargado
         setTimeout(() => {
           // Initialize header individual - COMENTADO: causa conflicto con userDisplayGlobal.js
-          // initIndividualHeader();
+          initIndividualHeader();
           
           // Initialize global controller ONLY para event bus listeners después del header
           setTimeout(() => {
@@ -2351,7 +2492,7 @@
           import('./js/models/pacienteModel.js')
         ]);
 
-        const estadisticas = reporteModel.getEstadisticas('mes');
+        const estadisticas = await reporteModel.getEstadisticas('mes');
 
         // KPIs
         const kpiPacientes = estadisticas.pacientes.totalPacientes || 0;
@@ -2486,35 +2627,66 @@
       // Usar el sistema de autenticación existente del proyecto
       try {
         console.log('🔍 Buscando rol del usuario...');
-        
-        // Verificar la clave correcta del localStorage (usuarioActual según storageModel.js)
-        const currentUserData = localStorage.getItem('usuarioActual');
-        if (currentUserData) {
-          const user = JSON.parse(currentUserData);
-          console.log('👤 Usuario desde usuarioActual:', user);
-          console.log('🏷️ Rol encontrado:', user.rol);
-          console.log('🏷️ Tipo de rol:', typeof user.rol);
-          return user.rol || 'practicante';
+
+        // PRIMERO: Verificar sessionStorage donde se guarda el usuario actual (según storageModel.js)
+        const sessionUserData = sessionStorage.getItem('currentUser');
+        if (sessionUserData) {
+          const user = JSON.parse(sessionUserData);
+          console.log('👤 Usuario desde sessionStorage (currentUser):', user);
+          console.log('🏷️ Rol encontrado (sessionStorage):', user.rol);
+          console.log('🏷️ Tipo de rol (sessionStorage):', typeof user.rol);
+
+          // Validar que el rol sea válido
+          const validRoles = ['practicante', 'admin', 'administrador', 'administrator', 'supervisor'];
+          if (user.rol && validRoles.includes(user.rol.toLowerCase())) {
+            console.log('✅ Rol válido encontrado en sessionStorage:', user.rol);
+            return user.rol;
+          } else {
+            console.warn('⚠️ Rol inválido en sessionStorage:', user.rol, '- usando practicante por defecto');
+            return 'practicante';
+          }
         }
-        
+
         // Fallback: verificar con la clave alternativa
         const currentUserDataAlt = localStorage.getItem('currentUser');
         if (currentUserDataAlt) {
           const user = JSON.parse(currentUserDataAlt);
           console.log('👤 Usuario desde currentUser (fallback):', user);
-          console.log('🏷️ Rol encontrado:', user.rol);
-          return user.rol || 'practicante';
+          console.log('🏷️ Rol encontrado (currentUser):', user.rol);
+          console.log('🏷️ Tipo de rol (currentUser):', typeof user.rol);
+
+          // Validar que el rol sea válido
+          const validRoles = ['practicante', 'admin', 'administrador', 'administrator', 'supervisor'];
+          if (user.rol && validRoles.includes(user.rol.toLowerCase())) {
+            console.log('✅ Rol válido encontrado en currentUser:', user.rol);
+            return user.rol;
+          } else {
+            console.warn('⚠️ Rol inválido en currentUser:', user.rol, '- usando practicante por defecto');
+            return 'practicante';
+          }
         }
-        
+
         // Segundo fallback: verificar si hay datos de sesión
         const sessionData = localStorage.getItem('sessionData');
         if (sessionData) {
           const session = JSON.parse(sessionData);
           console.log('📝 Usuario desde sessionData:', session);
           console.log('🏷️ Rol de sesión:', session.userRole || session.rol);
-          return session.userRole || session.rol || 'practicante';
+
+          const role = session.userRole || session.rol;
+          if (role) {
+            // Validar que el rol sea válido
+            const validRoles = ['practicante', 'admin', 'administrador', 'administrator', 'supervisor'];
+            if (validRoles.includes(role.toLowerCase())) {
+              console.log('✅ Rol válido encontrado en sessionData:', role);
+              return role;
+            } else {
+              console.warn('⚠️ Rol inválido en sessionData:', role, '- usando practicante por defecto');
+              return 'practicante';
+            }
+          }
         }
-        
+
         console.log('⚠️ No se encontró usuario, usando rol por defecto: practicante');
         return 'practicante'; // Default
       } catch (error) {
@@ -2525,13 +2697,13 @@
 
     function showDashboardByRole(role) {
       console.log('=== DASHBOARD ROLE DETECTION ===');
-      console.log('🎯 Rol detectado:', role);
+      console.log('🎯 Rol recibido:', role);
       console.log('🔍 Tipo de rol:', typeof role);
       console.log('🔍 Rol normalizado:', role ? role.toLowerCase().trim() : 'undefined');
-      
+
       const adminDashboard = document.getElementById('admin-dashboard');
       const practitionerDashboard = document.getElementById('practitioner-dashboard');
-      
+
       // Verificar que los elementos existan
       if (!adminDashboard) {
         console.error('❌ Elemento admin-dashboard no encontrado');
@@ -2541,35 +2713,34 @@
         console.error('❌ Elemento practitioner-dashboard no encontrado');
         return;
       }
-      
+
       console.log('✅ Elementos del dashboard encontrados');
-      
+
       // Ocultar todos los dashboards primero
       adminDashboard.style.display = 'none';
       practitionerDashboard.style.display = 'none';
-      
+
       // Normalizar el rol para comparación
       const normalizedRole = role ? role.toLowerCase().trim() : '';
       console.log('📝 Comparando rol normalizado:', normalizedRole);
-      
+
+      // Lista de roles que deben mostrar el dashboard de administrador
+      const adminRoles = ['admin', 'administrador', 'administrator'];
+
       // Mostrar el dashboard correspondiente con mejor detección
-      if (normalizedRole === 'admin' || 
-          normalizedRole === 'administrador' || 
-          normalizedRole === 'administrator') {
+      if (adminRoles.includes(normalizedRole)) {
         adminDashboard.style.display = 'block';
-        console.log('🔧 Dashboard de administrador activado');
+        console.log('🔧 Dashboard de administrador activado para rol:', normalizedRole);
         loadAdminData();
       } else {
-        // Para cualquier otro rol (practicante, usuario, etc.)
+        // Para cualquier otro rol (practicante, usuario, supervisor, etc.)
         practitionerDashboard.style.display = 'block';
-        console.log('👨‍⚕️ Dashboard de practicante activado');
+        console.log('👨‍⚕️ Dashboard de practicante activado para rol:', normalizedRole);
         loadPractitionerData();
       }
-      
+
       console.log('=== FIN DASHBOARD ROLE DETECTION ===');
-    }
-    
-    // Función para testing desde consola
+    }    // Función para testing desde consola
     window.testDashboard = function(role) {
       console.log('🧪 TESTING: Forzando dashboard para rol:', role);
       showDashboardByRole(role);
@@ -2634,49 +2805,64 @@
       console.log('📍 Actualizando estado de módulos de salud...');
       
       try {
-    // Importar el modelo de gestión dinámicamente
-    const { gestionModel } = await import('./js/models/gestionModel.js');
-    const { authModel } = await import('./js/models/storageModel.js');
-    
-    // Obtener los módulos reales
-    const modulos = gestionModel.getModulos();
-    console.log('🏥 Módulos encontrados:', modulos.length);
-    
-    // Obtener el contenedor de la lista de módulos
-    const modulosContainer = document.getElementById('dashboard-modulos-list');
-    if (!modulosContainer) {
-      console.error('❌ No se encontró el contenedor dashboard-modulos-list');
-      return;
-    }
-    
-    // Función auxiliar para contar practicantes en un grupo
-    function contarPracticantesEnGrupo(grupoId) {
-      if (!grupoId) return 0;
-      const usuarios = authModel.getAllUsers();
-      return usuarios.filter(usuario => 
-        usuario.rol === 'practicante' && 
-        usuario.grupoId === grupoId &&
-        usuario.activo !== false
-      ).length;
-    }
-    
-    // Función auxiliar para formatear ubicación
-    function formatearUbicacion(modulo) {
-      if (modulo.lugar) {
-        return modulo.lugar;
-      } else if (modulo.ubicacion) {
-        return modulo.ubicacion;
-      }
-      return 'Sin ubicación';
-    }
-    
-    // Función auxiliar para formatear coordenadas
-    function formatearCoordenadas(modulo) {
-      if (modulo.latitud && modulo.longitud) {
-        return `Lat: ${modulo.latitud}, Lng: ${modulo.longitud}`;
-      }
-      return '';
-    }        if (modulos.length === 0) {
+        // Mostrar indicador de carga
+        const modulosContainer = document.getElementById('dashboard-modulos-list');
+        if (!modulosContainer) {
+          console.error('❌ No se encontró el contenedor dashboard-modulos-list');
+          return;
+        }
+        
+        // Mostrar loading spinner
+        modulosContainer.innerHTML = `
+          <div style="text-align: center; padding: 40px; color: #64748b;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 15px;"></i>
+            <p>Cargando módulos de salud...</p>
+          </div>
+        `;
+        
+        // Importar gestionView dinámicamente para usar sus funciones
+        const { gestionModel } = await import('./js/models/gestionModel.js');
+        
+        // Obtener los módulos reales desde Firebase
+        const modulos = await gestionModel.getModulos();
+        console.log('🏥 Módulos encontrados:', modulos.length);
+        
+        // Función auxiliar para contar practicantes en un grupo
+        async function contarPracticantesEnGrupo(grupoId) {
+          if (!grupoId) return 0;
+          try {
+            const { authModel } = await import('./js/models/storageModel.js');
+            const usuarios = await authModel.getAllUsers();
+            return usuarios.filter(usuario => 
+              usuario.rol === 'practicante' && 
+              usuario.grupoId === grupoId &&
+              usuario.activo !== false
+            ).length;
+          } catch (error) {
+            console.error('Error contando practicantes:', error);
+            return 0;
+          }
+        }
+        
+        // Función auxiliar para formatear ubicación
+        function formatearUbicacion(modulo) {
+          if (modulo.nombreLugar) {
+            return modulo.nombreLugar;
+          } else if (modulo.lugar) {
+            return modulo.lugar;
+          } else if (modulo.ubicacion) {
+            return modulo.ubicacion;
+          }
+          return 'Sin ubicación';
+        }
+        
+        // Función auxiliar para formatear coordenadas
+        function formatearCoordenadas(modulo) {
+          if (modulo.latitud && modulo.longitud) {
+            return `Lat: ${modulo.latitud}, Lng: ${modulo.longitud}`;
+          }
+          return '';
+        }        if (modulos.length === 0) {
           modulosContainer.innerHTML = `
             <div style="text-align: center; padding: 20px; color: #64748b;">
               <i class="fas fa-hospital" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
@@ -2694,7 +2880,7 @@
             gap: 16px;
             padding: 10px 0;
           ">
-            ${modulos.map(modulo => {
+            ${await Promise.all(modulos.map(async modulo => {
               // Determinar color del estado
               let statusColor = '#10b981'; // Verde por defecto (activo)
               let statusBgColor = 'rgba(16, 185, 129, 0.1)';
@@ -2718,8 +2904,11 @@
               // Obtener información del grupo asignado
               let grupoAsignado = null;
               if (modulo.grupoAsignadoId) {
-                grupoAsignado = gestionModel.getGrupoById(modulo.grupoAsignadoId);
+                grupoAsignado = await gestionModel.getGrupoById(modulo.grupoAsignadoId);
               }
+              
+              // Contar practicantes en el grupo
+              const numPracticantes = grupoAsignado ? await contarPracticantesEnGrupo(grupoAsignado.id) : 0;
               
               return `
                 <div style="
@@ -2871,7 +3060,7 @@
                           "><i class="fas fa-user-md"></i></div>
                           <div style="
                             color: #334155;
-                          ">Miembros: <strong>${contarPracticantesEnGrupo(grupoAsignado.id)}</strong></div>
+                          ">Miembros: <strong>${numPracticantes}</strong></div>
                         </div>
                       </div>
                     ` : `
@@ -2896,7 +3085,7 @@
                   </div>
                 </div>
               `;
-            }).join('')}
+            }))}
           </div>
         `;
         
@@ -2920,14 +3109,38 @@
     async function updateWorkGroups() {
       console.log('👥 Actualizando grupos de trabajo...');
       
+      // Mostrar indicador de carga
+      const gruposContainer = document.getElementById('dashboard-grupos-list');
+      if (gruposContainer) {
+        gruposContainer.innerHTML = `
+          <div style="text-align: center; padding: 20px;">
+            <div class="loading-spinner" style="
+              display: inline-block;
+              width: 20px;
+              height: 20px;
+              border: 2px solid #e5e7eb;
+              border-radius: 50%;
+              border-top-color: #3b82f6;
+              animation: spin 1s ease-in-out infinite;
+              margin-right: 8px;
+            "></div>
+            <span style="color: #6b7280;">Cargando grupos...</span>
+          </div>
+        `;
+      }
+      
       try {
         // Importar los modelos necesarios
         const { gestionModel } = await import('./js/models/gestionModel.js');
         const { authModel } = await import('./js/models/storageModel.js');
         
         // Obtener los grupos reales
-        const grupos = gestionModel.getGrupos();
+        const grupos = await gestionModel.getGrupos();
         console.log('👥 Grupos encontrados:', grupos.length);
+        
+        // Obtener TODOS los usuarios una sola vez al inicio
+        const todosLosUsuarios = await authModel.getAllUsers();
+        console.log('👥 Total de usuarios obtenidos:', todosLosUsuarios.length);
         
         // Obtener el contenedor de la lista de grupos
         const gruposContainer = document.getElementById('dashboard-grupos-list');
@@ -2936,19 +3149,21 @@
           return;
         }
         
-        // Función auxiliar para obtener usuarios de un grupo
+        // Función auxiliar para obtener usuarios de un grupo (ahora síncrona)
         function obtenerUsuariosDeGrupo(grupoId) {
-          const usuarios = authModel.getAllUsers();
-          return usuarios.filter(usuario => 
+          return todosLosUsuarios.filter(usuario => 
             usuario.grupoId === grupoId && 
             usuario.activo !== false
           );
         }
         
-        // Función auxiliar para obtener módulo asignado al grupo
+        // Obtener TODOS los módulos una sola vez al inicio para evitar llamadas repetidas
+        const todosLosModulos = await gestionModel.getModulos();
+        console.log('🏥 Total de módulos obtenidos:', todosLosModulos.length);
+        
+        // Función auxiliar para obtener módulo asignado al grupo (ahora síncrona)
         function obtenerModuloAsignado(grupoId) {
-          const modulos = gestionModel.getModulos();
-          return modulos.find(modulo => modulo.grupoAsignadoId === grupoId);
+          return todosLosModulos.find(modulo => modulo.grupoAsignadoId === grupoId);
         }
         
         // Función auxiliar para generar iniciales del nombre
@@ -3132,58 +3347,128 @@
 
     async function updateAssignedModule(currentUser) {
       try {
+        console.log('🏥 Actualizando módulo asignado para:', currentUser.usuario || currentUser.nombre);
+
         const { gestionModel } = await import('./js/models/gestionModel.js');
-        
+
         // Buscar módulo asignado al practicante
-        const modulos = gestionModel.getModulos();
+        const modulos = await gestionModel.getModulos();
+        console.log('🏥 Total de módulos disponibles:', modulos.length);
+        console.log('🏥 Módulos encontrados:', modulos.map(m => ({ id: m.id, nombre: m.nombre, grupoAsignado: m.grupoAsignado, grupoAsignadoId: m.grupoAsignadoId })));
+
         let moduloAsignado = null;
-        
-        // Si el usuario tiene un módulo asignado específicamente
+        let asignacionTipo = 'ninguna';
+
+        // 1. Si el usuario tiene un módulo asignado específicamente
         if (currentUser.moduloId) {
           moduloAsignado = modulos.find(m => m.id === currentUser.moduloId);
+          asignacionTipo = moduloAsignado ? 'módulo específico' : 'módulo específico (no encontrado)';
+          console.log('🔍 Buscando módulo específico por moduloId:', currentUser.moduloId, '- Encontrado:', !!moduloAsignado);
         }
-        
-        // Si no tiene módulo específico, buscar por grupo
+
+        // 2. Si no tiene módulo específico, buscar por grupo
         if (!moduloAsignado && currentUser.grupoId) {
-          // Buscar módulo que tenga el mismo grupo asignado
-          moduloAsignado = modulos.find(m => 
-            m.grupoAsignado === currentUser.grupoId || 
+          moduloAsignado = modulos.find(m =>
+            m.grupoAsignadoId === currentUser.grupoId ||
             (m.practicantes && m.practicantes.includes(currentUser.id))
           );
+          asignacionTipo = moduloAsignado ? 'por grupo' : 'por grupo (no encontrado)';
+          console.log('🔍 Buscando módulo por grupoId:', currentUser.grupoId, '- Encontrado:', !!moduloAsignado);
         }
-        
-        // Si no encuentra módulo, usar uno por defecto
-        if (!moduloAsignado && modulos.length > 0) {
-          moduloAsignado = modulos[0]; // Primer módulo disponible
+
+        // 2.1. Si no tiene grupoId pero tiene grupo_trabajo, buscar por grupo_trabajo
+        if (!moduloAsignado && !currentUser.grupoId && currentUser.grupo_trabajo) {
+          moduloAsignado = modulos.find(m =>
+            m.grupoAsignadoId === currentUser.grupo_trabajo ||
+            (m.practicantes && m.practicantes.includes(currentUser.id))
+          );
+          asignacionTipo = moduloAsignado ? 'por grupo_trabajo' : 'por grupo_trabajo (no encontrado)';
+          console.log('🔍 Buscando módulo por grupo_trabajo:', currentUser.grupo_trabajo, '- Encontrado:', !!moduloAsignado);
         }
-        
+
+        // 3. Si no encuentra ninguno, mostrar "Sin módulo asignado" en lugar de usar uno por defecto
+        if (!moduloAsignado) {
+          asignacionTipo = 'sin asignación';
+          console.log('🔍 No se encontró módulo asignado para el grupo del usuario');
+        }
+
+        console.log('📋 Resultado de asignación de módulo:', {
+          asignacionTipo,
+          moduloAsignado: moduloAsignado ? {
+            id: moduloAsignado.id,
+            nombre: moduloAsignado.nombre,
+            nombreTipo: typeof moduloAsignado.nombre,
+            grupoAsignado: moduloAsignado.grupoAsignado,
+            grupoAsignadoId: moduloAsignado.grupoAsignadoId
+          } : null
+        });
+
         // Actualizar la interfaz del módulo
         const moduleNameElement = document.querySelector('.module-name');
         const supervisorElement = document.querySelector('.supervisor');
         const locationElement = document.querySelector('.location-info span');
         const statusElement = document.querySelector('.assignment-details .status-indicator');
-        
+
+        console.log('🎯 Elementos encontrados:', {
+          moduleNameElement: !!moduleNameElement,
+          supervisorElement: !!supervisorElement,
+          locationElement: !!locationElement,
+          statusElement: !!statusElement
+        });
+
         if (moduloAsignado) {
+          // Asegurar que el nombre del módulo sea una cadena de texto
+          let nombreModulo = '';
+          
+          console.log('🔍 Depurando módulo asignado:', {
+            id: moduloAsignado.id,
+            nombre: moduloAsignado.nombre,
+            tipoNombre: typeof moduloAsignado.nombre,
+            keys: Object.keys(moduloAsignado),
+            moduloAsignadoCompleto: JSON.stringify(moduloAsignado, null, 2)
+          });
+          
+          if (typeof moduloAsignado.nombre === 'string' && moduloAsignado.nombre.trim()) {
+            nombreModulo = moduloAsignado.nombre.trim();
+          } else if (typeof moduloAsignado.nombre === 'object' && moduloAsignado.nombre !== null) {
+            // Si es un objeto, intentar extraer una propiedad de nombre
+            nombreModulo = moduloAsignado.nombre.nombre || 
+                          moduloAsignado.nombre.text || 
+                          moduloAsignado.nombre.value || 
+                          `Módulo ${moduloAsignado.id || 'sin ID'}`;
+          } else {
+            nombreModulo = `Módulo ${moduloAsignado.id || 'sin ID'}`;
+          }
+
+          console.log('🏷️ Nombre del módulo a mostrar:', nombreModulo, '(tipo original:', typeof moduloAsignado.nombre, ', valor original:', moduloAsignado.nombre, ')');
+
           if (moduleNameElement) {
-            moduleNameElement.textContent = moduloAsignado.nombre || 'Módulo sin nombre';
+            moduleNameElement.textContent = nombreModulo;
+            console.log('✅ Nombre del módulo asignado al elemento:', nombreModulo);
           }
-          
+
           if (supervisorElement) {
-            supervisorElement.textContent = `Supervisor: ${moduloAsignado.supervisor || 'Por asignar'}`;
+            const supervisor = moduloAsignado.supervisor || moduloAsignado.responsable || 'Por asignar';
+            supervisorElement.textContent = `Supervisor: ${supervisor}`;
           }
-          
+
           if (locationElement) {
-            const ubicacion = moduloAsignado.lugar || moduloAsignado.ubicacion || 'Ubicación no especificada';
+            const ubicacion = moduloAsignado.lugar || moduloAsignado.ubicacion || moduloAsignado.nombreLugar || 'Ubicación no especificada';
             locationElement.textContent = ubicacion;
           }
-          
+
           if (statusElement) {
-            statusElement.textContent = moduloAsignado.estado === 'activo' ? 'Activo' : 'Inactivo';
-            statusElement.className = `status-indicator ${moduloAsignado.estado === 'activo' ? 'active' : 'inactive'}`;
+            const estado = moduloAsignado.estado || 'desconocido';
+            const estadoTexto = estado === 'activo' ? 'Activo' : estado === 'inactivo' ? 'Inactivo' : 'Estado desconocido';
+            statusElement.textContent = estadoTexto;
+            statusElement.className = `status-indicator ${estado === 'activo' ? 'active' : 'inactive'}`;
           }
+
+          console.log('✅ Módulo asignado correctamente:', nombreModulo);
         } else {
           // Sin módulo asignado
           console.log('⚠️ No se encontró módulo asignado para el usuario');
+
           if (moduleNameElement) {
             moduleNameElement.textContent = 'Sin módulo asignado';
           }
@@ -3198,9 +3483,15 @@
             statusElement.className = 'status-indicator inactive';
           }
         }
-        
+
       } catch (error) {
         console.error('❌ Error actualizando módulo asignado:', error);
+
+        // En caso de error, mostrar mensaje de error
+        const moduleNameElement = document.querySelector('.module-name');
+        if (moduleNameElement) {
+          moduleNameElement.textContent = 'Error cargando módulo';
+        }
       }
     }
 
@@ -3221,26 +3512,32 @@
         }
         
         console.log('🔍 Verificando grupoId:', currentUser.grupoId);
+        console.log('🔍 Verificando grupo_trabajo:', currentUser.grupo_trabajo);
         console.log('👤 Datos completos del usuario:', JSON.stringify(currentUser, null, 2));
         
-        if (currentUser.grupoId) {
+        // Determinar qué ID de grupo usar
+        const grupoIdToUse = currentUser.grupoId || currentUser.grupo_trabajo;
+        console.log('🎯 ID de grupo a usar:', grupoIdToUse);
+        
+        if (grupoIdToUse) {
           const { authModel } = await import('./js/models/storageModel.js');
           const { gestionModel } = await import('./js/models/gestionModel.js');
+          
+          // Obtener TODOS los usuarios una sola vez al inicio
+          const todosLosUsuarios = await authModel.getAllUsers();
+          console.log('👥 Total de usuarios en el sistema:', todosLosUsuarios.length);
           
           // Obtener información del grupo de múltiples fuentes
           let miembrosGrupo = [];
           let infoGrupo = null;
           
           // 1. Buscar en usuarios por grupoId
-          const usuarios = authModel.getAllUsers();
-          console.log('👥 Total de usuarios en el sistema:', usuarios.length);
-          
-          miembrosGrupo = usuarios.filter(u => 
-            u.grupoId === currentUser.grupoId && 
-            u.activo !== false
+          miembrosGrupo = todosLosUsuarios.filter(u => 
+            u.grupoId === grupoIdToUse || 
+            u.grupo_trabajo === grupoIdToUse
           );
           
-          console.log('🔍 Miembros del grupo ' + currentUser.grupoId + ':', miembrosGrupo.length);
+          console.log('🔍 Miembros del grupo ' + grupoIdToUse + ':', miembrosGrupo.length);
           console.log('📝 Miembros encontrados:', miembrosGrupo.map(u => ({
             nombre: u.nombre || u.usuario,
             rol: u.rol,
@@ -3248,14 +3545,14 @@
           })));
           
           // 2. Buscar información del grupo en gestionModel
-          const gruposDisponibles = gestionModel.getGrupos();
+          const gruposDisponibles = await gestionModel.getGrupos();
           console.log('📋 Grupos disponibles en gestionModel:', gruposDisponibles);
           
           // Buscar por diferentes formatos de ID
           infoGrupo = gruposDisponibles.find(g => 
-            g.id === currentUser.grupoId || 
-            g.id === currentUser.grupoId.toUpperCase() ||
-            g.nombre?.toLowerCase().includes(currentUser.grupoId.toLowerCase())
+            g.id === grupoIdToUse || 
+            g.id === grupoIdToUse.toUpperCase() ||
+            g.nombre?.toLowerCase().includes(grupoIdToUse.toLowerCase())
           );
           
           console.log('🎯 Info del grupo encontrada:', infoGrupo);
@@ -3263,8 +3560,8 @@
           // 3. Si no hay grupos en gestionModel, crear uno básico
           if (!infoGrupo) {
             infoGrupo = {
-              id: currentUser.grupoId,
-              nombre: `Grupo ${currentUser.grupoId.replace('grupo-', '').toUpperCase()}`,
+              id: grupoIdToUse,
+              nombre: `Grupo ${grupoIdToUse.replace('grupo-', '').toUpperCase()}`,
               turno: getCurrentShift(),
               horario: getCurrentShiftTime()
             };
@@ -3274,12 +3571,14 @@
           // 4. Si no hay miembros pero sí usuarios con el mismo grupoId
           if (miembrosGrupo.length === 0) {
             // Buscar usuarios que puedan estar en el grupo con otros formatos de ID
-            const posiblesMiembros = usuarios.filter(u => {
+            const posiblesMiembros = todosLosUsuarios.filter(u => {
               const userGroupId = u.grupoId?.toLowerCase();
-              const targetGroupId = currentUser.grupoId?.toLowerCase();
+              const userGrupoTrabajo = u.grupo_trabajo?.toLowerCase();
+              const targetGroupId = grupoIdToUse?.toLowerCase();
               return userGroupId === targetGroupId || 
+                     userGrupoTrabajo === targetGroupId ||
                      userGroupId?.includes(targetGroupId) ||
-                     targetGroupId?.includes(userGroupId);
+                     userGrupoTrabajo?.includes(targetGroupId);
             });
             
             if (posiblesMiembros.length > 0) {
@@ -3294,13 +3593,12 @@
             console.log('👤 Solo se incluye el usuario actual como miembro');
           }
           
-          // Obtener módulos para encontrar el asignado al grupo
-          const modulos = gestionModel.getModulos();
-          console.log('🏥 Total de módulos:', modulos.length);
+          // Obtener TODOS los módulos una sola vez para evitar llamadas repetidas
+          const todosLosModulos = await gestionModel.getModulos();
+          console.log('🏥 Total de módulos obtenidos:', todosLosModulos.length);
           
-          const moduloAsignado = modulos.find(m => 
-            m.grupoAsignado === currentUser.grupoId ||
-            m.grupoAsignadoId === currentUser.grupoId ||
+          const moduloAsignado = todosLosModulos.find(m => 
+            m.grupoAsignadoId === grupoIdToUse ||
             (m.practicantes && m.practicantes.includes(currentUser.id))
           );
           
@@ -3398,7 +3696,7 @@
           
         } else {
           // Sin grupo asignado - intentar asignar automáticamente o crear información básica
-          console.log('⚠️ Usuario no tiene grupoId asignado');
+          console.log('⚠️ Usuario no tiene grupoId ni grupo_trabajo asignado');
           
           // Intentar asignar automáticamente a un grupo
           const grupoAsignado = await tryAutoAssignGroup(currentUser);
@@ -3407,6 +3705,18 @@
             console.log('✅ Grupo asignado automáticamente:', grupoAsignado);
             // Actualizar el usuario con el nuevo grupo
             currentUser.grupoId = grupoAsignado.id;
+            currentUser.grupo_trabajo = grupoAsignado.id;
+            
+            // Actualizar en sessionStorage
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            // Actualizar en localStorage (usuarios array)
+            const { authModel } = await import('./js/models/storageModel.js');
+            const todosLosUsuarios = await authModel.getAllUsers();
+            const usuariosActualizados = todosLosUsuarios.map(u => 
+              u.uid === currentUser.uid ? { ...u, grupoId: grupoAsignado.id, grupo_trabajo: grupoAsignado.id } : u
+            );
+            localStorage.setItem('usuarios', JSON.stringify(usuariosActualizados));
             
             // Recursivamente llamar esta función con el usuario actualizado
             return await updateAssignedGroup(currentUser);
@@ -3681,24 +3991,35 @@
         const { authModel } = await import('./js/models/storageModel.js');
         
         // Obtener grupos existentes
-        const gruposExistentes = gestionModel.getGrupos();
+        const gruposExistentes = await gestionModel.getGrupos();
         console.log('📋 Grupos existentes:', gruposExistentes);
+        
+        // Obtener TODOS los usuarios una sola vez
+        const todosLosUsuarios = await authModel.getAllUsers();
         
         // Si hay grupos existentes, asignar al primero
         if (gruposExistentes.length > 0) {
           const grupoSeleccionado = gruposExistentes[0];
           
           // Actualizar el usuario en localStorage
-          const usuarios = authModel.getAllUsers();
-          const userIndex = usuarios.findIndex(u => u.id === currentUser.id);
+          const userIndex = todosLosUsuarios.findIndex(u => u.id === currentUser.id);
           
           if (userIndex !== -1) {
-            usuarios[userIndex].grupoId = grupoSeleccionado.id;
-            localStorage.setItem('usuarios', JSON.stringify(usuarios));
+            todosLosUsuarios[userIndex].grupoId = grupoSeleccionado.id;
+            localStorage.setItem('usuarios', JSON.stringify(todosLosUsuarios));
             
-            // También actualizar el usuario actual en sessionStorage
+            // También actualizar el usuario actual en sessionStorage y localStorage
             currentUser.grupoId = grupoSeleccionado.id;
-            authModel.setCurrentUser(currentUser);
+            currentUser.grupo_trabajo = grupoSeleccionado.id;
+            
+            // Actualizar en sessionStorage
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            // Actualizar en localStorage (usuarios array)
+            const usuariosActualizados = todosLosUsuarios.map(u => 
+              u.uid === currentUser.uid ? { ...u, grupoId: grupoSeleccionado.id, grupo_trabajo: grupoSeleccionado.id } : u
+            );
+            localStorage.setItem('usuarios', JSON.stringify(usuariosActualizados));
             
             console.log('✅ Usuario asignado automáticamente al grupo:', grupoSeleccionado.id);
             return grupoSeleccionado;
@@ -3718,15 +4039,23 @@
         localStorage.setItem('grupos', JSON.stringify(gruposActualizados));
         
         // Asignar el usuario al nuevo grupo
-        const usuarios = authModel.getAllUsers();
-        const userIndex = usuarios.findIndex(u => u.id === currentUser.id);
+        const userIndex = todosLosUsuarios.findIndex(u => u.id === currentUser.id);
         
         if (userIndex !== -1) {
-          usuarios[userIndex].grupoId = nuevoGrupo.id;
-          localStorage.setItem('usuarios', JSON.stringify(usuarios));
+          todosLosUsuarios[userIndex].grupoId = nuevoGrupo.id;
+          localStorage.setItem('usuarios', JSON.stringify(todosLosUsuarios));
           
           currentUser.grupoId = nuevoGrupo.id;
-          authModel.setCurrentUser(currentUser);
+          currentUser.grupo_trabajo = nuevoGrupo.id;
+          
+          // Actualizar en sessionStorage
+          sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+          
+          // Actualizar en localStorage (usuarios array)
+          const usuariosActualizados = todosLosUsuarios.map(u => 
+            u.uid === currentUser.uid ? { ...u, grupoId: nuevoGrupo.id, grupo_trabajo: nuevoGrupo.id } : u
+          );
+          localStorage.setItem('usuarios', JSON.stringify(usuariosActualizados));
           
           console.log('✅ Grupo creado y usuario asignado:', nuevoGrupo.id);
           return nuevoGrupo;
@@ -4110,149 +4439,7 @@
       initializeDashboard();
     }
   </script>
-  
-  <script>
-    // Función para inicializar header individual
-    function initIndividualHeader() {
-      const userIcon = document.getElementById('userIcon');
-      const userDropdown = document.getElementById('userDropdown');
-      const logoutOption = document.getElementById('logoutBtn');
-      
-      // Obtener información del usuario
-      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-      
-      // Actualizar información del usuario
-      if (currentUser.nombre) {
-        document.getElementById('userName').textContent = currentUser.nombre;
-        document.getElementById('dropdownUserName').textContent = currentUser.nombre;
-      }
-      
-      if (currentUser.role) {
-        document.getElementById('dropdownUserRole').textContent = currentUser.role;
-      }
-      
-      // Toggle dropdown
-      userIcon.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isVisible = userDropdown.style.display === 'block';
-        userDropdown.style.display = isVisible ? 'none' : 'block';
-      });
-      
-      // Cerrar dropdown al hacer clic fuera
-      document.addEventListener('click', (e) => {
-        if (!userIcon.contains(e.target) && !userDropdown.contains(e.target)) {
-          userDropdown.style.display = 'none';
-        }
-      });
-      
-      // Manejar logout
-      logoutOption.addEventListener('click', (e) => {
-        e.preventDefault();
-        
-        if (typeof window.showLogoutConfirmationModal === 'function') {
-          window.showLogoutConfirmationModal();
-        } else {
-          // Fallback básico
-          if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-            localStorage.removeItem('currentUser');
-            localStorage.removeItem('userSession');
-            window.location.href = 'index.html';
-          }
-        }
-        
-        userDropdown.style.display = 'none';
-      });
-    }
 
-    // Hacer disponible globalmente
-    window.initIndividualHeader = initIndividualHeader;
-
-    // Función para mostrar el modal elegante de confirmación de logout
-    function showLogoutConfirmationModal() {
-      const modal = document.getElementById('logoutModal');
-      const cancelBtn = document.getElementById('logoutCancelBtn');
-      const confirmBtn = document.getElementById('logoutConfirmBtn');
-      
-      // Mostrar modal
-      modal.style.display = 'flex';
-      
-      // Enfocar el botón de cancelar por defecto
-      setTimeout(() => {
-        cancelBtn.focus();
-      }, 100);
-      
-      // Handler para cancelar
-      const cancelHandler = () => {
-        modal.style.display = 'none';
-        cleanup();
-      };
-      
-      // Handler para confirmar logout
-      const confirmHandler = () => {
-        modal.style.display = 'none';
-        performLogout();
-        cleanup();
-      };
-      
-      // Handler para tecla ESC
-      const escHandler = (e) => {
-        if (e.key === 'Escape') {
-          cancelHandler();
-        }
-      };
-      
-      // Handler para click en overlay
-      const overlayHandler = (e) => {
-        if (e.target.classList.contains('logout-modal-overlay')) {
-          cancelHandler();
-        }
-      };
-      
-      // Agregar event listeners
-      cancelBtn.addEventListener('click', cancelHandler);
-      confirmBtn.addEventListener('click', confirmHandler);
-      document.addEventListener('keydown', escHandler);
-      modal.addEventListener('click', overlayHandler);
-      
-      // Función para limpiar event listeners
-      function cleanup() {
-        cancelBtn.removeEventListener('click', cancelHandler);
-        confirmBtn.removeEventListener('click', confirmHandler);
-        document.removeEventListener('keydown', escHandler);
-        modal.removeEventListener('click', overlayHandler);
-      }
-    }
-    
-    // Función para realizar el logout
-    function performLogout() {
-      console.log('🚪 Cerrando sesión...');
-      
-      // Limpiar localStorage
-      localStorage.removeItem('currentUser');
-      localStorage.removeItem('userSession');
-      localStorage.removeItem('usuarioActual');
-      localStorage.removeItem('sessionData');
-      
-      // Emitir evento de logout si hay EventBus disponible
-      if (typeof window.EventBus !== 'undefined') {
-        window.EventBus.emit('user:logout', {
-          userId: 'current',
-          timestamp: Date.now(),
-          reason: 'manual'
-        });
-      }
-      
-      // Redireccionar al login
-      setTimeout(() => {
-        window.location.href = 'index.html';
-      }, 100);
-    }
-    
-    // Hacer funciones disponibles globalmente
-    window.showLogoutConfirmationModal = showLogoutConfirmationModal;
-    window.performLogout = performLogout;
-  </script>
-  
   <script>
     // Previene cualquier handler que intente navegar desde el botón de 'Reportes'
     document.addEventListener('click', function(e) {
@@ -4299,30 +4486,11 @@
       </div>
     </div>
   </div>
-  
-  <!-- JWT Control Panel -->
-  <script type="module">
-    // Importar panel de control JWT
-    import('./js/utils/jwtControlPanel.js').catch(error => {
-      console.warn('Panel JWT no disponible:', error);
-    });
-    
-    // Mostrar información del token si JWT está activo
-    setTimeout(() => {
-      if (typeof authModel !== 'undefined' && authModel.isJWTEnabled()) {
-        console.log('🔐 === INFORMACIÓN DE SESIÓN JWT ACTIVA ===');
-        const tokenInfo = authModel.getJWTInfo();
-        if (tokenInfo && tokenInfo.valid) {
-          console.log('✅ Sesión JWT válida');
-          console.log('👤 Usuario:', tokenInfo.payload.nombre);
-          console.log('🏷️ Rol:', tokenInfo.payload.rol);
-          console.log('⏰ Expira en:', tokenInfo.timeFormatted);
-          console.log('🔑 Token ID:', tokenInfo.payload.jti);
-          console.log('💡 Presiona Ctrl+Shift+J para abrir el panel de control JWT');
-        }
-      }
-    }, 2000);
-  </script>
+  <style>
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 
 </body>
 </html>

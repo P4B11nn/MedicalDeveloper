@@ -4,12 +4,12 @@ import { authModel } from './storageModel.js';
 
 export const reporteModel = {
   // Obtener estadísticas generales del sistema
-  getEstadisticas: (periodo = 'mes') => {
+  getEstadisticas: async (periodo = 'mes') => {
     const pacientes = pacienteModel.getPacientes();
-    const usuarios = authModel.getAllUsers();
+    const usuarios = await authModel.getAllUsers();
     const citas = pacienteModel.getCitas();
     const historialMedico = pacienteModel.getHistorialMedico();
-    const actividades = authModel.getActividades();
+    const actividades = await authModel.getActividades();
     
     // Fecha para filtrar por periodo
     const fechaLimite = getFechaLimite(periodo);
@@ -229,12 +229,10 @@ export const reporteModel = {
     });
   },
   
-  // Generar reporte de actividad del sistema (solo registros de storageModel)
+  // Generar reporte de actividad del sistema (todos los registros)
   getReporteActividades: (filtro = {}) => {
-  // Usar solo los registros generados por storageModel/authModel con JWT
-  const actividades = authModel.getActividades(filtro);
-  // Filtrar solo los registros con sistemaAuth: 'JWT'
-  return actividades.filter(a => a.sistemaAuth === 'JWT');
+    // Usar todos los registros generados por storageModel/authModel
+    return authModel.getActividades(filtro);
   },
   
   // Exportar a CSV un conjunto de datos

@@ -254,7 +254,7 @@ export function renderRegistroEntradasSalidas(historial, container) {
     return;
   }
 
-  // Crea la tabla de registros con información JWT.
+  // Crea la tabla de registros.
   container.innerHTML = `
     <table class="tabla-registros">
       <thead>
@@ -276,25 +276,6 @@ export function renderRegistroEntradasSalidas(historial, container) {
           // Mostrar solo la fecha/hora en Salida si existe; si no existe, dejar vacío
           const salidaDisplay = salidaFmt ? salidaFmt : '<span style="color: #059669; font-weight: bold;">En servicio</span>';
           
-          // Determinar sistema de autenticación y seguridad
-          const sistemaAuth = s.sistemaAuth || 'Legacy';
-          const esJWT = sistemaAuth === 'JWT';
-          const authIcon = esJWT ? '🔐' : '🔓';
-          const authColor = esJWT ? '#059669' : '#6b7280';
-          const authText = esJWT ? 'JWT' : 'Legacy';
-          
-          // Información de seguridad para tooltip
-          let securityInfo = `Sistema: ${sistemaAuth}`;
-          if (esJWT && s.tokenId) {
-            securityInfo += `\nToken ID: ${s.tokenId}`;
-            if (s.tiempoSesionRestante) {
-              securityInfo += `\nTiempo sesión: ${s.tiempoSesionRestante}h`;
-            }
-          }
-          if (s.autenticacionSegura === true) {
-            securityInfo += '\nAutenticación: Segura';
-          }
-
           return `
             <tr>
               <td><strong>${s.nombre || 'N/A'}</strong></td>
