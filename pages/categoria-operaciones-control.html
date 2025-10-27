@@ -403,6 +403,27 @@
       .mesa-status.ocupada, .modulo-status.ocupada { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
       .mesa-status.fuera-servicio, .modulo-status.fuera-servicio { background: linear-gradient(135deg, #ef4444, #f87171); }
       .mesa-info p, .modulo-info p { margin: 5px 0; color: #374151; font-size: 0.9rem; }
+
+    /* Loading spinner */
+    .loading-spinner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+      color: #06b6d4;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .loading-spinner i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
   <script>
     // Protección temprana: si la URL contiene un hash que apunta a una sección
@@ -515,7 +536,11 @@
       <div class="content-area">
       <div id="registro-entradas-salidas-section" class="form-section hidden">
           <h2 class="content-title">Registro de Entradas/Salidas</h2>
-          <div id="registroESLista" class="hidden"></div>
+          <div id="registroESLista" class="hidden">
+            <div class="loading-spinner" id="registroESLoadingSpinner">
+              <i class="fas fa-spinner fa-spin"></i> Cargando registros...
+            </div>
+          </div>
         </div>
         <div id="asistencia-section" class="form-section hidden">
           <h2 class="content-title">Asistencia</h2>
@@ -526,7 +551,9 @@
           </div>
 
           <div id="asistenciaContainer">
-            <!-- Render dinámico de asistencia -->
+            <div class="loading-spinner" id="asistenciaLoadingSpinner">
+              <i class="fas fa-spinner fa-spin"></i> Cargando asistencia...
+            </div>
           </div>
         </div>
         <!-- Contenedor de tarjetas de módulos eliminado por solicitud -->
@@ -636,6 +663,7 @@
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initOperationsController } from '../js/controllers/operacionesController.js';
+    import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
     // HeaderComponent eliminado, ahora usamos header individual
     import '../js/utils/eventBusManager.js';      // Event Bus monitoring
     import '../js/utils/performanceMonitor.js';   // Performance monitoring  
@@ -655,6 +683,7 @@
         setTimeout(() => {
           initGlobalController();
           initOperationsController();
+          ConnectionIndicator.init();
           console.log('✅ Operaciones: Página cargada exitosamente');
           console.log('🔧 Debug: EventBusDebug, PerformanceDebug, ArchitectureDebug, TestSuite');
         }, 100);

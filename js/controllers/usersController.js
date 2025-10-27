@@ -6,6 +6,111 @@ import { gestionModel } from '../models/gestionModel.js';
 import { mostrarCredencialesUsuario } from '../utils/credentialsModal.js';
 
 /**
+ * Función de validación completa para formularios
+ * @param {string} formType - Tipo de formulario ('usuario', 'paciente', 'datos-medicos')
+ * @param {FormData} formData - Datos del formulario
+ * @returns {Object} - {isValid: boolean, errors: Array, warnings: Array}
+ */
+export function validateForm(formType, formData) {
+  const errors = [];
+  const warnings = [];
+
+  switch (formType) {
+    case 'usuario':
+      return validateUsuarioForm(formData);
+    case 'paciente':
+      return validatePacienteForm(formData);
+    case 'datos-medicos':
+      return validateDatosMedicosForm(formData);
+    default:
+      return { isValid: false, errors: ['Tipo de formulario no reconocido'], warnings: [] };
+  }
+}
+
+/**
+ * Validación específica para formulario de usuario
+ */
+function validateUsuarioForm(formData) {
+  const errors = [];
+  const warnings = [];
+
+  // Email
+  const email = formData.get('email')?.trim();
+  if (!email) {
+    errors.push('El correo electrónico es obligatorio');
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.push('El formato del correo electrónico no es válido');
+  }
+
+  // Nombre
+  const nombre = formData.get('nombre')?.trim();
+  if (!nombre) {
+    errors.push('El nombre es obligatorio');
+  } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombre)) {
+    errors.push('El nombre solo puede contener letras y espacios');
+  } else if (nombre.length < 2) {
+    errors.push('El nombre debe tener al menos 2 caracteres');
+  } else if (nombre.length > 50) {
+    errors.push('El nombre no puede tener más de 50 caracteres');
+  }
+
+  // Apellidos
+  const apellidos = formData.get('apellidos')?.trim();
+  if (!apellidos) {
+    errors.push('Los apellidos son obligatorios');
+  } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(apellidos)) {
+    errors.push('Los apellidos solo pueden contener letras y espacios');
+  } else if (apellidos.length < 2) {
+    errors.push('Los apellidos deben tener al menos 2 caracteres');
+  } else if (apellidos.length > 50) {
+    errors.push('Los apellidos no pueden tener más de 50 caracteres');
+  }
+
+  // Edad
+  const edadStr = formData.get('edad')?.trim();
+  if (!edadStr) {
+    errors.push('La edad es obligatoria');
+  } else {
+    const edad = parseInt(edadStr);
+    if (isNaN(edad)) {
+      errors.push('La edad debe ser un número válido');
+    } else if (edad < 0) {
+      errors.push('La edad no puede ser negativa');
+    } else if (edad > 120) {
+      errors.push('La edad no puede ser mayor a 120 años');
+    } else if (edad < 18) {
+      warnings.push('El usuario es menor de edad');
+    }
+  }
+
+  // Sexo
+  const sexo = formData.get('sexo');
+  if (!sexo) {
+    errors.push('El sexo es obligatorio');
+  } else if (!['M', 'F'].includes(sexo)) {
+    errors.push('El sexo debe ser Masculino (M) o Femenino (F)');
+  }
+
+  // Matrícula
+  const matricula = formData.get('matricula')?.trim();
+  if (!matricula) {
+    errors.push('La matrícula es obligatoria');
+  } else if (!/^[A-Z0-9]{3,15}$/.test(matricula)) {
+    errors.push('La matrícula debe contener solo letras mayúsculas y números (3-15 caracteres)');
+  }
+
+  // Rol
+  const rol = formData.get('rol');
+  if (!rol) {
+    errors.push('El rol es obligatorio');
+  } else if (!['admin', 'practicante'].includes(rol)) {
+    errors.push('El rol debe ser Administrador o Practicante');
+  }
+
+  return { isValid: errors.length === 0, errors, warnings };
+}
+
+/**
  * Función principal para inicializar la página de Usuarios y Personal.
  */
 export function initUsersController() {
@@ -181,6 +286,22 @@ function setupNewUserForm() {
 
         try {
             const formData = new FormData(formUsuario);
+            
+            // Validación completa del formulario
+            const validation = validateForm('usuario', formData);
+            if (!validation.isValid) {
+                // Mostrar errores de validación
+                const errorMessage = validation.errors.join('\n');
+                mostrarMensaje('error', '❌ Errores de Validación', errorMessage, 8000);
+                throw new Error('Datos inválidos en el formulario');
+            }
+            
+            // Mostrar advertencias si existen
+            if (validation.warnings.length > 0) {
+                const warningMessage = validation.warnings.join('\n');
+                mostrarMensaje('warning', '⚠️ Advertencias', warningMessage, 6000);
+            }
+            
             const userData = {
                 email: formData.get('email'), // Usar email completo
                 password: authModel.generateTemporaryPassword(), // Generar contraseña temporal
@@ -192,15 +313,6 @@ function setupNewUserForm() {
                 grupo_trabajo: formData.get('grupoId') || '',
                 rol: formData.get('rol')
             };
-
-            // Validaciones
-            if (!userData.email?.includes('@')) {
-                throw new Error('Por favor ingresa un correo electrónico válido');
-            }
-
-            if (!userData.nombre || !userData.matricula || !userData.rol) {
-                throw new Error('Nombre, matrícula y rol son obligatorios');
-            }
 
             // Crear usuario
             const nuevoUsuario = await authModel.addUser(userData);

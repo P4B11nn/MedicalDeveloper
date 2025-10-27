@@ -552,6 +552,27 @@
       font-size: 1.1rem;
       padding: 20px;
     }
+
+    /* Loading spinner */
+    .loading-spinner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+      color: #06b6d4;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .loading-spinner i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body class="pre-init">
@@ -628,8 +649,8 @@
         <div id="personal-section" class="form-section">
           <h2 class="content-title">Personal Registrado</h2>
           <div class="personal-lista" id="personalLista">
-            <div class="empty-state">
-              No hay usuarios registrados en el sistema.
+            <div class="loading-spinner" id="personalLoadingSpinner">
+              <i class="fas fa-spinner fa-spin"></i> Cargando personal...
             </div>
           </div>
         </div>
@@ -803,6 +824,7 @@
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initUsersController } from '../js/controllers/usersController.js';
+    import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
     // HeaderComponent eliminado, ahora usamos header individual
     
     document.addEventListener('DOMContentLoaded', () => {
@@ -816,6 +838,7 @@
         setTimeout(() => {
           initGlobalController();
           initUsersController();
+          ConnectionIndicator.init();
         }, 100);
       }
     });

@@ -190,12 +190,12 @@
       <form id="loginForm" onsubmit="return false;">
         <div class="form-group">
           <label for="matriculaInput">Email:</label>
-          <input type="text" name="matricula" id="matriculaInput" placeholder="Ingresa tu email o" required>
+          <input type="text" name="matricula" id="matriculaInput" placeholder="Ingresa tu email" required>
         </div>
         
         <div class="form-group">
           <label for="contrasenaInput">Contraseña:</label>
-          <input type="password" name="contrasena" id="contrasenaInput" required>
+          <input type="password" name="contrasena" id="contrasenaInput" placeholder="Ingresa tu contraseña" required>
         </div>
         
         <button type="button" id="btnLogin" class="btn-login">Inicio de sesión</button>
@@ -225,6 +225,7 @@
   <script type="module">
     import { initAuthController } from "./js/controllers/authController.js";
     import { authModel } from "./js/models/storageModel.js";
+    import "./js/utils/connectionIndicator.js";
 
     document.addEventListener("DOMContentLoaded", () => {
       console.log("Inicializando controlador de autenticación");

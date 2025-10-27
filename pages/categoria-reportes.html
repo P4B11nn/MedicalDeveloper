@@ -562,6 +562,22 @@
       margin-left: 0 !important;
       width: 100% !important;
     }
+
+    /* Loading spinner */
+    .loading-spinner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+      color: #06b6d4;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .loading-spinner i {
+      animation: spin 1s linear infinite;
+    }
   </style>
 
   <script>
@@ -652,12 +668,24 @@
     <div class="content">
       <div class="content-area">
         <!-- Sección de estadísticas -->
-        <div id="estadisticas-section" class="form-section active"></div>
+        <div id="estadisticas-section" class="form-section active">
+          <div class="loading-spinner" id="estadisticasLoadingSpinner">
+            <i class="fas fa-spinner fa-spin"></i> Cargando estadísticas...
+          </div>
+        </div>
 
         <!-- Sección de actividades -->
-        <div id="actividades-section" class="form-section"></div>
+        <div id="actividades-section" class="form-section">
+          <div class="loading-spinner" id="actividadesLoadingSpinner">
+            <i class="fas fa-spinner fa-spin"></i> Cargando actividades...
+          </div>
+        </div>
         <!-- Sección de exportación -->
-        <div id="exportacion-section" class="form-section"></div>
+        <div id="exportacion-section" class="form-section">
+          <div class="loading-spinner" id="exportacionLoadingSpinner">
+            <i class="fas fa-spinner fa-spin"></i> Cargando opciones de exportación...
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -764,6 +792,7 @@
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initReporteController } from '../js/controllers/reporteController.js';
+    import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
     // HeaderComponent eliminado, ahora usamos header individual
     
     document.addEventListener('DOMContentLoaded', () => {
@@ -777,6 +806,7 @@
         setTimeout(() => {
           initGlobalController();
           initReporteController();
+          ConnectionIndicator.init();
         }, 100);
       }
     });

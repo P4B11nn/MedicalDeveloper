@@ -1027,6 +1027,11 @@
     input[type="text"]:valid {
       border-color: #28a745;
     }
+
+    /* Animación para el loading spinner */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body class="pre-init">
@@ -1135,7 +1140,22 @@
                 </tr>
               </thead>
               <tbody id="tablaPacientes">
-                <!-- Los pacientes se cargarán dinámicamente -->
+                <!-- Loading spinner mientras se cargan los datos -->
+                <tr>
+                  <td colspan="10" style="text-align: center; padding: 40px;">
+                    <div style="
+                      display: inline-block;
+                      width: 20px;
+                      height: 20px;
+                      border: 2px solid #e5e7eb;
+                      border-radius: 50%;
+                      border-top-color: #3b82f6;
+                      animation: spin 1s ease-in-out infinite;
+                      margin-right: 8px;
+                    "></div>
+                    <span style="color: #6b7280;">Cargando pacientes...</span>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -1323,6 +1343,10 @@
                     <span id="modalFacultad">-</span>
                   </div>
                   <div class="info-item">
+                    <label>Carrera:</label>
+                    <span id="modalCarrera">-</span>
+                  </div>
+                  <div class="info-item">
                     <label>Teléfono:</label>
                     <span id="modalTelefono">-</span>
                   </div>
@@ -1423,8 +1447,18 @@
                       <input type="text" id="editMatricula" name="matricula" required>
                     </div>
                     <div class="form-group col-md-6">
-                      <label for="editNombre">Nombre:</label>
-                      <input type="text" id="editNombre" name="nombre" required>
+                      <label for="editNombres">Nombre(s):</label>
+                      <input type="text" id="editNombres" name="nombres" required>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group col-md-6">
+                      <label for="editApellidos">Apellidos:</label>
+                      <input type="text" id="editApellidos" name="apellidos" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                      <label for="editFechaNacimiento">Fecha de Nacimiento:</label>
+                      <input type="date" id="editFechaNacimiento" name="fecha-nacimiento" required>
                     </div>
                   </div>
                   <div class="form-row">
@@ -1452,7 +1486,15 @@
                   </div>
                   <div class="form-group">
                     <label for="editFacultad">Facultad:</label>
-                    <input type="text" id="editFacultad" name="facultad" required>
+                    <select id="editFacultad" name="facultad" required>
+                      <option value="">Seleccione una facultad</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="editCarrera">Carrera:</label>
+                    <select id="editCarrera" name="carrera" required>
+                      <option value="">Seleccione una carrera</option>
+                    </select>
                   </div>
                 </div>
 
@@ -1540,6 +1582,10 @@
                   <div class="info-item">
                     <label>Facultad:</label>
                     <span id="modalHistorialFacultad">-</span>
+                  </div>
+                  <div class="info-item">
+                    <label>Carrera:</label>
+                    <span id="modalHistorialCarrera">-</span>
                   </div>
                   <div class="info-item">
                     <label>Teléfono:</label>
@@ -1652,14 +1698,27 @@
           <div class="pending-alert">
             <h4 class="warning-text">⚠️ Pacientes con datos médicos pendientes</h4>
             <div class="flex-gap-20">
-              <!-- Los pacientes pendientes se cargarán dinámicamente -->
+              <!-- Loading spinner mientras se cargan los datos -->
+              <div style="text-align: center; padding: 20px; width: 100%;">
+                <div style="
+                  display: inline-block;
+                  width: 20px;
+                  height: 20px;
+                  border: 2px solid #e5e7eb;
+                  border-radius: 50%;
+                  border-top-color: #3b82f6;
+                  animation: spin 1s ease-in-out infinite;
+                  margin-right: 8px;
+                "></div>
+                <span style="color: #6b7280;">Cargando pacientes pendientes...</span>
+              </div>
             </div>
           </div>
           
           <div class="form-group">
             <label for="seleccionarPaciente">Seleccionar Paciente:</label>
             <select id="seleccionarPaciente" name="seleccionarPaciente" onchange="cargarDatosPacienteSelect(this.value)" required>
-              <option value="">Seleccione un paciente...</option>
+              <option value="">Cargando pacientes...</option>
               <!-- Los pacientes se cargarán dinámicamente -->
             </select>
             <small class="form-text text-muted">Puedes seleccionar cualquier paciente para agregar o actualizar sus datos médicos</small>
@@ -1779,7 +1838,22 @@
                 </tr>
               </thead>
               <tbody>
-                <!-- Los registros del historial se cargarán dinámicamente -->
+                <!-- Loading spinner mientras se cargan los datos -->
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 40px;">
+                    <div style="
+                      display: inline-block;
+                      width: 20px;
+                      height: 20px;
+                      border: 2px solid #e5e7eb;
+                      border-radius: 50%;
+                      border-top-color: #3b82f6;
+                      animation: spin 1s ease-in-out infinite;
+                      margin-right: 8px;
+                    "></div>
+                    <span style="color: #6b7280;">Cargando historial médico...</span>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -1801,6 +1875,7 @@
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initPacienteController } from '../js/controllers/pacienteController.js';
+    import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
     // HeaderComponent eliminado, ahora usamos header individual
     import '../js/utils/eventBusManager.js';      // Event Bus monitoring
     import '../js/utils/performanceMonitor.js';   // Performance monitoring
@@ -1846,6 +1921,7 @@
         setTimeout(() => {
           initGlobalController();
           initPacienteController();
+          ConnectionIndicator.init();
           
           // Inicializar navegación entre secciones
           initNavegacionPacientes();
@@ -1986,21 +2062,60 @@
       document.getElementById('formNuevaCarrera').reset();
     }
 
-    function actualizarSelectoresFacultades() {
-      const facultadSelect = document.getElementById('facultad');
-      const selectedValue = facultadSelect.value;
+    function resetFacultadesCarrerasEditar() {
+      const editFacultadSelect = document.getElementById('editFacultad');
+      const editCarreraSelect = document.getElementById('editCarrera');
       
-      // Limpiar y repoblar
-      facultadSelect.innerHTML = '<option value="">Seleccione una facultad</option>';
-      Object.keys(facultadesYCarreras).forEach(facultad => {
-        facultadSelect.add(new Option(facultad, facultad));
-      });
-      
-      // Restaurar selección si aún existe
-      if (selectedValue && facultadesYCarreras[selectedValue]) {
-        facultadSelect.value = selectedValue;
-        facultadSelect.dispatchEvent(new Event('change'));
+      if (editFacultadSelect) {
+        editFacultadSelect.innerHTML = '<option value="">Seleccione una facultad</option>';
       }
+      if (editCarreraSelect) {
+        editCarreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+        editCarreraSelect.disabled = true;
+      }
+    }
+
+    function initFacultadesCarrerasEditar() {
+      // Esperar a que los elementos estén disponibles
+      setTimeout(() => {
+        // Cargar datos persistidos primero
+        cargarFacultadesYCarreras();
+        
+        const editFacultadSelect = document.getElementById('editFacultad');
+        const editCarreraSelect = document.getElementById('editCarrera');
+        
+        if (editFacultadSelect && editCarreraSelect) {
+          // Limpiar opciones existentes
+          editFacultadSelect.innerHTML = '<option value="">Seleccione una facultad</option>';
+          editCarreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+          editCarreraSelect.disabled = true;
+          
+          // Poblar el select de facultades
+          Object.keys(window.facultadesYCarreras).forEach(facultad => {
+            editFacultadSelect.add(new Option(facultad, facultad));
+          });
+
+          // Event listener para cambio de facultad
+          editFacultadSelect.addEventListener('change', () => {
+            const facultadSeleccionada = editFacultadSelect.value;
+            editCarreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+
+            if (facultadSeleccionada && window.facultadesYCarreras[facultadSeleccionada]) {
+              editCarreraSelect.disabled = false;
+              
+              window.facultadesYCarreras[facultadSeleccionada].forEach(carrera => {
+                editCarreraSelect.add(new Option(carrera, carrera));
+              });
+            } else {
+              editCarreraSelect.disabled = true;
+            }
+          });
+          
+          console.log('✅ Sistema de facultades y carreras para edición inicializado');
+        } else {
+          console.log('⚠️ Selectores de edición de facultad/carrera no encontrados');
+        }
+      }, 100);
     }
 
     // Event listeners para los formularios de modales
@@ -2105,6 +2220,9 @@
     window.cerrarModalFacultad = cerrarModalFacultad;
     window.mostrarModalNuevaCarrera = mostrarModalNuevaCarrera;
     window.cerrarModalCarrera = cerrarModalCarrera;
+    window.initFacultadesCarrerasEditar = initFacultadesCarrerasEditar;
+    window.resetFacultadesCarrerasEditar = resetFacultadesCarrerasEditar;
+    window.facultadesYCarreras = facultadesYCarreras;
   </script>
 
   <script type="module">

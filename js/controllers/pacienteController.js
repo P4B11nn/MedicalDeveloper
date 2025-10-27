@@ -3,6 +3,315 @@
 import { pacienteModel } from '../models/pacienteModel.js';
 import { renderPacienteForm } from '../views/pacienteView.js';
 
+/**
+ * Función de validación completa para formularios
+ * @param {string} formType - Tipo de formulario ('usuario', 'paciente', 'datos-medicos')
+ * @param {FormData} formData - Datos del formulario
+ * @returns {Object} - {isValid: boolean, errors: Array, warnings: Array}
+ */
+export function validateForm(formType, formData) {
+  const errors = [];
+  const warnings = [];
+
+  switch (formType) {
+    case 'usuario':
+      return validateUsuarioForm(formData);
+    case 'paciente':
+      return validatePacienteForm(formData);
+    case 'datos-medicos':
+      return validateDatosMedicosForm(formData);
+    default:
+      return { isValid: false, errors: ['Tipo de formulario no reconocido'], warnings: [] };
+  }
+}
+
+/**
+ * Validación específica para formulario de usuario
+ */
+function validateUsuarioForm(formData) {
+  const errors = [];
+  const warnings = [];
+
+  // Email
+  const email = formData.get('email')?.trim();
+  if (!email) {
+    errors.push('El correo electrónico es obligatorio');
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.push('El formato del correo electrónico no es válido');
+  }
+
+  // Nombre
+  const nombre = formData.get('nombre')?.trim();
+  if (!nombre) {
+    errors.push('El nombre es obligatorio');
+  } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombre)) {
+    errors.push('El nombre solo puede contener letras y espacios');
+  } else if (nombre.length < 2) {
+    errors.push('El nombre debe tener al menos 2 caracteres');
+  } else if (nombre.length > 50) {
+    errors.push('El nombre no puede tener más de 50 caracteres');
+  }
+
+  // Apellidos
+  const apellidos = formData.get('apellidos')?.trim();
+  if (!apellidos) {
+    errors.push('Los apellidos son obligatorios');
+  } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(apellidos)) {
+    errors.push('Los apellidos solo pueden contener letras y espacios');
+  } else if (apellidos.length < 2) {
+    errors.push('Los apellidos deben tener al menos 2 caracteres');
+  } else if (apellidos.length > 50) {
+    errors.push('Los apellidos no pueden tener más de 50 caracteres');
+  }
+
+  // Edad
+  const edadStr = formData.get('edad')?.trim();
+  if (!edadStr) {
+    errors.push('La edad es obligatoria');
+  } else {
+    const edad = parseInt(edadStr);
+    if (isNaN(edad)) {
+      errors.push('La edad debe ser un número válido');
+    } else if (edad < 0) {
+      errors.push('La edad no puede ser negativa');
+    } else if (edad > 120) {
+      errors.push('La edad no puede ser mayor a 120 años');
+    } else if (edad < 18) {
+      warnings.push('El usuario es menor de edad');
+    }
+  }
+
+  // Sexo
+  const sexo = formData.get('sexo');
+  if (!sexo) {
+    errors.push('El sexo es obligatorio');
+  } else if (!['M', 'F'].includes(sexo)) {
+    errors.push('El sexo debe ser Masculino (M) o Femenino (F)');
+  }
+
+  // Matrícula
+  const matricula = formData.get('matricula')?.trim();
+  if (!matricula) {
+    errors.push('La matrícula es obligatoria');
+  } else if (!/^[A-Z0-9]{3,15}$/.test(matricula)) {
+    errors.push('La matrícula debe contener solo letras mayúsculas y números (3-15 caracteres)');
+  }
+
+  // Rol
+  const rol = formData.get('rol');
+  if (!rol) {
+    errors.push('El rol es obligatorio');
+  } else if (!['admin', 'practicante'].includes(rol)) {
+    errors.push('El rol debe ser Administrador o Practicante');
+  }
+
+  return { isValid: errors.length === 0, errors, warnings };
+}
+
+/**
+ * Validación específica para formulario de paciente
+ */
+function validatePacienteForm(formData) {
+  const errors = [];
+  const warnings = [];
+
+  // Matrícula
+  const matricula = formData.get('matricula')?.trim();
+  if (!matricula) {
+    errors.push('La matrícula es obligatoria');
+  } else if (!/^[A-Z0-9]{3,15}$/.test(matricula)) {
+    errors.push('La matrícula debe contener solo letras mayúsculas y números (3-15 caracteres)');
+  }
+
+  // Nombre
+  const nombres = formData.get('nombres')?.trim();
+  if (!nombres) {
+    errors.push('El nombre es obligatorio');
+  } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombres)) {
+    errors.push('El nombre solo puede contener letras y espacios');
+  } else if (nombres.length < 2) {
+    errors.push('El nombre debe tener al menos 2 caracteres');
+  } else if (nombres.length > 50) {
+    errors.push('El nombre no puede tener más de 50 caracteres');
+  }
+
+  // Apellidos
+  const apellidos = formData.get('apellidos')?.trim();
+  if (!apellidos) {
+    errors.push('Los apellidos son obligatorios');
+  } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(apellidos)) {
+    errors.push('Los apellidos solo pueden contener letras y espacios');
+  } else if (apellidos.length < 2) {
+    errors.push('Los apellidos deben tener al menos 2 caracteres');
+  } else if (apellidos.length > 50) {
+    errors.push('Los apellidos no pueden tener más de 50 caracteres');
+  }
+
+  // Fecha de nacimiento
+  const fechaNacimiento = formData.get('fecha-nacimiento');
+  if (!fechaNacimiento) {
+    errors.push('La fecha de nacimiento es obligatoria');
+  } else {
+    const fecha = new Date(fechaNacimiento);
+    const hoy = new Date();
+    const edadMinima = new Date();
+    edadMinima.setFullYear(hoy.getFullYear() - 120);
+    const edadMaxima = new Date();
+    edadMaxima.setFullYear(hoy.getFullYear() - 5);
+
+    if (isNaN(fecha.getTime())) {
+      errors.push('La fecha de nacimiento no es válida');
+    } else if (fecha > hoy) {
+      errors.push('La fecha de nacimiento no puede ser futura');
+    } else if (fecha < edadMinima) {
+      errors.push('La fecha de nacimiento parece demasiado antigua');
+    } else if (fecha > edadMaxima) {
+      warnings.push('El paciente parece ser muy joven (menos de 5 años)');
+    }
+  }
+
+  // Grado
+  const grado = formData.get('grado');
+  const gradosValidos = [
+    '1er Semestre', '2do Semestre', '3er Semestre', '4to Semestre',
+    '5to Semestre', '6to Semestre', '7mo Semestre', '8vo Semestre',
+    '9no Semestre', '10mo Semestre'
+  ];
+  if (!grado) {
+    errors.push('El grado es obligatorio');
+  } else if (!gradosValidos.includes(grado)) {
+    errors.push('El grado seleccionado no es válido');
+  }
+
+  // Grupo
+  const grupo = formData.get('grupo')?.trim();
+  if (!grupo) {
+    errors.push('El grupo es obligatorio');
+  } else if (!/^[A-Za-z0-9\s\-]+$/.test(grupo)) {
+    errors.push('El grupo solo puede contener letras, números, espacios y guiones');
+  } else if (grupo.length > 20) {
+    errors.push('El grupo no puede tener más de 20 caracteres');
+  }
+
+  // Facultad
+  const facultad = formData.get('facultad');
+  if (!facultad) {
+    errors.push('La facultad es obligatoria');
+  } else if (facultad.length < 3) {
+    errors.push('El nombre de la facultad es demasiado corto');
+  } else if (facultad.length > 100) {
+    errors.push('El nombre de la facultad es demasiado largo');
+  }
+
+  // Carrera
+  const carrera = formData.get('carrera');
+  if (!carrera) {
+    errors.push('La carrera es obligatoria');
+  } else if (carrera.length < 3) {
+    errors.push('El nombre de la carrera es demasiado corto');
+  } else if (carrera.length > 100) {
+    errors.push('El nombre de la carrera es demasiado largo');
+  }
+
+  // Teléfono
+  const telefono = formData.get('telefono')?.trim();
+  if (!telefono) {
+    errors.push('El teléfono es obligatorio');
+  } else {
+    // Remover espacios, guiones y paréntesis para validación
+    const telefonoLimpio = telefono.replace(/[\s\-\(\)]/g, '');
+    if (!/^\d{10}$/.test(telefonoLimpio)) {
+      errors.push('El teléfono debe tener exactamente 10 dígitos');
+    } else if (!/^55/.test(telefonoLimpio)) {
+      warnings.push('El número no parece ser de la zona metropolitana (debe comenzar con 55)');
+    }
+  }
+
+  return { isValid: errors.length === 0, errors, warnings };
+}
+
+/**
+ * Validación específica para formulario de datos médicos
+ */
+function validateDatosMedicosForm(formData) {
+  const errors = [];
+  const warnings = [];
+
+  // Temperatura
+  const temperaturaStr = formData.get('temperatura')?.trim();
+  if (temperaturaStr) {
+    const temperatura = parseFloat(temperaturaStr);
+    if (isNaN(temperatura)) {
+      errors.push('La temperatura debe ser un número válido');
+    } else if (temperatura < 35.0 || temperatura > 42.0) {
+      errors.push(`Temperatura: ${temperatura}°C está fuera del rango válido (35.0-42.0°C)`);
+    } else if (temperatura < 36.0 || temperatura > 37.5) {
+      warnings.push(`Temperatura: ${temperatura}°C fuera del rango normal (36.0-37.5°C)`);
+    }
+  }
+
+  // Presión arterial
+  const presion = formData.get('presion')?.trim();
+  if (presion) {
+    const presionPattern = /^(\d{2,3})\/(\d{2,3})$/;
+    const match = presion.match(presionPattern);
+    if (!match) {
+      errors.push('Presión arterial: Formato inválido. Use el formato sistólica/diastólica (ej: 120/80)');
+    } else {
+      const sistolica = parseInt(match[1]);
+      const diastolica = parseInt(match[2]);
+      if (sistolica < 70 || sistolica > 200) {
+        errors.push(`Presión sistólica: ${sistolica} está fuera del rango válido (70-200 mmHg)`);
+      } else if (diastolica < 40 || diastolica > 120) {
+        errors.push(`Presión diastólica: ${diastolica} está fuera del rango válido (40-120 mmHg)`);
+      } else if (sistolica < 90 || sistolica > 140 || diastolica < 60 || diastolica > 90) {
+        warnings.push(`Presión arterial: ${presion} mmHg fuera del rango normal (90-140/60-90 mmHg)`);
+      }
+    }
+  }
+
+  // Peso
+  const pesoStr = formData.get('peso')?.trim();
+  if (pesoStr) {
+    const peso = parseFloat(pesoStr);
+    if (isNaN(peso)) {
+      errors.push('El peso debe ser un número válido');
+    } else if (peso < 30.0 || peso > 200.0) {
+      errors.push(`Peso: ${peso}kg está fuera del rango válido (30-200kg)`);
+    } else if (peso < 45.0 || peso > 120.0) {
+      warnings.push(`Peso: ${peso}kg fuera del rango típico para adultos (45-120kg)`);
+    }
+  }
+
+  // Talla
+  const tallaStr = formData.get('talla')?.trim();
+  if (tallaStr) {
+    const talla = parseInt(tallaStr);
+    if (isNaN(talla)) {
+      errors.push('La talla debe ser un número válido');
+    } else if (talla < 140 || talla > 220) {
+      errors.push(`Talla: ${talla}cm está fuera del rango válido (140-220cm)`);
+    } else if (talla < 150 || talla > 200) {
+      warnings.push(`Talla: ${talla}cm fuera del rango típico para adultos (150-200cm)`);
+    }
+  }
+
+  // Frecuencia respiratoria
+  const frecuenciaStr = formData.get('frecuenciaRespiratoria')?.trim();
+  if (frecuenciaStr) {
+    const frecuencia = parseInt(frecuenciaStr);
+    if (isNaN(frecuencia)) {
+      errors.push('La frecuencia respiratoria debe ser un número válido');
+    } else if (frecuencia < 10 || frecuencia > 40) {
+      errors.push(`Frecuencia respiratoria: ${frecuencia} rpm está fuera del rango válido (10-40 rpm)`);
+    } else if (frecuencia < 12 || frecuencia > 20) {
+      warnings.push(`Frecuencia respiratoria: ${frecuencia} rpm fuera del rango normal (12-20 rpm)`);
+    }
+  }
+
+  return { isValid: errors.length === 0, errors, warnings };
+}
+
 export async function initPacienteController() {
   console.log('🚀 Controlador de Pacientes inicializado');
   
@@ -149,6 +458,21 @@ export async function handlePacienteSubmit(event) {
   
   const formData = new FormData(event.target);
   
+  // Validación completa del formulario
+  const validation = validateForm('paciente', formData);
+  if (!validation.isValid) {
+    // Mostrar errores de validación
+    const errorMessage = validation.errors.join('\n');
+    mostrarMensaje('error', '❌ Errores de Validación', errorMessage, 8000);
+    throw new Error('Datos inválidos en el formulario');
+  }
+  
+  // Mostrar advertencias si existen
+  if (validation.warnings.length > 0) {
+    const warningMessage = validation.warnings.join('\n');
+    mostrarMensaje('warning', '⚠️ Advertencias', warningMessage, 6000);
+  }
+  
   // Crear objeto paciente con todos los campos, incluyendo facultad
   const nuevoPaciente = {
     matricula: formData.get('matricula'),
@@ -164,12 +488,6 @@ export async function handlePacienteSubmit(event) {
     fechaRegistro: new Date().toISOString()
     // El status se asigna automáticamente en el modelo como 'sin_datos_medicos'
   };
-  
-  // Validaciones básicas
-  if (!nuevoPaciente.matricula || !nuevoPaciente.nombre || !nuevoPaciente.carrera || !nuevoPaciente.facultad) {
-    mostrarMensaje('warning', '⚠️ Campos Requeridos', 'Por favor completa todos los campos obligatorios: matrícula, nombre, carrera y facultad.');
-    return;
-  }
   
   try {
     // Verificar si ya existe un paciente con esa matrícula
@@ -242,75 +560,19 @@ async function handleDatosMedicosSubmit(event) {
       return;
     }
     
-    // Validaciones mejoradas con límites realistas
-    let advertencias = [];
-    let errores = [];
-    
-    // Validar temperatura
-    if (temperatura) {
-      const temp = parseFloat(temperatura);
-      if (temp < 35.0 || temp > 42.0) {
-        errores.push(`Temperatura: ${temperatura}°C está fuera del rango válido (35.0-42.0°C)`);
-      } else if (temp < 36.0 || temp > 37.5) {
-        advertencias.push(`Temperatura: ${temperatura}°C fuera del rango normal (36.0-37.5°C)`);
-      }
-    }
-    
-    // Validar presión arterial
-    if (presion) {
-      const presionPattern = /^(\d{2,3})\/(\d{2,3})$/;
-      const match = presion.match(presionPattern);
-      if (!match) {
-        errores.push(`Presión arterial: Formato inválido. Use el formato sistólica/diastólica (ej: 120/80)`);
-      } else {
-        const sistolica = parseInt(match[1]);
-        const diastolica = parseInt(match[2]);
-        if (sistolica < 70 || sistolica > 200) {
-          errores.push(`Presión sistólica: ${sistolica} está fuera del rango válido (70-200 mmHg)`);
-        } else if (diastolica < 40 || diastolica > 120) {
-          errores.push(`Presión diastólica: ${diastolica} está fuera del rango válido (40-120 mmHg)`);
-        } else if (sistolica < 90 || sistolica > 140 || diastolica < 60 || diastolica > 90) {
-          advertencias.push(`Presión arterial: ${presion} mmHg fuera del rango normal (90-140/60-90 mmHg)`);
-        }
-      }
-    }
-    
-    // Validar peso
-    if (peso) {
-      const pesoNum = parseFloat(peso);
-      if (pesoNum < 30.0 || pesoNum > 200.0) {
-        errores.push(`Peso: ${peso}kg está fuera del rango válido (30-200kg)`);
-      } else if (pesoNum < 45.0 || pesoNum > 120.0) {
-        advertencias.push(`Peso: ${peso}kg fuera del rango típico para adultos (45-120kg)`);
-      }
-    }
-    
-    // Validar talla
-    if (talla) {
-      const tallaNum = parseInt(talla);
-      if (tallaNum < 140 || tallaNum > 220) {
-        errores.push(`Talla: ${talla}cm está fuera del rango válido (140-220cm)`);
-      } else if (tallaNum < 150 || tallaNum > 200) {
-        advertencias.push(`Talla: ${talla}cm fuera del rango típico para adultos (150-200cm)`);
-      }
-    }
-    
-    // Validar frecuencia respiratoria
-    if (frecuenciaRespiratoria) {
-      const frecuencia = parseInt(frecuenciaRespiratoria);
-      if (frecuencia < 10 || frecuencia > 40) {
-        errores.push(`Frecuencia respiratoria: ${frecuencia} rpm está fuera del rango válido (10-40 rpm)`);
-      } else if (frecuencia < 12 || frecuencia > 20) {
-        advertencias.push(`Frecuencia respiratoria: ${frecuencia} rpm fuera del rango normal (12-20 rpm)`);
-      }
-    }
-    
-    // Si hay errores críticos, no permitir continuar
-    if (errores.length > 0) {
-      mostrarMensaje('error', '❌ Datos Inválidos', 
-        'Por favor corrige los siguientes errores antes de continuar:\n\n' + 
-        errores.map(error => `• ${error}`).join('\n'));
+    // Validación completa de datos médicos
+    const validation = validateForm('datos-medicos', formData);
+    if (!validation.isValid) {
+      // Mostrar errores de validación
+      const errorMessage = validation.errors.join('\n');
+      mostrarMensaje('error', '❌ Errores de Validación', errorMessage, 8000);
       return;
+    }
+    
+    // Mostrar advertencias si existen
+    if (validation.warnings.length > 0) {
+      const warningMessage = validation.warnings.join('\n');
+      mostrarMensaje('warning', '⚠️ Advertencias', warningMessage, 6000);
     }
     
     // Determinar si es actualización o registro inicial
@@ -369,10 +631,6 @@ async function handleDatosMedicosSubmit(event) {
               const unidad = unidades[key] || '';
               return `• ${labels[key]}: ${value}${unidad}`;
             }).join('\n');      let mensajeFinal = `${tipoActividad} realizada para ${paciente.nombre} ${paciente.apellidos || ''}:\n${datosGuardados}`;
-        
-        if (advertencias.length > 0) {
-          mensajeFinal += '\n\n⚠️ Advertencias:\n' + advertencias.map(adv => `• ${adv}`).join('\n');
-        }
         
         mensajeFinal += `\n\nRegistrado por: ${usuarioActual.nombre}`;
         
@@ -917,6 +1175,7 @@ function llenarModalHistorialMedico(paciente, datosActuales, datosAnteriores, ca
   document.getElementById('modalHistorialGrado').textContent = paciente.grado;
   document.getElementById('modalHistorialGrupo').textContent = paciente.grupo;
   document.getElementById('modalHistorialFacultad').textContent = paciente.facultad;
+  document.getElementById('modalHistorialCarrera').textContent = paciente.carrera || 'No especificada';
   document.getElementById('modalHistorialTelefono').textContent = paciente.telefono;
 
   // Datos médicos actuales - convertir nombres de campos de Firebase a nombres internos
@@ -1068,6 +1327,7 @@ function llenarModalVerPaciente(paciente) {
   document.getElementById('modalGrado').textContent = paciente.grado;
   document.getElementById('modalGrupo').textContent = paciente.grupo;
   document.getElementById('modalFacultad').textContent = paciente.facultad;
+  document.getElementById('modalCarrera').textContent = paciente.carrera || 'No especificada';
   document.getElementById('modalTelefono').textContent = paciente.telefono;
   
   // Datos médicos
@@ -1132,6 +1392,9 @@ async function editarPaciente(pacienteId) {
     
     // Llenar formulario de edición
     llenarFormularioEdicion(paciente);
+    
+    // Inicializar dropdowns de facultad y carrera
+    await initFacultadesCarrerasEditar();
     
     // Mostrar modal de edición
     document.getElementById('modalEditarPaciente').style.display = 'flex';
@@ -1384,34 +1647,58 @@ function cerrarModalVerPaciente() {
   document.getElementById('modalVerPaciente').style.display = 'none';
 }
 
-async function abrirModalEditarPaciente() {
-  const pacienteId = window.currentPacienteId;
-  if (!pacienteId) return;
-  
-  try {
-    const paciente = await pacienteModel.getPaciente(pacienteId);
-    if (!paciente) return;
-    
-    // Llenar formulario de edición
-    llenarFormularioEdicion(paciente);
-    
-    // Cerrar modal de ver y abrir modal de editar
-    cerrarModalVerPaciente();
-    document.getElementById('modalEditarPaciente').style.display = 'flex';
-  } catch (error) {
-    console.error('❌ Error al abrir modal de edición:', error);
-    mostrarMensaje('error', '❌ Error', 'No se pudo abrir el modal de edición. Intenta nuevamente.');
+async function initFacultadesCarrerasEditar() {
+  // Llamar a la función global definida en el HTML
+  if (typeof window.initFacultadesCarrerasEditar === 'function') {
+    window.initFacultadesCarrerasEditar();
   }
 }
 
 function llenarFormularioEdicion(paciente) {
   // Datos personales
   document.getElementById('editMatricula').value = paciente.matricula;
-  document.getElementById('editNombre').value = `${paciente.nombre} ${paciente.apellidos || ''}`;
+  document.getElementById('editNombres').value = paciente.nombre;
+  document.getElementById('editApellidos').value = paciente.apellidos || '';
+  document.getElementById('editFechaNacimiento').value = paciente.fechaNacimiento ? paciente.fechaNacimiento.split('T')[0] : '';
   document.getElementById('editGrado').value = paciente.grado;
   document.getElementById('editGrupo').value = paciente.grupo;
   document.getElementById('editTelefono').value = paciente.telefono;
-  document.getElementById('editFacultad').value = paciente.facultad;
+  
+  // Seleccionar facultad y carrera
+  const editFacultadSelect = document.getElementById('editFacultad');
+  const editCarreraSelect = document.getElementById('editCarrera');
+  
+  if (editFacultadSelect && editCarreraSelect) {
+    // Limpiar opciones existentes
+    editFacultadSelect.innerHTML = '<option value="">Seleccione una facultad</option>';
+    editCarreraSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
+    editCarreraSelect.disabled = true;
+    
+    // Poblar el select de facultades desde window.facultadesYCarreras
+    if (window.facultadesYCarreras) {
+      Object.keys(window.facultadesYCarreras).forEach(facultad => {
+        editFacultadSelect.add(new Option(facultad, facultad));
+      });
+    }
+    
+    // Establecer la facultad del paciente si existe
+    if (paciente.facultad) {
+      editFacultadSelect.value = paciente.facultad;
+      
+      // Cargar las carreras de la facultad seleccionada
+      if (window.facultadesYCarreras && window.facultadesYCarreras[paciente.facultad]) {
+        editCarreraSelect.disabled = false;
+        window.facultadesYCarreras[paciente.facultad].forEach(carrera => {
+          editCarreraSelect.add(new Option(carrera, carrera));
+        });
+        
+        // Establecer la carrera del paciente si existe
+        if (paciente.carrera) {
+          editCarreraSelect.value = paciente.carrera;
+        }
+      }
+    }
+  }
   
   // Datos médicos (si existen)
   if (paciente.datosMedicos) {
@@ -1430,6 +1717,11 @@ function cerrarModalEditarPaciente() {
   document.getElementById('modalEditarPaciente').style.display = 'none';
   // Limpiar formulario
   document.getElementById('formEditarPaciente').reset();
+  
+  // Resetear selectores de facultad y carrera
+  if (typeof window.resetFacultadesCarrerasEditar === 'function') {
+    window.resetFacultadesCarrerasEditar();
+  }
 }
 
 async function handleEditarPacienteSubmit(event) {
@@ -1443,21 +1735,36 @@ async function handleEditarPacienteSubmit(event) {
   
   const formData = new FormData(event.target);
   
-  // Extraer nombre completo
-  const nombreCompleto = formData.get('nombre').trim();
-  const partesNombre = nombreCompleto.split(' ');
-  const nombre = partesNombre[0];
-  const apellidos = partesNombre.slice(1).join(' ');
+  // Validación completa del formulario de edición
+  const validation = validateForm('paciente', formData);
+  if (!validation.isValid) {
+    // Mostrar errores de validación
+    const errorMessage = validation.errors.join('\n');
+    mostrarMensaje('error', '❌ Errores de Validación', errorMessage, 8000);
+    return;
+  }
+  
+  // Mostrar advertencias si existen
+  if (validation.warnings.length > 0) {
+    const warningMessage = validation.warnings.join('\n');
+    mostrarMensaje('warning', '⚠️ Advertencias', warningMessage, 6000);
+  }
+  
+  // Extraer datos del formulario
+  const nombre = formData.get('nombres').trim();
+  const apellidos = formData.get('apellidos').trim();
   
   // Datos personales actualizados
   const datosPersonales = {
     matricula: formData.get('matricula'),
     nombre: nombre,
     apellidos: apellidos,
+    fechaNacimiento: formData.get('fecha-nacimiento'),
     grado: formData.get('grado'),
     grupo: formData.get('grupo'),
     telefono: formData.get('telefono'),
-    facultad: formData.get('facultad')
+    facultad: formData.get('facultad'),
+    carrera: formData.get('carrera')
   };
   
   // Datos médicos actualizados
@@ -1543,7 +1850,20 @@ async function eliminarRegistroHistorial(registroId, pacienteId, isActualizacion
     console.error('Error al eliminar registro del historial:', error);
     mostrarMensaje('error', '❌ Error del Sistema', 'Error interno al eliminar el registro. Contacta al administrador.');
   }
-}// Hacer funciones globales para compatibilidad con HTML
+}
+
+// Función para abrir el modal de edición desde el modal de ver paciente
+async function abrirModalEditarPaciente() {
+  const pacienteId = window.currentPacienteId;
+  if (!pacienteId) {
+    mostrarMensaje('error', '❌ Error', 'No se puede identificar el paciente a editar. Cierra el modal e intenta nuevamente.');
+    return;
+  }
+  
+  await editarPaciente(pacienteId);
+}
+
+// Hacer funciones globales para compatibilidad con HTML
 window.cargarDatosPaciente = cargarDatosPaciente;
 window.cargarDatosPacienteSelect = cargarDatosPacienteSelect;
 window.mostrarMensaje = mostrarMensaje;

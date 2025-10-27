@@ -2188,6 +2188,7 @@
     import './js/utils/eventBusManager.js';      // Event Bus monitoring
     import './js/utils/performanceMonitor.js';   // Performance monitoring
     import './js/utils/architectureValidator.js'; // Architecture validation
+    import './js/utils/connectionIndicator.js';   // Connection status indicator
     
     // Función para inicializar header individual
     function initIndividualHeader() {
@@ -2342,6 +2343,11 @@
           // Initialize global controller ONLY para event bus listeners después del header
           setTimeout(() => {
             initGlobalController();
+            
+            // Initialize connection indicator
+            if (typeof ConnectionIndicator !== 'undefined') {
+              ConnectionIndicator.init();
+            }
           }, 100);
         }, 50);
         

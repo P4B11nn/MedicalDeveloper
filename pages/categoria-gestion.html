@@ -534,6 +534,27 @@
       margin-left: 0 !important;
       width: 100% !important;
     }
+
+    /* Loading spinner */
+    .loading-spinner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+      color: #0891b2;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+
+    .loading-spinner i {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 
   <script>
@@ -608,8 +629,16 @@
     </div>
     <div class="content">
       <div class="content-area">
-        <div id="modulos-section" class="form-section"></div>
-        <div id="grupos-section" class="form-section"></div>
+        <div id="modulos-section" class="form-section">
+          <div class="loading-spinner" id="modulosLoadingSpinner">
+            <i class="fas fa-spinner fa-spin"></i> Cargando módulos...
+          </div>
+        </div>
+        <div id="grupos-section" class="form-section">
+          <div class="loading-spinner" id="gruposLoadingSpinner">
+            <i class="fas fa-spinner fa-spin"></i> Cargando grupos...
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -703,6 +732,7 @@
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initGestionController } from '../js/controllers/gestionController.js';
     import { init as initGestionView } from '../js/views/gestionView.js';
+    import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
     // HeaderComponent eliminado, ahora usamos header individual
     import '../js/utils/eventBusManager.js';
     
@@ -738,6 +768,8 @@
           
           // Luego inicializar controlador
           initGestionController();
+          
+          ConnectionIndicator.init();
         }, 100);        
       }
     });
