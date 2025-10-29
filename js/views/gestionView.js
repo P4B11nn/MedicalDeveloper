@@ -478,6 +478,26 @@ export function renderFormModulo(modulo = null) {
                             </div>
                         </div>
                         
+                        <!-- Botón para seleccionar ubicación en mapa -->
+                        <div style="margin-top: 10px;">
+                            <button type="button" id="btnSeleccionarMapa" style="
+                                background: linear-gradient(135deg, #10b981, #059669);
+                                color: white;
+                                border: none;
+                                border-radius: 6px;
+                                padding: 8px 16px;
+                                font-size: 14px;
+                                cursor: pointer;
+                                display: flex;
+                                align-items: center;
+                                gap: 8px;
+                                transition: all 0.2s ease;
+                            " onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                                <i class="fas fa-map-marker-alt"></i>
+                                Seleccionar en mapa
+                            </button>
+                        </div>
+                        
                         <!-- Información de ayuda -->
                         <div style="margin-top: 8px; padding: 8px; background: #f0f9ff; border-radius: 6px; border-left: 3px solid #3b82f6;">
                             <small style="color: #1e40af; font-size: 0.85rem;">
@@ -608,42 +628,13 @@ export function renderFormModulo(modulo = null) {
     
     document.body.appendChild(formContainer);
     
-    // Configurar eventos para los checkboxes de días
-    const diasCheckboxes = formContainer.querySelectorAll('input[type="checkbox"][id$="-check"]');
-    diasCheckboxes.forEach(checkbox => {
-        const dia = checkbox.id.replace('-check', '').replace('dia-', '');
-        const inicioInput = formContainer.querySelector(`#${dia}-inicio`);
-        const finInput = formContainer.querySelector(`#${dia}-fin`);
-        const diaContainer = checkbox.closest('.dia-horario');
-
-        // Función para actualizar estado visual
-        const actualizarEstadoVisual = () => {
-            if (checkbox.checked) {
-                diaContainer.style.background = 'linear-gradient(135deg, #f0f9ff, #e0f2fe)';
-                diaContainer.style.borderColor = '#3b82f6';
-                inicioInput.disabled = false;
-                finInput.disabled = false;
-                inicioInput.style.opacity = '1';
-                finInput.style.opacity = '1';
-            } else {
-                diaContainer.style.background = '#f5f5f5';
-                diaContainer.style.borderColor = '#d1d5db';
-                inicioInput.disabled = true;
-                finInput.disabled = true;
-                inicioInput.style.opacity = '0.5';
-                finInput.style.opacity = '0.5';
-            }
-        };
-
-        // Estado inicial
-        if (modulo?.horarioPorDia?.[dia]?.inicio && modulo?.horarioPorDia?.[dia]?.fin) {
-            checkbox.checked = true;
-        }
-        actualizarEstadoVisual();
-
-        // Event listener
-        checkbox.addEventListener('change', actualizarEstadoVisual);
-    });
+    // Configurar evento para el botón de seleccionar ubicación en mapa
+    const btnSeleccionarMapa = formContainer.querySelector('#btnSeleccionarMapa');
+    if (btnSeleccionarMapa) {
+        btnSeleccionarMapa.addEventListener('click', () => {
+            mostrarModalMapaSeleccion();
+        });
+    }
     
     // Obtener referencias a los botones
     const cerrarBtn = formContainer.querySelector('#btnCerrarModuloX');
@@ -790,11 +781,345 @@ export function renderFormModulo(modulo = null) {
 }
 
 /**
+ * Muestra un modal con mini mapa para seleccionar coordenadas
+ */
+function mostrarModalMapaSeleccion() {
+    // Eliminar modal anterior si existe
+    document.getElementById('mapa-seleccion-modal')?.remove();
+    
+    // Obtener coordenadas actuales de los campos
+    const latitudInput = document.getElementById('modulo-latitud');
+    const longitudInput = document.getElementById('modulo-longitud');
+    
+    const latActual = latitudInput?.value ? parseFloat(latitudInput.value) : 22.27546821201615;
+    const lngActual = longitudInput?.value ? parseFloat(longitudInput.value) : -97.86079278482266;
+    
+    const modalContainer = document.createElement('div');
+    modalContainer.id = 'mapa-seleccion-modal';
+    modalContainer.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 2000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+    `;
+    
+    modalContainer.innerHTML = `
+        <div class="modal-dialog" style="
+            background: white;
+            max-width: 800px;
+            width: 90%;
+            margin: 20px auto;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            animation: modalFadeIn 0.3s ease-out;
+        ">
+            <style>
+                @keyframes modalFadeIn {
+                    from { opacity: 0; transform: translateY(-20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                
+                .mapa-container {
+                    position: relative;
+                    height: 400px;
+                    border-radius: 8px;
+                    overflow: hidden;
+                }
+                
+                .mapa-instrucciones {
+                    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+                    border: 1px solid #3b82f6;
+                    border-radius: 8px;
+                    padding: 12px 16px;
+                    margin-bottom: 16px;
+                    font-size: 14px;
+                    color: #1e40af;
+                }
+                
+                .mapa-instrucciones i {
+                    color: #3b82f6;
+                    margin-right: 8px;
+                }
+                
+                .coordenadas-seleccionadas {
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    padding: 12px 16px;
+                    margin-bottom: 16px;
+                    font-family: monospace;
+                    font-size: 14px;
+                }
+                
+                .coordenadas-label {
+                    font-weight: 600;
+                    color: #374151;
+                    margin-bottom: 4px;
+                }
+                
+                .coordenadas-valor {
+                    color: #059669;
+                    font-weight: 500;
+                }
+            </style>
+            
+            <div class="modal-header" style="
+                padding: 20px 24px;
+                border-bottom: 1px solid #e5e7eb;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: linear-gradient(135deg, #1e40af, #3b82f6);
+                color: white;
+            ">
+                <h3 style="margin: 0; font-weight: 600; font-size: 1.4rem;">
+                    <i class="fas fa-map-marker-alt" style="margin-right: 10px;"></i>
+                    Seleccionar Ubicación en el Mapa
+                </h3>
+                <button id="btnCerrarMapaModal" style="
+                    background: rgba(255, 255, 255, 0.2);
+                    border: none;
+                    border-radius: 50%;
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 20px;
+                    cursor: pointer;
+                    color: white;
+                    transition: all 0.2s ease;
+                " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">×</button>
+            </div>
+            
+            <div class="modal-body" style="padding: 24px;">
+                <div class="mapa-instrucciones">
+                    <i class="fas fa-mouse-pointer"></i>
+                    <strong>Instrucciones:</strong> Haz clic en cualquier punto del mapa para seleccionar la ubicación del módulo. 
+                    Las coordenadas se actualizarán automáticamente en el formulario.
+                </div>
+                
+                <div id="coordenadas-seleccionadas" class="coordenadas-seleccionadas">
+                    <div class="coordenadas-label">Coordenadas seleccionadas:</div>
+                    <div class="coordenadas-valor" id="coordenadas-valor">
+                        Latitud: ${latActual.toFixed(6)}, Longitud: ${lngActual.toFixed(6)}
+                    </div>
+                </div>
+                
+                <div class="mapa-container" id="mapa-seleccion-container">
+                    <!-- El mapa se cargará aquí -->
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100%;
+                        background: #f8fafc;
+                        color: #6b7280;
+                        font-size: 16px;
+                    ">
+                        <div style="text-align: center;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 10px;"></i>
+                            <div>Cargando mapa...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-buttons" style="
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 12px;
+                    margin-top: 20px;
+                ">
+                    <button type="button" id="btnCancelarMapaSeleccion" style="
+                        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+                        color: #475569;
+                        border: 1px solid #cbd5e1;
+                        border-radius: 8px;
+                        padding: 10px 20px;
+                        font-size: 14px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                    ">Cancelar</button>
+                    <button type="button" id="btnConfirmarMapaSeleccion" style="
+                        background: linear-gradient(135deg, #10b981, #059669);
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        padding: 10px 20px;
+                        font-size: 14px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+                    ">Confirmar Ubicación</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modalContainer);
+    
+    // Variables para el mapa y marcador
+    let mapa = null;
+    let marcadorSeleccionado = null;
+    let coordenadasSeleccionadas = { lat: latActual, lng: lngActual };
+    
+    // Función para inicializar el mapa
+    function inicializarMapa() {
+        try {
+            // Verificar que Leaflet esté disponible
+            if (typeof L === 'undefined') {
+                throw new Error('Leaflet no está disponible. Asegúrate de que se haya cargado correctamente.');
+            }
+            
+            const contenedorMapa = document.getElementById('mapa-seleccion-container');
+            if (!contenedorMapa) {
+                throw new Error('Contenedor del mapa no encontrado');
+            }
+            
+            // Crear el mapa
+            mapa = L.map('mapa-seleccion-container').setView([coordenadasSeleccionadas.lat, coordenadasSeleccionadas.lng], 15);
+            
+            // Agregar capa de OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(mapa);
+            
+            // Agregar marcador inicial si hay coordenadas
+            if (coordenadasSeleccionadas.lat && coordenadasSeleccionadas.lng) {
+                marcadorSeleccionado = L.marker([coordenadasSeleccionadas.lat, coordenadasSeleccionadas.lng])
+                    .addTo(mapa)
+                    .bindPopup('Ubicación seleccionada<br><small>Haz clic en otro punto para cambiar</small>')
+                    .openPopup();
+            }
+            
+            // Evento para capturar clics en el mapa
+            mapa.on('click', function(e) {
+                const { lat, lng } = e.latlng;
+                
+                // Actualizar coordenadas seleccionadas
+                coordenadasSeleccionadas = { lat, lng };
+                
+                // Actualizar marcador
+                if (marcadorSeleccionado) {
+                    mapa.removeLayer(marcadorSeleccionado);
+                }
+                
+                marcadorSeleccionado = L.marker([lat, lng])
+                    .addTo(mapa)
+                    .bindPopup('Ubicación seleccionada<br><small>Haz clic en otro punto para cambiar</small>')
+                    .openPopup();
+                
+                // Actualizar display de coordenadas
+                actualizarDisplayCoordenadas(lat, lng);
+                
+                console.log('Ubicación seleccionada:', { lat, lng });
+            });
+            
+            console.log('Mapa inicializado correctamente');
+            
+        } catch (error) {
+            console.error('Error al inicializar el mapa:', error);
+            
+            const contenedorMapa = document.getElementById('mapa-seleccion-container');
+            if (contenedorMapa) {
+                contenedorMapa.innerHTML = `
+                    <div style="
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100%;
+                        background: #fef2f2;
+                        color: #dc2626;
+                        font-size: 16px;
+                        text-align: center;
+                        padding: 20px;
+                    ">
+                        <div>
+                            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
+                            <div>Error al cargar el mapa</div>
+                            <small style="display: block; margin-top: 8px;">${error.message}</small>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    }
+    
+    // Función para actualizar el display de coordenadas
+    function actualizarDisplayCoordenadas(lat, lng) {
+        const elementoCoordenadas = document.getElementById('coordenadas-valor');
+        if (elementoCoordenadas) {
+            elementoCoordenadas.textContent = `Latitud: ${lat.toFixed(6)}, Longitud: ${lng.toFixed(6)}`;
+        }
+    }
+    
+    // Configurar eventos del modal
+    const btnCerrar = document.getElementById('btnCerrarMapaModal');
+    const btnCancelar = document.getElementById('btnCancelarMapaSeleccion');
+    const btnConfirmar = document.getElementById('btnConfirmarMapaSeleccion');
+    
+    // Función para cerrar el modal
+    function cerrarModalMapa() {
+        if (mapa) {
+            mapa.remove(); // Limpiar el mapa
+        }
+        modalContainer.remove();
+    }
+    
+    // Eventos para cerrar/cancelar
+    btnCerrar.addEventListener('click', cerrarModalMapa);
+    btnCancelar.addEventListener('click', cerrarModalMapa);
+    
+    // Cerrar al hacer clic fuera del modal
+    modalContainer.addEventListener('click', (e) => {
+        if (e.target === modalContainer) {
+            cerrarModalMapa();
+        }
+    });
+    
+    // Evento para confirmar selección
+    btnConfirmar.addEventListener('click', () => {
+        // Actualizar los campos del formulario principal
+        if (latitudInput) {
+            latitudInput.value = coordenadasSeleccionadas.lat.toFixed(6);
+        }
+        if (longitudInput) {
+            longitudInput.value = coordenadasSeleccionadas.lng.toFixed(6);
+        }
+        
+        // Mostrar notificación de éxito
+        modalUtil.mostrarAlerta({
+            title: 'Ubicación Seleccionada',
+            message: `Coordenadas guardadas: ${coordenadasSeleccionadas.lat.toFixed(6)}, ${coordenadasSeleccionadas.lng.toFixed(6)}`,
+            type: 'success'
+        });
+        
+        // Cerrar modal
+        cerrarModalMapa();
+    });
+    
+    // Inicializar el mapa después de un pequeño delay para asegurar que el DOM esté listo
+    setTimeout(() => {
+        inicializarMapa();
+    }, 100);
+}
+
+/**
  * Renderiza el formulario de grupo y configura sus eventos
  */
 export function renderFormGrupo(grupo = null) {
-    // Eliminar formulario anterior si existe
-    document.getElementById('grupo-form-container')?.remove();
     
     const formContainer = document.createElement('div');
     formContainer.id = 'grupo-form-container';

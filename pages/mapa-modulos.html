@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Módulos Médicos</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --header-h: 80px;
+            --sidebar-w: 260px;
+            --gutter: 20px;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            background: url('../img/medical-background.png?v=1') center center / cover no-repeat fixed;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(126, 211, 252, 0.1);
+            z-index: -1;
+        }
+
+        /* Estilos del header */
+        header {
+            background: linear-gradient(135deg, #7dd3fc, #fef3c7);
+            color: #1f2937;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: var(--header-h);
+            box-shadow: 0 4px 15px rgba(125, 211, 252, 0.3);
+            z-index: 1000;
+            padding: 0;
+        }
+
+        .nav-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            padding: 0 20px;
+            max-width: 100%;
+        }
+
+        .nav-left {
+            flex: 0 0 auto;
+            min-width: 0;
+            width: 180px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .nav-center {
+            flex: 1;
+            text-align: center;
+            min-width: 0;
+        }
+
+        .nav-center h1 {
+            margin: 0;
+            font-size: clamp(20px, 3.5vw, 26px);
+            font-weight: bold;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .nav-right {
+            flex: 0 0 auto;
+            position: relative;
+            min-width: 0;
+            width: 180px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            min-height: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-info:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .user-info:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            min-width: 280px;
+            z-index: 1001;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .dropdown-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .user-avatar {
+            font-size: 32px;
+            color: #64748b;
+        }
+
+        .user-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+
+        .user-role {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 0;
+        }
+
+        .dropdown-options {
+            padding: 8px 0;
+        }
+
+        .dropdown-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: #475569;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .dropdown-option:hover {
+            background: #f1f5f9;
+            color: #dc2626;
+        }
+
+        .dropdown-option i {
+            width: 16px;
+            text-align: center;
+        }
+
+        /* Modal de logout */
+        .logout-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logout-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .logout-modal-content {
+            position: relative;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            max-width: 480px;
+            width: 90%;
+            max-height: 90vh;
+            overflow: hidden;
+            animation: slideIn 0.3s ease-out;
+            transform: scale(1);
+        }
+
+        .logout-modal-header {
+            padding: 32px 32px 24px;
+            text-align: center;
+            background: linear-gradient(135deg, #fee2e2, #fef3c7);
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .logout-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 8px 32px rgba(239, 68, 68, 0.3);
+        }
+
+        .logout-modal-header h3 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: #1f2937;
+            line-height: 1.3;
+        }
+
+        .logout-modal-body {
+            padding: 32px;
+            text-align: center;
+        }
+
+        .logout-modal-body p {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        .logout-subtitle {
+            font-size: 14px !important;
+            color: #6b7280 !important;
+            margin: 0 !important;
+        }
+
+        .logout-modal-footer {
+            padding: 24px 32px 32px;
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        .logout-btn-cancel,
+        .logout-btn-confirm {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .logout-btn-cancel {
+            background: #f9fafb;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+
+        .logout-btn-cancel:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+            transform: translateY(-1px);
+        }
+
+        .logout-btn-confirm {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+        }
+
+        .logout-btn-confirm:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .logout-btn-confirm:active {
+            transform: translateY(0);
+        }
+
+        /* Animaciones */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .logout-modal-content {
+                width: 95%;
+                margin: 20px;
+            }
+
+            .logout-modal-header,
+            .logout-modal-body {
+                padding: 24px 20px;
+            }
+
+            .logout-modal-footer {
+                padding: 20px;
+                flex-direction: column;
+            }
+
+            .logout-btn-cancel,
+            .logout-btn-confirm {
+                width: 100%;
+            }
+        }
+
+        /* Estilos de la página */
+        .container {
+            margin: calc(var(--header-h) + 20px) 20px 20px 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 8px;
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #1f2937;
+            padding: 10px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(-2px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="nav-container">
+            <div class="nav-left">
+                <button class="back-button" onclick="window.location.href='../menuInicio.html'">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Volver al inicio</span>
+                </button>
+            </div>
+            <div class="nav-center">
+                <h1>Mapa de Módulos Médicos</h1>
+            </div>
+            <div class="nav-right">
+                <div class="user-info" id="userIcon">
+                    <span id="userName">Usuario</span>
+                </div>
+                <div class="user-dropdown" id="userDropdown" style="display: none;">
+                    <div class="dropdown-header">
+                        <div class="user-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="user-details">
+                            <div class="user-name" id="dropdownUserName">Usuario</div>
+                            <div class="user-role" id="dropdownUserRole">Rol no definido</div>
+                        </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-options">
+                        <a href="#" class="dropdown-option" id="profileBtn">
+                            <i class="fas fa-user"></i>
+                            <span>Ver perfil</span>
+                        </a>
+                        <a href="#" class="dropdown-option" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Cerrar sesión</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenido principal -->
+    <div class="container">
+        <h2>Mapa de Módulos Médicos</h2>
+        <p>Visualiza la ubicación de los módulos en la universidad.</p>
+        <div id="map"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="../js/views/mapView.js"></script>
+    <script type="module">
+      // Importar userDisplayGlobal para manejar la visualización del usuario
+      import { initUserDisplay } from '../js/utils/userDisplayGlobal.js';
+
+      // Inicializar al cargar la página
+      document.addEventListener('DOMContentLoaded', () => {
+        console.log('Mapa de Módulos: Página cargada');
+        initUserDisplay();
+      });
+    </script>
+</body>
+</html>

@@ -121,6 +121,30 @@ export function initUsersController() {
   setupNewUserForm();
   initUserView(); // Inicializar vista de usuario
 
+  // Registrar callback para refrescar datos cuando se restaure la conexión
+  // Usar un timeout para asegurar que ConnectionIndicator esté inicializado
+  setTimeout(() => {
+    if (window.connectionIndicator) {
+      window.connectionIndicator.onConnectionRestored(async () => {
+        console.log('🔄 Refrescando datos de usuarios tras restaurar conexión...');
+        try {
+          // Mostrar mensaje de carga
+          mostrarMensaje('info', '🔄 Sincronizando Datos', 'Actualizando información de usuarios desde Firebase...', 3000);
+
+          // Refrescar la vista de usuarios
+          await mostrarUsuarios();
+
+          mostrarMensaje('success', '✅ Datos Actualizados', 'La información de usuarios se ha sincronizado correctamente con Firebase.', 3000);
+        } catch (error) {
+          console.error('❌ Error al refrescar datos de usuarios tras restaurar conexión:', error);
+          mostrarMensaje('warning', '⚠️ Error de Sincronización', 'No se pudieron actualizar los datos de usuarios. Refresca la página manualmente.', 5000);
+        }
+      });
+    } else {
+      console.warn('⚠️ ConnectionIndicator no disponible para registrar callback de restauración de conexión en usersController');
+    }
+  }, 500);
+
   // Comentado: no activar automáticamente para permitir navegación manual
   // const firstButton = document.querySelector('.sidebar-menu button');
   // if (firstButton) {

@@ -1,6 +1,5 @@
 // js/controllers/operacionesController.js
-import { getRegistroEntradasSalidas, exportarDatosCSV, limpiarRegistros } from '../models/operacionesModel.js';
-import { renderRegistroEntradasSalidas, renderModulos, renderAsistencia, obtenerEtiquetaModulo } from '../views/operacionesView.js';
+import { renderAsistencia, obtenerEtiquetaModulo, renderAsistenciasGenerales } from '../views/operacionesView.js';
 import { gestionModel } from '../models/gestionModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
 import { authModel } from '../models/storageModel.js';
@@ -18,12 +17,9 @@ export function initOperationsController() {
   setupEventListeners();
   
   setupSidebarNavigation();
-  // CSV export initialization intentionally disabled (commented out)
-  // Date: 2025-10-18
-  // Reason: The app currently does not use the CSV export UI and some pages trigger
-  // a console warning when the export button (`btnExportarTodo`) is missing.
-  // To avoid console noise and test timeouts, the initialization is kept but not executed.
-  // If you need the feature in the future, uncomment the line below to re-enable it:
+  // CSV export initialization intentionally disabled (removed - old E/S system)
+  // Date: 2025-10-28
+  // Reason: Old E/S system removed, now using asistencias_usuarios collection only.
   // setupSimpleExport();
 
   // Activar la primera sección por defecto
@@ -66,7 +62,10 @@ export function initOperationsController() {
               targetSectionEl.classList.add('active');
               targetSectionEl.classList.remove('hidden');
 
-              if (hash === 'registro-entradas-salidas') mostrarTodosLosRegistros();
+              if (hash === 'registro-entradas-salidas') {
+                // Mostrar vista general de asistencias con filtros
+                mostrarVistaAsistenciasGenerales();
+              }
 
               activated = true;
             } else if (targetBtn) {
@@ -106,49 +105,22 @@ export function initOperationsController() {
 
   // Hacer disponibles funciones de debug
   window.OperationsDebug = {
-    limpiarRegistros: () => {
-      if (typeof mostrarConfirmacion === 'function') {
-        mostrarConfirmacion('🗑️ Limpiar Registros', 
-          '¿Estás seguro de que deseas limpiar TODOS los registros de entradas y salidas?\n\nEsta acción no se puede deshacer.',
-          () => {
-            limpiarRegistros();
-            mostrarTodosLosRegistros();
-            console.log('OperationsDebug: Registros limpiados');
-            if (typeof mostrarMensaje === 'function') {
-              mostrarMensaje('success', '✅ Registros Limpiados', 'Todos los registros de entradas y salidas han sido eliminados exitosamente.');
-            } else {
-              alert('Registros limpiados exitosamente');
-            }
-          }
-        );
-      } else {
-        const confirmacion = confirm('¿Estás seguro de que deseas limpiar TODOS los registros?\n\nEsta acción no se puede deshacer.');
-        if (confirmacion) {
-          limpiarRegistros();
-          mostrarTodosLosRegistros();
-          console.log('OperationsDebug: Registros limpiados');
-          alert('Registros limpiados exitosamente');
-        }
-      }
-    },
-    mostrarRegistros: () => {
-      console.table(getRegistroEntradasSalidas());
-    }
+    // Debug functions removed - old E/S system no longer used
   };
   
-  console.log('OperationsDebug: Comandos disponibles - OperationsDebug.limpiarRegistros(), OperationsDebug.mostrarRegistros()');
+  console.log('OperationsDebug: Comandos disponibles - Old E/S system removed, now using asistencias_usuarios collection only');
 
   // Intentar pre-renderizar Asistencia si el contenedor ya existe (evita que parezca vacío)
 
-  setTimeout(() => {
+  setTimeout(async () => {
     const asistenciaEl = document.getElementById('asistenciaContainer');
     if (asistenciaEl) {
       try {
-        const todos = authModel.getAllUsers() || [];
+        const todos = await authModel.getAllUsers() || [];
         console.log('OperationsController: Pre-render Asistencia con usuarios:', todos.length);
         asistenciaEl.innerHTML = '';
         // import renderAsistencia dinámicamente por seguridad (ya exportado arriba)
-        renderAsistencia(todos, asistenciaEl);
+        await renderAsistencia(todos, asistenciaEl);
         // pre-render Asistencia
       } catch (e) {
         console.error('OperationsController: Error pre-render Asistencia', e);
@@ -159,7 +131,7 @@ export function initOperationsController() {
 
 /**
  * Helper: Pobla el select #asistenciaModuloSelect con los módulos disponibles.
- * Usa `gestionModel.getModulos()` y hace fallback a localStorage si es necesario.
+ * Usa `gestionModel.getModulos()` para obtener módulos desde Firebase.
  */
 // NOTE: All module-select and migration helper functions removed per request.
 
@@ -186,9 +158,9 @@ function setupEventListeners() {
     console.log('OperationsController: Datos cargados', data);
     if (!data || !data.type) return;
     if (data.type === 'registro') {
-      refreshRegistroView();
-  } else if (data.type === 'modulos' || data.type === 'mesas') {
-      refreshModulosView();
+      console.log('OperationsController: Registro event ignored - old E/S system removed');
+    } else if (data.type === 'modulos' || data.type === 'mesas') {
+      console.log('OperationsController: Modulos event ignored - modules removed from operations');
     }
   });
 }
@@ -200,7 +172,7 @@ function setupSidebarNavigation() {
   console.log(`Configurando navegación lateral: ${sidebarButtons.length} botones, ${sections.length} secciones`);
 
   sidebarButtons.forEach((button, index) => {
-    button.addEventListener('click', () => {
+    button.addEventListener('click', async () => {
       const targetSectionId = button.getAttribute('data-section');
       // Seguridad: si por alguna razón el botón no tiene data-section, ignoramos el click
       if (!targetSectionId) {
@@ -233,8 +205,8 @@ function setupSidebarNavigation() {
         console.log(`Sección activada: ${targetSectionId}`);
         // Renderizar contenido según la sección y ocultar lo demás
         if (targetSectionId === 'registro-entradas-salidas') {
-              // Mostrar registros; cualquier UI de módulos eliminada.
-              mostrarTodosLosRegistros();
+              // Mostrar vista general de asistencias con filtros
+              mostrarVistaAsistenciasGenerales();
             } else if (targetSectionId === 'asistencia') {
           // Mostrar asistencia
           const asistenciaEl = document.getElementById('asistenciaContainer');
@@ -244,7 +216,7 @@ function setupSidebarNavigation() {
                 // Obtener lista completa de usuarios y usarla como base para Asistencia
                 // Ahora la ventana de Asistencia debe mostrar TODO el personal; la marca de
                 // "en servicio" sólo se activará cuando se pulse Entrada en esta pantalla.
-                const todos = authModel.getAllUsers() || [];
+                const todos = await authModel.getAllUsers() || [];
                 const baseLista = todos;
 
                 console.log('OperationsController: Activando Asistencia - usuarios totales en authModel:', baseLista.length);
@@ -253,11 +225,7 @@ function setupSidebarNavigation() {
                 // Limpiar contenedor antes de renderizar para evitar solapamientos
                 asistenciaEl.innerHTML = '';
 
-                renderAsistencia(baseLista, asistenciaEl);
-
-                // Render asistencia sin agregar lógica de filtrado por módulos (combobox removed)
-                // Simplemente renderizar la lista completa usando baseLista
-                renderAsistencia(baseLista, asistenciaEl);
+                await renderAsistencia(baseLista, asistenciaEl);
           } else {
             console.error('No se encontró el contenedor de Asistencia');
           }
@@ -273,131 +241,50 @@ function setupSidebarNavigation() {
   }
 }
 
-function setupSimpleExport() {
-    console.log('Configurando exportación simplificada (sin filtros)...');
-    
-    // Ocultar controles de filtro si existen
-    const buscarInput = document.getElementById('buscarRegistro');
-    const rolSelect = document.getElementById('filtroRol');
-    
-  if (buscarInput) {
-    buscarInput.classList.add('hidden');
-    console.log('Input de búsqueda ocultado (clase .hidden)');
+/**
+ * Muestra la vista general de asistencias con filtros
+ */
+async function mostrarVistaAsistenciasGenerales() {
+  console.log('Mostrando vista general de asistencias...');
+  const container = document.getElementById('registroESLista');
+  
+  if (!container) {
+    console.error('No se encontró el contenedor registroESLista');
+    return;
   }
-    
-  if (rolSelect) {
-    rolSelect.classList.add('hidden');
-    console.log('Select de filtro ocultado (clase .hidden)');
+  
+  // Asegurar que el contenedor esté visible
+  container.classList.remove('hidden');
+  
+  // Limpiar contenedor
+  container.innerHTML = '';
+  
+  try {
+    // Renderizar la vista de asistencias generales
+    await renderAsistenciasGenerales(container);
+    console.log('Vista general de asistencias mostrada exitosamente');
+  } catch (error) {
+    console.error('Error mostrando vista de asistencias:', error);
+    container.innerHTML = `
+      <div style="text-align: center; color: #ef4444; padding: 20px;">
+        <i class="fas fa-exclamation-triangle"></i>
+        Error al cargar la vista de asistencias. Verifique la conexión a Firebase.
+      </div>
+    `;
   }
-    
-    // Configurar solo exportación
-    const exportarBtn = document.getElementById('btnExportarTodo');
-    if (exportarBtn) {
-        exportarBtn.addEventListener('click', () => {
-            console.log('Iniciando exportación CSV...');
-            const historial = getRegistroEntradasSalidas();
-            if (historial.length > 0) {
-                eventBus.emit(EVENT_NAMES.EXPORT_REQUESTED, {
-                    type: 'csv',
-                    data: historial,
-                    filename: 'registro_completo'
-                });
-                exportarDatosCSV(historial, 'registro_completo');
-                console.log(`Exportando ${historial.length} registros`);
-            } else {
-                console.warn('No hay datos para exportar');
-                if (typeof mostrarMensaje === 'function') {
-                  mostrarMensaje('info', 'ℹ️ Sin Datos', 'No hay registros de entradas y salidas para exportar.');
-                } else {
-                  alert('No hay datos para exportar.');
-                }
-            }
-        });
-        console.log('Botón de exportar CSV configurado');
-    } else {
-        console.error('No se encontró el botón btnExportarTodo');
-    }
-    
-    console.log('Configuración de exportación simplificada completada');
-}
-
-function mostrarTodosLosRegistros() {
-    console.log('Mostrando todos los registros de entradas/salidas...');
-    const container = document.getElementById('registroESLista');
-    
-    if (!container) {
-        console.error('No se encontró el contenedor registroESLista');
-        return;
-    }
-    
-    // Obtener todos los registros reales de actividad
-    const historial = getRegistroEntradasSalidas();
-    console.log(`Registros obtenidos: ${historial.length}`);
-
-    // Asegurar que sólo el contenedor de registro esté visible.
-    if (container) container.classList.remove('hidden');
-
-    // Renderizar todos los registros sin filtros
-    // Hide top-level registro filters (search / role select) for clarity — registros should only
-    // reflect asistencia tomada por el administrador in Asistencia.
-    const buscarInput = document.getElementById('buscarRegistro'); if (buscarInput) buscarInput.classList.add('hidden');
-    const rolSelect = document.getElementById('filtroRol'); if (rolSelect) rolSelect.classList.add('hidden');
-
-    // Renderizar la tabla en el contenedor específico
-    const tablaContainer = document.createElement('div');
-    tablaContainer.id = 'tabla-registros-container';
-    container.innerHTML = '';
-    container.appendChild(tablaContainer);
-    
-    renderRegistroEntradasSalidas(historial, tablaContainer);
-    
-    console.log('Todos los registros mostrados exitosamente');
 }
 
 /**
  * Manejar solicitudes de exportación desde el Event Bus
  */
 function handleExportRequest(data) {
-  console.log('OperationsController: Manejando solicitud de exportación', data);
-  
-  if (data.type === 'csv' && data.data && data.filename) {
-    try {
-      exportarDatosCSV(data.data, data.filename);
-      eventBus.emit(EVENT_NAMES.REPORTE_EXPORTED, {
-        type: 'csv',
-        filename: data.filename,
-        recordCount: data.data.length,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error('Error en exportación:', error);
-      eventBus.emit(EVENT_NAMES.DATA_ERROR, {
-        operation: 'export',
-        error: error.message
-      });
-    }
-  }
-}
-
-/**
- * Refrescar vista de registro
- */
-function refreshRegistroView() {
-  const container = document.getElementById('registroESLista');
-  if (container) {
-    const historial = getRegistroEntradasSalidas();
-    renderRegistroEntradasSalidas(historial, container);
-    console.log('OperationsController: Vista de registro refrescada');
-  }
+  console.log('OperationsController: Manejo de exportación removido - old E/S system no longer used');
 }
 
 /**
  * Refrescar vista de módulos
  */
 function refreshModulosView() {
-  // El contenedor de módulos fue eliminado del DOM para evitar conflictos (se eliminó 'mesasGrid').
-  // Si en el futuro se necesita renderizar módulos en una ubicación concreta, llamar a
-  // renderModulos(modulos, container) pasando el contenedor deseado.
-  const modulos = gestionModel.getModulos() || [];
-  console.log('OperationsController: refreshModulosView invoked — module container removed. Modulos disponibles:', modulos.length);
+  // Modules functionality completely removed from operations control
+  console.log('OperationsController: refreshModulosView - modules removed from operations');
 }

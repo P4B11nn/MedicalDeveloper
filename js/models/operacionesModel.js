@@ -1,324 +1,83 @@
 // js/models/operacionesModel.js
 import performanceMonitor from '../utils/performanceMonitor.js';
+import { db } from './firebaseConfig.js';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, limit, Timestamp } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
+import { authModel } from './storageModel.js';
+import { gestionModel } from './gestionModel.js';
 
 export function getRegistroEntradasSalidas() {
-  return performanceMonitor.measureFunction('dataLoad', () => {
-    try {
-      let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-
-      // Normalizar valores de 'modulo' en registros para que concuerden con modulos configurados
-      try {
-        import('./gestionModel.js').then(({ gestionModel }) => {
-          try {
-            const modulos = gestionModel.getModulos() || [];
-
-            let changed = false;
-            const normalized = historial.map(reg => {
-              const r = { ...reg };
-              const raw = (r.modulo || r.mesa || r.moduloId || r.grupoId || '').toString().trim();
-              if (raw) {
-                const mMatch = raw.match(/(\d+)/);
-                if (mMatch) {
-                  const num = parseInt(mMatch[1], 10);
-                  if (!isNaN(num)) {
-                    const padded = `M${String(num).padStart(2,'0')}`;
-                    const found = modulos.find(m => (m.id||'').toUpperCase() === padded.toUpperCase());
-                    if (found) {
-                      r.moduinfo = `${found.id} - ${found.nombre}`;
-                      r.moduloId = found.id;
-                      r.modulo = found.id; // asegurar campo 'modulo' con id del módulo
-                      changed = true;
-                    }
-                  }
-                } else {
-                  const byId = modulos.find(m => (m.id||'').toLowerCase() === raw.toLowerCase());
-                    if (byId) {
-                    r.moduinfo = `${byId.id} - ${byId.nombre}`;
-                    r.moduloId = byId.id;
-                    r.modulo = byId.id;
-                    changed = true;
-                  }
-                  else {
-                    // If raw looks like a group id, try to map via grupoAsignadoId
-                    const byGroup = modulos.find(m => (m.grupoAsignadoId || '').toString() === raw.toString());
-                    if (byGroup) {
-                      r.moduinfo = `${byGroup.id} - ${byGroup.nombre}`;
-                      r.moduloId = byGroup.id;
-                      r.modulo = byGroup.id;
-                      changed = true;
-                    }
-                  }
-                }
-              }
-              return r;
-            });
-
-            if (changed) {
-              historial = normalized;
-              localStorage.setItem('servicioHistorial', JSON.stringify(historial));
-              console.log('OperacionesModel: Historial normalizado y guardado para consistencia de módulos');
-            }
-          } catch(innerErr) {
-            console.warn('OperacionesModel: Error normalizando historial:', innerErr);
-          }
-        }).catch(err => {
-          console.warn('OperacionesModel: No se pudo importar gestionModel para normalizar historial:', err);
-        });
-      } catch (e) {
-        console.warn('OperacionesModel: No se pudo normalizar historial contra gestionModel:', e);
-      }
-
-      console.log('OperacionesModel: Cargando historial real de actividades:', historial.length, 'registros');
-      return historial;
-    } catch (error) {
-      console.error('Error cargando historial:', error);
-      return [];
-    }
-  });
+  console.warn('getRegistroEntradasSalidas: Función obsoleta, use getAsistencias() para Firebase');
+  return [];
 }
 
-/**
- * Registra la entrada de un usuario
- */
-export function registrarEntrada(usuario) {
-  try {
-    let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-    const now = new Date();
-
-    // Cerrar cualquier registro abierto anterior para este usuario
-    historial.forEach(reg => {
-      if (reg.matricula === usuario.matricula && reg.salida === null) {
-        reg.salida = now.toLocaleString();
-        reg.salidaIso = now.toISOString();
-        reg.salidaTimestamp = now.getTime();
-        reg.duracion = 'Cerrado automáticamente por nueva entrada';
-        reg.salidaConTokenValido = false;
-      }
-    });
-
-    const registro = {
-      id: `ES${Date.now()}`,
-      nombre: usuario.nombre,
-      matricula: usuario.matricula,
-      modulo: usuario.modulo || usuario.moduloId || usuario.mesa || 'No asignada',
-      grupoId: usuario.grupoId || null,
-      rol: usuario.rol,
-      entrada: now.toLocaleString(),
-      entradaIso: now.toISOString(),
-      entradaTimestamp: now.getTime(),
-      salida: null,
-      salidaIso: null,
-      salidaTimestamp: null,
-      duracion: 'En servicio'
-    };
-
-    historial.push(registro);
-    localStorage.setItem('servicioHistorial', JSON.stringify(historial));
-    return registro;
-  } catch (error) {
-    console.error('Error registrando entrada:', error);
-    return null;
-  }
+export function registrarEntrada() {
+  console.warn('registrarEntrada: Función obsoleta, use registrarEntradaAsistencia() para Firebase');
+  return null;
 }
 
-/**
- * Registra la salida de un usuario
- */
-export function registrarSalida(usuarioId) {
-  try {
-    let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-    const salidaTime = new Date();
-    let registrosCerrados = 0;
-    historial.forEach(registro => {
-      if (registro.matricula === usuarioId && registro.salida === null) {
-        // Calcular duración
-        let entradaMs = registro.entradaTimestamp || Date.parse(registro.entradaIso) || Date.parse(registro.entrada);
-        let duracionStr = 'N/A';
-        if (entradaMs) {
-          const duracionMs = salidaTime.getTime() - entradaMs;
-          const horas = Math.floor(duracionMs / (1000 * 60 * 60));
-          const minutos = Math.floor((duracionMs % (1000 * 60 * 60)) / (1000 * 60));
-          duracionStr = `${horas}h ${minutos}m`;
-        }
-        registro.salida = salidaTime.toLocaleString();
-        registro.salidaIso = salidaTime.toISOString();
-        registro.salidaTimestamp = salidaTime.getTime();
-        registro.duracion = duracionStr;
-        console.log('OperacionesModel: Salida registrada para', registro.nombre);
-        registrosCerrados++;
-      }
-    });
-    localStorage.setItem('servicioHistorial', JSON.stringify(historial));
-    return registrosCerrados > 0 ? true : null;
-  } catch (error) {
-    console.error('Error registrando salida:', error);
-    return null;
-  }
+export function registrarSalida() {
+  console.warn('registrarSalida: Función obsoleta, use registrarSalidaAsistencia() para Firebase');
+  return null;
 }
 
-/**
- * Elimina un registro específico por ID
- */
-export function eliminarRegistro(registroId) {
-  try {
-    let historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-    
-    const initialLength = historial.length;
-    historial = historial.filter(registro => registro.id !== registroId);
-    
-    if (historial.length < initialLength) {
-      localStorage.setItem('servicioHistorial', JSON.stringify(historial));
-      console.log('OperacionesModel: Registro eliminado:', registroId);
-      return true;
-    }
-    
-    console.warn('OperacionesModel: Registro no encontrado:', registroId);
-    return false;
-  } catch (error) {
-    console.error('Error eliminando registro:', error);
-    return false;
-  }
+export function eliminarRegistro() {
+  console.warn('eliminarRegistro: Función obsoleta, use eliminarAsistencia() para Firebase');
+  return false;
 }
 
-/**
- * Limpiar todos los registros existentes
- */
 export function limpiarRegistros() {
-  try {
-    localStorage.removeItem('servicioHistorial');
-    console.log('OperacionesModel: Registros limpiados');
-    return true;
-  } catch (error) {
-    console.error('Error limpiando registros:', error);
-    return false;
-  }
+  console.warn('limpiarRegistros: Función obsoleta, no aplica para Firebase');
+  return false;
 }
 
 export function getModulosSalud() {
-  try {
-    let usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
-    const historial = getRegistroEntradasSalidas();
-    const mesasMap = new Map();
-
-    // Si no hay usuarios, crear datos de prueba
-    if (usuarios.length === 0) {
-      usuarios = [
-        { id: 'U001', nombre: 'Juan Pérez', apellidos: '', modulo: 1, rol: 'admin' },
-        { id: 'U002', nombre: 'María González', apellidos: '', modulo: 2, rol: 'practicante' },
-        { id: 'U003', nombre: 'Carlos López', apellidos: '', modulo: 3, rol: 'practicante' }
-      ];
-      localStorage.setItem('usuarios', JSON.stringify(usuarios));
-    }
-
-  // Construir mapa de módulos (compatibilidad con usuarios que usen campo 'mesa')
-    const modulosMap = new Map();
-
-    usuarios.forEach(usuario => {
-      const modRaw = usuario.modulo || usuario.mesa;
-      if (modRaw) {
-        const num = parseInt(modRaw);
-        const key = isNaN(num) ? modRaw : num;
-        if (!modulosMap.has(key)) {
-          modulosMap.set(key, {
-            id: key,
-            asignado: usuario,
-            estado: 'en-servicio',
-            ultimaActividad: null
-          });
-        }
-      }
-    });
-
-    historial.forEach(registro => {
-      const regMod = registro.modulo || registro.mesa;
-      if (regMod && !registro.salida) {
-        const mKey = parseInt(regMod);
-        const key = isNaN(mKey) ? regMod : mKey;
-        if (modulosMap.has(key)) {
-          modulosMap.get(key).estado = 'ocupada';
-          modulosMap.get(key).ultimaActividad = registro.entrada;
-        }
-      }
-    });
-
-    // Si aún no hay módulos, crear módulos por defecto
-    if (modulosMap.size === 0) {
-      for (let i = 1; i <= 3; i++) {
-        modulosMap.set(i, {
-          id: i,
-          asignado: null,
-          estado: 'fuera-servicio',
-          ultimaActividad: null
-        });
-      }
-    }
-
-    return Array.from(modulosMap.values()).sort((a, b) => (a.id || a.numero) - (b.id || b.numero));
-  } catch (e) {
-    console.error('Error al obtener modulos de salud:', e);
-    return [];
-  }
+  console.warn('getModulosSalud: Función obsoleta, use gestionModel.getModulos() para Firebase');
+  return [];
 }
-// Compatibilidad: alias antiguo
+
 export function getMesasSalud() {
   return getModulosSalud();
 }
 
-export function exportarDatosCSV(datos, nombreArchivo) {
-    console.log(`Iniciando exportación CSV: ${nombreArchivo}`);
-    console.log(`Datos recibidos: ${datos ? datos.length : 0} registros`);
-    
-    if (!datos || datos.length === 0) {
-        console.error('No hay datos para exportar');
-        alert('No hay datos para exportar.');
-        return;
-    }
-    
-    try {
-        const headers = Object.keys(datos[0]);
-        console.log(`Headers detectados: ${headers.join(', ')}`);
-        
-        const csvRows = [headers.join(',')];
-
-        for (const row of datos) {
-            const values = headers.map(header => {
-                const escaped = ('' + (row[header] || '')).replace(/"/g, '\\"');
-                return `"${escaped}"`;
-            });
-            csvRows.push(values.join(','));
-        }
-
-        const csvString = csvRows.join('\n');
-        const blob = new Blob([csvString], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${nombreArchivo}_${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        console.log(`Archivo CSV exportado exitosamente: ${a.download}`);
-        
-    } catch (error) {
-        console.error('Error durante la exportación CSV:', error);
-        alert('Error al exportar los datos. Consulte la consola para más detalles.');
-    }
+export function exportarDatosCSV() {
+  console.warn('exportarDatosCSV: Función obsoleta, use funciones de exportación específicas para Firebase');
+  return false;
 }
 
 /**
- * Devuelve el registro de asistencia activo para una matrícula (si existe)
+ * Devuelve el registro de asistencia activo para un usuario ID (desde Firebase)
  */
-export function getRegistroActivoPorMatricula(matricula) {
+export async function getRegistroActivoPorUsuarioId(usuarioId) {
   try {
-    const historial = JSON.parse(localStorage.getItem('servicioHistorial')) || [];
-    return historial
-      .filter(r => r.matricula === matricula && r.salida === null)
-      .sort((a, b) => new Date(b.entrada) - new Date(a.entrada))[0] || null;
-  } catch (e) {
-    console.error('Error getRegistroActivoPorMatricula', e);
+    console.log('OperacionesModel: Buscando asistencia activa para usuario ID:', usuarioId);
+
+    // Buscar asistencia activa por el ID del usuario directamente
+    const asistenciasActivas = await getAsistencias({
+      usuarioId: usuarioId,
+      estado: 'activa',
+      limit: 1
+    });
+
+    if (asistenciasActivas.length > 0) {
+      const asistencia = asistenciasActivas[0];
+      console.log('OperacionesModel: Encontrada asistencia activa:', asistencia.id);
+
+      return {
+        id: asistencia.id,
+        nombre: asistencia.nombreUsuario,
+        matricula: asistencia.matricula,
+        entrada: asistencia.horaEntrada ? new Date(asistencia.horaEntrada).toLocaleString() : null,
+        entradaIso: asistencia.horaEntrada,
+        entradaTimestamp: asistencia.horaEntrada ? new Date(asistencia.horaEntrada).getTime() : null,
+        salida: null,
+        estado: 'activa'
+      };
+    }
+
+    console.log('OperacionesModel: No se encontró asistencia activa para usuario ID:', usuarioId);
+    return null;
+  } catch (error) {
+    console.error('Error obteniendo registro activo por usuario ID:', error);
     return null;
   }
 }
@@ -326,16 +85,135 @@ export function getRegistroActivoPorMatricula(matricula) {
 /**
  * Registra entrada de asistencia (estructura: id, nombre, matricula, modulo, entrada, salida)
  */
-export function registrarEntradaAsistencia(usuario) {
-  // Reuse registrarEntrada but ensure field names match
-  return registrarEntrada(usuario);
+export async function registrarEntradaAsistencia(usuario) {
+  try {
+    console.log('OperacionesModel: Registrando entrada de asistencia para:', usuario);
+
+    // Obtener el usuario completo desde Firebase para tener acceso a grupoId y nombre completo
+    const allUsers = await authModel.getAllUsers();
+    const usuarioCompleto = allUsers.find(u => u.uid === usuario.id || u.matricula === usuario.matricula);
+
+    if (!usuarioCompleto) {
+      throw new Error('Usuario no encontrado en la base de datos');
+    }
+
+    // Obtener el usuario actual (quien está registrando la asistencia)
+    const usuarioActual = authModel.getCurrentUser();
+    const registradoPor = usuarioActual ? `${usuarioActual.nombre} (${usuarioActual.matricula})` : 'Sistema';
+
+    // Obtener el módulo del usuario desde su grupo asignado
+    let moduloId = null;
+    if (usuarioCompleto.grupoId) {
+      try {
+        const grupo = await gestionModel.getGrupoById(usuarioCompleto.grupoId);
+        if (grupo) {
+          // Buscar módulos asignados a este grupo
+          const modulos = await gestionModel.getModulos();
+          const moduloAsignado = modulos.find(m => m.grupoAsignadoId === usuarioCompleto.grupoId);
+          if (moduloAsignado) {
+            moduloId = moduloAsignado.id;
+            console.log('OperacionesModel: Módulo encontrado para el grupo:', moduloId);
+          }
+        }
+      } catch (error) {
+        console.warn('OperacionesModel: Error obteniendo módulo del grupo:', error);
+      }
+    }
+
+    // Crear el registro de asistencia en Firebase
+    const asistencia = {
+      usuarioId: usuarioCompleto.uid || usuarioCompleto.id, // Usar el ID único del usuario
+      nombreUsuario: `${usuarioCompleto.nombre} ${usuarioCompleto.apellidos || ''}`.trim(), // Nombre completo
+      matricula: usuarioCompleto.matricula,
+      moduloId: moduloId,
+      fecha: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+      horaEntrada: new Date().toISOString(),
+      horaSalida: null,
+      estado: 'activa',
+      registradoPor: registradoPor, // Usuario actual que registra
+      observaciones: ''
+    };
+
+    const resultado = await registrarAsistencia(asistencia);
+
+    if (resultado) {
+      console.log('OperacionesModel: Entrada de asistencia registrada exitosamente:', resultado.id);
+      return {
+        id: resultado.id,
+        nombre: asistencia.nombreUsuario,
+        matricula: usuarioCompleto.matricula,
+        entrada: new Date(resultado.horaEntrada).toLocaleString(),
+        entradaIso: resultado.horaEntrada,
+        entradaTimestamp: new Date(resultado.horaEntrada).getTime(),
+        salida: null,
+        estado: 'activa'
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error registrando entrada de asistencia:', error);
+    return null;
+  }
 }
 
 /**
- * Registra salida de asistencia para una matrícula
+ * Registra salida de asistencia para un usuario ID
  */
-export function registrarSalidaAsistencia(matricula) {
-  return registrarSalida(matricula);
+export async function registrarSalidaAsistencia(usuarioId) {
+  try {
+    console.log('OperacionesModel: Registrando salida de asistencia para usuario ID:', usuarioId);
+
+    // Buscar la asistencia activa para este usuario por su ID
+    const asistenciasActivas = await getAsistencias({
+      usuarioId: usuarioId,
+      estado: 'activa',
+      limit: 1
+    });
+
+    if (asistenciasActivas.length === 0) {
+      console.warn('OperacionesModel: No se encontró asistencia activa para usuario ID:', usuarioId);
+      return null;
+    }
+
+    const asistenciaActiva = asistenciasActivas[0];
+    const horaSalida = new Date().toISOString();
+
+    // Calcular duración
+    const entradaTime = new Date(asistenciaActiva.horaEntrada);
+    const salidaTime = new Date(horaSalida);
+    const diffMs = salidaTime - entradaTime;
+    const horas = Math.floor(diffMs / (1000 * 60 * 60));
+    const minutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const duracion = `${horas}h ${minutos}m`;
+
+    // Actualizar la asistencia con la salida
+    const updates = {
+      horaSalida: horaSalida,
+      estado: 'completada',
+      observaciones: `Duración: ${duracion}`
+    };
+
+    const exito = await actualizarAsistencia(asistenciaActiva.id, updates);
+
+    if (exito) {
+      console.log('OperacionesModel: Salida de asistencia registrada exitosamente');
+      return {
+        id: asistenciaActiva.id,
+        matricula: asistenciaActiva.matricula,
+        salida: salidaTime.toLocaleString(),
+        salidaIso: horaSalida,
+        salidaTimestamp: salidaTime.getTime(),
+        duracion: duracion,
+        estado: 'completada'
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Error registrando salida de asistencia:', error);
+    return null;
+  }
 }
 
 /**
@@ -349,3 +227,338 @@ export function registrarSalidaAsistencia(matricula) {
 // mantiene pequeñas normalizaciones cuando se cargan registros en
 // `getRegistroEntradasSalidas`, pero no hay una función pública de "migración"
 // ejecutable desde controladores.
+
+/**
+ * OBTIENE TODAS LAS ASISTENCIAS DESDE FIREBASE
+ * @returns {Promise<Array>} Array de asistencias
+ */
+export async function getAsistencias(filtros = {}) {
+  return performanceMonitor.measureFunction('firebaseQuery', async () => {
+    try {
+      console.log('OperacionesModel: Obteniendo asistencias con filtros:', filtros);
+
+      let q = collection(db, 'asistencias_usuarios');
+      let constraints = [];
+
+      // IMPORTANTE: Firebase requiere índices compuestos para combinaciones de where + orderBy
+      // Los índices necesarios son:
+      // 1. (estado, fecha) - para filtrar por estado y ordenar por fecha
+      // 2. (usuarioId, fecha) - para filtrar por usuario y ordenar por fecha
+      // 3. (usuarioId, estado, fecha) - para filtrar por usuario y estado, ordenar por fecha
+
+      // Aplicar filtros en orden específico para optimizar índices
+      if (filtros.usuarioId) {
+        constraints.push(where('usuarioId', '==', filtros.usuarioId));
+      }
+      
+      if (filtros.estado) {
+        constraints.push(where('estado', '==', filtros.estado));
+      }
+      
+      if (filtros.fecha) {
+        constraints.push(where('fecha', '==', filtros.fecha));
+      }
+
+      // Determinar ordenamiento basado en los filtros aplicados
+      if (filtros.usuarioId) {
+        // Cuando se filtra por usuario específico, ordenar descendente (más recientes primero)
+        constraints.push(orderBy('fecha', 'desc'));
+      } else if (filtros.estado) {
+        // Cuando se filtra solo por estado, ordenar ascendente
+        constraints.push(orderBy('fecha', 'asc'));
+      } else {
+        // Sin filtros específicos, ordenar descendente por defecto
+        constraints.push(orderBy('fecha', 'desc'));
+      }
+
+      // Limitar resultados si se especifica
+      if (filtros.limit) {
+        constraints.push(limit(filtros.limit));
+      }
+
+      q = query(q, ...constraints);
+
+      const querySnapshot = await getDocs(q);
+      const asistencias = [];
+
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        asistencias.push({
+          id: doc.id,
+          ...data,
+          // Convertir Timestamps a fechas legibles
+          fecha: data.fecha?.toDate?.() || data.fecha,
+          horaEntrada: data.horaEntrada?.toDate?.() || data.horaEntrada,
+          horaSalida: data.horaSalida?.toDate?.() || data.horaSalida,
+          fechaCreacion: data.fechaCreacion?.toDate?.() || data.fechaCreacion
+        });
+      });
+
+      console.log(`OperacionesModel: ${asistencias.length} asistencias obtenidas`);
+      return asistencias;
+
+    } catch (error) {
+      console.error('Error obteniendo asistencias:', error);
+      console.error('Detalles del error:', error.message);
+
+      // Si es error de índice, proporcionar instrucciones claras
+      if (error.message && error.message.includes('requires an index')) {
+        console.error('🔧 SOLUCIÓN: Crear índice compuesto en Firebase Console');
+        console.error('Ir a: https://console.firebase.google.com/');
+        console.error('Proyecto: medicalweboffline > Firestore Database > Índices');
+        console.error('Crear índices para: (estado, fecha), (usuarioId, fecha), (usuarioId, estado, fecha)');
+      }
+
+      return [];
+    }
+  });
+}
+
+/**
+ * REGISTRA UNA NUEVA ASISTENCIA EN FIREBASE
+ * @param {Object} asistencia - Datos de la asistencia
+ * @returns {Promise<Object>} Asistencia creada
+ */
+export async function registrarAsistencia(asistencia) {
+  try {
+    console.log('OperacionesModel: Registrando nueva asistencia:', asistencia);
+    
+    const asistenciaData = {
+      usuarioId: asistencia.usuarioId,
+      nombreUsuario: asistencia.nombreUsuario,
+      matricula: asistencia.matricula,
+      moduloId: asistencia.moduloId || null,
+      fecha: Timestamp.fromDate(new Date(asistencia.fecha)),
+      horaEntrada: asistencia.horaEntrada ? Timestamp.fromDate(new Date(asistencia.horaEntrada)) : null,
+      horaSalida: asistencia.horaSalida ? Timestamp.fromDate(new Date(asistencia.horaSalida)) : null,
+      estado: asistencia.estado || 'activa',
+      observaciones: asistencia.observaciones || '',
+      registradoPor: asistencia.registradoPor,
+      fechaCreacion: Timestamp.fromDate(new Date())
+    };
+    
+    const docRef = await addDoc(collection(db, 'asistencias_usuarios'), asistenciaData);
+    
+    console.log('OperacionesModel: Asistencia registrada con ID:', docRef.id);
+    return {
+      id: docRef.id,
+      ...asistenciaData,
+      fecha: asistenciaData.fecha.toDate(),
+      horaEntrada: asistenciaData.horaEntrada?.toDate(),
+      horaSalida: asistenciaData.horaSalida?.toDate(),
+      fechaCreacion: asistenciaData.fechaCreacion.toDate()
+    };
+    
+  } catch (error) {
+    console.error('Error registrando asistencia:', error);
+    return null;
+  }
+}
+
+/**
+ * ACTUALIZA UNA ASISTENCIA EXISTENTE
+ * @param {string} asistenciaId - ID de la asistencia
+ * @param {Object} updates - Campos a actualizar
+ * @returns {Promise<boolean>} Éxito de la operación
+ */
+export async function actualizarAsistencia(asistenciaId, updates) {
+  try {
+    console.log('OperacionesModel: Actualizando asistencia:', asistenciaId, updates);
+    
+    const asistenciaRef = doc(db, 'asistencias_usuarios', asistenciaId);
+    
+    // Convertir fechas a Timestamps si es necesario
+    const updatesData = { ...updates };
+    if (updatesData.fecha) {
+      updatesData.fecha = Timestamp.fromDate(new Date(updatesData.fecha));
+    }
+    if (updatesData.horaEntrada) {
+      updatesData.horaEntrada = Timestamp.fromDate(new Date(updatesData.horaEntrada));
+    }
+    if (updatesData.horaSalida) {
+      updatesData.horaSalida = Timestamp.fromDate(new Date(updatesData.horaSalida));
+    }
+    
+    await updateDoc(asistenciaRef, updatesData);
+    
+    console.log('OperacionesModel: Asistencia actualizada exitosamente');
+    return true;
+    
+  } catch (error) {
+    console.error('Error actualizando asistencia:', error);
+    return false;
+  }
+}
+
+/**
+ * ELIMINA UNA ASISTENCIA
+ * @param {string} asistenciaId - ID de la asistencia
+ * @returns {Promise<boolean>} Éxito de la operación
+ */
+export async function eliminarAsistencia(asistenciaId) {
+  try {
+    console.log('OperacionesModel: Eliminando asistencia:', asistenciaId);
+    
+    await deleteDoc(doc(db, 'asistencias_usuarios', asistenciaId));
+    
+    console.log('OperacionesModel: Asistencia eliminada exitosamente');
+    return true;
+    
+  } catch (error) {
+    console.error('Error eliminando asistencia:', error);
+    return false;
+  }
+}
+
+/**
+ * OBTIENE ASISTENCIAS POR USUARIO
+ * @param {string} usuarioId - ID del usuario
+ * @param {Object} filtros - Filtros adicionales
+ * @returns {Promise<Array>} Asistencias del usuario
+ */
+export async function getAsistenciasPorUsuario(usuarioId, filtros = {}) {
+  return getAsistencias({ ...filtros, usuarioId });
+}
+
+/**
+ * OBTIENE ASISTENCIAS POR FECHA
+ * @param {string} fecha - Fecha en formato YYYY-MM-DD
+ * @returns {Promise<Array>} Asistencias de la fecha
+ */
+export async function getAsistenciasPorFecha(fecha) {
+  const fechaInicio = new Date(fecha);
+  fechaInicio.setHours(0, 0, 0, 0);
+  
+  const fechaFin = new Date(fecha);
+  fechaFin.setHours(23, 59, 59, 999);
+  
+  return getAsistencias({
+    fechaDesde: fechaInicio.toISOString(),
+    fechaHasta: fechaFin.toISOString()
+  });
+}
+
+/**
+ * DIAGNOSTICA EL ESTADO DE LOS ÍNDICES DE FIREBASE
+ * @returns {Promise<Object>} Resultado del diagnóstico
+ */
+export async function diagnosticarIndicesFirebase() {
+  console.log('🔍 OperacionesModel: Iniciando diagnóstico de índices Firebase...');
+
+  const resultados = {
+    indicesVerificados: [],
+    erroresEncontrados: [],
+    recomendaciones: []
+  };
+
+  try {
+    // Prueba 1: Consulta básica de estado
+    console.log('📊 Probando consulta: where(estado == "activa").orderBy(fecha, asc)');
+    try {
+      const test1 = await getAsistencias({ estado: 'activa', limit: 1 });
+      resultados.indicesVerificados.push({
+        consulta: 'estado + fecha ascendente',
+        estado: '✅ Funciona',
+        resultado: `${test1.length} resultados`
+      });
+    } catch (error) {
+      resultados.erroresEncontrados.push({
+        consulta: 'estado + fecha ascendente',
+        error: error.message,
+        solucion: 'Crear índice (estado, fecha)'
+      });
+    }
+
+    // Prueba 2: Consulta por usuario
+    console.log('👤 Probando consulta: where(usuarioId).orderBy(fecha, desc)');
+    try {
+      const allUsers = await authModel.getAllUsers();
+      if (allUsers.length > 0) {
+        const test2 = await getAsistencias({ usuarioId: allUsers[0].id, limit: 1 });
+        resultados.indicesVerificados.push({
+          consulta: 'usuarioId + fecha descendente',
+          estado: '✅ Funciona',
+          resultado: `${test2.length} resultados`
+        });
+      }
+    } catch (error) {
+      resultados.erroresEncontrados.push({
+        consulta: 'usuarioId + fecha descendente',
+        error: error.message,
+        solucion: 'Crear índice (usuarioId, fecha)'
+      });
+    }
+
+    // Prueba 3: Consulta combinada usuario + estado
+    console.log('🔗 Probando consulta: where(usuarioId).where(estado)');
+    try {
+      const allUsers = await authModel.getAllUsers();
+      if (allUsers.length > 0) {
+        const test3 = await getAsistencias({
+          usuarioId: allUsers[0].id,
+          estado: 'activa',
+          limit: 1
+        });
+        resultados.indicesVerificados.push({
+          consulta: 'usuarioId + estado',
+          estado: '✅ Funciona',
+          resultado: `${test3.length} resultados`
+        });
+      }
+    } catch (error) {
+      resultados.erroresEncontrados.push({
+        consulta: 'usuarioId + estado + fecha',
+        error: error.message,
+        solucion: 'Crear índice (usuarioId, estado, fecha)'
+      });
+    }
+
+  } catch (error) {
+    resultados.erroresEncontrados.push({
+      consulta: 'diagnóstico general',
+      error: error.message,
+      solucion: 'Verificar conexión a Firebase'
+    });
+  }
+
+  // Generar recomendaciones
+  if (resultados.erroresEncontrados.length > 0) {
+    resultados.recomendaciones.push('🔧 Crear los índices faltantes en Firebase Console');
+    resultados.recomendaciones.push('📖 Revisar FIREBASE_INDEXES_SETUP.md para instrucciones');
+    resultados.recomendaciones.push('⏱️ Esperar 5-10 minutos después de crear índices');
+  } else {
+    resultados.recomendaciones.push('✅ Todos los índices están funcionando correctamente');
+  }
+
+  console.log('🔍 Diagnóstico completado:', resultados);
+  return resultados;
+}
+
+/**
+ * OBTIENE ESTADÍSTICAS DE ASISTENCIAS
+ * @param {Object} filtros - Filtros opcionales para las estadísticas
+ * @returns {Promise<Object>} Estadísticas de asistencias
+ */
+export async function getEstadisticasAsistencias(filtros = {}) {
+  try {
+    console.log('📊 OperacionesModel: Obteniendo estadísticas de asistencias con filtros:', filtros);
+
+    // Obtener todas las asistencias con los filtros aplicados
+    const asistencias = await getAsistencias({ ...filtros, limit: 1000 });
+
+    // Calcular estadísticas
+    const estadisticas = {
+      total: asistencias.length,
+      activas: asistencias.filter(a => a.estado === 'activa').length,
+      completadas: asistencias.filter(a => a.estado === 'completada').length,
+      usuariosUnicos: new Set(asistencias.map(a => a.usuarioId || a.matricula)).size
+    };
+
+    console.log('📊 Estadísticas calculadas:', estadisticas);
+    return estadisticas;
+
+  } catch (error) {
+    console.error('❌ Error obteniendo estadísticas de asistencias:', error);
+    throw new Error('No se pudieron obtener las estadísticas: ' + error.message);
+  }
+}

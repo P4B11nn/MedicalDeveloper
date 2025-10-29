@@ -12,6 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "firebase": "^10.7.1",
-    "hint": "^2.0.0"
+    "hint": "^2.0.0",
+    "leaflet": "^1.9.4"
   }
 }

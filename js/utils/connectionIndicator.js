@@ -7,18 +7,32 @@ class ConnectionIndicator {
   constructor() {
     this.isOnline = navigator.onLine;
     this.indicator = null;
+    this.isChecking = false; // Evitar múltiples verificaciones simultáneas
+    this.onConnectionRestoredCallbacks = []; // Callbacks para cuando se restaure la conexión
     this.init();
   }
 
   init() {
     this.createIndicator();
     this.bindEvents();
+
+    // Estado inicial basado en navigator.onLine
+    this.isOnline = navigator.onLine;
     this.updateIndicator();
 
-    // Verificación inicial de conexión después de un breve delay
+    // Si está offline desde el inicio, mostrar el indicador inmediatamente
+    if (!this.isOnline) {
+      this.showIndicator();
+    }
+
+    // Verificación inicial después de un breve delay
     setTimeout(() => {
-      this.checkConnection();
-    }, 1000);
+      if (navigator.onLine) {
+        this.verifyOnlineStatus();
+      } else {
+        this.verifyOfflineStatus();
+      }
+    }, 2000);
   }
 
   createIndicator() {
@@ -150,67 +164,161 @@ class ConnectionIndicator {
   }
 
   bindEvents() {
-    // Eventos de conexión
+    // Eventos de conexión del navegador
     window.addEventListener('online', () => this.handleOnline());
     window.addEventListener('offline', () => this.handleOffline());
 
-    // Verificar conexión periódicamente
+    // Verificar conexión periódicamente solo si está online según navigator.onLine
     setInterval(() => {
-      this.checkConnection();
-    }, 30000); // Cada 30 segundos
-  }
-
-  handleOnline() {
-    console.log('🔗 Conexión a internet restaurada');
-    this.isOnline = true;
-    this.updateIndicator();
-
-    // Mostrar indicador con mensaje de conexión restaurada
-    this.showIndicator();
-
-    // Agregar clase especial para indicar que se acaba de reconectar
-    this.indicator.classList.add('just-reconnected');
-
-    // Remover la clase especial y ocultar después de 3 segundos
-    setTimeout(() => {
-      if (this.indicator) {
-        this.indicator.classList.remove('just-reconnected');
-        this.hideIndicator();
+      if (navigator.onLine) {
+        this.refresh();
       }
-    }, 3000);
+    }, 60000); // Cada 60 segundos (menos frecuente)
   }
 
   handleOffline() {
-    console.log('📴 Conexión a internet perdida');
-    this.isOnline = false;
-    this.updateIndicator();
+    console.log('📴 Evento offline del navegador detectado');
 
-    // Mantener visible cuando está offline
-    this.showIndicator();
+    // Cuando el navegador reporta offline, asumimos desconexión inmediata
+    // No necesitamos verificar con fetch ya que el navegador ya lo confirmó
+    if (this.isOnline) {
+      console.log('📴 Desconexión confirmada por navegador');
+      this.isOnline = false;
+      this.updateIndicator();
+      this.showIndicator();
+    }
   }
 
-  checkConnection() {
-    // Verificar conexión usando una petición más confiable
-    // Usar el mismo dominio para evitar problemas de CORS
-    const checkUrl = window.location.origin + '/favicon.ico';
+  handleOnline() {
+    console.log('🔗 Evento online del navegador detectado');
+
+    // Verificar inmediatamente si realmente está online
+    this.verifyOnlineStatus();
+  }
+
+  // Método para registrar callbacks que se ejecuten cuando se restaure la conexión
+  onConnectionRestored(callback) {
+    if (typeof callback === 'function') {
+      this.onConnectionRestoredCallbacks.push(callback);
+      console.log('🔗 Callback registrado para restauración de conexión');
+    }
+  }
+
+  // Método privado para ejecutar callbacks cuando se restaure la conexión
+  _triggerConnectionRestored() {
+    console.log('🔄 Ejecutando callbacks de restauración de conexión...');
+    this.onConnectionRestoredCallbacks.forEach(callback => {
+      try {
+        callback();
+      } catch (error) {
+        console.error('❌ Error ejecutando callback de restauración de conexión:', error);
+      }
+    });
+  }
+
+  verifyOnlineStatus() {
+    // Evitar múltiples verificaciones simultáneas
+    if (this.isChecking) return;
+    this.isChecking = true;
+
+    // Usar una URL del mismo dominio para evitar problemas de CORS
+    const checkUrl = window.location.origin + '/index.html';
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 segundos timeout
 
     fetch(checkUrl, {
       method: 'HEAD',
       cache: 'no-cache',
-      mode: 'no-cors' // Evitar problemas de CORS
+      signal: controller.signal
     })
-    .then(() => {
-      // Conexión exitosa
-      if (!this.isOnline) {
-        console.log('🔗 Conexión verificada exitosamente');
-        this.handleOnline();
+    .then(response => {
+      clearTimeout(timeoutId);
+      this.isChecking = false;
+
+      if (response.ok) {
+        // Confirmado: está online
+        if (!this.isOnline) {
+          this.isOnline = true;
+          this.updateIndicator();
+          this.showIndicator();
+          this.indicator.classList.add('just-reconnected');
+
+          // Ejecutar callbacks de restauración de conexión
+          this._triggerConnectionRestored();
+
+          // Ocultar después de 3 segundos
+          setTimeout(() => {
+            if (this.indicator) {
+              this.indicator.classList.remove('just-reconnected');
+              this.hideIndicator();
+            }
+          }, 3000);
+        }
+      } else {
+        // Respuesta no ok, mantener offline
+        if (this.isOnline) {
+          this.isOnline = false;
+          this.updateIndicator();
+          this.showIndicator();
+        }
       }
     })
-    .catch(() => {
-      // Error de conexión
+    .catch(error => {
+      clearTimeout(timeoutId);
+      this.isChecking = false;
+
+      // Error de conexión, mantener offline
       if (this.isOnline) {
-        console.log('📴 Conexión perdida durante verificación');
-        this.handleOffline();
+        this.isOnline = false;
+        this.updateIndicator();
+        this.showIndicator();
+      }
+    });
+  }
+
+  verifyOfflineStatus() {
+    // Evitar múltiples verificaciones simultáneas
+    if (this.isChecking) return;
+    this.isChecking = true;
+
+    // Usar una URL del mismo dominio para evitar problemas de CORS
+    const checkUrl = window.location.origin + '/index.html';
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 segundos timeout
+
+    fetch(checkUrl, {
+      method: 'HEAD',
+      cache: 'no-cache',
+      signal: controller.signal
+    })
+    .then(response => {
+      clearTimeout(timeoutId);
+      this.isChecking = false;
+
+      if (response.ok) {
+        // En realidad está online, no cambiar estado
+        console.log('🔍 Verificación: conexión disponible a pesar del evento offline');
+      } else {
+        // Confirmado: está offline
+        if (this.isOnline) {
+          this.isOnline = false;
+          this.updateIndicator();
+          this.showIndicator();
+        }
+      }
+    })
+    .catch(error => {
+      clearTimeout(timeoutId);
+      this.isChecking = false;
+
+      // Confirmado: está offline
+      if (this.isOnline) {
+        console.log('📴 Verificación confirma desconexión');
+        this.isOnline = false;
+        this.updateIndicator();
+        this.showIndicator();
       }
     });
   }
@@ -270,8 +378,72 @@ class ConnectionIndicator {
 
   // Método para forzar actualización del indicador
   refresh() {
-    this.checkConnection();
-    this.updateIndicator();
+    console.log('🔄 Refrescando indicador de conexión...');
+    if (navigator.onLine) {
+      this.verifyOnlineStatus();
+    } else {
+      this.verifyOfflineStatus();
+    }
+  }
+
+  // Método para verificación agresiva (ignora navigator.onLine)
+  forceCheck() {
+    console.log('🔍 Verificación agresiva de conexión...');
+    this.isChecking = false; // Reset flag
+
+    // Usar una URL del mismo dominio para evitar problemas de CORS
+    const checkUrl = window.location.origin + '/index.html';
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    fetch(checkUrl, {
+      method: 'HEAD',
+      cache: 'no-cache',
+      signal: controller.signal
+    })
+    .then(response => {
+      clearTimeout(timeoutId);
+      if (response.ok) {
+        // Conexión exitosa
+        if (!this.isOnline) {
+          console.log('🔗 Conexión verificada exitosamente');
+          this.isOnline = true;
+          this.updateIndicator();
+          this.showIndicator();
+          this.indicator.classList.add('just-reconnected');
+
+          // Ejecutar callbacks de restauración de conexión
+          this._triggerConnectionRestored();
+
+          // Ocultar después de 3 segundos
+          setTimeout(() => {
+            if (this.indicator) {
+              this.indicator.classList.remove('just-reconnected');
+              this.hideIndicator();
+            }
+          }, 3000);
+        }
+      } else {
+        // Respuesta no ok
+        if (this.isOnline) {
+          console.log('📴 Conexión perdida - respuesta no ok');
+          this.isOnline = false;
+          this.updateIndicator();
+          this.showIndicator();
+        }
+      }
+    })
+    .catch(error => {
+      clearTimeout(timeoutId);
+      // Error de conexión
+      if (this.isOnline) {
+        console.log('📴 Conexión perdida durante verificación:', error.message);
+        this.isOnline = false;
+        this.updateIndicator();
+        this.showIndicator();
+      }
+    });
   }
 
   // Método estático para inicialización desde HTML
@@ -326,8 +498,16 @@ if (typeof window !== 'undefined') {
     // Verificar conexión manualmente
     checkNow: () => {
       if (window.connectionIndicator) {
-        window.connectionIndicator.checkConnection();
+        window.connectionIndicator.refresh();
         console.log('🔍 Verificando conexión manualmente...');
+      }
+    },
+
+    // Verificación agresiva (ignora navigator.onLine)
+    forceCheck: () => {
+      if (window.connectionIndicator) {
+        window.connectionIndicator.forceCheck();
+        console.log('🔍 Verificación agresiva iniciada...');
       }
     },
 
@@ -352,6 +532,7 @@ if (typeof window !== 'undefined') {
   console.log('   - debugConnectionIndicator.forceOnline()');
   console.log('   - debugConnectionIndicator.forceOffline()');
   console.log('   - debugConnectionIndicator.checkNow()');
+  console.log('   - debugConnectionIndicator.forceCheck()');
   console.log('   - debugConnectionIndicator.getStatus()');
   console.log('   - debugConnectionIndicator.refresh()');
 }

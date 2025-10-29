@@ -11,6 +11,44 @@ export async function initGestionController() {
     await inicializarDatosGestion();
     
     setupSidebarNavigation();
+
+    // Registrar callback para refrescar datos cuando se restaure la conexión
+    // Usar un timeout para asegurar que ConnectionIndicator esté inicializado
+    setTimeout(() => {
+      if (window.connectionIndicator) {
+        window.connectionIndicator.onConnectionRestored(async () => {
+          console.log('🔄 Refrescando datos de gestión tras restaurar conexión...');
+          try {
+            // Mostrar mensaje de carga
+            if (typeof mostrarMensaje === 'function') {
+              mostrarMensaje('info', '🔄 Sincronizando Datos', 'Actualizando información de gestión desde Firebase...', 3000);
+            }
+
+            // Refrescar todas las vistas de gestión
+            const modulosSection = document.getElementById('modulos-section');
+            const gruposSection = document.getElementById('grupos-section');
+
+            if (modulosSection && modulosSection.classList.contains('active')) {
+              await renderGestionModulos(modulosSection);
+            }
+            if (gruposSection && gruposSection.classList.contains('active')) {
+              await renderGestionGrupos(gruposSection);
+            }
+
+            if (typeof mostrarMensaje === 'function') {
+              mostrarMensaje('success', '✅ Datos Actualizados', 'La información de gestión se ha sincronizado correctamente con Firebase.', 3000);
+            }
+          } catch (error) {
+            console.error('❌ Error al refrescar datos de gestión tras restaurar conexión:', error);
+            if (typeof mostrarMensaje === 'function') {
+              mostrarMensaje('warning', '⚠️ Error de Sincronización', 'No se pudieron actualizar los datos de gestión. Refresca la página manualmente.', 5000);
+            }
+          }
+        });
+      } else {
+        console.warn('⚠️ ConnectionIndicator no disponible para registrar callback de restauración de conexión en gestionController');
+      }
+    }, 500);
     
     // Abrir la sección indicada por la URL (query param 'section' o hash) o
     // por defecto abrir 'modulos'. Esto evita que se rendericen varias

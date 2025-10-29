@@ -32,37 +32,31 @@ http.createServer((req, res) => {
     filePath = "./index.html";
   }
   
+  // Corregir rutas que empiezan con ./
+  if (filePath.startsWith('./')) {
+    filePath = filePath.substring(2);
+  }
+  
   // Manejar parámetros de versión ya está incluido en el parseo de URL
   
   // Leer el archivo
   fs.readFile(filePath, (err, content) => {
     if (err) {
       if (err.code === "ENOENT") {
-        // Archivo no encontrado
-        fs.readFile("./index.html", (err, content) => {
-          if (err) {
-            res.writeHead(500);
-            res.end("Error: " + err.code);
-          } else {
-            res.writeHead(200, { "Content-Type": "text/html" });
-            res.end(content, "utf-8");
-          }
-        });
+        // Archivo no encontrado - devolver 404 con mensaje claro
+        console.error(`Archivo no encontrado: ${filePath}`);
+        res.writeHead(404, { "Content-Type": "text/plain" });
+        res.end(`Archivo no encontrado: ${pathname}`);
+        return;
       } else if (err.code === "EISDIR") {
         // Es un directorio, intentar cargar index.html dentro del directorio
         const indexPath = path.join(filePath, "index.html");
         fs.readFile(indexPath, (err, content) => {
           if (err) {
-            // No hay index.html en el directorio, redirigir a la ra�z
-            fs.readFile("./index.html", (err, content) => {
-              if (err) {
-                res.writeHead(500);
-                res.end("Error: " + err.code);
-              } else {
-                res.writeHead(200, { "Content-Type": "text/html" });
-                res.end(content, "utf-8");
-              }
-            });
+            // No hay index.html en el directorio
+            res.writeHead(404, { "Content-Type": "text/plain" });
+            res.end(`Directorio sin index.html: ${pathname}`);
+            return;
           } else {
             // Encontramos index.html en el directorio
             res.writeHead(200, { "Content-Type": "text/html" });
@@ -71,8 +65,9 @@ http.createServer((req, res) => {
         });
       } else {
         // Error de servidor
-        res.writeHead(500);
-        res.end("Error: " + err.code);
+        console.error(`Error de servidor: ${err.code} para ${filePath}`);
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end(`Error de servidor: ${err.code}`);
       }
     } else {
       // Respuesta exitosa

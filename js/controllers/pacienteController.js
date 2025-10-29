@@ -322,6 +322,34 @@ export async function initPacienteController() {
   await renderPacientesList();
   await renderDatosMedicosForm();
   await renderHistorialCompleto();
+
+  // Registrar callback para refrescar datos cuando se restaure la conexión
+  // Usar un timeout para asegurar que ConnectionIndicator esté inicializado
+  setTimeout(() => {
+    if (window.connectionIndicator) {
+      window.connectionIndicator.onConnectionRestored(async () => {
+        console.log('🔄 Refrescando datos de pacientes tras restaurar conexión...');
+        try {
+          // Mostrar mensaje de carga
+          mostrarMensaje('info', '🔄 Sincronizando Datos', 'Actualizando información desde Firebase...', 3000);
+
+          // Refrescar todas las vistas que dependen de Firebase
+          await Promise.all([
+            renderPacientesList(),
+            renderDatosMedicosForm(),
+            renderHistorialCompleto()
+          ]);
+
+          mostrarMensaje('success', '✅ Datos Actualizados', 'La información se ha sincronizado correctamente con Firebase.', 3000);
+        } catch (error) {
+          console.error('❌ Error al refrescar datos tras restaurar conexión:', error);
+          mostrarMensaje('warning', '⚠️ Error de Sincronización', 'No se pudieron actualizar algunos datos. Refresca la página manualmente.', 5000);
+        }
+      });
+    } else {
+      console.warn('⚠️ ConnectionIndicator no disponible para registrar callback de restauración de conexión');
+    }
+  }, 500);
 }
 
 function setupEventListeners() {
