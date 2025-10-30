@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reportes - Medical Developer</title>
+  <title>Reportes de Pacientes - Medical Developer</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     * {
@@ -562,22 +562,6 @@
       margin-left: 0 !important;
       width: 100% !important;
     }
-
-    /* Loading spinner */
-    .loading-spinner {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 20px;
-      color: #06b6d4;
-      font-size: 1rem;
-      font-weight: 500;
-    }
-
-    .loading-spinner i {
-      animation: spin 1s linear infinite;
-    }
   </style>
 
   <script>
@@ -629,10 +613,6 @@
           </div>
           <div class="dropdown-divider"></div>
           <div class="dropdown-options">
-            <a href="#" class="dropdown-option" id="profileBtn">
-              <i class="fas fa-user"></i>
-              <span>Ver perfil</span>
-            </a>
             <a href="#" class="dropdown-option" id="logoutBtn">
               <i class="fas fa-sign-out-alt"></i>
               <span>Cerrar sesión</span>
@@ -668,24 +648,12 @@
     <div class="content">
       <div class="content-area">
         <!-- Sección de estadísticas -->
-        <div id="estadisticas-section" class="form-section active">
-          <div class="loading-spinner" id="estadisticasLoadingSpinner">
-            <i class="fas fa-spinner fa-spin"></i> Cargando estadísticas...
-          </div>
-        </div>
+        <div id="estadisticas-section" class="form-section active"></div>
 
         <!-- Sección de actividades -->
-        <div id="actividades-section" class="form-section">
-          <div class="loading-spinner" id="actividadesLoadingSpinner">
-            <i class="fas fa-spinner fa-spin"></i> Cargando actividades...
-          </div>
-        </div>
+        <div id="actividades-section" class="form-section"></div>
         <!-- Sección de exportación -->
-        <div id="exportacion-section" class="form-section">
-          <div class="loading-spinner" id="exportacionLoadingSpinner">
-            <i class="fas fa-spinner fa-spin"></i> Cargando opciones de exportación...
-          </div>
-        </div>
+        <div id="exportacion-section" class="form-section"></div>
       </div>
     </div>
   </div>
@@ -768,20 +736,6 @@
         
         userDropdown.style.display = 'none';
       });
-      
-      // Manejar ver perfil
-      const profileOption = document.getElementById('profileBtn');
-      if (profileOption) {
-        profileOption.addEventListener('click', (e) => {
-          e.preventDefault();
-          userDropdown.style.display = 'none';
-          
-          // Usar el controlador de usuarios para mostrar el perfil
-          if (typeof window.showUserProfile === 'function') {
-            window.showUserProfile();
-          }
-        });
-      }
     }
 
     // Hacer disponible globalmente
@@ -792,7 +746,6 @@
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initReporteController } from '../js/controllers/reporteController.js';
-    import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
     // HeaderComponent eliminado, ahora usamos header individual
     
     document.addEventListener('DOMContentLoaded', () => {
@@ -806,7 +759,6 @@
         setTimeout(() => {
           initGlobalController();
           initReporteController();
-          ConnectionIndicator.init();
         }, 100);
       }
     });

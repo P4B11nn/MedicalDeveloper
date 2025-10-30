@@ -246,4 +246,4 @@ export const EVENT_NAMES = {
 };
 
 export default eventBus;
-export { EventBus };
+export { EventBus, eventBus };

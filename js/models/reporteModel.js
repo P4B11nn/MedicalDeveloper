@@ -5,10 +5,11 @@ import { authModel } from './storageModel.js';
 export const reporteModel = {
   // Obtener estadísticas generales del sistema
   getEstadisticas: async (periodo = 'mes') => {
-    const pacientes = pacienteModel.getPacientes();
+    // Obtener datos desde los modelos (estos ya manejan Firestore + fallback)
+    const pacientes = await pacienteModel.getPacientes();
     const usuarios = await authModel.getAllUsers();
-    const citas = pacienteModel.getCitas();
-    const historialMedico = pacienteModel.getHistorialMedico();
+    const citas = await pacienteModel.getCitas();
+    const historialMedico = await pacienteModel.getHistorialMedico();
     const actividades = await authModel.getActividades();
     
     // Fecha para filtrar por periodo
@@ -82,21 +83,21 @@ export const reporteModel = {
   },
   
   // Generar estadísticas personalizadas
-  getEstadisticasPersonalizadas: (configuracion) => {
+  getEstadisticasPersonalizadas: async (configuracion) => {
     const { periodo = 'mes', tipo = 'general' } = configuracion;
-    const estadisticas = reporteModel.getEstadisticas(periodo);
-    
+    const estadisticas = await reporteModel.getEstadisticas(periodo);
+
     // Si solo se quiere un tipo específico de estadísticas, lo filtramos
     if (tipo !== 'general') {
       return { [tipo]: estadisticas[tipo] };
     }
-    
+
     return estadisticas;
   },
   
   // Generar reporte de pacientes
-  getReportePacientes: (filtro = {}) => {
-    let pacientes = pacienteModel.getPacientes();
+  getReportePacientes: async (filtro = {}) => {
+    let pacientes = await pacienteModel.getPacientes();
     
     // Aplicar filtros
     if (filtro.status) {
@@ -142,8 +143,8 @@ export const reporteModel = {
   },
   
   // Generar reporte de citas
-  getReporteCitas: (filtro = {}) => {
-    let citas = pacienteModel.getCitas();
+  getReporteCitas: async (filtro = {}) => {
+    let citas = await pacienteModel.getCitas();
     
     // Aplicar filtros
     if (filtro.estado) {
@@ -188,20 +189,22 @@ export const reporteModel = {
       });
     }
     
-    // Enriquecer con datos de pacientes
-    return citas.map(cita => {
-      const paciente = pacienteModel.getPaciente(cita.pacienteId);
+    // Enriquecer con datos de pacientes (asíncrono)
+    const enriched = await Promise.all(citas.map(async (cita) => {
+      const paciente = await pacienteModel.getPaciente(cita.pacienteId);
       return {
         ...cita,
         pacienteNombre: paciente ? `${paciente.nombre} ${paciente.apellidos}` : 'Desconocido'
       };
-    });
+    }));
+
+    return enriched;
   },
   
   // Obtener historial médico para reportes
-  getReporteHistorialMedico: (filtro = {}) => {
-    let registros = pacienteModel.getHistorialMedico();
-    
+  getReporteHistorialMedico: async (filtro = {}) => {
+    let registros = await pacienteModel.getHistorialMedico();
+
     if (filtro.pacienteId) {
       registros = registros.filter(r => r.pacienteId === filtro.pacienteId);
     }
@@ -219,61 +222,531 @@ export const reporteModel = {
     // Ordenar por fecha más reciente primero por defecto
     registros = registros.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
     
-    // Enriquecer con datos de pacientes
-    return registros.map(registro => {
-      const paciente = pacienteModel.getPaciente(registro.pacienteId);
+    // Enriquecer con datos de pacientes (asíncrono)
+    const enriched = await Promise.all(registros.map(async (registro) => {
+      const paciente = await pacienteModel.getPaciente(registro.pacienteId);
       return {
         ...registro,
         pacienteNombre: paciente ? `${paciente.nombre} ${paciente.apellidos}` : 'Desconocido'
       };
-    });
+    }));
+
+    return enriched;
   },
   
-  // Generar reporte de actividad del sistema (todos los registros)
-  getReporteActividades: (filtro = {}) => {
-    // Usar todos los registros generados por storageModel/authModel
-    return authModel.getActividades(filtro);
+  // Generar reporte de actividad del sistema (solo registros de storageModel)
+  getReporteActividades: async (filtro = {}) => {
+    // Usar solo los registros generados por storageModel/authModel con JWT
+    const actividades = await authModel.getActividades(filtro);
+    // Filtrar solo los registros con sistemaAuth: 'JWT'
+    return actividades.filter(a => a.sistemaAuth === 'JWT');
   },
   
-  // Exportar a CSV un conjunto de datos
-  exportarCSV: (datos, nombreArchivo) => {
+  // Exportar a PDF (abre una vista imprimible; el usuario puede elegir "Guardar como PDF").
+  // Genera un layout tipo informe médico: encabezado con título de la app, cada registro como lista,
+  // el campo 'id' se omite visualmente y se añade un pie de página.
+  exportarPDF: async (datos, nombreArchivo) => {
     if (!datos || datos.length === 0) {
       return { success: false, message: 'No hay datos para exportar' };
     }
-    
-    // Obtener encabezados
-    const encabezados = Object.keys(datos[0]);
-    
-    // Crear contenido CSV
-    let contenidoCSV = encabezados.join(',') + '\n';
-    
-    // Agregar filas
-    datos.forEach(fila => {
-      const valores = encabezados.map(encabezado => {
-        // Escapar comas y comillas en los valores
-        let valor = fila[encabezado] !== undefined ? fila[encabezado].toString() : '';
-        if (valor.includes(',') || valor.includes('"')) {
-          valor = `"${valor.replace(/"/g, '""')}"`;
-        }
-        return valor;
+    const registros = Array.isArray(datos) ? datos : [datos];
+    const appTitle = (typeof document !== 'undefined' && document.title) ? document.title : 'Medical App';
+
+    // Helper: generar SVG simple (line) para una serie de valores {fecha,valor}
+    function generarSVGSerie(puntos, opts = {}) {
+      const width = opts.width || 520;
+      const height = opts.height || 120;
+      const padding = 8;
+      if (!puntos || puntos.length === 0) {
+        return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><text x="${width/2}" y="${height/2}" font-size="12" text-anchor="middle" fill="#888">Sin datos</text></svg>`;
+      }
+
+      // Extraer valores numéricos
+      const vals = puntos.map(p => Number(p.valor)).filter(v => !isNaN(v));
+      if (vals.length === 0) return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><text x="${width/2}" y="${height/2}" font-size="12" text-anchor="middle" fill="#888">Sin datos numéricos</text></svg>`;
+
+      const min = Math.min(...vals);
+      const max = Math.max(...vals);
+      const range = max - min || 1;
+
+      // Mapear puntos a coordenadas
+      const stepX = (width - padding * 2) / (vals.length - 1 || 1);
+      const coords = vals.map((v, i) => {
+        const x = padding + i * stepX;
+        const y = padding + (height - padding * 2) * (1 - (v - min) / range);
+        return { x, y, v };
       });
-      
-      contenidoCSV += valores.join(',') + '\n';
-    });
-    
-    // Crear Blob y URL
-    const blob = new Blob([contenidoCSV], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    // Crear enlace y disparar descarga
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `${nombreArchivo}_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    return { success: true, message: 'Archivo CSV descargado correctamente' };
+
+      const pathD = coords.map((c, i) => (i === 0 ? `M ${c.x} ${c.y}` : `L ${c.x} ${c.y}`)).join(' ');
+
+      // Build simple svg with area fill and path
+      const stroke = opts.stroke || '#06b6d4';
+      const fill = opts.fill || 'rgba(6,182,212,0.12)';
+
+      // Area path (close to bottom)
+      const areaD = coords.map((c, i) => (i === 0 ? `M ${c.x} ${c.y}` : `L ${c.x} ${c.y}`)).join(' ') + ` L ${padding + (coords.length - 1) * stepX} ${height - padding} L ${padding} ${height - padding} Z`;
+
+      // Labels: min/max
+      const minLabel = min.toFixed(1);
+      const maxLabel = max.toFixed(1);
+
+      return `
+        <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="background:transparent">
+          <defs>
+            <linearGradient id="g${Math.random().toString(36).slice(2,8)}" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="${stroke}" stop-opacity="0.18" />
+              <stop offset="100%" stop-color="${stroke}" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" fill="transparent" />
+          <path d="${areaD}" fill="url(#g${Math.random().toString(36).slice(2,8)})" stroke="none" />
+          <path d="${pathD}" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <text x="${padding}" y="${padding + 10}" font-size="10" fill="#444">Max: ${maxLabel}</text>
+          <text x="${padding}" y="${height - 4}" font-size="10" fill="#666">Min: ${minLabel}</text>
+        </svg>
+      `;
+    }
+
+    // Generador de SVG para presión arterial combinada (muestra ambos valores y etiqueta "SYS/DIA" en cada punto)
+    function generarSVGPresionCombinada(puntos, opts = {}) {
+      const width = opts.width || 520;
+      const height = opts.height || 120;
+      const padding = 8;
+      if (!puntos || puntos.length === 0) {
+        return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><text x="${width/2}" y="${height/2}" font-size="12" text-anchor="middle" fill="#888">Sin datos</text></svg>`;
+      }
+
+      // Extraer valores numéricos para escalado (usar ambos sys y dia)
+      const valsSys = puntos.map(p => Number(p.systolic)).filter(v => !isNaN(v));
+      const valsDia = puntos.map(p => Number(p.diastolic)).filter(v => !isNaN(v));
+      const allVals = valsSys.concat(valsDia);
+      if (allVals.length === 0) return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><text x="${width/2}" y="${height/2}" font-size="12" text-anchor="middle" fill="#888">Sin datos numéricos</text></svg>`;
+
+      const min = Math.min(...allVals);
+      const max = Math.max(...allVals);
+      const range = max - min || 1;
+
+      const stepX = (width - padding * 2) / (puntos.length - 1 || 1);
+      const coordsSys = puntos.map((p, i) => ({ x: padding + i * stepX, y: padding + (height - padding * 2) * (1 - ((Number(p.systolic) - min) / range)), v: p.systolic }));
+      const coordsDia = puntos.map((p, i) => ({ x: padding + i * stepX, y: padding + (height - padding * 2) * (1 - ((Number(p.diastolic) - min) / range)), v: p.diastolic }));
+
+      const pathSys = coordsSys.map((c, i) => (i === 0 ? `M ${c.x} ${c.y}` : `L ${c.x} ${c.y}`)).join(' ');
+      const pathDia = coordsDia.map((c, i) => (i === 0 ? `M ${c.x} ${c.y}` : `L ${c.x} ${c.y}`)).join(' ');
+
+      // Labels: min/max
+      const minLabel = min.toFixed(0);
+      const maxLabel = max.toFixed(0);
+
+      // Build SVG with two lines and combined labels at each point
+      let pointsLabels = '';
+      puntos.forEach((p, i) => {
+        const cs = coordsSys[i];
+        const cd = coordsDia[i];
+        const label = (p.systolic || p.diastolic) ? `${p.systolic || '-'} / ${p.diastolic || '-'}` : '-';
+        pointsLabels += `<text x="${cs.x}" y="${Math.min(cs.y, cd.y) - 6}" font-size="10" text-anchor="middle" fill="#0f172a">${label}</text>`;
+      });
+
+      return `
+        <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="background:transparent">
+          <rect width="100%" height="100%" fill="transparent" />
+          <path d="${pathDia}" fill="none" stroke="#a78bfa" stroke-width="2" stroke-dasharray="6 4" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="${pathSys}" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          ${pointsLabels}
+          <text x="${padding}" y="${padding + 10}" font-size="10" fill="#444">Max: ${maxLabel}</text>
+          <text x="${padding}" y="${height - 4}" font-size="10" fill="#666">Min: ${minLabel}</text>
+        </svg>
+      `;
+    }
+
+    // Intentar capturar canvases de Chart.js para fidelidad visual.
+    // Construiremos un mapa patientId -> { paramKey: dataURL }
+    function capturarGraficasPaciente(pacienteId) {
+      const keys = ['peso','imc','presion','glucosa','frecuencia','frecuenciaRespiratoria','presion_sistolica','presion_diastolica','temperatura','talla'];
+      const out = {};
+      if (!pacienteId) return out;
+      keys.forEach(k => {
+        // Comprobar varios patrones de id usados en la vista
+        const idsToTry = [
+          `chart-${pacienteId}-${k}`,
+          `chart-single-${pacienteId}-${k}`,
+          `chart-${pacienteId}-${k.toLowerCase()}`
+        ];
+        for (const id of idsToTry) {
+          try {
+            const el = document.getElementById(id);
+            if (el && el.tagName && el.tagName.toLowerCase() === 'canvas') {
+              try { out[k] = el.toDataURL('image/png'); break; } catch (e) { /* cross-origin or other */ }
+            }
+          } catch (e) { /* noop */ }
+        }
+      });
+      // También intentar localizar un canvas genérico dentro del contenedor del paciente
+      try {
+        const container = document.querySelector(`#patient-params-${pacienteId}`) || document.querySelector(`#patient-params-single-${pacienteId}`) || document.querySelector(`#patient-params-${pacienteId}`);
+        if (container) {
+          const canv = container.querySelector('canvas');
+          if (canv && canv.toDataURL) {
+            out['any'] = canv.toDataURL('image/png');
+          }
+        }
+      } catch (e) {}
+      return out;
+    }
+
+    const imagesMap = {};
+    try {
+      registros.forEach(r => {
+        const pid = (r && r.paciente && (r.paciente.id || r.paciente.matricula)) || (r && (r.id || r.matricula || r.pacienteId));
+        if (pid) imagesMap[pid] = capturarGraficasPaciente(pid);
+      });
+    } catch (e) { /* noop */ }
+
+    let html = `<!doctype html><html><head><meta charset="utf-8"><title>${nombreArchivo}</title>`;
+    html += `<style>
+      body{font-family:Arial,Helvetica,sans-serif;padding:20px;color:#111;background:#fff}
+      header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:1px solid #eee;padding-bottom:8px}
+      header .branding{display:flex;align-items:center;gap:12px}
+      header h1{font-size:18px;margin:0}
+      header .meta{font-size:12px;color:#666}
+      footer{position:fixed;left:0;right:0;bottom:0;padding:8px 24px;font-size:11px;color:#666;border-top:1px solid #eee;background:#fff}
+      section.record{page-break-inside:avoid;margin-bottom:18px;padding:12px;border:1px solid #f0f0f0;border-radius:6px;background:#fff;position:relative}
+      section.record h2{margin:0 0 8px 0;font-size:16px}
+      ul.record-list{list-style:none;padding:0;margin:0;display:block}
+      ul.record-list li{padding:4px 0;border-bottom:1px dashed #f3f3f3;font-size:13px}
+      ul.record-list li strong{display:inline-block;width:160px;color:#374151}
+      .graphs-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-items:start;margin-top:8px}
+      .graphs-grid .graph-card{background:#fff;border:1px solid #f3f4f6;border-radius:6px;padding:8px}
+      .patient-photo{position:absolute;right:16px;top:16px;width:96px;height:96px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#f3f4f6;display:flex;align-items:center;justify-content:center}
+      .patient-photo img{width:100%;height:100%;object-fit:cover}
+    </style>`;
+    html += `</head><body>`;
+
+    html += `<header><h1>${appTitle}</h1><div class="meta">Exportado: ${new Date().toLocaleString()}</div></header>`;
+
+  for (let idx = 0; idx < registros.length; idx++) {
+      const fila = registros[idx];
+      // Si el registro es un objeto enriquecido para exportar historial de un paciente
+      if (fila && fila.paciente && fila.parametrosSeries) {
+        const paciente = fila.paciente || {};
+        html += `<section class="record" style="position:relative">`;
+        const tituloP = `${paciente.nombre || paciente.pacienteNombre || 'Paciente'} ${paciente.apellidos || ''}`.trim();
+        // Área para fotografía del paciente (arriba derecha). Si existe url en paciente.photo/paciente.foto/paciente.imagen la mostramos; si no, silueta gris.
+        try {
+          const photoSrc = paciente.photo || paciente.photoUrl || paciente.foto || paciente.imagen || null;
+          if (photoSrc) {
+            html += `<div style="position:absolute;right:16px;top:16px;width:96px;height:96px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#fff"><img src="${photoSrc}" style="width:100%;height:100%;object-fit:cover"/></div>`;
+          } else {
+            html += `<div style="position:absolute;right:16px;top:16px;width:96px;height:96px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f3f4f6"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="#9CA3AF"/><path d="M3 20c0-3.866 3.582-7 9-7s9 3.134 9 7v1H3v-1z" fill="#D1D5DB"/></svg></div>`;
+          }
+        } catch (e) { /* noop */ }
+
+        html += `<h2>${tituloP}</h2>`;
+
+        // Información básica del paciente
+        html += `<ul class="record-list">`;
+        if (paciente.matricula) html += `<li><strong>Matrícula:</strong> ${paciente.matricula}</li>`;
+        if (paciente.fechaNacimiento) html += `<li><strong>Fecha de Nacimiento:</strong> ${paciente.fechaNacimiento}</li>`;
+        if (paciente.facultad) html += `<li><strong>Facultad:</strong> ${paciente.facultad}</li>`;
+        if (paciente.carrera) html += `<li><strong>Carrera:</strong> ${paciente.carrera}</li>`;
+        html += `</ul>`;
+
+  // Sección de gráficas por parámetro (usar imagen de canvas si está disponible para fidelidad)
+  html += `<div style="margin-top:12px"><h3>Gráficas por parámetro</h3><div class="graphs-grid">`;
+        const ps = fila.parametrosSeries || {};
+        const pid = paciente.id || paciente.matricula || paciente.pacienteId || paciente.pacienteNombre || tituloP;
+        const imgs = imagesMap[pid] || {};
+
+        // Helper para renderizar imagen o fallback SVG
+        const renderImgOrSVG = (imgKey, svgHtml) => {
+          if (imgs && imgs[imgKey]) return `<div><img src="${imgs[imgKey]}" style="max-width:520px;height:auto;display:block;border:1px solid #eee;border-radius:4px"/></div>`;
+          if (imgs && imgs['any']) return `<div><img src="${imgs['any']}" style="max-width:520px;height:auto;display:block;border:1px solid #eee;border-radius:4px"/></div>`;
+          return svgHtml;
+        };
+
+        // temperatura
+        html += `<div style="margin:8px 0"><strong>Temperatura (°C)</strong><div>${renderImgOrSVG('temperatura', generarSVGSerie(ps.temperatura || [], { width:520, height:120, stroke: '#ef4444' }))}</div></div>`;
+        // peso
+        html += `<div style="margin:8px 0"><strong>Peso (kg)</strong><div>${renderImgOrSVG('peso', generarSVGSerie(ps.peso || [], { width:520, height:120, stroke: '#10b981' }))}</div></div>`;
+        // talla
+        html += `<div style="margin:8px 0"><strong>Talla (cm)</strong><div>${renderImgOrSVG('talla', generarSVGSerie(ps.talla || [], { width:520, height:120, stroke: '#3b82f6' }))}</div></div>`;
+        // IMC (calcular a partir de peso/talla si no existe explícitamente)
+        try {
+          const tallaMap = {};
+          (ps.talla || []).forEach(t => { if (t && t.fecha) tallaMap[t.fecha] = Number(t.valor); });
+          let lastT = null;
+          const imcSeries = (ps.peso || []).map(p => {
+            const f = p.fecha; const pesoV = Number(p.valor);
+            if (tallaMap[f]) lastT = tallaMap[f];
+            const tallaV = lastT || (ps.talla && ps.talla.length ? Number(ps.talla[ps.talla.length - 1].valor) : null);
+            const imc = (pesoV && tallaV) ? parseFloat((pesoV / Math.pow((tallaV/100),2)).toFixed(1)) : null;
+            return imc !== null ? { fecha: f, valor: imc } : null;
+          }).filter(x=>x);
+          html += `<div style="margin:8px 0"><strong>IMC</strong><div>${renderImgOrSVG('imc', generarSVGSerie(imcSeries || [], { width:520, height:120, stroke: '#8b5cf6' }))}</div></div>`;
+        } catch(e) { /* noop */ }
+
+        // glucosa
+        html += `<div style="margin:8px 0"><strong>Glucosa (mg/dL)</strong><div>${renderImgOrSVG('glucosa', generarSVGSerie(ps.glucosa || [], { width:520, height:120, stroke: '#f97316' }))}</div></div>`;
+
+        // frecuencia respiratoria
+        html += `<div style="margin:8px 0"><strong>Frecuencia Respiratoria (rpm)</strong><div>${renderImgOrSVG('frecuencia', generarSVGSerie(ps.frecuenciaRespiratoria || [], { width:520, height:120, stroke: '#f59e0b' }))}</div></div>`;
+
+        // presión combinada (usar imagen si existe)
+        try {
+          const combined = [];
+          if (ps.presion && Array.isArray(ps.presion) && ps.presion.length) {
+            ps.presion.forEach(p => {
+              const v = String(p.valor || p).trim();
+              const m = v.match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
+              combined.push({ fecha: p.fecha, systolic: m ? Number(m[1]) : (isFinite(Number(p.valor))?Number(p.valor):null), diastolic: m ? Number(m[2]) : null });
+            });
+          } else if ((ps.presion_sistolica || []).length || (ps.presion_diastolica || []).length) {
+            const byFechaSys = {};
+            (ps.presion_sistolica || []).forEach(s => { if (s && s.fecha) byFechaSys[s.fecha] = Number(s.valor); });
+            const byFechaDia = {};
+            (ps.presion_diastolica || []).forEach(d => { if (d && d.fecha) byFechaDia[d.fecha] = Number(d.valor); });
+            const fechas = new Set([...Object.keys(byFechaSys), ...Object.keys(byFechaDia)]);
+            Array.from(fechas).sort().forEach(f => { combined.push({ fecha: f, systolic: byFechaSys[f] || null, diastolic: byFechaDia[f] || null }); });
+          }
+          html += `<div style="margin:8px 0"><strong>Presión Arterial (Sistólica/Diastólica)</strong><div>${renderImgOrSVG('presion', generarSVGPresionCombinada(combined || [], { width:520, height:120 }))}</div></div>`;
+        } catch(e) { /* noop */ }
+  html += `</div></div>`;
+
+        // Observaciones del personal médico
+        html += `<div style="margin-top:12px"><h3>Observaciones del personal médico</h3>`;
+        const obs = fila.observaciones || [];
+
+        // Helper to render a list of observations
+        function renderObsList(arr) {
+          let out = '';
+          out += `<ul class="record-list">`;
+          arr.forEach(o => {
+            const f = o && o.fecha ? new Date(o.fecha).toLocaleString() : '';
+            out += `<li><strong>${f}</strong> — ${String(o.texto)}</li>`;
+          });
+          out += `</ul>`;
+          return out;
+        }
+
+        // If obs is an array (legacy), render as before
+        if (Array.isArray(obs)) {
+          if (obs.length === 0) {
+            html += `<div class="muted-text">No hay observaciones registradas.</div>`;
+          } else {
+            html += renderObsList(obs);
+          }
+        } else if (typeof obs === 'object' && obs !== null) {
+          // Expecting grouped object: { examenVista: [], examenOido: [], general: [] }
+          const gv = obs;
+          const hasVista = gv.examenVista && gv.examenVista.length;
+          const hasOido = gv.examenOido && gv.examenOido.length;
+          const hasGen = gv.general && gv.general.length;
+
+          if (!hasVista && !hasOido && !hasGen) {
+            html += `<div class="muted-text">No hay observaciones registradas.</div>`;
+          } else {
+            // Examen de Oído
+            if (hasOido) {
+              html += `<div style="margin-top:8px"><h4>Examen de Oído</h4>`;
+              html += renderObsList(gv.examenOido);
+              html += `</div>`;
+            }
+
+            // Examen de Vista
+            if (hasVista) {
+              html += `<div style="margin-top:8px"><h4>Examen de Vista</h4>`;
+              html += renderObsList(gv.examenVista);
+              html += `</div>`;
+            }
+
+            // Observaciones generales
+            if (hasGen) {
+              html += `<div style="margin-top:8px"><h4>Observación General</h4>`;
+              html += renderObsList(gv.general);
+              html += `</div>`;
+            }
+          }
+        } else {
+          html += `<div class="muted-text">No hay observaciones registradas.</div>`;
+        }
+
+        html += `</div>`;
+
+        // Historial: listado cronológico si existe
+        const hist = fila.historial || [];
+        if (hist.length > 0) {
+          html += `<div style="margin-top:12px"><h3>Historial</h3><ul class="record-list">`;
+          hist.forEach(r => {
+            const f = r.fecha ? new Date(r.fecha).toLocaleString() : '';
+            const tipo = r.tipo || '';
+            const notas = r.notas || r.descripcion || '';
+            html += `<li><strong>${f} • ${tipo}</strong><div style="margin-left:8px;color:#333">${String(notas)}</div></li>`;
+          });
+          html += `</ul></div>`;
+        }
+
+        html += `</section>`;
+        continue; // pasar al siguiente
+      }
+
+      // Comportamiento por defecto (anteriores formatos)
+      html += `<section class="record" style="position:relative">`;
+      const titulo = (fila.nombre || fila.pacienteNombre) ? `${fila.nombre || fila.pacienteNombre} ${fila.apellidos || ''}`.trim() : (fila.matricula || fila.pacienteNombre || `Registro ${idx + 1}`);
+      // Marco de fotografía genérico para registros/pacientes (arriba derecha)
+      try {
+        const photoSrcDefault = fila.photo || fila.photoUrl || fila.foto || fila.imagen || null;
+        if (photoSrcDefault) {
+          html += `<div style="position:absolute;right:16px;top:16px;width:96px;height:96px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#fff"><img src="${photoSrcDefault}" style="width:100%;height:100%;object-fit:cover"/></div>`;
+        } else {
+          html += `<div style="position:absolute;right:16px;top:16px;width:96px;height:96px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f3f4f6"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="#9CA3AF"/><path d="M3 20c0-3.866 3.582-7 9-7s9 3.134 9 7v1H3v-1z" fill="#D1D5DB"/></svg></div>`;
+        }
+      } catch (e) { /* noop */ }
+
+      html += `<h2>${titulo}</h2>`;
+      html += `<ul class="record-list">`;
+
+      Object.keys(fila).forEach(key => {
+        const keyLower = key.toLowerCase();
+        // ocultar campos de identificación que no deben verse en el PDF
+        if (keyLower === 'id' || keyLower === 'pacienteid' || keyLower === 'paciente_id') return;
+
+        let label = key;
+        const labels = {
+          matricula: 'Matrícula', nombre: 'Nombre', apellidos: 'Apellidos', fechaNacimiento: 'Fecha de Nacimiento', grado: 'Grado', grupo: 'Grupo', facultad: 'Facultad', carrera: 'Carrera', telefono: 'Teléfono', antecedentes: 'Antecedentes', fechaRegistro: 'Fecha de Registro', usuarioRegistro: 'Usuario Registro', pacienteNombre: 'Paciente', tipo: 'Tipo', fecha: 'Fecha', descripcion: 'Descripción'
+        };
+        if (labels[key]) label = labels[key];
+
+        let valor = fila[key];
+        if (valor === null || valor === undefined || valor === '') valor = '-';
+        if (typeof valor === 'object' && !Array.isArray(valor)) {
+          if (valor.temperatura || valor.presion || valor.peso || valor.talla) {
+            const parts = [];
+            if (valor.temperatura) parts.push(`Temperatura: ${valor.temperatura}°C`);
+            if (valor.presion) parts.push(`Presión: ${valor.presion}`);
+            if (valor.peso) parts.push(`Peso: ${valor.peso} kg`);
+            if (valor.talla) parts.push(`Talla: ${valor.talla} cm`);
+            valor = parts.join(' • ');
+          } else {
+            try { valor = JSON.stringify(valor); } catch (e) { valor = String(valor); }
+          }
+        }
+
+        html += `<li><strong>${label}:</strong> ${String(valor)}</li>`;
+      });
+
+      html += `</ul>`;
+
+      // Si el objeto paciente tiene historialCambios o datosMedicos, generar gráficas y observaciones
+      const posiblePacienteId = fila.id || fila.matricula || fila.pacienteId;
+      const tieneCambios = Array.isArray(fila.historialCambios) && fila.historialCambios.length > 0;
+      const tieneDatosMedicos = fila.datosMedicos && Object.keys(fila.datosMedicos).length > 0;
+      if (tieneCambios || tieneDatosMedicos) {
+        // Construir series
+        const ps = { temperatura: [], peso: [], talla: [], frecuenciaRespiratoria: [], presion_combined: [], glucosa: [] };
+
+        (fila.historialCambios || []).forEach(cambio => {
+          const fecha = cambio.fecha || cambio.datos?.fechaRegistroMedico || null;
+          const datos = cambio.datos || cambio;
+          if (datos.temperatura) ps.temperatura.push({ fecha, valor: parseFloat(datos.temperatura) });
+          if (datos.peso) ps.peso.push({ fecha, valor: parseFloat(datos.peso) });
+          if (datos.talla) ps.talla.push({ fecha, valor: parseFloat(datos.talla) });
+          if (datos.frecuenciaRespiratoria) ps.frecuenciaRespiratoria.push({ fecha, valor: parseFloat(datos.frecuenciaRespiratoria) });
+          if (datos.glucosa) ps.glucosa.push({ fecha, valor: parseFloat(datos.glucosa) });
+          if (datos.presion) {
+            const m = String(datos.presion).match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
+            if (m) { ps.presion_combined.push({ fecha, systolic: parseInt(m[1]), diastolic: parseInt(m[2]) }); }
+            else if (!isNaN(Number(datos.presion))) { ps.presion_combined.push({ fecha, systolic: Number(datos.presion), diastolic: null }); }
+          }
+        });
+
+        // incluir datosMedicos actuales
+        if (fila.datosMedicos && fila.datosMedicos.fechaRegistroMedico) {
+          const dm = fila.datosMedicos;
+          const fecha = dm.fechaRegistroMedico;
+          if (dm.temperatura) ps.temperatura.push({ fecha, valor: parseFloat(dm.temperatura) });
+          if (dm.peso) ps.peso.push({ fecha, valor: parseFloat(dm.peso) });
+          if (dm.talla) ps.talla.push({ fecha, valor: parseFloat(dm.talla) });
+          if (dm.frecuenciaRespiratoria) ps.frecuenciaRespiratoria.push({ fecha, valor: parseFloat(dm.frecuenciaRespiratoria) });
+          if (dm.glucosa) ps.glucosa.push({ fecha, valor: parseFloat(dm.glucosa) });
+          if (dm.presion) {
+            const m = String(dm.presion).match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
+            if (m) { ps.presion_combined.push({ fecha, systolic: parseInt(m[1]), diastolic: parseInt(m[2]) }); }
+            else if (!isNaN(Number(dm.presion))) { ps.presion_combined.push({ fecha, systolic: Number(dm.presion), diastolic: null }); }
+          }
+        }
+
+        Object.keys(ps).forEach(k => {
+          if (Array.isArray(ps[k])) ps[k].sort((a,b) => new Date(a.fecha) - new Date(b.fecha));
+        });
+
+  html += `<div style="margin-top:12px"><h3>Gráficas por parámetro</h3><div class="graphs-grid">`;
+        const imgsHist = imagesMap[posiblePacienteId] || {};
+        const renderImgOrSVGHist = (imgKey, svgHtml) => {
+          if (imgsHist && imgsHist[imgKey]) return `<div><img src="${imgsHist[imgKey]}" style="max-width:520px;height:auto;display:block;border:1px solid #eee;border-radius:4px"/></div>`;
+          if (imgsHist && imgsHist['any']) return `<div><img src="${imgsHist['any']}" style="max-width:520px;height:auto;display:block;border:1px solid #eee;border-radius:4px"/></div>`;
+          return svgHtml;
+        };
+
+        html += `<div style="margin:8px 0"><strong>Temperatura (°C)</strong><div>${renderImgOrSVGHist('temperatura', generarSVGSerie(ps.temperatura || [], { width:520, height:120, stroke: '#ef4444' }))}</div></div>`;
+        html += `<div style="margin:8px 0"><strong>Peso (kg)</strong><div>${renderImgOrSVGHist('peso', generarSVGSerie(ps.peso || [], { width:520, height:120, stroke: '#10b981' }))}</div></div>`;
+        html += `<div style="margin:8px 0"><strong>Talla (cm)</strong><div>${renderImgOrSVGHist('talla', generarSVGSerie(ps.talla || [], { width:520, height:120, stroke: '#3b82f6' }))}</div></div>`;
+        // IMC
+        try {
+          const tallaMap = {};
+          (ps.talla || []).forEach(t => { if (t && t.fecha) tallaMap[t.fecha] = Number(t.valor); });
+          let lastT = null;
+          const imcSeries = (ps.peso || []).map(p => {
+            const f = p.fecha; const pesoV = Number(p.valor);
+            if (tallaMap[f]) lastT = tallaMap[f];
+            const tallaV = lastT || (ps.talla && ps.talla.length ? Number(ps.talla[ps.talla.length - 1].valor) : null);
+            const imc = (pesoV && tallaV) ? parseFloat((pesoV / Math.pow((tallaV/100),2)).toFixed(1)) : null;
+            return imc !== null ? { fecha: f, valor: imc } : null;
+          }).filter(x=>x);
+          html += `<div style="margin:8px 0"><strong>IMC</strong><div>${renderImgOrSVGHist('imc', generarSVGSerie(imcSeries || [], { width:520, height:120, stroke: '#8b5cf6' }))}</div></div>`;
+        } catch(e) { /* noop */ }
+
+        html += `<div style="margin:8px 0"><strong>Glucosa (mg/dL)</strong><div>${renderImgOrSVGHist('glucosa', generarSVGSerie(ps.glucosa || [], { width:520, height:120, stroke: '#f97316' }))}</div></div>`;
+        html += `<div style="margin:8px 0"><strong>Frecuencia Respiratoria (rpm)</strong><div>${renderImgOrSVGHist('frecuencia', generarSVGSerie(ps.frecuenciaRespiratoria || [], { width:520, height:120, stroke: '#f59e0b' }))}</div></div>`;
+        html += `<div style="margin:8px 0"><strong>Presión Arterial (Sistólica/Diastólica)</strong><div>${renderImgOrSVGHist('presion', generarSVGPresionCombinada(ps.presion_combined || [], { width:520, height:120 }))}</div></div>`;
+  html += `</div></div>`;
+
+        // Observaciones desde historial central
+        let observCentral = [];
+        try {
+          const allHist = await pacienteModel.getHistorialMedico();
+          observCentral = (allHist || []).filter(h => (h.pacienteId === posiblePacienteId || h.pacienteId === fila.id || h.pacienteId === fila.matricula)).map(r => ({ fecha: r.fecha, texto: r.notas || r.descripcion || '' })).filter(o => o.texto);
+        } catch(e) { observCentral = []; }
+
+        html += `<div style="margin-top:12px"><h3>Observaciones del personal médico</h3>`;
+        if (observCentral.length === 0) {
+          html += `<div class="muted-text">No hay observaciones registradas.</div>`;
+        } else {
+          html += `<ul class="record-list">`;
+          observCentral.forEach(o => { const f = o.fecha ? new Date(o.fecha).toLocaleString() : ''; html += `<li><strong>${f}</strong> — ${String(o.texto)}</li>`; });
+          html += `</ul>`;
+        }
+        html += `</div>`;
+      }
+
+      html += `</section>`;
+  }
+
+    html += `<footer>${appTitle} • Generado el ${new Date().toLocaleString()}</footer>`;
+    html += `</body></html>`;
+
+    const newWin = window.open('', '_blank');
+    if (!newWin) {
+      return { success: false, message: 'No se pudo abrir la ventana de impresión. Desactive el bloqueador de ventanas emergentes.' };
+    }
+
+    newWin.document.open();
+    newWin.document.write(html);
+    newWin.document.close();
+
+    setTimeout(() => {
+      try { newWin.focus(); newWin.print(); } catch (e) { /* noop */ }
+    }, 500);
+
+    return { success: true, message: 'Se ha abierto la vista para imprimir. Use la opción "Guardar como PDF" en la impresora.' };
   }
 };
 
