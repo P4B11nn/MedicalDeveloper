@@ -432,7 +432,12 @@ function handleInputChange(event) {
   
   // Búsqueda en historial médico
   if (input.id === 'buscarHistorial') {
-    filtrarHistorial(input.value);
+    aplicarFiltrosHistorial();
+  }
+  
+  // Filtros del historial médico
+  if (input.id === 'filtroFecha' || input.id === 'filtroPaciente') {
+    aplicarFiltrosHistorial();
   }
   
   // Cambio en selector de paciente para datos médicos
@@ -976,7 +981,7 @@ async function renderHistorialCompleto() {
       }
 
       return `
-        <tr>
+        <tr data-paciente-id="${registro.pacienteId}">
           <td>
             <div class="fw-600">${fecha.toLocaleDateString('es-ES')}</div>
             <div class="muted-text small-text">${fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</div>
@@ -1015,6 +1020,36 @@ async function renderHistorialCompleto() {
         </tr>
       `;
     }).join('');
+    
+    // Poblar el selector de pacientes para filtrado
+    const pacienteSelect = document.getElementById('filtroPaciente');
+    if (pacienteSelect) {
+      pacienteSelect.innerHTML = '<option value="">Todos los pacientes</option>';
+      
+      // Obtener lista única de pacientes que tienen registros
+      const pacientesUnicos = {};
+      registrosHistorial.forEach(registro => {
+        if (registro.paciente && !pacientesUnicos[registro.pacienteId]) {
+          pacientesUnicos[registro.pacienteId] = registro.paciente;
+        }
+      });
+      
+      // Agregar opciones ordenadas alfabéticamente
+      Object.values(pacientesUnicos)
+        .sort((a, b) => `${a.nombre} ${a.apellidos || ''}`.localeCompare(`${b.nombre} ${b.apellidos || ''}`))
+        .forEach(paciente => {
+          pacienteSelect.add(new Option(
+            `${paciente.nombre} ${paciente.apellidos || ''} (${paciente.matricula})`,
+            paciente.id
+          ));
+        });
+    }
+    
+    // Agregar event listener para el botón de limpiar filtros
+    const limpiarBtn = document.querySelector('#historial-medico-completo-section .btn-secondary');
+    if (limpiarBtn) {
+      limpiarBtn.addEventListener('click', limpiarFiltrosHistorial);
+    }
   } catch (error) {
     console.error('❌ Error al renderizar historial médico:', error);
     const tableBody = document.querySelector('#historial-medico-completo-section tbody');
@@ -1033,29 +1068,110 @@ async function renderHistorialCompleto() {
 
 function filtrarPacientes(searchTerm) {
   const rows = document.querySelectorAll('#tablaPacientes tr');
-  const term = searchTerm.toLowerCase();
+  const term = searchTerm.toLowerCase().trim();
   
   rows.forEach(row => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(term) ? '' : 'none';
+    if (term === '') {
+      // Si no hay término de búsqueda, mostrar todas las filas
+      row.style.display = '';
+      return;
+    }
+    
+    // Buscar específicamente en matrícula (primera columna)
+    const matriculaCell = row.querySelector('td:nth-child(1)');
+    const matricula = matriculaCell ? matriculaCell.textContent.toLowerCase() : '';
+    
+    // Buscar específicamente en nombre (segunda columna, parte del nombre completo)
+    const nombreCell = row.querySelector('td:nth-child(2)');
+    const nombreCompleto = nombreCell ? nombreCell.textContent.toLowerCase() : '';
+    
+    // Verificar si el término coincide con matrícula o nombre
+    const matchesMatricula = matricula.includes(term);
+    const matchesNombre = nombreCompleto.includes(term);
+    
+    // Mostrar fila solo si coincide con matrícula o nombre
+    row.style.display = (matchesMatricula || matchesNombre) ? '' : 'none';
   });
 }
 
-function filtrarHistorial(searchTerm) {
+function aplicarFiltrosHistorial() {
+  const searchTerm = document.getElementById('buscarHistorial')?.value || '';
+  const fechaFiltro = document.getElementById('filtroFecha')?.value || '';
+  const pacienteFiltro = document.getElementById('filtroPaciente')?.value || '';
+  
+  filtrarHistorial(searchTerm, fechaFiltro, pacienteFiltro);
+}
+
+function filtrarHistorial(searchTerm = '', fechaFiltro = '', pacienteFiltro = '') {
   const rows = document.querySelectorAll('#historial-medico-completo-section tbody tr');
   const term = searchTerm.toLowerCase();
-  
+  const fechaSeleccionada = fechaFiltro ? new Date(fechaFiltro + 'T00:00:00') : null;
+
   rows.forEach(row => {
-    // Buscar específicamente por matrícula en lugar de todo el texto
+    // Buscar en la fecha (primera columna)
+    const fechaCell = row.querySelector('td:nth-child(1) .fw-600');
+    const fechaText = fechaCell ? fechaCell.textContent.toLowerCase() : '';
+    const fechaRegistro = fechaCell ? new Date(fechaCell.textContent.split('/').reverse().join('-') + 'T00:00:00') : null;
+
+    // Buscar en el nombre del paciente (segunda columna)
+    const nombreCell = row.querySelector('td:nth-child(2) .fw-600');
+    const nombreText = nombreCell ? nombreCell.textContent.toLowerCase() : '';
+
+    // Buscar específicamente por matrícula (segunda columna, texto muted)
     const matriculaCell = row.querySelector('td:nth-child(2) .muted-text');
     const matriculaText = matriculaCell ? matriculaCell.textContent.toLowerCase() : '';
-    
-    // Extraer solo el número/texto de matrícula (después de "Matrícula: ")
     const matricula = matriculaText.replace('matrícula: ', '').trim();
-    
-    // Mostrar fila si la matrícula contiene el término de búsqueda
-    const matches = matricula.includes(term);
-    row.style.display = matches ? '' : 'none';
+
+    // Obtener el paciente ID del registro (desde el atributo data o similar)
+    const pacienteId = row.getAttribute('data-paciente-id') || '';
+
+    // Aplicar filtros
+    let matchesSearch = true;
+    let matchesFecha = true;
+    let matchesPaciente = true;
+
+    // Filtro de búsqueda por texto
+    if (term) {
+      const matchesFechaText = fechaText.includes(term);
+      const matchesNombre = nombreText.includes(term);
+      const matchesMatricula = matricula.includes(term);
+      matchesSearch = matchesFechaText || matchesNombre || matchesMatricula;
+    }
+
+    // Filtro por fecha
+    if (fechaSeleccionada && fechaRegistro) {
+      // Comparar solo la fecha (sin hora) para que coincida con el input date
+      const fechaRegistroSolo = new Date(fechaRegistro.getFullYear(), fechaRegistro.getMonth(), fechaRegistro.getDate());
+      const fechaSeleccionadaSolo = new Date(fechaSeleccionada.getFullYear(), fechaSeleccionada.getMonth(), fechaSeleccionada.getDate());
+      
+      matchesFecha = fechaRegistroSolo.getTime() === fechaSeleccionadaSolo.getTime();
+    }
+
+    // Filtro por paciente
+    if (pacienteFiltro) {
+      matchesPaciente = pacienteId === pacienteFiltro;
+    }
+
+    // Mostrar fila solo si cumple todos los filtros
+    const mostrar = matchesSearch && matchesFecha && matchesPaciente;
+    row.style.display = mostrar ? '' : 'none';
+  });
+}
+
+function limpiarFiltrosHistorial() {
+  // Limpiar inputs
+  const buscarInput = document.getElementById('buscarHistorial');
+  const fechaInput = document.getElementById('filtroFecha');
+  const pacienteSelect = document.getElementById('filtroPaciente');
+  
+  if (buscarInput) buscarInput.value = '';
+  if (fechaInput) fechaInput.value = '';
+  if (pacienteSelect) pacienteSelect.value = '';
+  
+  // Mostrar todas las filas
+  const rows = document.querySelectorAll('#historial-medico-completo-section tbody tr');
+  rows.forEach(row => {
+    row.style.display = '';
   });
 }
 

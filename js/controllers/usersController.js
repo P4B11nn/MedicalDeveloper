@@ -119,6 +119,7 @@ export function initUsersController() {
   setupEventListeners();
   setupSidebarNavigation();
   setupNewUserForm();
+  setupSearchFunctionality(); // Agregar funcionalidad de búsqueda
   initUserView(); // Inicializar vista de usuario
 
   // Registrar callback para refrescar datos cuando se restaure la conexión
@@ -908,6 +909,88 @@ function calculatePasswordStrength(password) {
   return { level, score, checks };
 }
 
-// Hacer disponible globalmente
-window.showUserProfile = showUserProfile;
-window.showChangePasswordModal = showChangePasswordModal;
+/**
+ * Configura la funcionalidad de búsqueda para usuarios
+ */
+function setupSearchFunctionality() {
+  const searchInput = document.getElementById('buscarUsuario');
+  if (!searchInput) {
+    console.warn('Campo de búsqueda de usuarios no encontrado');
+    return;
+  }
+
+  searchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase().trim();
+    filtrarUsuarios(searchTerm);
+  });
+
+  console.log('UsersController: Funcionalidad de búsqueda configurada');
+}
+
+/**
+ * Filtra la lista de usuarios por matrícula o nombre
+ * @param {string} searchTerm - Término de búsqueda
+ */
+function filtrarUsuarios(searchTerm) {
+  const userItems = document.querySelectorAll('.personal-item');
+  const personalLista = document.getElementById('personalLista');
+  
+  // Remover mensaje anterior de "no results"
+  const existingMessage = personalLista.querySelector('.no-results-message');
+  if (existingMessage) {
+    existingMessage.remove();
+  }
+  
+  if (!searchTerm) {
+    // Si no hay término de búsqueda, mostrar todos los usuarios
+    userItems.forEach(item => {
+      item.classList.remove('hidden');
+      item.style.display = 'flex';
+    });
+    return;
+  }
+
+  let visibleCount = 0;
+  
+  userItems.forEach(item => {
+    const userName = item.querySelector('h4')?.textContent?.toLowerCase() || '';
+    const userInfo = item.querySelector('p')?.textContent?.toLowerCase() || '';
+    
+    // Extraer matrícula del texto (formato: "Matrícula: ABC123")
+    const matriculaMatch = userInfo.match(/matrícula:\s*([^\s|]+)/i);
+    const matricula = matriculaMatch ? matriculaMatch[1].toLowerCase() : '';
+    
+    // Verificar si el término de búsqueda coincide con matrícula o nombre completo
+    const fullName = userName; // El h4 contiene "Nombre Apellidos"
+    const matchesMatricula = matricula.includes(searchTerm);
+    const matchesName = fullName.includes(searchTerm);
+    
+    // Mostrar u ocultar el elemento con transición suave
+    if (matchesMatricula || matchesName) {
+      item.classList.remove('hidden');
+      item.style.display = 'flex';
+      visibleCount++;
+    } else {
+      item.classList.add('hidden');
+      // Mantener el elemento en el DOM pero oculto para preservar el layout
+      setTimeout(() => {
+        if (item.classList.contains('hidden')) {
+          item.style.display = 'none';
+        }
+      }, 300); // Esperar a que termine la transición
+    }
+  });
+  
+  // Mostrar mensaje si no hay resultados
+  if (visibleCount === 0 && searchTerm) {
+    const noResultsMessage = document.createElement('div');
+    noResultsMessage.className = 'no-results-message';
+    noResultsMessage.innerHTML = `
+      <i class="fas fa-search"></i>
+      <strong>No se encontraron usuarios</strong>
+      <p>No hay usuarios que coincidan con "${searchTerm}"</p>
+      <small>Intenta buscar por matrícula o nombre completo</small>
+    `;
+    personalLista.appendChild(noResultsMessage);
+  }
+}
