@@ -1435,7 +1435,7 @@ const estilosAsistencias = `
   background: rgba(255, 255, 255, 0.95);
   border-radius: 12px;
   padding: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 

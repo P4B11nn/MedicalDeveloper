@@ -220,7 +220,7 @@ function setupSidebarNavigation() {
                 const baseLista = todos;
 
                 console.log('OperationsController: Activando Asistencia - usuarios totales en authModel:', baseLista.length);
-                if (baseLista.length > 0) console.log('OperationsController: Primeros usuarios:', baseLista.slice(0,5));
+                if (baseLista.length > 0) console.log('OperationsController: Lista de usuarios cargada (información sensible oculta por seguridad)');
 
                 // Limpiar contenedor antes de renderizar para evitar solapamientos
                 asistenciaEl.innerHTML = '';

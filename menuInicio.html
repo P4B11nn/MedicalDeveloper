@@ -428,12 +428,31 @@
       padding: 0; /* dejar que sea el botón el que tenga el padding */
       box-shadow: none;
       margin: 4px 8px; /* mantener separación entre items */
+      position: relative;
     }
     .sidebar .menu .menu-item[data-disabled="true"] > button{
       background: transparent;
       color: #374151; /* texto atenuado */
       font-weight: 600;
       pointer-events: none; /* bloquear clicks en el botón */
+      cursor: not-allowed;
+      opacity: 0.7;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+    .sidebar .menu .menu-item[data-disabled="true"]::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10;
+      background: transparent;
+      cursor: not-allowed;
+      pointer-events: auto; /* permitir que este elemento capture los eventos */
     }
     .sidebar .menu .menu-item[data-disabled="true"] .submenu{
       background: white;
@@ -807,8 +826,8 @@
   /* Grid Layouts */
   .admin-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
   }
 
   .practitioner-grid {
@@ -818,38 +837,24 @@
   }
 
   /* Responsive adjustments for admin grid */
-  @media (max-width: 1800px) {
-    .admin-grid {
-      grid-template-columns: repeat(5, 1fr);
-      gap: 12px;
-    }
-  }
-
-  @media (max-width: 1400px) {
-    .admin-grid {
-      grid-template-columns: repeat(4, 1fr);
-      gap: 14px;
-    }
-  }
-
-  @media (max-width: 1100px) {
+  @media (max-width: 1600px) {
     .admin-grid {
       grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-  }
-
-  @media (max-width: 800px) {
-    .admin-grid {
-      grid-template-columns: repeat(2, 1fr);
       gap: 18px;
     }
   }
 
-  @media (max-width: 500px) {
+  @media (max-width: 1200px) {
+    .admin-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+  }
+
+  @media (max-width: 900px) {
     .admin-grid {
       grid-template-columns: 1fr;
-      gap: 16px;
+      gap: 20px;
     }
   }
 
@@ -1023,8 +1028,10 @@
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
     border: 1px solid #e2e8f0;
     border-radius: 6px;
-    padding: 8px;
+    padding: 16px;
     transition: all 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .group-item:hover {
@@ -1036,20 +1043,25 @@
   .group-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    gap: 20px;
   }
 
   .group-name {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
   }
 
   .group-title {
     font-weight: 600;
     font-size: 1.1rem;
     color: #1e293b;
+    line-height: 1.3;
+    word-wrap: break-word;
   }
 
   .member-count {
@@ -1061,40 +1073,49 @@
   .group-assignment {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
+    align-items: flex-start;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
   }
 
   .assigned-module {
     background: linear-gradient(135deg, #3b82f6, #1d4ed8);
     color: white;
-    padding: 6px 12px;
+    padding: 8px 16px;
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 500;
     text-align: center;
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    width: 100%;
+    box-sizing: border-box;
+    word-wrap: break-word;
   }
 
   .group-schedule {
     background: #f1f5f9;
     color: #475569;
-    padding: 4px 10px;
+    padding: 6px 12px;
     border-radius: 15px;
     font-size: 0.8rem;
     font-weight: 600;
     border: 1px solid #cbd5e1;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
   }
 
   .group-members {
     border-top: 1px solid #e2e8f0;
-    padding-top: 12px;
+    padding-top: 16px;
   }
 
   .member-avatars {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .member-avatar {
@@ -1898,7 +1919,7 @@
       </div>
       <div class="menu">
         <div class="menu-item">
-          <button data-category="pacientes" data-disabled="true">👥 <span>Pacientes</span></button>
+          <button data-category="pacientes" data-disabled="true" aria-disabled="true" tabindex="-1" class="disabled-menu-btn">👥 <span>Pacientes</span></button>
           <div class="submenu" aria-hidden="true">
             <a href="pages/categoria-pacientes.html?compact=1#pacientes-registrados-section"><i class="fas fa-user-check"></i> Ver pacientes registrados</a>
             <a href="pages/categoria-pacientes.html?compact=1#registro-paciente-section"><i class="fas fa-user-plus"></i> Registro de paciente</a>
@@ -1907,14 +1928,14 @@
           </div>
         </div>
         <div class="menu-item">
-          <button data-category="usuarios-personal" data-disabled="true">👤 <span>Usuarios y Personal</span></button>
+          <button data-category="usuarios-personal" data-disabled="true" aria-disabled="true" tabindex="-1" class="disabled-menu-btn">👤 <span>Usuarios y Personal</span></button>
           <div class="submenu" aria-hidden="true">
             <a href="pages/categoria-usuarios-personal.html?compact=1#personal-section"><i class="fas fa-user"></i> Personal</a>
             <a href="pages/categoria-usuarios-personal.html?compact=1#nuevo-usuario-section"><i class="fas fa-user-plus"></i> Nuevo usuario</a>
           </div>
         </div>
         <div class="menu-item">
-          <button data-category="operaciones-control" data-disabled="true"><span class="menu-icon">⚙️</span> <span>Operaciones / Control</span></button>
+          <button data-category="operaciones-control" data-disabled="true" aria-disabled="true" tabindex="-1" class="disabled-menu-btn"><span class="menu-icon">⚙️</span> <span>Operaciones / Control</span></button>
           <div class="submenu" aria-hidden="true">
             <a href="pages/categoria-operaciones-control.html?compact=1#registro-entradas-salidas-section"><i class="fas fa-door-open"></i> Registro de Entradas/Salidas</a>
             <a href="pages/categoria-operaciones-control.html?compact=1#asistencia-section"><i class="fas fa-user-check"></i> Asistencia</a>
@@ -1929,7 +1950,7 @@
           </div>
         </div>
         <div class="menu-item">
-          <button data-category="gestion" data-disabled="true" id="btnGestion" aria-disabled="true" tabindex="-1">📚 <i class="fas fa-cogs"></i><span>Gestión Administrativa</span></button>
+          <button data-category="gestion" data-disabled="true" id="btnGestion" aria-disabled="true" tabindex="-1" class="disabled-menu-btn">📚 <i class="fas fa-cogs"></i><span>Gestión Administrativa</span></button>
           <div class="submenu" aria-hidden="true">
             <a href="pages/categoria-gestion.html?compact=1#modulos" id="link-gestion-modulos"><i class="fas fa-hospital"></i> Gestionar Módulos</a>
             <a href="pages/categoria-gestion.html?compact=1#grupos" id="link-gestion-grupos"><i class="fas fa-users"></i> Gestionar Grupos</a>
@@ -2116,18 +2137,21 @@
 
       <div class="practitioner-grid">
         <!-- Módulo Asignado -->
-        <div class="dashboard-card">
+        <div class="dashboard-card" style="min-height: 180px;">
           <div class="card-header">
             <h3><i class="fas fa-clipboard-check"></i> Mi Módulo Asignado</h3>
             <span class="status-indicator active">Activo</span>
           </div>
-          <div class="assignment-details">
+          <div class="assignment-details" style="padding: 20px;">
             <div class="assignment-main">
-              <div class="module-assigned">
-                <span class="module-name">Cargando módulo...</span>
-                <span class="supervisor">Supervisor: Cargando...</span>
+              <div class="module-assigned" style="margin-bottom: 15px;">
+                <span class="module-name" style="font-size: 1.2rem; font-weight: 600; color: #1e40af; display: block; margin-bottom: 10px;">Cargando módulo...</span>
+                <div class="module-info" style="display: flex; flex-direction: column; gap: 5px;">
+                  <span class="module-type" style="font-size: 0.9rem; color: #64748b;">Tipo: Cargando...</span>
+                  <span class="module-status" style="font-size: 0.9rem; color: #64748b;">Estado: Cargando...</span>
+                </div>
               </div>
-              <div class="location-info">
+              <div class="location-info" style="display: flex; align-items: center; gap: 8px; color: #374151;">
                 <i class="fas fa-map-marker-alt"></i>
                 <span>Cargando ubicación...</span>
               </div>
@@ -2522,27 +2546,57 @@
     // en desktop (solo hover debe mostrar el submenu). Esto evita comportamientos
     // accidentales donde un click abría la página de pacientes.
     (function(){
+      // Bloquear completamente los botones deshabilitados en todos los dispositivos
+      document.querySelectorAll('.menu-item[data-disabled="true"]').forEach(item => {
+        // Bloquear todos los tipos de eventos de interacción
+        ['click', 'touchstart', 'touchend', 'mousedown', 'mouseup', 'pointerdown', 'pointerup', 'contextmenu'].forEach(eventType => {
+          item.addEventListener(eventType, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            console.log('Evento bloqueado en botón deshabilitado:', item.querySelector('button').getAttribute('data-category'), '- Evento:', eventType);
+            return false;
+          }, { passive: false, capture: true });
+        });
+      });
+
       const pacientesBtn = document.querySelector('.menu button[data-category="pacientes"]');
       if(pacientesBtn){
+        // Bloquear el click en TODOS los casos: el botón sólo sirve para mostrar el submenu
+        // y no debe navegar ni activar otra página si se hace click.
         pacientesBtn.addEventListener('click', (e)=>{
-          if(window.innerWidth > 768){
-            e.preventDefault();
-            e.stopPropagation();
-            // Asegurar que la clase active no cambie por este click
-            pacientesBtn.classList.remove('active');
-            // No navegamos: el submenu se controla por hover/mouseenter
-          }
+          e.preventDefault();
+          e.stopPropagation();
+          // Nos aseguramos de no cambiar estado "active" por click
+          pacientesBtn.classList.remove('active');
+          // No navegamos: el submenu se controla por hover/mouseenter
+          return false;
         });
       }
-      // Igual para Usuarios y Personal: bloquear el botón en desktop pero permitir submenu
+      // Igual para Usuarios y Personal: bloquear el botón completamente
       const usuariosBtn = document.querySelector('.menu button[data-category="usuarios-personal"]');
       if(usuariosBtn){
+        // Bloquear el click en TODOS los casos: el botón sólo sirve para mostrar el submenu
+        // y no debe navegar ni activar otra página si se hace click.
         usuariosBtn.addEventListener('click', (e)=>{
-          if(window.innerWidth > 768){
-            e.preventDefault();
-            e.stopPropagation();
-            usuariosBtn.classList.remove('active');
-          }
+          e.preventDefault();
+          e.stopPropagation();
+          usuariosBtn.classList.remove('active');
+          // No navegamos: el submenu se controla por hover/mouseenter
+          return false;
+        });
+      }
+      // Igual para Gestión Administrativa: bloquear el botón completamente
+      const gestionBtn = document.querySelector('.menu button[data-category="gestion"]');
+      if(gestionBtn){
+        // Bloquear el click en TODOS los casos: el botón está deshabilitado
+        // y no debe navegar ni activar otra página si se hace click.
+        gestionBtn.addEventListener('click', (e)=>{
+          e.preventDefault();
+          e.stopPropagation();
+          gestionBtn.classList.remove('active');
+          // No navegamos: el botón está deshabilitado
+          return false;
         });
       }
       // Igual para Operaciones / Control: bloquear click en desktop y usar hover/submenu
@@ -2717,13 +2771,10 @@
     // Variable para evitar múltiples inicializaciones
     let dashboardInitialized = false;
     
-    // Función de debugging para verificar localStorage
+    // Función de debugging para verificar localStorage (REMOVIDO POR SEGURIDAD)
     function debugLocalStorage() {
-      console.log('🔍 DEBUG - Contenido de localStorage:');
-      console.log('- usuarioActual:', localStorage.getItem('usuarioActual'));
-      console.log('- currentUser:', localStorage.getItem('currentUser'));
-      console.log('- sessionData:', localStorage.getItem('sessionData'));
-      console.log('- usuarios:', localStorage.getItem('usuarios'));
+      // Código de debug removido por seguridad - no mostrar información sensible en consola
+      console.log('🔍 DEBUG - Verificación de localStorage completada (datos sensibles ocultos)');
     }
     
     async function initializeDashboard() {
@@ -2784,44 +2835,23 @@
           }
         }
 
-        // Fallback: verificar con la clave alternativa
-        const currentUserDataAlt = localStorage.getItem('currentUser');
-        if (currentUserDataAlt) {
-          const user = JSON.parse(currentUserDataAlt);
-          console.log('👤 Usuario desde currentUser (fallback):', user);
-          console.log('🏷️ Rol encontrado (currentUser):', user.rol);
-          console.log('🏷️ Tipo de rol (currentUser):', typeof user.rol);
+        // Fallback: buscar en authModel (Firebase)
+        try {
+          if (window.authModel && typeof window.authModel.getCurrentUser === 'function') {
+            const firebaseUser = window.authModel.getCurrentUser();
+            if (firebaseUser && firebaseUser.rol) {
+              console.log('👤 Usuario desde Firebase authModel:', firebaseUser);
+              console.log('🏷️ Rol encontrado (Firebase):', firebaseUser.rol);
 
-          // Validar que el rol sea válido
-          const validRoles = ['practicante', 'admin', 'administrador', 'administrator', 'supervisor'];
-          if (user.rol && validRoles.includes(user.rol.toLowerCase())) {
-            console.log('✅ Rol válido encontrado en currentUser:', user.rol);
-            return user.rol;
-          } else {
-            console.warn('⚠️ Rol inválido en currentUser:', user.rol, '- usando practicante por defecto');
-            return 'practicante';
-          }
-        }
-
-        // Segundo fallback: verificar si hay datos de sesión
-        const sessionData = localStorage.getItem('sessionData');
-        if (sessionData) {
-          const session = JSON.parse(sessionData);
-          console.log('📝 Usuario desde sessionData:', session);
-          console.log('🏷️ Rol de sesión:', session.userRole || session.rol);
-
-          const role = session.userRole || session.rol;
-          if (role) {
-            // Validar que el rol sea válido
-            const validRoles = ['practicante', 'admin', 'administrador', 'administrator', 'supervisor'];
-            if (validRoles.includes(role.toLowerCase())) {
-              console.log('✅ Rol válido encontrado en sessionData:', role);
-              return role;
-            } else {
-              console.warn('⚠️ Rol inválido en sessionData:', role, '- usando practicante por defecto');
-              return 'practicante';
+              const validRoles = ['practicante', 'admin', 'administrador', 'administrator', 'supervisor'];
+              if (validRoles.includes(firebaseUser.rol.toLowerCase())) {
+                console.log('✅ Rol válido encontrado en Firebase:', firebaseUser.rol);
+                return firebaseUser.rol;
+              }
             }
           }
+        } catch (error) {
+          console.warn('Error obteniendo usuario de Firebase:', error);
         }
 
         console.log('⚠️ No se encontró usuario, usando rol por defecto: practicante');
@@ -2869,11 +2899,17 @@
         adminDashboard.style.display = 'block';
         console.log('🔧 Dashboard de administrador activado para rol:', normalizedRole);
         loadAdminData();
+        
+        // Para administradores: mostrar todos los botones del sidebar
+        showAllSidebarButtons();
       } else {
         // Para cualquier otro rol (practicante, usuario, supervisor, etc.)
         practitionerDashboard.style.display = 'block';
         console.log('👨‍⚕️ Dashboard de practicante activado para rol:', normalizedRole);
         loadPractitionerData();
+        
+        // Para practicantes: ocultar el botón de "Usuarios y Personal"
+        hideUsersButtonForPractitioners();
       }
 
       console.log('=== FIN DASHBOARD ROLE DETECTION ===');
@@ -2887,7 +2923,8 @@
       debugLocalStorage();
       const role = getUserRole();
       console.log('🎯 Rol actual detectado:', role);
-      return { role, localStorage: localStorage };
+      // REMOVIDO POR SEGURIDAD: No devolver localStorage completo
+      return { role, message: 'Información de localStorage oculta por seguridad' };
     };
 
     function loadAdminData() {
@@ -2898,7 +2935,6 @@
         updateWorkGroups();
         updateConsultationActivity();
         updateTeamAssignments();
-        setupAdminDashboardEventListeners();
         console.log('✅ Datos del administrador cargados exitosamente');
       } catch (error) {
         console.error('❌ Error cargando datos del administrador:', error);
@@ -3014,10 +3050,10 @@
           <div style="
             display: flex;
             flex-wrap: wrap;
-            gap: 16px;
+            gap: 12px;
             padding: 10px 0;
           ">
-            ${await Promise.all(modulos.map(async modulo => {
+            ${(await Promise.all(modulos.map(async modulo => {
               // Determinar color del estado
               let statusColor = '#10b981'; // Verde por defecto (activo)
               let statusBgColor = 'rgba(16, 185, 129, 0.1)';
@@ -3057,7 +3093,7 @@
                   border: 1px solid rgba(226, 232, 240, 0.6);
                   overflow: hidden;
                   position: relative;
-                  width: 280px;
+                  width: 240px;
                   flex-shrink: 0;
                 " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 25px rgba(0,0,0,0.1)';" 
                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.05)';">
@@ -3222,7 +3258,7 @@
                   </div>
                 </div>
               `;
-            }))}
+            }))).join('')}
           </div>
         `;
         
@@ -3421,21 +3457,25 @@
       }
     }
 
-    function setupAdminDashboardEventListeners() {
-      console.log('🔧 Configurando event listeners del dashboard de administrador...');
+    function showAllSidebarButtons() {
+      console.log('� Mostrando todos los botones del sidebar para administrador');
+      // Para administradores, todos los botones están visibles por defecto
+      // No necesitamos hacer nada especial aquí
+    }
+    
+    function hideUsersButtonForPractitioners() {
+      console.log('� Ocultando botón de Usuarios y Personal para practicante');
       
-      // Botón "Gestionar" grupos
-      const btnGestionarGrupos = document.getElementById('btn-gestionar-grupos');
-      if (btnGestionarGrupos) {
-        btnGestionarGrupos.addEventListener('click', function() {
-          console.log('🔗 Navegando a gestión de grupos...');
-          
-          // Navegar a la página de gestión administrativa con la sección de grupos
-          window.location.href = 'pages/categoria-gestion.html?compact=1#grupos';
-        });
-        console.log('✅ Event listener del botón "Gestionar grupos" configurado');
+      // Buscar el botón de usuarios y personal
+      const usersButton = document.querySelector('.menu-item button[data-category="usuarios-personal"]');
+      const usersMenuItem = usersButton ? usersButton.closest('.menu-item') : null;
+      
+      if (usersMenuItem) {
+        // Ocultar completamente el elemento del menú
+        usersMenuItem.style.display = 'none';
+        console.log('✅ Botón de Usuarios y Personal ocultado completamente');
       } else {
-        console.warn('⚠️ Botón "Gestionar grupos" no encontrado');
+        console.warn('⚠️ No se encontró el botón de Usuarios y Personal para ocultar');
       }
     }
 
@@ -3491,15 +3531,12 @@
         // Buscar módulo asignado al practicante
         const modulos = await gestionModel.getModulos();
         console.log('🏥 Total de módulos disponibles:', modulos.length);
-        console.log('🏥 Módulos encontrados:', modulos.map(m => ({ id: m.id, nombre: m.nombre, grupoAsignado: m.grupoAsignado, grupoAsignadoId: m.grupoAsignadoId })));
 
         let moduloAsignado = null;
-        let asignacionTipo = 'ninguna';
 
         // 1. Si el usuario tiene un módulo asignado específicamente
         if (currentUser.moduloId) {
           moduloAsignado = modulos.find(m => m.id === currentUser.moduloId);
-          asignacionTipo = moduloAsignado ? 'módulo específico' : 'módulo específico (no encontrado)';
           console.log('🔍 Buscando módulo específico por moduloId:', currentUser.moduloId, '- Encontrado:', !!moduloAsignado);
         }
 
@@ -3509,125 +3546,194 @@
             m.grupoAsignadoId === currentUser.grupoId ||
             (m.practicantes && m.practicantes.includes(currentUser.id))
           );
-          asignacionTipo = moduloAsignado ? 'por grupo' : 'por grupo (no encontrado)';
           console.log('🔍 Buscando módulo por grupoId:', currentUser.grupoId, '- Encontrado:', !!moduloAsignado);
         }
 
-        // 2.1. Si no tiene grupoId pero tiene grupo_trabajo, buscar por grupo_trabajo
+        // 3. Si no tiene grupoId pero tiene grupo_trabajo, buscar por grupo_trabajo
         if (!moduloAsignado && !currentUser.grupoId && currentUser.grupo_trabajo) {
           moduloAsignado = modulos.find(m =>
             m.grupoAsignadoId === currentUser.grupo_trabajo ||
             (m.practicantes && m.practicantes.includes(currentUser.id))
           );
-          asignacionTipo = moduloAsignado ? 'por grupo_trabajo' : 'por grupo_trabajo (no encontrado)';
           console.log('🔍 Buscando módulo por grupo_trabajo:', currentUser.grupo_trabajo, '- Encontrado:', !!moduloAsignado);
         }
 
-        // 3. Si no encuentra ninguno, mostrar "Sin módulo asignado" en lugar de usar uno por defecto
-        if (!moduloAsignado) {
-          asignacionTipo = 'sin asignación';
-          console.log('🔍 No se encontró módulo asignado para el grupo del usuario');
-        }
-
         console.log('📋 Resultado de asignación de módulo:', {
-          asignacionTipo,
           moduloAsignado: moduloAsignado ? {
             id: moduloAsignado.id,
             nombre: moduloAsignado.nombre,
-            nombreTipo: typeof moduloAsignado.nombre,
-            grupoAsignado: moduloAsignado.grupoAsignado,
-            grupoAsignadoId: moduloAsignado.grupoAsignadoId
+            ubicacion: moduloAsignado.lugar || moduloAsignado.ubicacion || moduloAsignado.nombreLugar
           } : null
         });
 
-        // Actualizar la interfaz del módulo
-        const moduleNameElement = document.querySelector('.module-name');
-        const supervisorElement = document.querySelector('.supervisor');
-        const locationElement = document.querySelector('.location-info span');
-        const statusElement = document.querySelector('.assignment-details .status-indicator');
+        // Obtener el contenedor de la card del módulo
+        const moduleCardContainer = document.querySelector('.assignment-details');
 
-        console.log('🎯 Elementos encontrados:', {
-          moduleNameElement: !!moduleNameElement,
-          supervisorElement: !!supervisorElement,
-          locationElement: !!locationElement,
-          statusElement: !!statusElement
-        });
+        if (!moduleCardContainer) {
+          console.error('❌ No se encontró el contenedor .assignment-details');
+          return;
+        }
 
         if (moduloAsignado) {
-          // Asegurar que el nombre del módulo sea una cadena de texto
-          let nombreModulo = '';
-          
-          console.log('🔍 Depurando módulo asignado:', {
-            id: moduloAsignado.id,
-            nombre: moduloAsignado.nombre,
-            tipoNombre: typeof moduloAsignado.nombre,
-            keys: Object.keys(moduloAsignado),
-            moduloAsignadoCompleto: JSON.stringify(moduloAsignado, null, 2)
-          });
-          
-          if (typeof moduloAsignado.nombre === 'string' && moduloAsignado.nombre.trim()) {
-            nombreModulo = moduloAsignado.nombre.trim();
-          } else if (typeof moduloAsignado.nombre === 'object' && moduloAsignado.nombre !== null) {
-            // Si es un objeto, intentar extraer una propiedad de nombre
-            nombreModulo = moduloAsignado.nombre.nombre || 
-                          moduloAsignado.nombre.text || 
-                          moduloAsignado.nombre.value || 
-                          `Módulo ${moduloAsignado.id || 'sin ID'}`;
-          } else {
-            nombreModulo = `Módulo ${moduloAsignado.id || 'sin ID'}`;
+          // Función auxiliar para formatear ubicación
+          function formatearUbicacion(modulo) {
+            if (modulo.nombreLugar) {
+              return modulo.nombreLugar;
+            } else if (modulo.lugar) {
+              return modulo.lugar;
+            } else if (modulo.ubicacion) {
+              return modulo.ubicacion;
+            }
+            return 'Sin ubicación';
           }
 
-          console.log('🏷️ Nombre del módulo a mostrar:', nombreModulo, '(tipo original:', typeof moduloAsignado.nombre, ', valor original:', moduloAsignado.nombre, ')');
-
-          if (moduleNameElement) {
-            moduleNameElement.textContent = nombreModulo;
-            console.log('✅ Nombre del módulo asignado al elemento:', nombreModulo);
+          // Función auxiliar para formatear coordenadas
+          function formatearCoordenadas(modulo) {
+            if (modulo.latitud && modulo.longitud) {
+              return `Lat: ${modulo.latitud}, Lng: ${modulo.longitud}`;
+            }
+            return '';
           }
 
-          if (supervisorElement) {
-            const supervisor = moduloAsignado.supervisor || moduloAsignado.responsable || 'Por asignar';
-            supervisorElement.textContent = `Supervisor: ${supervisor}`;
-          }
+          // Crear HTML de la card del módulo usando el mismo estilo del administrador pero más compacto
+          const moduleHTML = `
+            <div style="
+              background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+              border-radius: 12px;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+              padding: 16px;
+              transition: all 0.3s ease;
+              border: 1px solid rgba(226, 232, 240, 0.6);
+              overflow: hidden;
+              position: relative;
+              width: 100%;
+            ">
 
-          if (locationElement) {
-            const ubicacion = moduloAsignado.lugar || moduloAsignado.ubicacion || moduloAsignado.nombreLugar || 'Ubicación no especificada';
-            locationElement.textContent = ubicacion;
-          }
+              <h3 style="
+                margin-top: 0;
+                margin-bottom: 12px;
+                color: #1e40af;
+                font-size: 1.3rem;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+              ">
+                <i class="fas fa-hospital" style="color: #3b82f6;"></i> ${moduloAsignado.nombre}
+              </h3>
 
-          if (statusElement) {
-            const estado = moduloAsignado.estado || 'desconocido';
-            const estadoTexto = estado === 'activo' ? 'Activo' : estado === 'inactivo' ? 'Inactivo' : 'Estado desconocido';
-            statusElement.textContent = estadoTexto;
-            statusElement.className = `status-indicator ${estado === 'activo' ? 'active' : 'inactive'}`;
-          }
+              <div style="
+                display: flex;
+                align-items: center;
+                margin-bottom: 12px;
+                gap: 6px;
+              ">
+                <i class="fas fa-map-marker-alt" style="color: #64748b; font-size: 0.9rem;"></i>
+                <div style="
+                  color: #334155;
+                  font-weight: 500;
+                  font-size: 0.95rem;
+                ">
+                  ${formatearUbicacion(moduloAsignado)}
+                </div>
+              </div>
 
-          console.log('✅ Módulo asignado correctamente:', nombreModulo);
+              <div style="
+                background: rgba(96, 165, 250, 0.08);
+                border-radius: 8px;
+                padding: 12px;
+              ">
+                <h4 style="
+                  margin-top: 0;
+                  margin-bottom: 8px;
+                  color: #334155;
+                  font-size: 1rem;
+                  border-bottom: 1px solid rgba(203, 213, 225, 0.5);
+                  padding-bottom: 6px;
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                ">
+                  <i class="fas fa-users" style="color: #3b82f6; font-size: 0.9rem;"></i> Información del Módulo
+                </h4>
+
+                <div style="font-size: 0.9rem;">
+                  <div style="
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 6px;
+                  ">
+                    <div style="
+                      width: 20px;
+                      color: #60a5fa;
+                      font-size: 0.8rem;
+                    "><i class="fas fa-info-circle"></i></div>
+                    <div style="
+                      color: #334155;
+                      font-weight: 500;
+                    ">Módulo asignado a tu grupo</div>
+                  </div>
+
+                  <div style="
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 6px;
+                  ">
+                    <div style="
+                      width: 20px;
+                      color: #60a5fa;
+                      font-size: 0.8rem;
+                    "><i class="fas fa-clock"></i></div>
+                    <div style="
+                      color: #334155;
+                    ">Horario: <strong>${getCurrentShiftTime()}</strong></div>
+                  </div>
+
+                  <div style="
+                    display: flex;
+                    align-items: center;
+                  ">
+                    <div style="
+                      width: 20px;
+                      color: #60a5fa;
+                      font-size: 0.8rem;
+                    "><i class="fas fa-check-circle"></i></div>
+                    <div style="
+                      color: #334155;
+                    ">Estado: <strong style="color: #10b981;">Activo</strong></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          moduleCardContainer.innerHTML = moduleHTML;
+          console.log('✅ Módulo asignado correctamente con estilo de administrador');
+
         } else {
-          // Sin módulo asignado
+          // Sin módulo asignado - mostrar mensaje
           console.log('⚠️ No se encontró módulo asignado para el usuario');
 
-          if (moduleNameElement) {
-            moduleNameElement.textContent = 'Sin módulo asignado';
-          }
-          if (supervisorElement) {
-            supervisorElement.textContent = 'Supervisor: Por asignar';
-          }
-          if (locationElement) {
-            locationElement.textContent = 'Ubicación por confirmar';
-          }
-          if (statusElement) {
-            statusElement.textContent = 'Sin asignar';
-            statusElement.className = 'status-indicator inactive';
-          }
+          moduleCardContainer.innerHTML = `
+            <div style="text-align: center; padding: 30px; color: #6b7280;">
+              <i class="fas fa-hospital" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+              <p style="margin: 0; font-size: 1rem;">No tienes un módulo asignado</p>
+              <p style="margin: 8px 0 0 0; font-size: 0.85rem; opacity: 0.7;">Contacta a tu supervisor para ser asignado a un módulo</p>
+            </div>
+          `;
         }
 
       } catch (error) {
         console.error('❌ Error actualizando módulo asignado:', error);
 
         // En caso de error, mostrar mensaje de error
-        const moduleNameElement = document.querySelector('.module-name');
-        if (moduleNameElement) {
-          moduleNameElement.textContent = 'Error cargando módulo';
+        const moduleCardContainer = document.querySelector('.assignment-details');
+        if (moduleCardContainer) {
+          moduleCardContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #ef4444;">
+              <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+              Error cargando información del módulo
+            </div>
+          `;
         }
       }
     }

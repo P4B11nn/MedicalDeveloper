@@ -622,7 +622,8 @@ async function handleDatosMedicosSubmit(event) {
       frecuenciaRespiratoria: frecuenciaRespiratoria || null,
       examenVista: examenVista || null,
       examenOido: examenOido || null,
-      usuarioMedico: usuarioActual.nombre,
+      usuarioId: usuarioActual.id,
+      usuarioNombre: usuarioActual.nombre,
       fechaRegistroMedico: new Date().toISOString()
     };
     
@@ -1512,7 +1513,7 @@ function llenarModalVerPaciente(paciente) {
   document.getElementById('modalFechaRegistro').textContent = new Date(paciente.fechaRegistro).toLocaleString('es-ES');
   
   if (paciente.datosMedicos && paciente.status === 'completo') {
-    document.getElementById('modalUsuarioMedico').textContent = paciente.datosMedicos.usuarioMedico || 'Sistema';
+    document.getElementById('modalUsuarioMedico').textContent = paciente.datosMedicos.usuarioNombre || paciente.datosMedicos.usuarioMedico || 'Sistema';
     document.getElementById('modalUltimaActualizacion').textContent = new Date(paciente.datosMedicos.fechaRegistroMedico).toLocaleString('es-ES');
   } else {
     document.getElementById('modalUsuarioMedico').textContent = 'Sin datos médicos';
@@ -1563,19 +1564,42 @@ async function eliminarPaciente(pacienteId) {
     const historialCount = historial.filter(h => h.pacienteId === pacienteId).length;
     
     // Confirmación personalizada antes de eliminar
-    const mensaje = `¿Estás seguro de que deseas eliminar al paciente?
+    const mensaje = `
+      <div class="delete-info-section">
+        <div class="delete-info-grid">
+          <div class="delete-info-item">
+            <label>Nombre:</label>
+            <span>${paciente.nombre} ${paciente.apellidos || ''}</span>
+          </div>
+          <div class="delete-info-item">
+            <label>Matrícula:</label>
+            <span>${paciente.matricula}</span>
+          </div>
+          <div class="delete-info-item">
+            <label>Estado:</label>
+            <span class="${tieneDatosMedicos ? 'status-complete' : 'status-incomplete'}">${tieneDatosMedicos ? 'Datos médicos completos' : 'Sin datos médicos'}</span>
+          </div>
+          <div class="delete-info-item">
+            <label>Registros de historial:</label>
+            <span>${historialCount}</span>
+          </div>
+        </div>
+      </div>
 
-� Datos del paciente:
-• Nombre: ${paciente.nombre} ${paciente.apellidos || ''}
-• Matrícula: ${paciente.matricula}
-• Estado: ${tieneDatosMedicos ? 'Datos médicos completos' : 'Sin datos médicos'}
-• Registros de historial: ${historialCount}
+      <div class="delete-warning">
+        <h5><i class="fas fa-exclamation-triangle"></i> ADVERTENCIA</h5>
+        <p>Esta acción NO se puede deshacer.</p>
+      </div>
 
-⚠️ ADVERTENCIA: Esta acción NO se puede deshacer.
-Se eliminará:
-✗ Información personal del paciente  
-${tieneDatosMedicos ? '✗ Datos médicos completos' : ''}
-${historialCount > 0 ? `✗ ${historialCount} registro(s) de historial médico` : ''}`;
+      <div class="delete-affected-items">
+        <strong>Se eliminará:</strong>
+        <ul>
+          <li><i class="fas fa-user-times"></i> Información personal del paciente</li>
+          ${tieneDatosMedicos ? '<li><i class="fas fa-heartbeat"></i> Datos médicos completos</li>' : ''}
+          ${historialCount > 0 ? `<li><i class="fas fa-file-medical"></i> ${historialCount} registro(s) de historial médico</li>` : ''}
+        </ul>
+      </div>
+    `;
 
     mostrarConfirmacion('🗑️ Eliminar Paciente', mensaje, () => {
       eliminarPacienteConfirmado(pacienteId, paciente, tieneDatosMedicos, historialCount);
@@ -1715,17 +1739,17 @@ function mostrarConfirmacion(titulo, mensaje, callback, tipo = 'warning') {
 
   // Configurar contenido
   titleEl.textContent = titulo;
-  messageEl.textContent = mensaje;
-  
+  messageEl.innerHTML = mensaje; // Cambiar a innerHTML para permitir HTML estructurado
+
   // Configurar estilo según tipo
   const iconos = {
     warning: '⚠️',
     danger: '🗑️',
     info: 'ℹ️'
   };
-  
+
   iconEl.textContent = iconos[tipo] || '⚠️';
-  
+
   if (tipo === 'danger') {
     header.classList.add('danger');
     acceptBtn.className = 'btn-danger';
@@ -1758,31 +1782,48 @@ function mostrarConfirmacion(titulo, mensaje, callback, tipo = 'warning') {
 }
 
 function obtenerUsuarioActual() {
-  // Obtener usuario real del localStorage (sesión activa)
-  let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  
-  // Si currentUser está vacío, intentar con usuarioActual
-  if (!currentUser.nombre && !currentUser.name) {
-    currentUser = JSON.parse(localStorage.getItem('usuarioActual') || '{}');
-  }
-  
-  // Si aún no hay datos, intentar con userSession
-  if (!currentUser.nombre && !currentUser.name) {
-    const userSession = JSON.parse(localStorage.getItem('userSession') || '{}');
-    if (userSession.user) {
-      currentUser = userSession.user;
+  // Obtener usuario del authModel (sistema Firebase)
+  try {
+    // Intentar importar authModel dinámicamente si no está disponible globalmente
+    if (window.authModel && typeof window.authModel.getCurrentUser === 'function') {
+      const currentUser = window.authModel.getCurrentUser();
+      if (currentUser) {
+        return {
+          id: currentUser.uid || currentUser.id || 'unknown',
+          nombre: currentUser.nombre || currentUser.name || 'Usuario Anónimo',
+          rol: currentUser.rol || currentUser.role || 'sin-rol'
+        };
+      }
     }
+  } catch (error) {
+    console.warn('Error obteniendo usuario del authModel:', error);
   }
-  
-  // Devolver el usuario con nombre normalizado
-  return {
-    id: currentUser.id || currentUser.usuario || 'unknown',
-    nombre: currentUser.nombre || currentUser.name || currentUser.usuario || 'Usuario Anónimo',
-    rol: currentUser.rol || currentUser.role || 'sin-rol'
-  };
-}
 
-// Funciones para manejar modales
+  // Fallback: buscar en sessionStorage (donde guarda authModel)
+  try {
+    const sessionUser = sessionStorage.getItem('currentUser');
+    if (sessionUser) {
+      const currentUser = JSON.parse(sessionUser);
+      if (currentUser) {
+        return {
+          id: currentUser.uid || currentUser.id || 'unknown',
+          nombre: currentUser.nombre || currentUser.name || 'Usuario Anónimo',
+          rol: currentUser.rol || currentUser.role || 'sin-rol'
+        };
+      }
+    }
+  } catch (error) {
+    console.warn('Error obteniendo usuario de sessionStorage:', error);
+  }
+
+  // Si no se encuentra usuario, devolver usuario anónimo
+  console.warn('No se pudo obtener información del usuario actual');
+  return {
+    id: 'unknown',
+    nombre: 'Usuario Anónimo',
+    rol: 'sin-rol'
+  };
+}// Funciones para manejar modales
 function mostrarModalVerPaciente() {
   document.getElementById('modalVerPaciente').style.display = 'flex';
 }
@@ -1921,7 +1962,8 @@ async function handleEditarPacienteSubmit(event) {
     frecuenciaRespiratoria: formData.get('frecuenciaRespiratoria') || null,
     examenVista: formData.get('examenVista') || null,
     examenOido: formData.get('examenOido') || null,
-    usuarioMedico: usuarioActual.nombre,
+    usuarioId: usuarioActual.id,
+    usuarioNombre: usuarioActual.nombre,
     fechaRegistroMedico: new Date().toISOString()
   };
   
@@ -1957,46 +1999,75 @@ async function handleEditarPacienteSubmit(event) {
 }
 
 async function eliminarRegistroHistorial(registroId, pacienteId, isActualizacion, nombrePaciente) {
-  // Mostrar confirmación antes de eliminar
-  const confirmacion = confirm(
-    `⚠️ ¿Está seguro de que desea eliminar este registro médico?\n\n` +
-    `👤 Paciente: ${nombrePaciente}\n` +
-    `📋 Tipo: ${isActualizacion ? 'Actualización' : 'Registro Inicial'}\n\n` +
-    `⚠️ ADVERTENCIA: Esta acción no se puede deshacer.`
+  const tipoRegistro = isActualizacion ? 'actualización' : 'registro inicial';
+
+  // Crear mensaje estructurado para el modal de confirmación
+  const mensaje = `
+    <div class="delete-info-section">
+      <div class="delete-info-grid">
+        <div class="delete-info-item">
+          <label>Paciente:</label>
+          <span>${nombrePaciente}</span>
+        </div>
+        <div class="delete-info-item">
+          <label>Tipo de registro:</label>
+          <span>${tipoRegistro}</span>
+        </div>
+        <div class="delete-info-item">
+          <label>ID del registro:</label>
+          <span style="font-family: monospace; font-size: 0.8em;">${registroId}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="delete-warning">
+      <h5><i class="fas fa-exclamation-triangle"></i> ADVERTENCIA</h5>
+      <p>Esta acción eliminará permanentemente este registro médico del historial.</p>
+    </div>
+
+    <div class="delete-affected-items">
+      <strong>Se eliminará:</strong>
+      <ul>
+        <li><i class="fas fa-file-medical"></i> Registro médico ${tipoRegistro}</li>
+        <li><i class="fas fa-history"></i> Entrada del historial clínico</li>
+      </ul>
+    </div>
+  `;
+
+  // Mostrar confirmación personalizada
+  mostrarConfirmacion(
+    '🗑️ Eliminar Registro Médico',
+    mensaje,
+    async () => {
+      try {
+        // Eliminar registro de la colección registros_medicos
+        const eliminacionExitosa = await pacienteModel.deleteRegistroMedico(registroId);
+
+        if (eliminacionExitosa) {
+          const usuarioActual = obtenerUsuarioActual();
+
+          // Mostrar mensaje de éxito
+          mostrarMensaje('success', '✅ Registro Eliminado',
+            `El ${tipoRegistro} de ${nombrePaciente} ha sido eliminado exitosamente.\n\nEliminado por: ${usuarioActual.nombre}`, 4000);
+
+          // Actualizar vistas
+          await renderHistorialCompleto();
+          await renderPacientesList();
+          await renderDatosMedicosForm();
+
+        } else {
+          mostrarMensaje('error', '❌ Error al Eliminar', 'No se pudo eliminar el registro. Intenta nuevamente.');
+        }
+
+      } catch (error) {
+        console.error('Error al eliminar registro del historial:', error);
+        mostrarMensaje('error', '❌ Error del Sistema', 'Error interno al eliminar el registro. Contacta al administrador.');
+      }
+    },
+    'danger'
   );
-
-  if (!confirmacion) {
-    return; // Usuario canceló
-  }
-
-  try {
-    // Eliminar registro de la colección registros_medicos
-    const eliminacionExitosa = await pacienteModel.deleteRegistroMedico(registroId);
-
-    if (eliminacionExitosa) {
-      const usuarioActual = obtenerUsuarioActual();
-      const tipoRegistro = isActualizacion ? 'actualización' : 'registro inicial';
-
-      // Mostrar mensaje de éxito
-      mostrarMensaje('success', '✅ Registro Eliminado',
-        `El ${tipoRegistro} de ${nombrePaciente} ha sido eliminado exitosamente.\n\nEliminado por: ${usuarioActual.nombre}`, 4000);
-
-      // Actualizar vistas
-      await renderHistorialCompleto();
-      await renderPacientesList();
-      await renderDatosMedicosForm();
-
-    } else {
-      mostrarMensaje('error', '❌ Error al Eliminar', 'No se pudo eliminar el registro. Intenta nuevamente.');
-    }
-
-  } catch (error) {
-    console.error('Error al eliminar registro del historial:', error);
-    mostrarMensaje('error', '❌ Error del Sistema', 'Error interno al eliminar el registro. Contacta al administrador.');
-  }
 }
 
-// Función para abrir el modal de edición desde el modal de ver paciente
 async function abrirModalEditarPaciente() {
   const pacienteId = window.currentPacienteId;
   if (!pacienteId) {

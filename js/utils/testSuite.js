@@ -208,12 +208,31 @@ class TestSuite {
 
         // Authentication tests
         this.test('Auth - Current user exists', () => {
-            const currentUser = JSON.parse(localStorage.getItem('usuarioActual'));
-            if (!currentUser) {
-                throw new Error('No current user found');
+            // Usar el nuevo sistema de autenticación Firebase
+            let currentUser = null;
+
+            // Intentar obtener del authModel
+            if (window.authModel && typeof window.authModel.getCurrentUser === 'function') {
+                currentUser = window.authModel.getCurrentUser();
             }
-            if (!currentUser.rol) {
-                throw new Error('User has no role');
+
+            // Fallback a sessionStorage
+            if (!currentUser) {
+                try {
+                    const sessionUser = sessionStorage.getItem('currentUser');
+                    if (sessionUser) {
+                        currentUser = JSON.parse(sessionUser);
+                    }
+                } catch (error) {
+                    // Ignorar errores de parsing
+                }
+            }
+
+            if (!currentUser) {
+                throw new Error('No current user found in Firebase auth or sessionStorage');
+            }
+            if (!currentUser.rol && !currentUser.role) {
+                throw new Error('User has no role defined');
             }
         }, { category: 'auth' });
 

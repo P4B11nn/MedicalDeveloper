@@ -462,13 +462,13 @@ export const pacienteModel = {
             temperatura_corporal: datosAnteriores.temperatura || ''
           },
           fecha: new Date(datosMedicos.fechaRegistroMedico),
-          paciente: `${paciente.nombre} ${paciente.apellidos || ''}`,
+          paciente: `${paciente.nombre} ${paciente.apellidos || ''}`.trim(),
           pacienteId: pacienteId,
           pacienteMatricula: paciente.matricula,
-          pacienteNombre: `${paciente.nombre} ${paciente.apellidos || ''}`,
-          practicante: datosMedicos.usuarioMedico,
-          registradoPor: datosMedicos.usuarioMedico, // Usar el mismo por ahora
-          registradoPorNombre: datosMedicos.usuarioMedico,
+          pacienteNombre: `${paciente.nombre} ${paciente.apellidos || ''}`.trim(),
+          practicante: datosMedicos.usuarioNombre,
+          registradoPor: datosMedicos.usuarioId,
+          registradoPorNombre: datosMedicos.usuarioNombre,
           timestamp: new Date(datosMedicos.fechaRegistroMedico),
           tipoRegistro: 'actualizacion',
           totalCamposModificados: camposModificados.length
@@ -476,9 +476,13 @@ export const pacienteModel = {
 
         await addDoc(registrosMedicosCollection, registroMedico);
 
-        // Actualizar datos médicos actuales
+        // Actualizar datos médicos actuales - asegurar que siempre se actualice el usuario
         updateData.datosMedicos = {
-          ...datosMedicos
+          ...datosAnteriores, // Mantener datos anteriores
+          ...datosMedicos,    // Sobrescribir con nuevos datos
+          usuarioId: datosMedicos.usuarioId,
+          usuarioNombre: datosMedicos.usuarioNombre,
+          fechaRegistroMedico: datosMedicos.fechaRegistroMedico
         };
 
       } else {
@@ -504,13 +508,13 @@ export const pacienteModel = {
             temperatura_corporal: ''
           },
           fecha: new Date(datosMedicos.fechaRegistroMedico),
-          paciente: `${paciente.nombre} ${paciente.apellidos || ''}`,
+          paciente: `${paciente.nombre} ${paciente.apellidos || ''}`.trim(),
           pacienteId: pacienteId,
           pacienteMatricula: paciente.matricula,
-          pacienteNombre: `${paciente.nombre} ${paciente.apellidos || ''}`,
-          practicante: datosMedicos.usuarioMedico,
-          registradoPor: datosMedicos.usuarioMedico,
-          registradoPorNombre: datosMedicos.usuarioMedico,
+          pacienteNombre: `${paciente.nombre} ${paciente.apellidos || ''}`.trim(),
+          practicante: datosMedicos.usuarioNombre,
+          registradoPor: datosMedicos.usuarioId,
+          registradoPorNombre: datosMedicos.usuarioNombre,
           timestamp: new Date(datosMedicos.fechaRegistroMedico),
           tipoRegistro: 'registro_inicial',
           totalCamposModificados: 0
@@ -520,11 +524,14 @@ export const pacienteModel = {
 
         // Si es el primer registro, simplemente actualizar los datos médicos
         updateData.datosMedicos = {
-          ...datosMedicos
+          ...datosMedicos,
+          usuarioId: datosMedicos.usuarioId,
+          usuarioNombre: datosMedicos.usuarioNombre,
+          fechaRegistroMedico: datosMedicos.fechaRegistroMedico
         };
 
         updateData.fechaRegistroInicial = datosMedicos.fechaRegistroMedico;
-        updateData.usuarioRegistroInicial = datosMedicos.usuarioMedico;
+        updateData.usuarioRegistroInicial = datosMedicos.usuarioNombre;
       }
 
       // Cambiar status a 'completo' cuando se registren los datos médicos
@@ -622,4 +629,13 @@ export const pacienteModel = {
       return false;
     }
   },
+
+  // Función auxiliar para ordenar pacientes por nombre
+  _sortByName(pacientes) {
+    return pacientes.sort((a, b) => {
+      const nombreA = `${a.nombre} ${a.apellidos || ''}`.toLowerCase().trim();
+      const nombreB = `${b.nombre} ${b.apellidos || ''}`.toLowerCase().trim();
+      return nombreA.localeCompare(nombreB);
+    });
+  }
 };
