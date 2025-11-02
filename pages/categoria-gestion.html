@@ -659,7 +659,7 @@
     function initIndividualHeader() {
       const userIcon = document.getElementById('userIcon');
       const userDropdown = document.getElementById('userDropdown');
-      const logoutOption = document.getElementById('logoutBtn');
+      // logoutOption eliminado - se maneja en userDisplayGlobal.js
       
       // Obtener información del usuario (intentar múltiples fuentes)
       let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
@@ -715,23 +715,8 @@
         }
       });
       
-      // Manejar logout
-      logoutOption.addEventListener('click', (e) => {
-        e.preventDefault();
-        
-        if (typeof window.showLogoutConfirmationModal === 'function') {
-          window.showLogoutConfirmationModal();
-        } else {
-          // Fallback básico
-          if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-            // Limpiar sessionStorage (Firebase maneja la sesión)
-            sessionStorage.removeItem('currentUser');
-            window.location.href = '../index.html';
-          }
-        }
-        
-        userDropdown.style.display = 'none';
-      });
+      // NOTA: El logout se maneja en userDisplayGlobal.js, no es necesario configurarlo aquí
+      // El event listener para logoutBtn ya está configurado en userDisplayGlobal.js
     }
 
     // Hacer disponible globalmente

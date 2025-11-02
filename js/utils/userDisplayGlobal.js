@@ -219,10 +219,16 @@ function setupLogoutHandler() {
         e.preventDefault();
         e.stopPropagation();
         
-        console.log('UserDisplayGlobal: Click en botón de cerrar sesión');
+        console.log('UserDisplayGlobal: Click en botón de cerrar sesión - USANDO NUEVA FUNCIÓN');
         
-        // Show elegant logout confirmation modal
-        showLogoutConfirmation();
+        // Cerrar dropdown de usuario si está abierto
+        const userDropdown = document.getElementById('userDropdown');
+        if (userDropdown) {
+            userDropdown.style.display = 'none';
+        }
+        
+        // Show new logout confirmation modal (sin duplicados)
+        showLogoutConfirmationModal();
     });
     
     console.log('UserDisplayGlobal: Handler de logout configurado');
@@ -502,7 +508,7 @@ function showLogoutConfirmation() {
     }
 
     if (confirmButton) {
-        confirmButton.addEventListener('click', (e) => {
+        confirmButton.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
             console.log('UserDisplayGlobal: Usuario confirmó cerrar sesión');
@@ -511,6 +517,51 @@ function showLogoutConfirmation() {
             confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Cerrando...';
             confirmButton.disabled = true;
             
+            try {
+                // Registrar actividad de logout usando ActivityLogger (importar dinámicamente)
+                const { default: ActivityLogger } = await import('./activityLogger.js');
+                
+                // Usar el mismo método que la nueva función
+                let currentUser = null;
+                try {
+                    const userString = sessionStorage.getItem('currentUser');
+                    currentUser = userString ? JSON.parse(userString) : null;
+                } catch (e) {
+                    console.warn('Error leyendo sessionStorage:', e);
+                }
+                
+                if (!currentUser || (!currentUser.uid && !currentUser.id)) {
+                    try {
+                        const userString = localStorage.getItem('currentUser');
+                        currentUser = userString ? JSON.parse(userString) : null;
+                    } catch (e) {
+                        console.warn('Error leyendo localStorage:', e);
+                    }
+                }
+                
+                const userId = currentUser?.uid || currentUser?.id || currentUser?.userId;
+                const userName = currentUser?.nombre || currentUser?.name || currentUser?.displayName || 'Usuario';
+                
+                if (userId) {
+                    await ActivityLogger.log({
+                        accion: 'logout',
+                        descripcion: `Usuario ${userName} cerró sesión`,
+                        modulo: 'autenticacion'
+                    });
+                    console.log('✅ Actividad de logout registrada correctamente');
+                }
+                
+                // Usar logoutSilent para evitar registro duplicado
+                if (typeof authModel !== 'undefined' && authModel.logoutSilent) {
+                    await authModel.logoutSilent();
+                } else if (typeof authModel !== 'undefined' && authModel.logout) {
+                    await authModel.logout(); // Fallback
+                }
+                
+            } catch (error) {
+                console.error('Error durante logout:', error);
+            }
+            
             setTimeout(() => {
                 // Emit logout event
                 if (typeof eventBus !== 'undefined' && eventBus.emit) {
@@ -518,11 +569,6 @@ function showLogoutConfirmation() {
                         source: 'logout_button',
                         timestamp: new Date().toISOString()
                     });
-                }
-                
-                // Clear session
-                if (typeof authModel !== 'undefined' && authModel.logout) {
-                    authModel.logout();
                 }
                 
                 // Redirect to login
@@ -584,6 +630,254 @@ window.UserDisplayGlobal = {
     getRoleDisplayName, // Exportar función de nombres de rol
     isConfigured: false
 };
+
+/**
+ * Show logout confirmation modal with proper activity logging
+ * Esta función evita registros duplicados usando ActivityLogger directamente
+ */
+async function showLogoutConfirmationModal() {
+    console.log('🔍 showLogoutConfirmationModal() llamada - SIN REGISTRO DUPLICADO');
+    
+    // Check if modal already exists
+    const existingModal = document.querySelector('[id*="logout-confirmation-modal"]');
+    if (existingModal) {
+        console.warn('Modal de logout ya existe, no creando duplicado');
+        return;
+    }
+
+    console.log('Creando nuevo modal de logout con ActivityLogger');
+
+    // Create modal (same structure as showLogoutConfirmation)
+    const modal = document.createElement('div');
+    modal.id = 'logout-confirmation-modal-new';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(8px);
+        z-index: 15000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.3s ease;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(125, 211, 252, 0.3);
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(125, 211, 252, 0.2);
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s ease;
+        ">
+            <div style="
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #f87171, #fca5a5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 24px;
+                font-size: 32px;
+                color: white;
+                box-shadow: 0 8px 20px rgba(248, 113, 113, 0.3);
+            ">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            
+            <h3 style="
+                color: #1f2937;
+                font-size: 1.8rem;
+                font-weight: 700;
+                margin: 0 0 12px 0;
+                letter-spacing: -0.5px;
+            ">¿Cerrar Sesión?</h3>
+            
+            <p style="
+                color: #6b7280;
+                font-size: 1rem;
+                margin: 0 0 32px 0;
+                line-height: 1.6;
+            ">¿Estás seguro de que deseas cerrar tu sesión actual? Deberás volver a iniciar sesión para acceder.</p>
+            
+            <div style="
+                display: flex;
+                gap: 16px;
+                justify-content: center;
+            ">
+                <button id="cancelar-logout-new" style="
+                    background: rgba(107, 114, 128, 0.1);
+                    color: #374151;
+                    border: 2px solid rgba(107, 114, 128, 0.2);
+                    padding: 14px 24px;
+                    border-radius: 15px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    font-size: 1rem;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i class="fas fa-times" style="margin-right: 8px;"></i>
+                    Cancelar
+                </button>
+                <button id="confirmar-logout-new" style="
+                    background: linear-gradient(135deg, #f87171, #ef4444);
+                    color: white;
+                    border: none;
+                    padding: 14px 24px;
+                    border-radius: 15px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+                    transition: all 0.3s ease;
+                    font-size: 1rem;
+                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    <i class="fas fa-sign-out-alt" style="margin-right: 8px;"></i>
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // Event handlers
+    const cancelButton = modal.querySelector('#cancelar-logout-new');
+    const confirmButton = modal.querySelector('#confirmar-logout-new');
+    
+    if (cancelButton) {
+        cancelButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('🚫 Usuario canceló cerrar sesión');
+            modal.style.animation = 'fadeIn 0.3s ease reverse';
+            setTimeout(() => {
+                if (modal.parentNode) {
+                    modal.remove();
+                }
+            }, 300);
+        });
+    }
+
+    if (confirmButton) {
+        confirmButton.addEventListener('click', async (e) => {
+            e.preventDefault();
+            console.log('✅ Usuario confirmó cerrar sesión - REGISTRO CON ACTIVITYLOGGER');
+            
+            // Show loading state
+            confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Cerrando...';
+            confirmButton.disabled = true;
+            
+            try {
+                // Registrar actividad SOLO con ActivityLogger (importar dinámicamente)
+                const { default: ActivityLogger } = await import('./activityLogger.js');
+                
+                // Verificar en ambos storages y obtener el usuario como lo hace authModel
+                let currentUser = null;
+                
+                // Intentar sessionStorage primero (como authModel.getCurrentUser)
+                try {
+                    const userString = sessionStorage.getItem('currentUser');
+                    currentUser = userString ? JSON.parse(userString) : null;
+                    console.log('🔍 Usuario desde sessionStorage:', currentUser);
+                } catch (e) {
+                    console.warn('Error leyendo sessionStorage:', e);
+                }
+                
+                // Si no está en sessionStorage, intentar localStorage
+                if (!currentUser || (!currentUser.uid && !currentUser.id)) {
+                    try {
+                        const userString = localStorage.getItem('currentUser');
+                        currentUser = userString ? JSON.parse(userString) : null;
+                        console.log('🔍 Usuario desde localStorage:', currentUser);
+                    } catch (e) {
+                        console.warn('Error leyendo localStorage:', e);
+                    }
+                }
+                
+                // Verificar diferentes propiedades posibles para el ID
+                const userId = currentUser?.uid || currentUser?.id || currentUser?.userId;
+                const userName = currentUser?.nombre || currentUser?.name || currentUser?.displayName || 'Usuario';
+                
+                console.log('🔍 userId:', userId, 'userName:', userName);
+                console.log('🔍 Objeto currentUser completo:', JSON.stringify(currentUser, null, 2));
+                
+                if (userId) {
+                    await ActivityLogger.log({
+                        accion: 'logout',
+                        descripcion: `Usuario ${userName} cerró sesión`,
+                        modulo: 'autenticacion'
+                    });
+                    console.log('✅ Actividad de logout registrada ÚNICAMENTE con ActivityLogger');
+                } else {
+                    console.error('❌ No se encontró ID de usuario válido para registrar logout');
+                    // Intentar usar authModel.getCurrentUser() como backup
+                    if (typeof authModel !== 'undefined') {
+                        const authUser = authModel.getCurrentUser();
+                        console.log('🔍 Intentando con authModel.getCurrentUser():', authUser);
+                        if (authUser && (authUser.uid || authUser.id)) {
+                            await ActivityLogger.log({
+                                accion: 'logout',
+                                descripcion: `Usuario ${authUser.nombre || authUser.name || 'Usuario'} cerró sesión`,
+                                modulo: 'autenticacion'
+                            });
+                            console.log('✅ Actividad de logout registrada con authModel.getCurrentUser()');
+                        }
+                    }
+                }
+                
+                // Usar logoutSilent para evitar registro duplicado en storageModel
+                if (typeof authModel !== 'undefined' && authModel.logoutSilent) {
+                    await authModel.logoutSilent();
+                    console.log('✅ logoutSilent ejecutado (sin registro duplicado)');
+                } else if (typeof authModel !== 'undefined' && authModel.logout) {
+                    await authModel.logout(); // Fallback
+                    console.warn('⚠️ Usando logout normal (posible duplicado)');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error durante logout:', error);
+            }
+            
+            setTimeout(() => {
+                // Redirect to login
+                const currentPath = window.location.pathname;
+                const isInPagesFolder = currentPath.includes('/pages/');
+                const loginPath = isInPagesFolder ? '../index.html' : 'index.html';
+                
+                console.log('🔄 Redirigiendo a login:', loginPath);
+                if (modal.parentNode) {
+                    modal.remove();
+                }
+                window.location.href = loginPath;
+            }, 1000);
+        });
+    }
+
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            e.preventDefault();
+            console.log('🚫 Usuario canceló cerrar sesión (click fuera)');
+            modal.style.animation = 'fadeIn 0.3s ease reverse';
+            setTimeout(() => {
+                if (modal.parentNode) {
+                    modal.remove();
+                }
+            }, 300);
+        }
+    });
+}
+
+// Make new function available globally
+window.showLogoutConfirmationModal = showLogoutConfirmationModal;
 
 // Auto-initialize when script loads (only if not manually initialized)
 document.addEventListener('DOMContentLoaded', () => {

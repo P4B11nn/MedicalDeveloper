@@ -31,8 +31,8 @@ export function initGlobalController() {
   // Configurar menú de usuario (displayUserInfo se maneja ahora en userDisplayGlobal.js)
   setupUserDropdown();
   
-  // Configurar botón de cerrar sesión
-  setupLogoutButton();
+  // Configurar botón de cerrar sesión - DESHABILITADO: ahora se maneja en userDisplayGlobal.js
+  // setupLogoutButton();
   
   // Configurar navegación con botón de regreso
   setupBackButton();
@@ -260,14 +260,17 @@ function setupLogoutButton() {
  * Delega el modal de logout a UserDisplayGlobal
  */
 function showLogoutConfirmModal() {
-  console.log('GlobalController: Delegando logout a UserDisplayGlobal');
+  console.log('GlobalController: Delegando logout a nueva función SIN DUPLICADOS');
   
-  // Verificar si UserDisplayGlobal tiene la función
-  if (window.UserDisplayGlobal && typeof window.UserDisplayGlobal.showLogoutConfirmation === 'function') {
-    console.log('GlobalController: Llamando a UserDisplayGlobal.showLogoutConfirmation');
+  // Verificar si tenemos la nueva función sin duplicados
+  if (typeof window.showLogoutConfirmationModal === 'function') {
+    console.log('GlobalController: Llamando a showLogoutConfirmationModal (SIN DUPLICADOS)');
+    window.showLogoutConfirmationModal();
+  } else if (window.UserDisplayGlobal && typeof window.UserDisplayGlobal.showLogoutConfirmation === 'function') {
+    console.log('GlobalController: Fallback a UserDisplayGlobal.showLogoutConfirmation');
     window.UserDisplayGlobal.showLogoutConfirmation();
   } else if (typeof showLogoutConfirmation === 'function') {
-    console.log('GlobalController: Llamando a función global showLogoutConfirmation');
+    console.log('GlobalController: Fallback a función global showLogoutConfirmation');
     showLogoutConfirmation();
   } else {
     console.warn('GlobalController: No se encontró función de logout, usando fallback básico');

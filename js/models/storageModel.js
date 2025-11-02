@@ -172,6 +172,24 @@ export const authModel = {
     },
 
     /**
+     * Cierra la sesión del usuario SIN registrar actividad (para evitar duplicados)
+     */
+    async logoutSilent() {
+        try {
+            // Cerrar sesión en Firebase Auth
+            await signOut(auth);
+
+            // Limpiar sessionStorage
+            sessionStorage.removeItem(CURRENT_USER_KEY);
+
+            console.log('Logout silencioso exitoso');
+        } catch (error) {
+            console.error('Error en logout silencioso:', error);
+            throw error;
+        }
+    },
+
+    /**
      * Obtiene el usuario actual desde sessionStorage
      * @returns {Object|null} Usuario actual o null
      */
