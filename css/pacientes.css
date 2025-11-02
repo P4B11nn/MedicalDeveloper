@@ -282,6 +282,11 @@ header {
 .btn-primary:hover { background: linear-gradient(135deg, #38bdf8, #fbbf24); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(125,211,252,0.3); }
 .btn-secondary { background: #f3f4f6; color: #6b7280; padding: 12px 30px; border: 1px solid #d1d5db; border-radius: 25px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
 .btn-secondary:hover { background: #e5e7eb; transform: translateY(-2px); }
+.btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; padding: 12px 30px; border: none; border-radius: 25px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.btn-danger:hover { background: linear-gradient(135deg, #dc2626, #b91c1c); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239,68,68,0.3); }
+.btn-danger:disabled { background: #9ca3af; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-info { background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; padding: 12px 30px; border: none; border-radius: 25px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.btn-info:hover { background: linear-gradient(135deg, #0891b2, #0e7490); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(6,182,212,0.3); }
 
 .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
 .section-header h2 { font-size:1.5rem; font-weight:600; background: linear-gradient(135deg, #06b6d4, #0891b2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }

@@ -309,6 +309,19 @@ function validateDatosMedicosForm(formData) {
     }
   }
 
+  // Glucosa
+  const glucosaStr = formData.get('glucosa')?.trim();
+  if (glucosaStr) {
+    const glucosa = parseInt(glucosaStr);
+    if (isNaN(glucosa)) {
+      errors.push('El nivel de glucosa debe ser un número válido');
+    } else if (glucosa < 50 || glucosa > 400) {
+      errors.push(`Glucosa: ${glucosa} mg/dL está fuera del rango válido (50-400 mg/dL)`);
+    } else if (glucosa < 70 || glucosa > 100) {
+      warnings.push(`Glucosa: ${glucosa} mg/dL fuera del rango normal en ayunas (70-100 mg/dL)`);
+    }
+  }
+
   return { isValid: errors.length === 0, errors, warnings };
 }
 
@@ -595,10 +608,12 @@ async function handleDatosMedicosSubmit(event) {
     const peso = formData.get('peso')?.trim();
     const talla = formData.get('talla')?.trim();
     const frecuenciaRespiratoria = formData.get('frecuenciaRespiratoria')?.trim();
+    const glucosa = formData.get('glucosa')?.trim();
     const examenVista = formData.get('examenVista')?.trim();
     const examenOido = formData.get('examenOido')?.trim();
+    const observacionesGenerales = formData.get('observacionesGenerales')?.trim();
     
-    const hayDatos = temperatura || presion || peso || talla || frecuenciaRespiratoria || examenVista || examenOido;
+    const hayDatos = temperatura || presion || peso || talla || frecuenciaRespiratoria || glucosa || examenVista || examenOido || observacionesGenerales;
     
     if (!hayDatos) {
       mostrarMensaje('warning', '⚠️ Datos Requeridos', 'Por favor ingresa al menos un dato médico antes de guardar (temperatura, presión, peso, etc.).');
@@ -632,8 +647,10 @@ async function handleDatosMedicosSubmit(event) {
       peso: peso || null,
       talla: talla || null,
       frecuenciaRespiratoria: frecuenciaRespiratoria || null,
+      glucosa: glucosa || null,
       examenVista: examenVista || null,
       examenOido: examenOido || null,
+      observacionesGenerales: observacionesGenerales || null,
       usuarioId: usuarioActual.id,
       usuarioNombre: usuarioActual.nombre,
       fechaRegistroMedico: new Date().toISOString()
@@ -1373,8 +1390,10 @@ function llenarModalHistorialMedico(paciente, datosActuales, datosAnteriores, ca
     }
 
     document.getElementById('modalHistorialFrecuencia').textContent = datosActuales.frecuencia_respiratoria ? `${datosActuales.frecuencia_respiratoria} rpm` : '-';
+    document.getElementById('modalHistorialGlucosa').textContent = datosActuales.glucosa ? `${datosActuales.glucosa} mg/dL` : '-';
     document.getElementById('modalHistorialExamenVista').textContent = datosActuales.examen_vista || 'No registrado';
     document.getElementById('modalHistorialExamenOido').textContent = datosActuales.examen_oido || 'No registrado';
+    document.getElementById('modalHistorialObservacionesGenerales').textContent = datosActuales.observaciones_generales || 'No registrado';
 
     // Información del registro - usar fecha y usuario correctos
     const fecha = fechaRegistro?.toDate ? fechaRegistro.toDate() : new Date(fechaRegistro);
@@ -1526,10 +1545,12 @@ function llenarModalVerPaciente(paciente) {
     }
     
     document.getElementById('modalFrecuencia').textContent = datosMedicos.frecuenciaRespiratoria ? `${datosMedicos.frecuenciaRespiratoria} rpm` : '-';
+    document.getElementById('modalGlucosa').textContent = datosMedicos.glucosa ? `${datosMedicos.glucosa} mg/dL` : '-';
     
     // Exámenes
     document.getElementById('modalExamenVista').textContent = datosMedicos.examenVista || 'No registrado';
     document.getElementById('modalExamenOido').textContent = datosMedicos.examenOido || 'No registrado';
+    document.getElementById('modalObservacionesGenerales').textContent = datosMedicos.observacionesGenerales || 'No registrado';
     
     // Mostrar secciones médicas
     document.getElementById('datosMedicosSection').style.display = 'block';
@@ -1937,8 +1958,10 @@ function llenarFormularioEdicion(paciente) {
     document.getElementById('editPeso').value = dm.peso || '';
     document.getElementById('editTalla').value = dm.talla || '';
     document.getElementById('editFrecuenciaRespiratoria').value = dm.frecuenciaRespiratoria || '';
+    document.getElementById('editGlucosa').value = dm.glucosa || '';
     document.getElementById('editExamenVista').value = dm.examenVista || '';
     document.getElementById('editExamenOido').value = dm.examenOido || '';
+    document.getElementById('editObservacionesGenerales').value = dm.observacionesGenerales || '';
   }
 }
 
@@ -2004,8 +2027,10 @@ async function handleEditarPacienteSubmit(event) {
     peso: formData.get('peso') || null,
     talla: formData.get('talla') || null,
     frecuenciaRespiratoria: formData.get('frecuenciaRespiratoria') || null,
+    glucosa: formData.get('glucosa') || null,
     examenVista: formData.get('examenVista') || null,
     examenOido: formData.get('examenOido') || null,
+    observacionesGenerales: formData.get('observacionesGenerales') || null,
     usuarioId: usuarioActual.id,
     usuarioNombre: usuarioActual.nombre,
     fechaRegistroMedico: new Date().toISOString()

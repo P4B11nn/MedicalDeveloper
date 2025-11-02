@@ -423,8 +423,10 @@ export const pacienteModel = {
           'frecuencia_respiratoria': 'frecuenciaRespiratoria',
           'presion_arterial': 'presion',
           'talla': 'talla',
+          'glucosa': 'glucosa',
           'examen_vista': 'examenVista',
-          'examen_oido': 'examenOido'
+          'examen_oido': 'examenOido',
+          'observaciones_generales': 'observacionesGenerales'
         };
 
         Object.entries(camposComparar).forEach(([campoFirebase, campoActual]) => {
@@ -450,7 +452,9 @@ export const pacienteModel = {
             peso: datosMedicos.peso || '',
             presion_arterial: datosMedicos.presion || '',
             talla: datosMedicos.talla || '',
-            temperatura_corporal: datosMedicos.temperatura || ''
+            temperatura_corporal: datosMedicos.temperatura || '',
+            glucosa: datosMedicos.glucosa || '',
+            observaciones_generales: datosMedicos.observacionesGenerales || ''
           },
           datosMedicosAnteriores: {
             examen_oido: datosAnteriores.examenOido || '',
@@ -459,7 +463,9 @@ export const pacienteModel = {
             peso: datosAnteriores.peso || '',
             presion_arterial: datosAnteriores.presion || '',
             talla: datosAnteriores.talla || '',
-            temperatura_corporal: datosAnteriores.temperatura || ''
+            temperatura_corporal: datosAnteriores.temperatura || '',
+            glucosa: datosAnteriores.glucosa || '',
+            observaciones_generales: datosAnteriores.observacionesGenerales || ''
           },
           fecha: new Date(datosMedicos.fechaRegistroMedico),
           paciente: `${paciente.nombre} ${paciente.apellidos || ''}`.trim(),
@@ -496,7 +502,9 @@ export const pacienteModel = {
             peso: datosMedicos.peso || '',
             presion_arterial: datosMedicos.presion || '',
             talla: datosMedicos.talla || '',
-            temperatura_corporal: datosMedicos.temperatura || ''
+            temperatura_corporal: datosMedicos.temperatura || '',
+            glucosa: datosMedicos.glucosa || '',
+            observaciones_generales: datosMedicos.observacionesGenerales || ''
           },
           datosMedicosAnteriores: {
             examen_oido: '',
@@ -505,7 +513,9 @@ export const pacienteModel = {
             peso: '',
             presion_arterial: '',
             talla: '',
-            temperatura_corporal: ''
+            temperatura_corporal: '',
+            glucosa: '',
+            observaciones_generales: ''
           },
           fecha: new Date(datosMedicos.fechaRegistroMedico),
           paciente: `${paciente.nombre} ${paciente.apellidos || ''}`.trim(),

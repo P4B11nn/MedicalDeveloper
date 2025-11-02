@@ -368,18 +368,333 @@
         }
 
         /* Estilos de la página */
-        .container {
+        .main-container {
             margin: calc(var(--header-h) + 20px) 20px 20px 20px;
-            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            min-height: calc(100vh - var(--header-h) - 40px);
+        }
+
+        .info-panel {
             background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: fit-content;
+        }
+
+        .info-panel h2 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .info-panel h2 i {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 32px;
+        }
+
+        .description {
+            color: #64748b;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .map-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
             border-radius: 12px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.15);
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0891b2;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .map-legend {
+            background: linear-gradient(135deg, #fef3c7, #fbbf24);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .legend-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #92400e;
+        }
+
+        .legend-indicator {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+        }
+
+        .legend-indicator i {
+            font-size: 14px;
+            z-index: 2;
+        }
+
+        .status-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 3px solid;
+            z-index: 1;
+        }
+
+        .status-border.active {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .status-border.inactive {
+            border-color: #f97316;
+            background: rgba(249, 115, 22, 0.1);
+        }
+
+        .status-border.maintenance {
+            border-color: #eab308;
+            background: rgba(234, 179, 8, 0.1);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid #92400e;
+        }
+
+        .legend-color.modulo { background: #ef4444; }
+        .legend-color.edificio { background: #3b82f6; }
+        .legend-color.servicio { background: #10b981; }
+
+        .map-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+        }
+
+        .map-header {
+            background: linear-gradient(135deg, #7dd3fc, #0ea5e9);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .map-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 90px;
+            right: 15px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .map-control-btn {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            color: #374151;
+            font-size: 16px;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .map-control-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
 
         #map {
-            height: 500px;
+            height: 550px;
             width: 100%;
-            border-radius: 8px;
+            border: none;
+        }
+
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 16px;
+            color: #374151;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #06b6d4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilos personalizados para los marcadores del mapa */
+        .custom-popup {
+            font-family: 'Arial', sans-serif;
+        }
+
+        .custom-popup h4 {
+            margin: 0 0 10px 0;
+            color: #1e293b;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .custom-popup p {
+            margin: 5px 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .custom-popup .popup-coords {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+            }
+            
+            .info-panel {
+                padding: 20px;
+            }
+            
+            .map-stats {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-number {
+                font-size: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                margin: calc(var(--header-h) + 10px) 10px 10px 10px;
+                gap: 15px;
+            }
+            
+            .map-stats {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            #map {
+                height: 400px;
+            }
+            
+            .info-panel h2 {
+                font-size: 24px;
+            }
         }
 
         .back-button {
@@ -447,10 +762,100 @@
     </header>
 
     <!-- Contenido principal -->
-    <div class="container">
-        <h2>Mapa de Módulos Médicos</h2>
-        <p>Visualiza la ubicación de los módulos en la universidad.</p>
-        <div id="map"></div>
+    <div class="main-container">
+        <!-- Panel de información -->
+        <div class="info-panel">
+            <h2>
+                <i class="fas fa-map-marked-alt"></i>
+                Mapa de Módulos
+            </h2>
+            
+            <p class="description">
+                Explora la ubicación de todos los módulos médicos en el campus universitario. 
+                Visualiza edificios, servicios y áreas importantes de manera interactiva.
+            </p>
+            
+            <div class="map-stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalModulos">--</div>
+                    <div class="stat-label">Total Módulos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="modulosActivos">--</div>
+                    <div class="stat-label">Activos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="modulosInactivos">--</div>
+                    <div class="stat-label">Inactivos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="modulosMantenimiento">--</div>
+                    <div class="stat-label">Mantenimiento</div>
+                </div>
+            </div>
+            
+            <div class="map-legend">
+                <div class="legend-title">
+                    <i class="fas fa-info-circle"></i>
+                    Estados de los Módulos
+                </div>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <span class="legend-indicator">
+                            <i class="fas fa-hospital-user" style="color: #ef4444;"></i>
+                            <span class="status-border active"></span>
+                        </span>
+                        <span>Módulo Activo</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-indicator">
+                            <i class="fas fa-hospital-user" style="color: #ef4444;"></i>
+                            <span class="status-border inactive"></span>
+                        </span>
+                        <span>Módulo Inactivo</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-indicator">
+                            <i class="fas fa-hospital-user" style="color: #ef4444;"></i>
+                            <span class="status-border maintenance"></span>
+                        </span>
+                        <span>En Mantenimiento</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenedor del mapa -->
+        <div class="map-container">
+            <div class="map-header">
+                <h3>
+                    <i class="fas fa-hospital"></i>
+                    Campus Universitario - Módulos Médicos
+                </h3>
+            </div>
+            
+            <div class="map-controls">
+                <button class="map-control-btn" id="zoomInBtn" title="Acercar">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button class="map-control-btn" id="zoomOutBtn" title="Alejar">
+                    <i class="fas fa-minus"></i>
+                </button>
+                <button class="map-control-btn" id="centerMapBtn" title="Centrar mapa">
+                    <i class="fas fa-crosshairs"></i>
+                </button>
+                <button class="map-control-btn" id="fullscreenBtn" title="Pantalla completa">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+            
+            <div class="loading-indicator" id="mapLoader">
+                <div class="spinner"></div>
+                <span>Cargando mapa...</span>
+            </div>
+            
+            <div id="map"></div>
+        </div>
     </div>
 
     <!-- Scripts -->

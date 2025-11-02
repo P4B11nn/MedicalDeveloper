@@ -125,12 +125,8 @@ export const authModel = {
             // Guardar en sessionStorage para acceso rápido
             sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(usuario));
 
-            // Registrar actividad de login
-            await this.registrarActividad({
-                accion: 'login',
-                descripcion: `Usuario ${userData.nombre} inició sesión`,
-                userId: firebaseUser.uid
-            });
+            // Nota: El registro de login se maneja en authController.js con ActivityLogger.loginActivity()
+            // para evitar duplicados y mantener consistencia
 
             return usuario;
         } catch (error) {

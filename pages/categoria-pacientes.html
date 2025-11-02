@@ -652,6 +652,7 @@
     .medical-value.height { color: #06b6d4; }
     .medical-value.imc { color: #3b82f6; }
     .medical-value.frequency { color: #10b981; }
+    .medical-value.glucose { color: #9333ea; }
 
     /* Exámenes */
     .exam-item {
@@ -1608,6 +1609,10 @@
                     <label>Frecuencia Respiratoria:</label>
                     <span id="modalFrecuencia" class="medical-value frequency">-</span>
                   </div>
+                  <div class="medical-item">
+                    <label>Glucosa:</label>
+                    <span id="modalGlucosa" class="medical-value glucose">-</span>
+                  </div>
                 </div>
               </div>
 
@@ -1621,6 +1626,10 @@
                 <div class="exam-item">
                   <label>Examen de Oído:</label>
                   <div id="modalExamenOido" class="exam-result">-</div>
+                </div>
+                <div class="exam-item">
+                  <label>Observaciones Generales:</label>
+                  <div id="modalObservacionesGenerales" class="exam-result">-</div>
                 </div>
               </div>
 
@@ -1758,6 +1767,11 @@
                       <input type="number" id="editFrecuenciaRespiratoria" name="frecuenciaRespiratoria" min="10" max="40">
                       <small class="form-text text-muted">Respiraciones por minuto - Rango normal: 12-20 rpm</small>
                     </div>
+                    <div class="form-group col-md-6">
+                      <label for="editGlucosa">Glucosa (mg/dL):</label>
+                      <input type="number" id="editGlucosa" name="glucosa" min="50" max="400">
+                      <small class="form-text text-muted">Rango normal en ayunas: 70-100 mg/dL</small>
+                    </div>
                   </div>
                   <div class="form-row">
                     <div class="form-group col-md-6">
@@ -1768,6 +1782,11 @@
                       <label for="editExamenOido">Examen de Oído:</label>
                       <textarea id="editExamenOido" name="examenOido" rows="3" placeholder="Observaciones del examen auditivo"></textarea>
                     </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="editObservacionesGenerales">Observaciones Generales:</label>
+                    <textarea id="editObservacionesGenerales" name="observacionesGenerales" rows="4" placeholder="Observaciones adicionales, síntomas, notas especiales..."></textarea>
+                    <small class="form-text text-muted">Campo opcional para registrar información adicional relevante</small>
                   </div>
                 </div>
               </div>
@@ -1849,6 +1868,10 @@
                     <label>Frecuencia Respiratoria:</label>
                     <span id="modalHistorialFrecuencia" class="medical-value frequency">-</span>
                   </div>
+                  <div class="medical-item">
+                    <label>Glucosa:</label>
+                    <span id="modalHistorialGlucosa" class="medical-value glucose">-</span>
+                  </div>
                 </div>
               </div>
 
@@ -1862,6 +1885,10 @@
                 <div class="exam-item">
                   <label>Examen de Oído:</label>
                   <div id="modalHistorialExamenOido" class="exam-result">-</div>
+                </div>
+                <div class="exam-item">
+                  <label>Observaciones Generales:</label>
+                  <div id="modalHistorialObservacionesGenerales" class="exam-result">-</div>
                 </div>
               </div>
 
@@ -2003,14 +2030,27 @@
                   <small class="form-text text-muted">Respiraciones por minuto - Rango normal: 12-20 rpm</small>
                 </div>
                 <div class="form-group col-md-6">
+                  <label for="glucosa">Glucosa (mg/dL):</label>
+                  <input type="number" id="glucosa" name="glucosa" placeholder="Ej: 90" min="50" max="400">
+                  <small class="form-text text-muted">Rango normal en ayunas: 70-100 mg/dL</small>
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group col-md-6">
                   <label for="examenVista">Examen de Vista (opcional):</label>
                   <textarea id="examenVista" name="examenVista" placeholder="Observaciones del examen visual" rows="3"></textarea>
+                </div>
+                <div class="form-group col-md-6">
+                  <label for="examenOido">Examen de Oído (opcional):</label>
+                  <textarea id="examenOido" name="examenOido" placeholder="Observaciones del examen auditivo" rows="3"></textarea>
                 </div>
               </div>
               
               <div class="form-group">
-                <label for="examenOido">Examen de Oído (opcional):</label>
-                <textarea id="examenOido" name="examenOido" placeholder="Observaciones del examen auditivo" rows="3"></textarea>
+                <label for="observacionesGenerales">Observaciones Generales:</label>
+                <textarea id="observacionesGenerales" name="observacionesGenerales" placeholder="Observaciones adicionales, síntomas, notas especiales..." rows="4"></textarea>
+                <small class="form-text text-muted">Campo opcional para registrar información adicional relevante</small>
               </div>
               
               <div class="form-actions">
