@@ -138,40 +138,38 @@ export async function renderEstadisticas(estadisticasPrevia = null, options = {}
     </div>
   `;
   
-  // Estadísticas de actividad
+  // Estadísticas de actividad con Chart.js
   html += `
     <div class="estadisticas-seccion">
-      <h3>Actividad Reciente</h3>
+      <h3>Actividad Reciente del Sistema</h3>
       <div class="stats-graph">
         <div class="graph-header">
-          <span>Acciones por día (últimos 7 días)</span>
+          <span>Registros médicos creados por día (últimos 7 días)</span>
         </div>
-        <div class="graph-body">
-          ${generarGraficoActividad(estadisticas.actividades.porDia)}
+        <div class="graph-body" style="height: 300px; position: relative;">
+          <canvas id="activity-chart" style="max-height: 280px;"></canvas>
         </div>
       </div>
     </div>
   `;
   
-  // Estadísticas de tipo de pacientes
-  if (estadisticas.pacientes.porGenero) {
-    html += `
-      <div class="estadisticas-seccion">
-        <h3>Distribución de Pacientes por Género</h3>
-        <div class="stats-pie-charts">
-          ${generarGraficoPie(estadisticas.pacientes.porGenero)}
-        </div>
+  // Estadísticas de distribución por facultad con Chart.js
+  html += `
+    <div class="estadisticas-seccion">
+      <h3>Distribución de Pacientes por Facultad</h3>
+      <div class="stats-pie-charts" style="height: 350px; position: relative;">
+        <canvas id="faculty-chart" style="max-height: 330px;"></canvas>
       </div>
-    `;
-  }
+    </div>
+  `;
   
-  // Estadísticas de citas por estado
+  // Estadísticas de citas por estado con Chart.js
   if (estadisticas.pacientes.citasPorEstado) {
     html += `
       <div class="estadisticas-seccion">
         <h3>Citas por Estado</h3>
-        <div class="stats-pie-charts">
-          ${generarGraficoPie(estadisticas.pacientes.citasPorEstado)}
+        <div class="stats-pie-charts" style="height: 350px; position: relative;">
+          <canvas id="appointments-chart" style="max-height: 330px;"></canvas>
         </div>
       </div>
     `;
@@ -216,6 +214,14 @@ export async function renderEstadisticas(estadisticasPrevia = null, options = {}
   } catch (e) {
     console.warn('No se pudieron generar las gráficas globales:', e);
   }
+
+  // Generar gráficas mejoradas con Chart.js
+  await generarGraficasEstadisticasConChartJS(estadisticas);
+  try {
+    await generarGraficasEstadisticasConChartJS(estadisticas);
+  } catch (e) {
+    console.warn('No se pudieron generar las gráficas de estadísticas con Chart.js:', e);
+  }
 }
 
 // Renderiza la sección de actividades
@@ -230,56 +236,152 @@ export async function renderActividades() {
   // Obtener usuarios para el filtro
   const usuarios = await authModel.getAllUsers();
   
+  // Obtener estadísticas recientes de actividades
+  let activityStats = {};
+  try {
+    const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+    activityStats = await ActivityLogger.getActivityStats({ limit: 100 });
+  } catch (error) {
+    console.warn('No se pudieron cargar estadísticas de actividades:', error);
+  }
+  
   let html = `
     <div class="section-header">
-      <h2>Registro de Actividades</h2>
+      <h2>📋 Registro de Actividades del Sistema</h2>
+      <!-- Estadísticas visuales mejoradas -->
+      <div class="activity-stats-grid">
+        <div class="activity-stat-card total">
+          <div class="activity-stat-icon">
+            <i class="fas fa-clipboard-list"></i>
+          </div>
+          <div class="activity-stat-content">
+            <div class="activity-stat-number">${activityStats.total || 0}</div>
+            <div class="activity-stat-label">Total de Actividades</div>
+          </div>
+        </div>
+        
+        <div class="activity-stat-card users">
+          <div class="activity-stat-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="activity-stat-content">
+            <div class="activity-stat-number">${activityStats.usuarios?.length || 0}</div>
+            <div class="activity-stat-label">Usuarios Activos</div>
+          </div>
+        </div>
+        
+        <div class="activity-stat-card modules">
+          <div class="activity-stat-icon">
+            <i class="fas fa-th-large"></i>
+          </div>
+          <div class="activity-stat-content">
+            <div class="activity-stat-number">${Object.keys(activityStats.porModulo || {}).length}</div>
+            <div class="activity-stat-label">Módulos Utilizados</div>
+          </div>
+        </div>
+        
+        <div class="activity-stat-card actions">
+          <div class="activity-stat-icon">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <div class="activity-stat-content">
+            <div class="activity-stat-number">${Object.keys(activityStats.porAccion || {}).length}</div>
+            <div class="activity-stat-label">Tipos de Acciones</div>
+          </div>
+        </div>
+      </div>
     </div>
     
     <div class="filtros-container">
-      <h3>Filtros</h3>
+      <h3>🔍 Filtros de Búsqueda</h3>
       <form id="formFiltroActividades" class="form-filtros">
         <div class="form-row">
           <div class="form-group col-md-6">
-            <label for="fechaInicio">Desde:</label>
+            <label for="fechaInicio">📅 Desde:</label>
             <input type="date" id="fechaInicio" name="fechaInicio">
           </div>
           <div class="form-group col-md-6">
-            <label for="fechaFin">Hasta:</label>
+            <label for="fechaFin">📅 Hasta:</label>
             <input type="date" id="fechaFin" name="fechaFin">
           </div>
         </div>
         
         <div class="form-row">
           <div class="form-group col-md-6">
-            <label for="usuario">Usuario:</label>
+            <label for="usuario">👤 Usuario:</label>
             <select id="usuario" name="usuario">
               <option value="">Todos los usuarios</option>
-              ${usuarios.map(u => `<option value="${u.usuario}">${u.nombre} (${u.usuario})</option>`).join('')}
+              ${usuarios.map(u => `<option value="${u.nombre}">${u.nombre} (${u.matricula || u.usuario})</option>`).join('')}
             </select>
           </div>
           <div class="form-group col-md-6">
-            <label for="accion">Acción:</label>
+            <label for="accion">⚡ Acción:</label>
             <select id="accion" name="accion">
               <option value="">Todas las acciones</option>
-              <option value="login">Inicio de sesión</option>
-              <option value="logout">Cierre de sesión</option>
-              <option value="create">Creación de registros</option>
-              <option value="update">Actualización de registros</option>
-              <option value="delete">Eliminación de registros</option>
+              <option value="login">🔑 Inicio de sesión</option>
+              <option value="logout">🚪 Cierre de sesión</option>
+              <option value="create">➕ Creación de registros</option>
+              <option value="update">✏️ Actualización de registros</option>
+              <option value="delete">🗑️ Eliminación de registros</option>
+              <option value="consulta">👁️ Consulta/Visualización</option>
+              <option value="exportar">📤 Exportación de datos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label for="modulo">🏥 Módulo:</label>
+            <select id="modulo" name="modulo">
+              <option value="">Todos los módulos</option>
+              <option value="autenticacion">🔐 Autenticación</option>
+              <option value="pacientes">👥 Pacientes</option>
+              <option value="usuarios">👤 Usuarios</option>
+              <option value="reportes">📊 Reportes</option>
+              <option value="operaciones">⚕️ Operaciones</option>
+            </select>
+          </div>
+          <div class="form-group col-md-6">
+            <label for="limite">📊 Límite de resultados:</label>
+            <select id="limite" name="limite">
+              <option value="50">50 más recientes</option>
+              <option value="100" selected>100 más recientes</option>
+              <option value="200">200 más recientes</option>
+              <option value="500">500 más recientes</option>
             </select>
           </div>
         </div>
         
         <div class="form-actions">
-          <button type="submit" class="btn-primary">Filtrar</button>
-          <button type="reset" class="btn-secondary">Limpiar filtros</button>
+          <button type="submit" class="btn-primary">
+            🔍 Filtrar Actividades
+          </button>
+          <button type="reset" class="btn-secondary">
+            🧹 Limpiar filtros
+          </button>
+          <button type="button" id="btnRefreshActivities" class="btn-info">
+            🔄 Actualizar
+          </button>
+          <button type="button" id="btnManageRecords" class="btn-warning" style="background: #f59e0b; margin-left: 20px;">
+            �️ Gestionar Registros
+          </button>
         </div>
       </form>
     </div>
     
     <div class="resultados-container" id="resultadosActividades">
       <div class="alert-info">
-        Selecciona los filtros y haz clic en "Filtrar" para ver el registro de actividades.
+        <i class="fas fa-info-circle"></i>
+        Selecciona los filtros y haz clic en "Filtrar Actividades" para ver el registro detallado.
+        <br><br>
+        <strong>💡 Tipos de actividades monitoreadas:</strong>
+        <ul style="margin-top: 10px; text-align: left;">
+          <li>🔑 Inicios y cierres de sesión</li>
+          <li>👥 Gestión de pacientes (crear, editar, eliminar)</li>
+          <li>⚕️ Registros médicos (crear, actualizar)</li>
+          <li>👤 Gestión de usuarios del sistema</li>
+          <li>📊 Generación y exportación de reportes</li>
+        </ul>
       </div>
     </div>
   `;
@@ -300,14 +402,18 @@ export async function renderActividades() {
     formFiltroActividades.addEventListener('submit', (event) => {
       event.preventDefault();
       
-      const fechaInicio = document.getElementById('fechaInicio').value;
-      const fechaFin = document.getElementById('fechaFin').value;
-      const usuario = document.getElementById('usuario').value;
-      const accion = document.getElementById('accion').value;
+      const filtros = {
+        fechaInicio: document.getElementById('fechaInicio').value,
+        fechaFin: document.getElementById('fechaFin').value,
+        usuario: document.getElementById('usuario').value,
+        accion: document.getElementById('accion').value,
+        modulo: document.getElementById('modulo').value,
+        limite: document.getElementById('limite').value
+      };
       
       // Importar el controlador dinámicamente para evitar dependencias circulares
       import('../controllers/reporteController.js').then(module => {
-        module.filtrarActividades({ fechaInicio, fechaFin, usuario, accion });
+        module.filtrarActividades(filtros);
       });
     });
     
@@ -318,6 +424,22 @@ export async function renderActividades() {
         document.getElementById('fechaInicio').value = inicioMes.toISOString().split('T')[0];
         document.getElementById('fechaFin').value = hoy.toISOString().split('T')[0];
       }, 10);
+    });
+  }
+
+  // Configurar botón de actualizar actividades
+  const btnRefreshActivities = document.getElementById('btnRefreshActivities');
+  if (btnRefreshActivities) {
+    btnRefreshActivities.addEventListener('click', () => {
+      location.reload();
+    });
+  }
+
+  // Configurar botón de gestionar registros
+  const btnManageRecords = document.getElementById('btnManageRecords');
+  if (btnManageRecords) {
+    btnManageRecords.addEventListener('click', () => {
+      renderActivityManagement();
     });
   }
 }
@@ -890,6 +1012,122 @@ export function insertarEstilosGraficos() {
       box-shadow: 0 6px 20px rgba(125, 211, 252, 0.3);
     }
 
+    /* Estilos para botón temporal de limpieza */
+    .btn-warning {
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-warning:hover {
+      background: linear-gradient(135deg, #d97706, #ea580c);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+    }
+
+    .btn-warning:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Estilos para tarjetas de estadísticas de actividades */
+    .activity-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+      padding: 20px 0;
+    }
+
+    .activity-stat-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+      border: 1px solid rgba(14, 165, 233, 0.15);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .activity-stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #0ea5e9, #06b6d4, #10b981);
+    }
+
+    .activity-stat-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 48px rgba(14, 165, 233, 0.15);
+      border-color: rgba(14, 165, 233, 0.3);
+    }
+
+    .activity-stat-icon {
+      font-size: 2.5rem;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(6, 182, 212, 0.1));
+      color: #0ea5e9;
+      transition: all 0.3s ease;
+    }
+
+    .activity-stat-card:hover .activity-stat-icon {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(6, 182, 212, 0.2));
+      transform: scale(1.1);
+    }
+
+    .activity-stat-content {
+      flex-grow: 1;
+    }
+
+    .activity-stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .activity-stat-label {
+      font-size: 1rem;
+      color: #64748b;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .activity-stat-trend {
+      margin-top: 8px;
+      font-size: 0.875rem;
+      color: #10b981;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
     /* Estilos responsivos */
     @media (max-width: 768px) {
       .stats-cards {
@@ -910,6 +1148,26 @@ export function insertarEstilosGraficos() {
       
       .exportacion-container {
         grid-template-columns: 1fr;
+      }
+
+      .activity-stats-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 16px 0;
+      }
+
+      .activity-stat-card {
+        padding: 20px;
+      }
+
+      .activity-stat-value {
+        font-size: 2rem;
+      }
+
+      .activity-stat-icon {
+        font-size: 2rem;
+        width: 60px;
+        height: 60px;
       }
     }
   `;
@@ -1021,23 +1279,33 @@ export async function generarGraficasPorPaciente(containerId = 'contenedorEstadi
   const contenedor = document.getElementById(containerId);
   if (!contenedor) return;
 
-  // Intentar cargar Chart.js pero no detener la generación si falla (usaremos un renderer local de fallback)
-  try { await loadChartJS(); } catch (err) { console.warn('Chart.js no disponible, se usará renderer local de fallback si es necesario.', err); }
+  // Intentar cargar Chart.js pero no detener la generación si falla
+  try { 
+    await loadChartJS(); 
+  } catch (err) { 
+    console.warn('Chart.js no disponible, se usará renderer local de fallback si es necesario.', err); 
+  }
 
-  const pacientes = await pacienteModel.getPacientes();
-  if (!pacientes || pacientes.length === 0) {
-    contenedor.innerHTML = '<div class="alert-info">No hay pacientes para generar gráficas.</div>';
+  // Obtener todos los pacientes con su evolución médica desde Firebase
+  const pacientesConEvolucion = await reporteModel.getTodosPacientesConEvolucion();
+  
+  if (!pacientesConEvolucion || pacientesConEvolucion.length === 0) {
+    contenedor.innerHTML = '<div class="alert-info">No hay pacientes con registros médicos para generar gráficas.</div>';
     return;
   }
 
   // Reusar o crear wrapper
   let wrapper = document.querySelector('.pacientes-charts-wrapper');
-  if (wrapper && contenedor.contains(wrapper)) wrapper.innerHTML = '';
-  else { wrapper = document.createElement('div'); wrapper.className = 'pacientes-charts-wrapper'; contenedor.appendChild(wrapper); }
+  if (wrapper && contenedor.contains(wrapper)) {
+    wrapper.innerHTML = '';
+  } else { 
+    wrapper = document.createElement('div'); 
+    wrapper.className = 'pacientes-charts-wrapper'; 
+    contenedor.appendChild(wrapper); 
+  }
 
   // Función helper para crear tarjetas de parámetro
-  const createParamCard = (paciente, paramKey, title, labels, values) => {
-    const validCount = values.filter(v => typeof v === 'number' && !isNaN(v)).length;
+  const createParamCard = (paciente, paramKey, title, data) => {
     const card = document.createElement('div');
     card.className = 'patient-param-card';
     card.innerHTML = `
@@ -1046,24 +1314,56 @@ export async function generarGraficasPorPaciente(containerId = 'contenedorEstadi
     `;
 
     const body = card.querySelector(`#param-body-${paciente.id}-${paramKey}`);
-    if (validCount < 2) {
-      body.innerHTML = '<div class="alert-info">Información insuficiente para la generación de la gráfica</div>';
+    
+    if (!data || data.length < 2) {
+      body.innerHTML = '<div class="alert-info">Información insuficiente para generar la gráfica (mínimo 2 puntos)</div>';
       return card;
     }
 
     const canvas = document.createElement('canvas');
     canvas.id = `chart-${paciente.id}-${paramKey}`;
     canvas.width = 600;
-    canvas.height = 220;
+    canvas.height = 200;
     body.appendChild(canvas);
 
     try {
       const ctx = canvas.getContext('2d');
+      const labels = data.map(d => d.fecha);
+      const values = data.map(d => d.valor);
+      
       // eslint-disable-next-line no-undef
       new Chart(ctx, {
         type: 'line',
-        data: { labels: labels, datasets: [{ label: title, data: values, borderColor: '#06b6d4', backgroundColor: 'transparent', spanGaps: true, tension: 0.2 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: true }, y: { display: true, beginAtZero: false } } }
+        data: { 
+          labels: labels, 
+          datasets: [{ 
+            label: title, 
+            data: values, 
+            borderColor: '#06b6d4', 
+            backgroundColor: 'rgba(6, 182, 212, 0.1)', 
+            spanGaps: true, 
+            tension: 0.2,
+            fill: true,
+            pointBackgroundColor: '#06b6d4',
+            pointBorderColor: '#0891b2',
+            pointRadius: 3
+          }] 
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              mode: 'index',
+              intersect: false
+            }
+          }, 
+          scales: { 
+            x: { display: true }, 
+            y: { display: true, beginAtZero: false } 
+          } 
+        }
       });
     } catch (e) {
       console.error('Error creando gráfico param', paramKey, e);
@@ -1073,34 +1373,50 @@ export async function generarGraficasPorPaciente(containerId = 'contenedorEstadi
     return card;
   };
 
-  pacientes.forEach(paciente => {
-    // Recolectar puntos cronológicos
-    const puntos = [];
-    if (Array.isArray(paciente.historialCambios)) paciente.historialCambios.forEach(h => puntos.push({ fecha: h.fecha || (h.datos && h.datos.fechaRegistroMedico) || null, datos: h.datos || h }));
-    if (paciente.fechaRegistroInicial && paciente.datosMedicos) puntos.push({ fecha: paciente.fechaRegistroInicial || paciente.datosMedicos.fechaRegistroMedico, datos: paciente.datosMedicos });
-    if (paciente.datosMedicos && paciente.datosMedicos.fechaRegistroMedico) {
-      const existe = puntos.some(p => p.fecha === paciente.datosMedicos.fechaRegistroMedico);
-      if (!existe) puntos.push({ fecha: paciente.datosMedicos.fechaRegistroMedico, datos: paciente.datosMedicos });
+  pacientesConEvolucion.forEach(paciente => {
+    const evolucion = paciente.evolucionMedica;
+    
+    // Calcular IMC si hay datos de peso y talla
+    let imcData = [];
+    if (evolucion.peso.length > 0 && evolucion.talla.length > 0) {
+      const tallaMap = {};
+      evolucion.talla.forEach(t => {
+        tallaMap[t.fechaRaw] = t.valor;
+      });
+
+      let ultimaTalla = evolucion.talla[evolucion.talla.length - 1].valor;
+      
+      evolucion.peso.forEach(p => {
+        const tallaParaFecha = tallaMap[p.fechaRaw] || ultimaTalla;
+        if (tallaParaFecha > 0) {
+          const imc = p.valor / Math.pow((tallaParaFecha / 100), 2);
+          imcData.push({
+            fecha: p.fecha,
+            valor: parseFloat(imc.toFixed(1)),
+            fechaRaw: p.fechaRaw
+          });
+          // Actualizar última talla conocida
+          if (tallaMap[p.fechaRaw]) ultimaTalla = tallaMap[p.fechaRaw];
+        }
+      });
     }
 
-    puntos.sort((a, b) => new Date(a.fecha || 0) - new Date(b.fecha || 0));
-
-    const labels = puntos.map(pt => pt.fecha ? new Date(pt.fecha).toLocaleDateString('es-ES') : 'Sin fecha');
-
-    // Construir series por parámetro
-    const seriesPeso = puntos.map(pt => { const d = pt.datos||{}; const val = d.peso ? parseFloat(d.peso) : null; return isFinite(val) ? val : null; });
-    const seriesIMC = puntos.map(pt => { const d = pt.datos||{}; const peso = d.peso ? parseFloat(d.peso) : null; const talla = d.talla ? parseFloat(d.talla) : null; const imc = (peso && talla) ? parseFloat((peso / Math.pow((talla/100),2)).toFixed(1)) : null; return imc !== null ? imc : null; });
-  const seriesPresion = puntos.map(pt => { const d = pt.datos||{}; if (d.presion && typeof d.presion === 'string' && d.presion.includes('/')) { const parts = d.presion.split('/').map(s=>parseInt(s.trim(),10)); return Number.isFinite(parts[0]) ? parts[0] : null; } if (d.presion && !isNaN(parseFloat(d.presion))) return parseFloat(d.presion); return null; });
-  const seriesGlucosa = puntos.map(pt => { const d = pt.datos||{}; const g = d.glucosa ? parseFloat(d.glucosa) : null; return isFinite(g) ? g : null; });
-  const seriesFrecuencia = puntos.map(pt => { const d = pt.datos||{}; const f = d.frecuenciaRespiratoria ? parseFloat(d.frecuenciaRespiratoria) : null; return isFinite(f) ? f : null; });
-
-    // Crear tarjeta principal por paciente y añadir sub-cards por parámetro
+    // Crear tarjeta principal por paciente
     const pacienteCard = document.createElement('div');
     pacienteCard.className = 'patient-chart-card';
+    
+    const totalRegistros = Object.values(evolucion).reduce((total, param) => total + param.length, 0);
+    const ultimaFecha = Math.max(
+      ...Object.values(evolucion)
+        .flat()
+        .map(r => r.fechaRaw ? new Date(r.fechaRaw).getTime() : 0)
+        .filter(t => !isNaN(t))
+    );
+    
     pacienteCard.innerHTML = `
       <div class="patient-chart-header">
         <div class="patient-title"><strong>${paciente.nombre} ${paciente.apellidos || ''}</strong> • ${paciente.matricula}</div>
-        <div class="patient-meta">Última actualización: ${paciente.datosMedicos && paciente.datosMedicos.fechaRegistroMedico ? new Date(paciente.datosMedicos.fechaRegistroMedico).toLocaleString('es-ES') : 'Sin datos'}</div>
+        <div class="patient-meta">Registros médicos: ${totalRegistros} entradas | Última actualización: ${ultimaFecha > 0 ? new Date(ultimaFecha).toLocaleString('es-ES') : 'Sin datos'}</div>
       </div>
       <div class="patient-params-grid" id="patient-params-${paciente.id}"></div>
     `;
@@ -1109,28 +1425,32 @@ export async function generarGraficasPorPaciente(containerId = 'contenedorEstadi
 
     const paramsGrid = pacienteCard.querySelector(`#patient-params-${paciente.id}`);
     paramsGrid.style.display = 'grid';
-    paramsGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(260px, 1fr))';
+    paramsGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(280px, 1fr))';
     paramsGrid.style.gap = '12px';
 
-  paramsGrid.appendChild(createParamCard(paciente, 'peso', 'Peso (kg)', labels, seriesPeso));
-  paramsGrid.appendChild(createParamCard(paciente, 'imc', 'IMC', labels, seriesIMC));
-  paramsGrid.appendChild(createParamCard(paciente, 'presion', 'Presión Arterial', labels, seriesPresion));
-  paramsGrid.appendChild(createParamCard(paciente, 'glucosa', 'Glucosa (mg/dL)', labels, seriesGlucosa));
-  paramsGrid.appendChild(createParamCard(paciente, 'frecuencia', 'Frecuencia Respiratoria (rpm)', labels, seriesFrecuencia));
+    // Añadir gráficas por parámetro
+    paramsGrid.appendChild(createParamCard(paciente, 'temperatura', 'Temperatura (°C)', evolucion.temperatura));
+    paramsGrid.appendChild(createParamCard(paciente, 'peso', 'Peso (kg)', evolucion.peso));
+    paramsGrid.appendChild(createParamCard(paciente, 'talla', 'Talla (cm)', evolucion.talla));
+    paramsGrid.appendChild(createParamCard(paciente, 'imc', 'IMC (kg/m²)', imcData));
+    paramsGrid.appendChild(createParamCard(paciente, 'presion', 'Presión Arterial Sistólica (mmHg)', evolucion.presion));
+    paramsGrid.appendChild(createParamCard(paciente, 'glucosa', 'Glucosa (mg/dL)', evolucion.glucosa));
+    paramsGrid.appendChild(createParamCard(paciente, 'frecuencia', 'Frecuencia Respiratoria (rpm)', evolucion.frecuenciaRespiratoria));
   });
 
   // Estilos ligeros para las sub-cards
   if (!document.getElementById('patient-charts-styles')) {
-    const s = document.createElement('style'); s.id = 'patient-charts-styles';
+    const s = document.createElement('style'); 
+    s.id = 'patient-charts-styles';
     s.innerHTML = `
       .pacientes-charts-wrapper { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 18px; margin-top: 20px; }
-      .patient-chart-card { background: white; border-radius: 10px; padding: 12px; border: 1px solid #e6eef2; box-shadow: 0 6px 18px rgba(2,6,23,0.04); }
-      .patient-chart-header { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
-      .patient-title { font-size: 1rem; color: #0f172a; }
+      .patient-chart-card { background: white; border-radius: 10px; padding: 16px; border: 1px solid #e6eef2; box-shadow: 0 6px 18px rgba(2,6,23,0.04); }
+      .patient-chart-header { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
+      .patient-title { font-size: 1rem; color: #0f172a; font-weight: 600; }
       .patient-meta { font-size: 0.8rem; color: #6b7280; }
-      .patient-param-card { background: #fff; border-radius: 8px; padding:10px; border:1px solid #eef2f6; min-height: 140px; }
-      .param-card-header { font-weight:700; margin-bottom:8px; }
-      .param-card-body { height: 160px; }
+      .patient-param-card { background: #fff; border-radius: 8px; padding:12px; border:1px solid #eef2f6; min-height: 160px; }
+      .param-card-header { font-weight:700; margin-bottom:8px; color: #374151; }
+      .param-card-body { height: 180px; }
     `;
     document.head.appendChild(s);
   }
@@ -1284,60 +1604,159 @@ export async function renderSinglePacienteChart(pacienteId, containerId = 'conte
   const contenedor = document.getElementById(containerId);
   if (!contenedor) return;
 
-  try { await loadChartJS(); } catch (e) { console.error(e); contenedor.innerHTML = '<div class="alert-info">No se pudo cargar Chart.js</div>'; return; }
+  try { 
+    await loadChartJS(); 
+  } catch (e) { 
+    console.error(e); 
+    contenedor.innerHTML = '<div class="alert-info">No se pudo cargar Chart.js</div>'; 
+    return; 
+  }
 
   const paciente = await pacienteModel.getPaciente(pacienteId);
-  if (!paciente) { contenedor.innerHTML = '<div class="alert-info">Paciente no encontrado</div>'; return; }
+  if (!paciente) { 
+    contenedor.innerHTML = '<div class="alert-info">Paciente no encontrado</div>'; 
+    return; 
+  }
 
+  // Usar reporteModel para obtener evolución médica desde Firebase
+  const evolucionMedica = await reporteModel.getEvolucionMedicaPaciente(pacienteId);
+  
   contenedor.innerHTML = '';
 
-  // Recolectar puntos cronológicos
-  const puntos = [];
-  if (Array.isArray(paciente.historialCambios)) paciente.historialCambios.forEach(h => puntos.push({ fecha: h.fecha || (h.datos && h.datos.fechaRegistroMedico) || null, datos: h.datos || h }));
-  if (paciente.fechaRegistroInicial && paciente.datosMedicos) puntos.push({ fecha: paciente.fechaRegistroInicial || paciente.datosMedicos.fechaRegistroMedico, datos: paciente.datosMedicos });
-  if (paciente.datosMedicos && paciente.datosMedicos.fechaRegistroMedico) {
-    const existe = puntos.some(p => p.fecha === paciente.datosMedicos.fechaRegistroMedico);
-    if (!existe) puntos.push({ fecha: paciente.datosMedicos.fechaRegistroMedico, datos: paciente.datosMedicos });
-  }
-  puntos.sort((a,b)=>new Date(a.fecha||0)-new Date(b.fecha||0));
-
-  const labels = puntos.map(pt => pt.fecha ? new Date(pt.fecha).toLocaleDateString('es-ES') : 'Sin fecha');
-  const seriesPeso = puntos.map(pt => { const d=pt.datos||{}; const v = d.peso ? parseFloat(d.peso) : null; return isFinite(v)?v:null; });
-  const seriesIMC  = puntos.map(pt => { const d=pt.datos||{}; const p = d.peso?parseFloat(d.peso):null; const t = d.talla?parseFloat(d.talla):null; const imc = (p && t) ? parseFloat((p/Math.pow((t/100),2)).toFixed(1)) : null; return imc!==null?imc:null; });
-  const seriesPresion = puntos.map(pt => { const d=pt.datos||{}; if (d.presion && typeof d.presion==='string' && d.presion.includes('/')){ const parts=d.presion.split('/').map(s=>parseInt(s.trim(),10)); return Number.isFinite(parts[0])?parts[0]:null; } if (d.presion && !isNaN(parseFloat(d.presion))) return parseFloat(d.presion); return null; });
-  const seriesGlucosa = puntos.map(pt => { const d=pt.datos||{}; const g = d.glucosa?parseFloat(d.glucosa):null; return isFinite(g)?g:null; });
-  const seriesFrecuencia = puntos.map(pt => { const d = pt.datos||{}; const f = d.frecuenciaRespiratoria ? parseFloat(d.frecuenciaRespiratoria) : null; return isFinite(f) ? f : null; });
-
   // Crear contenedor de paciente
-  const card = document.createElement('div'); card.className='patient-chart-card';
+  const card = document.createElement('div'); 
+  card.className='patient-chart-card';
   card.innerHTML = `
     <div class="patient-chart-header">
       <div class="patient-title"><strong>${paciente.nombre} ${paciente.apellidos || ''}</strong> • ${paciente.matricula}</div>
-      <div class="patient-meta">Última actualización: ${paciente.datosMedicos && paciente.datosMedicos.fechaRegistroMedico ? new Date(paciente.datosMedicos.fechaRegistroMedico).toLocaleString('es-ES') : 'Sin datos'}</div>
+      <div class="patient-meta">Registros médicos: ${Object.values(evolucionMedica).reduce((total, param) => total + param.length, 0)} entradas</div>
     </div>
     <div class="patient-params-grid" id="patient-params-single-${paciente.id}"></div>
   `;
   contenedor.appendChild(card);
 
   const grid = card.querySelector(`#patient-params-single-${paciente.id}`);
-  grid.style.display='grid'; grid.style.gridTemplateColumns='repeat(auto-fit,minmax(260px,1fr))'; grid.style.gap='12px';
+  grid.style.display='grid'; 
+  grid.style.gridTemplateColumns='repeat(auto-fit,minmax(280px,1fr))'; 
+  grid.style.gap='12px';
 
-  const createParam = (key,title,values)=>{
-    const valid = values.filter(v=>typeof v==='number' && !isNaN(v)).length;
-    const wrapper = document.createElement('div'); wrapper.className='patient-param-card';
+  const createParam = (key, title, data) => {
+    const wrapper = document.createElement('div'); 
+    wrapper.className='patient-param-card';
     wrapper.innerHTML = `<div class="param-card-header">${title}</div><div class="param-card-body"></div>`;
     const body = wrapper.querySelector('.param-card-body');
-    if (valid < 2) { body.innerHTML = '<div class="alert-info">Información insuficiente para la generación de la gráfica</div>'; return wrapper; }
-    const canvas = document.createElement('canvas'); canvas.id=`chart-single-${paciente.id}-${key}`; canvas.width=700; canvas.height=220; body.appendChild(canvas);
-    try { const ctx = canvas.getContext('2d'); new Chart(ctx,{ type:'line', data:{ labels, datasets:[{ label:title, data:values, borderColor:'#06b6d4', backgroundColor:'transparent', spanGaps:true, tension:0.2 }]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{display:true}, y:{display:true}} } }); } catch(e){ console.error(e); body.innerHTML = '<div class="alert-info">Error generando la gráfica</div>'; }
+    
+    if (!data || data.length < 2) { 
+      body.innerHTML = '<div class="alert-info">Información insuficiente para generar la gráfica (mínimo 2 puntos)</div>'; 
+      return wrapper; 
+    }
+    
+    const canvas = document.createElement('canvas'); 
+    canvas.id=`chart-single-${paciente.id}-${key}`; 
+    canvas.width=700; 
+    canvas.height=240; 
+    body.appendChild(canvas);
+    
+    try { 
+      const ctx = canvas.getContext('2d'); 
+      const labels = data.map(d => d.fecha);
+      const values = data.map(d => d.valor);
+      
+      new Chart(ctx, { 
+        type: 'line', 
+        data: { 
+          labels, 
+          datasets: [{ 
+            label: title, 
+            data: values, 
+            borderColor: '#06b6d4', 
+            backgroundColor: 'rgba(6, 182, 212, 0.1)', 
+            spanGaps: true, 
+            tension: 0.2,
+            fill: true,
+            pointBackgroundColor: '#06b6d4',
+            pointBorderColor: '#0891b2',
+            pointRadius: 4
+          }]
+        }, 
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                label: function(context) {
+                  return `${title}: ${context.parsed.y}`;
+                }
+              }
+            }
+          }, 
+          scales: {
+            x: { 
+              display: true,
+              title: {
+                display: true,
+                text: 'Fecha'
+              }
+            }, 
+            y: { 
+              display: true,
+              title: {
+                display: true,
+                text: title
+              },
+              beginAtZero: false
+            }
+          },
+          interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+          }
+        } 
+      }); 
+    } catch(e) { 
+      console.error('Error creando gráfico:', e); 
+      body.innerHTML = '<div class="alert-info">Error generando la gráfica</div>'; 
+    }
     return wrapper;
   };
 
-  grid.appendChild(createParam('peso','Peso (kg)', seriesPeso));
-  grid.appendChild(createParam('imc','IMC', seriesIMC));
-  grid.appendChild(createParam('presion','Presión Arterial', seriesPresion));
-  grid.appendChild(createParam('glucosa','Glucosa (mg/dL)', seriesGlucosa));
-  grid.appendChild(createParam('frecuencia','Frecuencia Respiratoria (rpm)', seriesFrecuencia));
+  // Calcular IMC si hay datos de peso y talla
+  let imcData = [];
+  if (evolucionMedica.peso.length > 0 && evolucionMedica.talla.length > 0) {
+    const tallaMap = {};
+    evolucionMedica.talla.forEach(t => {
+      tallaMap[t.fechaRaw] = t.valor;
+    });
+
+    let ultimaTalla = evolucionMedica.talla[evolucionMedica.talla.length - 1].valor;
+    
+    evolucionMedica.peso.forEach(p => {
+      const tallaParaFecha = tallaMap[p.fechaRaw] || ultimaTalla;
+      if (tallaParaFecha > 0) {
+        const imc = p.valor / Math.pow((tallaParaFecha / 100), 2);
+        imcData.push({
+          fecha: p.fecha,
+          valor: parseFloat(imc.toFixed(1)),
+          fechaRaw: p.fechaRaw
+        });
+        // Actualizar última talla conocida
+        if (tallaMap[p.fechaRaw]) ultimaTalla = tallaMap[p.fechaRaw];
+      }
+    });
+  }
+
+  grid.appendChild(createParam('temperatura', 'Temperatura (°C)', evolucionMedica.temperatura));
+  grid.appendChild(createParam('peso', 'Peso (kg)', evolucionMedica.peso));
+  grid.appendChild(createParam('talla', 'Talla (cm)', evolucionMedica.talla));
+  grid.appendChild(createParam('imc', 'IMC (kg/m²)', imcData));
+  grid.appendChild(createParam('presion', 'Presión Arterial Sistólica (mmHg)', evolucionMedica.presion));
+  grid.appendChild(createParam('glucosa', 'Glucosa (mg/dL)', evolucionMedica.glucosa));
+  grid.appendChild(createParam('frecuencia', 'Frecuencia Respiratoria (rpm)', evolucionMedica.frecuenciaRespiratoria));
 }
 
 // Suscribirse a eventos de paciente para actualizar gráficas automáticamente
@@ -1405,89 +1824,172 @@ export async function generarGraficasGlobales(containerId = 'contenedorEstadisti
   if (!contenedor) return;
 
   // Cargar Chart.js
-  try { await loadChartJS(); } catch (err) { contenedor.insertAdjacentHTML('beforeend', `<div class="alert-info">No se pudo cargar la librería de gráficas (Chart.js).</div>`); console.error(err); return; }
+  try { 
+    await loadChartJS(); 
+  } catch (err) { 
+    contenedor.insertAdjacentHTML('beforeend', `<div class="alert-info">No se pudo cargar la librería de gráficas (Chart.js).</div>`); 
+    console.error(err); 
+    return; 
+  }
 
-  const pacientes = await pacienteModel.getPacientes();
-  if (!pacientes || pacientes.length === 0) {
+  // Obtener todos los pacientes con evolución médica desde Firebase
+  const pacientesConEvolucion = await reporteModel.getTodosPacientesConEvolucion();
+  
+  if (!pacientesConEvolucion || pacientesConEvolucion.length === 0) {
     // Si no hay pacientes, limpiar la sección si existe
     const existing = contenedor.querySelector('#global-charts-section');
-    if (existing) existing.innerHTML = '<div class="alert-info">No hay pacientes para generar las gráficas globales.</div>';
+    if (existing) existing.innerHTML = '<div class="alert-info">No hay pacientes con registros médicos para generar las gráficas globales.</div>';
     return;
   }
 
   // Helpers de fecha: obtener inicio de semana (lunes) en formato YYYY-MM-DD
   const getWeekStartISO = (dateLike) => {
-    const d = new Date(dateLike);
-    if (isNaN(d)) return null;
-    const day = d.getDay(); // 0 (Dom) .. 6 (Sab)
-    const diff = (day + 6) % 7; // 0->Lun, ...
-    const monday = new Date(d);
-    monday.setDate(d.getDate() - diff);
-    monday.setHours(0,0,0,0);
-    return monday.toISOString().split('T')[0];
+    try {
+      const d = new Date(dateLike);
+      if (isNaN(d.getTime())) return null;
+      
+      const day = d.getDay(); // 0 (Dom) .. 6 (Sab)
+      const diff = (day + 6) % 7; // 0->Lun, ...
+      const monday = new Date(d);
+      monday.setDate(d.getDate() - diff);
+      monday.setHours(0, 0, 0, 0);
+      
+      const result = monday.toISOString().split('T')[0];
+      console.log(`📅 Fecha ${dateLike} → Semana ${result}`);
+      return result;
+    } catch (e) {
+      console.error(`❌ Error procesando fecha ${dateLike}:`, e);
+      return null;
+    }
   };
 
   const addWeeksISO = (isoDateStr, weeks) => {
-    const d = new Date(isoDateStr + 'T00:00:00');
-    d.setDate(d.getDate() + weeks * 7);
-    d.setHours(0,0,0,0);
-    return d.toISOString().split('T')[0];
+    try {
+      const d = new Date(isoDateStr + 'T00:00:00');
+      d.setDate(d.getDate() + weeks * 7);
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString().split('T')[0];
+    } catch (e) {
+      console.error(`❌ Error añadiendo semanas a ${isoDateStr}:`, e);
+      return isoDateStr;
+    }
   };
 
-  // Parámetros y umbrales (por defecto)
-  const mapThreshold = typeof options.mapThreshold === 'number' ? options.mapThreshold : 95; // MAP >= 95 considerada alta (ajustable)
-  const imcThreshold = typeof options.imcThreshold === 'number' ? options.imcThreshold : 30; // IMC >= 30 obesidad
+  // Parámetros y umbrales (ajustados para ser más realistas)
+  const mapThreshold = typeof options.mapThreshold === 'number' ? options.mapThreshold : 90; // MAP >= 90 considerada alta (más realista)
+  const imcThreshold = typeof options.imcThreshold === 'number' ? options.imcThreshold : 25; // IMC >= 25 sobrepeso (más inclusivo)
+
+  console.log(`📊 Iniciando análisis global con umbrales: IMC ≥ ${imcThreshold}, MAP ≥ ${mapThreshold}`);
+  console.log(`👥 Analizando ${pacientesConEvolucion.length} pacientes con evolución médica`);
 
   // Mapas semana -> Set(de pacientes)
   const semanaObesos = {}; // weekISO -> Set(ids)
   const semanaPresionAlta = {}; // weekISO -> Set(ids)
 
-  // Recorrer pacientes y sus puntos médicos
-  pacientes.forEach(paciente => {
-    const puntos = [];
-    if (Array.isArray(paciente.historialCambios)) paciente.historialCambios.forEach(h => puntos.push({ fecha: h.fecha || (h.datos && h.datos.fechaRegistroMedico) || null, datos: h.datos || h }));
-    if (paciente.fechaRegistroInicial && paciente.datosMedicos) puntos.push({ fecha: paciente.fechaRegistroInicial || paciente.datosMedicos.fechaRegistroMedico, datos: paciente.datosMedicos });
-    if (paciente.datosMedicos && paciente.datosMedicos.fechaRegistroMedico) {
-      const existe = puntos.some(p => p.fecha === paciente.datosMedicos.fechaRegistroMedico);
-      if (!existe) puntos.push({ fecha: paciente.datosMedicos.fechaRegistroMedico, datos: paciente.datosMedicos });
+  // Estadísticas generales para debugging
+  let totalPacientesConPeso = 0;
+  let totalPacientesConTalla = 0;
+  let totalPacientesConPresion = 0;
+  let totalRegistrosIMC = 0;
+  let totalRegistrosPresion = 0;
+
+  // Recorrer pacientes y sus evoluciones médicas desde Firebase
+  pacientesConEvolucion.forEach(paciente => {
+    const evolucion = paciente.evolucionMedica;
+    console.log(`🔍 Analizando paciente ${paciente.nombre} para gráficas globales:`, evolucion);
+
+    // Contar pacientes con datos
+    if (evolucion.peso.length > 0) totalPacientesConPeso++;
+    if (evolucion.talla.length > 0) totalPacientesConTalla++;
+    if (evolucion.presion.length > 0) totalPacientesConPresion++;
+
+    // Procesar registros de peso y talla para calcular IMC por semana
+    if (evolucion.peso.length > 0 && evolucion.talla.length > 0) {
+      const tallaMap = {};
+      evolucion.talla.forEach(t => {
+        tallaMap[t.fechaRaw] = t.valor;
+      });
+
+      let ultimaTalla = evolucion.talla[evolucion.talla.length - 1].valor;
+      
+      evolucion.peso.forEach(p => {
+        const fecha = new Date(p.fechaRaw);
+        if (isNaN(fecha)) return;
+        
+        const tallaParaFecha = tallaMap[p.fechaRaw] || ultimaTalla;
+        if (tallaParaFecha > 0) {
+          const imc = p.valor / Math.pow((tallaParaFecha / 100), 2);
+          totalRegistrosIMC++;
+          
+          console.log(`📏 Paciente ${paciente.nombre}: Peso ${p.valor}kg, Talla ${tallaParaFecha}cm, IMC ${imc.toFixed(1)}`);
+          
+          if (imc >= imcThreshold) {
+            const week = getWeekStartISO(fecha);
+            if (week) {
+              semanaObesos[week] = semanaObesos[week] || new Set();
+              semanaObesos[week].add(paciente.id);
+              console.log(`� Paciente ${paciente.nombre} registrado con obesidad en semana ${week} (IMC: ${imc.toFixed(1)})`);
+            }
+          }
+          
+          // Actualizar última talla conocida
+          if (tallaMap[p.fechaRaw]) ultimaTalla = tallaMap[p.fechaRaw];
+        }
+      });
     }
 
-    puntos.forEach(pt => {
-      const fecha = pt.fecha ? new Date(pt.fecha) : null;
-      if (!fecha || isNaN(fecha)) return;
-      const week = getWeekStartISO(fecha);
-      if (!week) return;
+    // Procesar registros de presión arterial
+    evolucion.presion.forEach(p => {
+      const fecha = new Date(p.fechaRaw);
+      if (isNaN(fecha)) return;
 
-      const d = pt.datos || {};
-      // IMC
-      const peso = d.peso ? parseFloat(d.peso) : null;
-      const talla = d.talla ? parseFloat(d.talla) : null;
-      const imc = (peso && talla) ? (peso / Math.pow((talla/100),2)) : null;
-      if (imc !== null && !isNaN(imc) && imc >= imcThreshold) {
-        semanaObesos[week] = semanaObesos[week] || new Set();
-        semanaObesos[week].add(paciente.id);
-      }
-
-      // Presión: intentar parsear "systolic/diastolic" y calcular MAP
       let map = null;
-      if (d.presion && typeof d.presion === 'string' && d.presion.includes('/')) {
-        const parts = d.presion.split('/').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
-        if (parts.length >= 2) {
-          const sys = parts[0]; const dia = parts[1];
-          map = (sys + 2*dia) / 3;
-        } else if (parts.length === 1) {
-          // si solo hay un valor, usarlo como aproximación (menos ideal)
-          map = parts[0];
+      totalRegistrosPresion++;
+      
+      // Si hay presión completa en el formato "sistólica/diastólica"
+      if (p.presionCompleta && typeof p.presionCompleta === 'string' && p.presionCompleta.includes('/')) {
+        const partes = p.presionCompleta.split('/');
+        if (partes.length >= 2) {
+          const sistolica = parseFloat(partes[0].trim());
+          const diastolica = parseFloat(partes[1].trim());
+          if (!isNaN(sistolica) && !isNaN(diastolica)) {
+            map = (sistolica + 2 * diastolica) / 3; // Calcular MAP
+          }
         }
-      } else if (d.presion && !isNaN(parseFloat(d.presion))) {
-        map = parseFloat(d.presion);
+      } else if (!isNaN(p.valor)) {
+        // Si solo tenemos la presión sistólica, usar como aproximación
+        map = p.valor;
       }
+
+      console.log(`🩺 Paciente ${paciente.nombre}: Presión ${p.presionCompleta || p.valor}, MAP calculado: ${map ? map.toFixed(1) : 'N/A'}`);
 
       if (map !== null && !isNaN(map) && map >= mapThreshold) {
-        semanaPresionAlta[week] = semanaPresionAlta[week] || new Set();
-        semanaPresionAlta[week].add(paciente.id);
+        const week = getWeekStartISO(fecha);
+        if (week) {
+          semanaPresionAlta[week] = semanaPresionAlta[week] || new Set();
+          semanaPresionAlta[week].add(paciente.id);
+          console.log(`🚨 Paciente ${paciente.nombre} registrado con presión alta en semana ${week} (MAP: ${map.toFixed(1)})`);
+        }
       }
     });
+  });
+
+  // Mostrar estadísticas de debugging
+  console.log(`📈 Estadísticas de análisis global:`);
+  console.log(`   • Pacientes con datos de peso: ${totalPacientesConPeso}`);
+  console.log(`   • Pacientes con datos de talla: ${totalPacientesConTalla}`);
+  console.log(`   • Pacientes con datos de presión: ${totalPacientesConPresion}`);
+  console.log(`   • Total registros IMC analizados: ${totalRegistrosIMC}`);
+  console.log(`   • Total registros presión analizados: ${totalRegistrosPresion}`);
+  console.log(`   • Semanas con obesidad detectada: ${Object.keys(semanaObesos).length}`);
+  console.log(`   • Semanas con presión alta detectada: ${Object.keys(semanaPresionAlta).length}`);
+  
+  // Mostrar detalle de semanas
+  Object.keys(semanaObesos).forEach(semana => {
+    console.log(`   🗓️ Semana ${semana}: ${semanaObesos[semana].size} pacientes con obesidad`);
+  });
+  Object.keys(semanaPresionAlta).forEach(semana => {
+    console.log(`   🗓️ Semana ${semana}: ${semanaPresionAlta[semana].size} pacientes con presión alta`);
   });
 
   // Construir rango de semanas (min..max) para eje X
@@ -1496,7 +1998,10 @@ export async function generarGraficasGlobales(containerId = 'contenedorEstadisti
     // No hay datos por semana
     let sec = contenedor.querySelector('#global-charts-section');
     if (!sec) {
-      sec = document.createElement('div'); sec.id = 'global-charts-section'; sec.className = 'estadisticas-seccion'; contenedor.appendChild(sec);
+      sec = document.createElement('div'); 
+      sec.id = 'global-charts-section'; 
+      sec.className = 'estadisticas-seccion'; 
+      contenedor.appendChild(sec);
     }
     sec.innerHTML = '<h3>Gráficas Globales</h3><div class="alert-info">No hay suficientes datos semanales para generar las gráficas globales.</div>';
     return;
@@ -1543,7 +2048,7 @@ export async function generarGraficasGlobales(containerId = 'contenedorEstadisti
     <h3>Gráficas Globales</h3>
     <div class="global-charts-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div class="global-chart-card">
-        <div class="chart-card-header"><strong>Pacientes con obesidad (IMC ≥ ${imcThreshold}) — por semana</strong></div>
+        <div class="chart-card-header"><strong>Pacientes con sobrepeso/obesidad (IMC ≥ ${imcThreshold}) — por semana</strong></div>
         <div style="height:280px;"><canvas id="global-obesidad-chart"></canvas></div>
       </div>
       <div class="global-chart-card">
@@ -1551,7 +2056,12 @@ export async function generarGraficasGlobales(containerId = 'contenedorEstadisti
         <div style="height:280px;"><canvas id="global-presion-chart"></canvas></div>
       </div>
     </div>
-    <div style="margin-top:10px;font-size:0.9rem;color:#6b7280;">Nota: Umbrales usados — IMC ≥ ${imcThreshold}; MAP ≥ ${mapThreshold}. Puedes ajustar estos parámetros en la configuración si es necesario.</div>
+    <div style="margin-top:10px;font-size:0.9rem;color:#6b7280;">
+      Nota: Umbrales usados — IMC ≥ ${imcThreshold} (sobrepeso/obesidad); MAP ≥ ${mapThreshold} (presión alta). 
+      Datos obtenidos desde registros médicos de Firebase.
+      Total de pacientes analizados: ${pacientesConEvolucion.length}
+      <br>Pacientes con datos: peso (${totalPacientesConPeso}), talla (${totalPacientesConTalla}), presión (${totalPacientesConPresion})
+    </div>
   `;
 
   // Crear gráficos: preferir Chart.js si está disponible, si no usar fallback canvas
@@ -1561,16 +2071,102 @@ export async function generarGraficasGlobales(containerId = 'contenedorEstadisti
       // eslint-disable-next-line no-undef
       new Chart(ctxOb, {
         type: 'line',
-        data: { labels, datasets: [{ label: 'Obesidad (pacientes)', data: dataObesidad, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)', fill: true, tension: 0.2 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: true }, y: { beginAtZero: true, ticks: { precision:0 } } } }
+        data: { 
+          labels, 
+          datasets: [{ 
+            label: 'Sobrepeso/Obesidad (pacientes)', 
+            data: dataObesidad, 
+            borderColor: '#ef4444', 
+            backgroundColor: 'rgba(239,68,68,0.08)', 
+            fill: true, 
+            tension: 0.2,
+            pointBackgroundColor: '#ef4444',
+            pointBorderColor: '#dc2626',
+            pointRadius: 4
+          }] 
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.parsed.y} pacientes con IMC ≥ ${imcThreshold}`;
+                }
+              }
+            }
+          }, 
+          scales: { 
+            x: { 
+              display: true,
+              title: {
+                display: true,
+                text: 'Semana'
+              }
+            }, 
+            y: { 
+              beginAtZero: true, 
+              ticks: { precision: 0 },
+              title: {
+                display: true,
+                text: 'Número de pacientes'
+              }
+            } 
+          } 
+        }
       });
 
       const ctxPr = document.getElementById('global-presion-chart').getContext('2d');
       // eslint-disable-next-line no-undef
       new Chart(ctxPr, {
         type: 'line',
-        data: { labels, datasets: [{ label: 'Presión alta (pacientes)', data: dataPresion, borderColor: '#06b6d4', backgroundColor: 'rgba(6,182,212,0.08)', fill: true, tension: 0.2 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: true }, y: { beginAtZero: true, ticks: { precision:0 } } } }
+        data: { 
+          labels, 
+          datasets: [{ 
+            label: 'Presión alta (pacientes)', 
+            data: dataPresion, 
+            borderColor: '#06b6d4', 
+            backgroundColor: 'rgba(6,182,212,0.08)', 
+            fill: true, 
+            tension: 0.2,
+            pointBackgroundColor: '#06b6d4',
+            pointBorderColor: '#0891b2',
+            pointRadius: 4
+          }] 
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `${context.parsed.y} pacientes con MAP ≥ ${mapThreshold}`;
+                }
+              }
+            }
+          }, 
+          scales: { 
+            x: { 
+              display: true,
+              title: {
+                display: true,
+                text: 'Semana'
+              }
+            }, 
+            y: { 
+              beginAtZero: true, 
+              ticks: { precision: 0 },
+              title: {
+                display: true,
+                text: 'Número de pacientes'
+              }
+            } 
+          } 
+        }
       });
     } else {
       // Fallback sin dependencias externas
@@ -1580,11 +2176,1050 @@ export async function generarGraficasGlobales(containerId = 'contenedorEstadisti
       canvasOb.style.width = '100%'; canvasOb.style.height = '240px';
       canvasPr.style.width = '100%'; canvasPr.style.height = '240px';
 
-      drawSimpleLineChartOnCanvas(canvasOb, labels, dataObesidad, { title: `Obesidad (IMC ≥ ${imcThreshold})`, color: '#ef4444', aria: `Pacientes con obesidad por semana. Valores exactos de conteo.` });
-      drawSimpleLineChartOnCanvas(canvasPr, labels, dataPresion, { title: `Presión alta (MAP ≥ ${mapThreshold})`, color: '#06b6d4', aria: `Pacientes con presión arterial alta por semana. Valores exactos de conteo.` });
+      drawSimpleLineChartOnCanvas(canvasOb, labels, dataObesidad, { 
+        title: `Sobrepeso/Obesidad (IMC ≥ ${imcThreshold})`, 
+        color: '#ef4444', 
+        aria: `Pacientes con sobrepeso/obesidad por semana. Valores exactos de conteo.` 
+      });
+      drawSimpleLineChartOnCanvas(canvasPr, labels, dataPresion, { 
+        title: `Presión alta (MAP ≥ ${mapThreshold})`, 
+        color: '#06b6d4', 
+        aria: `Pacientes con presión arterial alta por semana. Valores exactos de conteo.` 
+      });
     }
   } catch (e) {
     console.error('Error generando gráficas globales', e);
     section.insertAdjacentHTML('beforeend', '<div class="alert-info">No se pudieron renderizar las gráficas globales.</div>');
+  }
+}
+
+// Nueva función para generar gráficas de estadísticas con Chart.js
+export async function generarGraficasEstadisticasConChartJS(estadisticas) {
+  try {
+    await loadChartJS();
+  } catch (err) {
+    console.warn('Chart.js no disponible para gráficas de estadísticas:', err);
+    return;
+  }
+
+  // Destruir gráficas existentes para evitar conflictos
+  Chart.getChart('activity-chart')?.destroy();
+  Chart.getChart('faculty-chart')?.destroy();
+  Chart.getChart('appointments-chart')?.destroy();
+
+  // Gráfica de actividad reciente (registros médicos por día)
+  await generarGraficaActividadReciente();
+
+  // Gráfica de distribución por facultad
+  await generarGraficaDistribucionFacultad();
+
+  // Gráfica de citas por estado
+  if (estadisticas.pacientes.citasPorEstado) {
+    generarGraficaCitasPorEstado(estadisticas.pacientes.citasPorEstado);
+  }
+}
+
+// Función para generar gráfica de actividad reciente basada en registros médicos
+async function generarGraficaActividadReciente() {
+  const canvas = document.getElementById('activity-chart');
+  if (!canvas) return;
+
+  try {
+    // Destruir gráfica existente si existe
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
+    // Obtener todos los registros médicos de los últimos 7 días
+    const registrosMedicos = await pacienteModel.getHistorialMedico();
+    
+    // Calcular datos por día para los últimos 7 días
+    const hoy = new Date();
+    const actividadPorDia = {};
+    const labels = [];
+
+    // Inicializar los últimos 7 días
+    for (let i = 6; i >= 0; i--) {
+      const fecha = new Date(hoy);
+      fecha.setDate(fecha.getDate() - i);
+      const fechaStr = fecha.toISOString().split('T')[0];
+      const fechaLabel = fecha.toLocaleDateString('es-ES', { 
+        weekday: 'short', 
+        day: 'numeric', 
+        month: 'numeric' 
+      });
+      actividadPorDia[fechaStr] = 0;
+      labels.push(fechaLabel);
+    }
+
+    // Contar registros médicos por día
+    registrosMedicos.forEach(registro => {
+      let fechaRegistro = null;
+      
+      // Manejar diferentes formatos de fecha
+      if (registro.timestamp?.toDate) {
+        fechaRegistro = registro.timestamp.toDate();
+      } else if (registro.fecha?.toDate) {
+        fechaRegistro = registro.fecha.toDate();
+      } else if (registro.timestamp) {
+        fechaRegistro = new Date(registro.timestamp);
+      } else if (registro.fecha) {
+        fechaRegistro = new Date(registro.fecha);
+      }
+
+      if (fechaRegistro && !isNaN(fechaRegistro.getTime())) {
+        const fechaStr = fechaRegistro.toISOString().split('T')[0];
+        if (actividadPorDia[fechaStr] !== undefined) {
+          actividadPorDia[fechaStr]++;
+        }
+      }
+    });
+
+    const data = Object.values(actividadPorDia);
+    
+    console.log('📊 Datos de actividad reciente:', { labels, data, actividadPorDia });
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Registros médicos',
+          data: data,
+          backgroundColor: 'rgba(6, 182, 212, 0.6)',
+          borderColor: 'rgba(6, 182, 212, 1)',
+          borderWidth: 2,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.parsed.y} registros médicos`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Día'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            },
+            title: {
+              display: true,
+              text: 'Cantidad de registros'
+            }
+          }
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error generando gráfica de actividad reciente:', error);
+    canvas.parentElement.innerHTML = '<div class="alert-info">Error generando gráfica de actividad reciente</div>';
+  }
+}
+
+// Función para generar gráfica de distribución por facultad
+async function generarGraficaDistribucionFacultad() {
+  const canvas = document.getElementById('faculty-chart');
+  if (!canvas) return;
+
+  try {
+    // Destruir gráfica existente si existe
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
+    // Obtener todos los pacientes y contar por facultad
+    const pacientes = await pacienteModel.getPacientes();
+    const facultadCounts = {};
+    
+    pacientes.forEach(paciente => {
+      const facultad = paciente.facultad || 'Sin facultad especificada';
+      facultadCounts[facultad] = (facultadCounts[facultad] || 0) + 1;
+    });
+
+    const labels = Object.keys(facultadCounts);
+    const data = Object.values(facultadCounts);
+    const total = data.reduce((sum, val) => sum + val, 0);
+
+    if (total === 0) {
+      canvas.parentElement.innerHTML = '<div class="alert-info">No hay datos de facultades disponibles</div>';
+      return;
+    }
+
+    const colores = [
+      'rgba(6, 182, 212, 0.8)',   // Azul
+      'rgba(236, 72, 153, 0.8)',  // Rosa
+      'rgba(16, 185, 129, 0.8)',  // Verde
+      'rgba(245, 158, 11, 0.8)',  // Amarillo
+      'rgba(139, 92, 246, 0.8)',  // Morado
+      'rgba(239, 68, 68, 0.8)',   // Rojo
+      'rgba(156, 163, 175, 0.8)'  // Gris
+    ];
+
+    console.log('📊 Datos de distribución por facultad:', { labels, data, facultadCounts });
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: colores.slice(0, labels.length),
+          borderColor: colores.slice(0, labels.length).map(color => color.replace('0.8', '1')),
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              generateLabels: function(chart) {
+                const data = chart.data;
+                return data.labels.map((label, index) => {
+                  const value = data.datasets[0].data[index];
+                  const percentage = ((value / total) * 100).toFixed(1);
+                  // Truncar etiquetas largas
+                  const shortLabel = label.length > 25 ? label.substring(0, 22) + '...' : label;
+                  return {
+                    text: `${shortLabel}: ${value} (${percentage}%)`,
+                    fillStyle: data.datasets[0].backgroundColor[index],
+                    strokeStyle: data.datasets[0].borderColor[index],
+                    lineWidth: 2,
+                    index: index
+                  };
+                });
+              }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label;
+                const value = context.parsed;
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${label}: ${value} pacientes (${percentage}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error generando gráfica de distribución por facultad:', error);
+    canvas.parentElement.innerHTML = '<div class="alert-info">Error generando gráfica de distribución por facultad</div>';
+  }
+}
+
+// Función para generar gráfica de citas por estado
+function generarGraficaCitasPorEstado(datosCitas) {
+  const canvas = document.getElementById('appointments-chart');
+  if (!canvas) return;
+
+  try {
+    // Destruir gráfica existente si existe
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+      existingChart.destroy();
+    }
+
+    const labels = Object.keys(datosCitas);
+    const data = Object.values(datosCitas);
+    const total = data.reduce((sum, val) => sum + val, 0);
+
+    const colores = [
+      'rgba(16, 185, 129, 0.8)',  // Verde - Completadas
+      'rgba(245, 158, 11, 0.8)',  // Amarillo - Programadas
+      'rgba(239, 68, 68, 0.8)',   // Rojo - Canceladas
+      'rgba(6, 182, 212, 0.8)',   // Azul - Pendientes
+      'rgba(139, 92, 246, 0.8)'   // Morado - Otros
+    ];
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: colores.slice(0, labels.length),
+          borderColor: colores.slice(0, labels.length).map(color => color.replace('0.8', '1')),
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              generateLabels: function(chart) {
+                const data = chart.data;
+                return data.labels.map((label, index) => {
+                  const value = data.datasets[0].data[index];
+                  const percentage = ((value / total) * 100).toFixed(1);
+                  return {
+                    text: `${label}: ${value} (${percentage}%)`,
+                    fillStyle: data.datasets[0].backgroundColor[index],
+                    strokeStyle: data.datasets[0].borderColor[index],
+                    lineWidth: 2,
+                    index: index
+                  };
+                });
+              }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label;
+                const value = context.parsed;
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${label}: ${value} citas (${percentage}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error generando gráfica de citas por estado:', error);
+    canvas.parentElement.innerHTML = '<div class="alert-info">Error generando gráfica de citas por estado</div>';
+  }
+}
+
+// Función temporal para limpiar registros de navegación del sistema
+async function cleanNavigationRecords() {
+  try {
+    console.log('🗑️ Iniciando limpieza de registros de navegación...');
+    
+    // Importar Firebase dinámicamente
+    const { getFirestore, collection, query, where, getDocs, deleteDoc, doc } = await import('https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js');
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js');
+    
+    // Obtener configuración de Firebase del modelo
+    const firebaseConfigModule = await import('../models/firebaseConfig.js');
+    
+    // Usar la configuración exportada
+    const firebaseConfig = {
+      apiKey: "AIzaSyA-ZU02eVn2FiwkgpjveymB8VRUUeGSH3Y",
+      authDomain: "medicalweboffline.firebaseapp.com",
+      projectId: "medicalweboffline",
+      storageBucket: "medicalweboffline.firebasestorage.app",
+      messagingSenderId: "1038201454133",
+      appId: "1:1038201454133:web:f6ee7c6215f6b4d4febb7c"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    
+    const actividadesCollection = collection(db, 'registro_actividades');
+    
+    // Buscar registros antiguos de navegación que puedan quedar
+    const navegacionQuery = query(
+      actividadesCollection,
+      where('accion', 'in', ['navegacion', 'page_access', 'acceso', 'navegacion-bloqueada', 'navegar', 'navigation', 'menu', 'consulta'])
+    );
+    
+    console.log('🔍 Buscando registros de navegación antiguos...');
+    const snapshot = await getDocs(navegacionQuery);
+    
+    console.log(`📊 Encontrados ${snapshot.size} registros de navegación antiguos para eliminar`);
+    
+    if (snapshot.size === 0) {
+      console.log('⚪ No hay registros de navegación para limpiar');
+      return 0;
+    }
+    
+    // También buscar registros del módulo 'sistema'
+    const sistemaQuery = query(
+      actividadesCollection,
+      where('modulo', '==', 'sistema')
+    );
+    
+    const sistemaSnapshot = await getDocs(sistemaQuery);
+    console.log(`📊 Encontrados ${sistemaSnapshot.size} registros del módulo 'sistema' para eliminar`);
+    
+    // Combinar ambos conjuntos de documentos
+    const todosLosDocumentos = [...snapshot.docs, ...sistemaSnapshot.docs];
+    const documentosUnicos = todosLosDocumentos.filter((doc, index, arr) => 
+      arr.findIndex(d => d.id === doc.id) === index
+    );
+    
+    console.log(`📊 Total de documentos únicos a eliminar: ${documentosUnicos.length}`);
+    
+    // Eliminar registros en lotes para evitar sobrecarga
+    let deletedCount = 0;
+    const deletePromises = [];
+    
+    documentosUnicos.forEach((docSnapshot) => {
+      const docRef = doc(db, 'registro_actividades', docSnapshot.id);
+      deletePromises.push(deleteDoc(docRef));
+    });
+    
+    // Ejecutar eliminaciones en paralelo
+    console.log('🗑️ Eliminando registros...');
+    await Promise.all(deletePromises);
+    deletedCount = documentosUnicos.length;
+    
+    console.log(`✅ Se eliminaron ${deletedCount} registros de navegación antiguos exitosamente`);
+    
+    return deletedCount;
+    
+  } catch (error) {
+    console.error('❌ Error eliminando registros de navegación:', error);
+    throw error;
+  }
+}
+
+// Función para gestionar registros de actividades individuales
+async function renderActivityManagement() {
+  try {
+    console.log('🗂️ Renderizando gestión de registros de actividades...');
+    
+    const content = document.querySelector('.content');
+    content.innerHTML = `
+      <div class="section-container">
+        <div class="section-header">
+          <h2>
+            <i class="fas fa-list-alt"></i>
+            Gestión de Registros de Actividades
+          </h2>
+          <p class="section-description">
+            Administra y elimina registros de actividades individuales del sistema
+          </p>
+        </div>
+
+        <div class="filter-controls" style="margin-bottom: 20px;">
+          <div class="filter-row">
+            <div class="filter-group">
+              <label for="activity-type-filter">Tipo de Actividad:</label>
+              <select id="activity-type-filter" class="form-control">
+                <option value="">Todos los tipos</option>
+                <option value="login">Accesos</option>
+                <option value="logout">Cierres de sesión</option>
+                <option value="crud">Operaciones CRUD</option>
+                <option value="report">Reportes</option>
+                <option value="error">Errores</option>
+              </select>
+            </div>
+            
+            <div class="filter-group">
+              <label for="activity-module-filter">Módulo:</label>
+              <select id="activity-module-filter" class="form-control">
+                <option value="">Todos los módulos</option>
+                <option value="pacientes">Pacientes</option>
+                <option value="usuarios">Usuarios</option>
+                <option value="reportes">Reportes</option>
+                <option value="operaciones">Operaciones</option>
+                <option value="gestion">Gestión</option>
+                <option value="general">General</option>
+              </select>
+            </div>
+            
+            <div class="filter-group">
+              <label for="activity-date-filter">Fecha:</label>
+              <input type="date" id="activity-date-filter" class="form-control">
+            </div>
+            
+            <div class="filter-group">
+              <button type="button" id="apply-activity-filters" class="btn btn-primary">
+                <i class="fas fa-filter"></i> Filtrar
+              </button>
+              <button type="button" id="clear-activity-filters" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Limpiar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-controls" style="margin-bottom: 15px;">
+          <div class="bulk-actions">
+            <button type="button" id="select-all-records" class="btn btn-secondary">
+              <i class="fas fa-check-square"></i> Seleccionar Todo
+            </button>
+            <button type="button" id="deselect-all-records" class="btn btn-secondary">
+              <i class="fas fa-square"></i> Deseleccionar Todo
+            </button>
+            <button type="button" id="delete-selected-records" class="btn btn-danger" disabled>
+              <i class="fas fa-trash"></i> Eliminar Seleccionados
+            </button>
+          </div>
+          
+          <div class="record-count">
+            <span id="total-records-count">0 registros</span> |
+            <span id="selected-records-count">0 seleccionados</span>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div id="activity-records-loading" class="loading-state" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i>
+            Cargando registros de actividades...
+          </div>
+          
+          <div id="activity-records-table-container">
+            <!-- Tabla se renderiza aquí -->
+          </div>
+        </div>
+
+        <div class="pagination-container" id="activity-pagination" style="margin-top: 20px;">
+          <!-- Controles de paginación se renderizan aquí -->
+        </div>
+
+        <div class="back-button-container" style="margin-top: 30px;">
+          <button type="button" id="back-to-reports" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver a Reportes
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Variables de paginación y estado
+    let currentActivityRecords = [];
+    let filteredActivityRecords = [];
+    let currentActivityPage = 1;
+    const recordsPerPage = 15;
+    let selectedRecords = new Set();
+
+    // Cargar registros iniciales
+    await loadActivityRecords();
+
+    // Event listeners
+    document.getElementById('apply-activity-filters').addEventListener('click', applyActivityFilters);
+    document.getElementById('clear-activity-filters').addEventListener('click', clearActivityFilters);
+    document.getElementById('select-all-records').addEventListener('click', selectAllRecords);
+    document.getElementById('deselect-all-records').addEventListener('click', deselectAllRecords);
+    document.getElementById('delete-selected-records').addEventListener('click', deleteSelectedRecords);
+    document.getElementById('back-to-reports').addEventListener('click', () => {
+      renderReportes();
+    });
+
+    // Función para cargar registros de actividades
+    async function loadActivityRecords() {
+      try {
+        const loadingElement = document.getElementById('activity-records-loading');
+        loadingElement.style.display = 'block';
+
+        console.log('📊 Cargando registros de actividades...');
+        
+        // Usar ActivityLogger para obtener registros
+        const activityLogger = (await import('../utils/activityLogger.js')).default;
+        const records = await activityLogger.getActivities({
+          limit: 1000, // Cargar más registros para gestión
+          orderBy: 'timestamp',
+          orderDirection: 'desc'
+        });
+
+        currentActivityRecords = records;
+        filteredActivityRecords = [...records];
+        selectedRecords.clear();
+
+        console.log(`📋 Cargados ${records.length} registros de actividades`);
+
+        loadingElement.style.display = 'none';
+        renderActivityTable();
+        updateRecordCounts();
+
+      } catch (error) {
+        console.error('❌ Error cargando registros de actividades:', error);
+        document.getElementById('activity-records-loading').style.display = 'none';
+        document.getElementById('activity-records-table-container').innerHTML = `
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            Error cargando registros: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    // Función para aplicar filtros
+    function applyActivityFilters() {
+      const typeFilter = document.getElementById('activity-type-filter').value;
+      const moduleFilter = document.getElementById('activity-module-filter').value;
+      const dateFilter = document.getElementById('activity-date-filter').value;
+
+      console.log('🔍 Aplicando filtros:', { typeFilter, moduleFilter, dateFilter });
+
+      filteredActivityRecords = currentActivityRecords.filter(record => {
+        // Filtro por tipo
+        if (typeFilter && record.accion !== typeFilter) {
+          return false;
+        }
+
+        // Filtro por módulo
+        if (moduleFilter && record.modulo !== moduleFilter) {
+          return false;
+        }
+
+        // Filtro por fecha
+        if (dateFilter) {
+          const recordDate = new Date(record.timestamp).toISOString().split('T')[0];
+          if (recordDate !== dateFilter) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      console.log(`📊 Filtrados ${filteredActivityRecords.length} de ${currentActivityRecords.length} registros`);
+
+      currentActivityPage = 1;
+      selectedRecords.clear();
+      renderActivityTable();
+      updateRecordCounts();
+    }
+
+    // Función para limpiar filtros
+    function clearActivityFilters() {
+      document.getElementById('activity-type-filter').value = '';
+      document.getElementById('activity-module-filter').value = '';
+      document.getElementById('activity-date-filter').value = '';
+      
+      filteredActivityRecords = [...currentActivityRecords];
+      currentActivityPage = 1;
+      selectedRecords.clear();
+      renderActivityTable();
+      updateRecordCounts();
+    }
+
+    // Función para renderizar tabla de registros
+    function renderActivityTable() {
+      const container = document.getElementById('activity-records-table-container');
+      
+      if (filteredActivityRecords.length === 0) {
+        container.innerHTML = `
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            No se encontraron registros de actividades
+          </div>
+        `;
+        return;
+      }
+
+      // Calcular registros para la página actual
+      const startIndex = (currentActivityPage - 1) * recordsPerPage;
+      const endIndex = startIndex + recordsPerPage;
+      const pageRecords = filteredActivityRecords.slice(startIndex, endIndex);
+
+      const tableHTML = `
+        <table class="activity-table">
+          <thead>
+            <tr>
+              <th style="width: 40px;">
+                <input type="checkbox" id="select-page-records" ${selectedRecords.size === pageRecords.length && pageRecords.length > 0 ? 'checked' : ''}>
+              </th>
+              <th>Fecha/Hora</th>
+              <th>Usuario</th>
+              <th>Módulo</th>
+              <th>Acción</th>
+              <th>Descripción</th>
+              <th>Datos</th>
+              <th style="width: 80px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pageRecords.map(record => {
+              const isSelected = selectedRecords.has(record.id);
+              return `
+                <tr class="${isSelected ? 'selected' : ''}">
+                  <td>
+                    <input type="checkbox" class="record-checkbox" data-record-id="${record.id}" ${isSelected ? 'checked' : ''}>
+                  </td>
+                  <td>${formatTimestamp(record.timestamp)}</td>
+                  <td>${record.usuario || 'Sistema'}</td>
+                  <td>
+                    <span class="module-badge module-${record.modulo}">${record.modulo}</span>
+                  </td>
+                  <td>
+                    <span class="action-badge action-${record.accion}">${record.accion}</span>
+                  </td>
+                  <td class="description-cell">${record.descripcion || '-'}</td>
+                  <td class="data-cell">
+                    ${record.datos ? `<button class="btn-link view-data" data-record-id="${record.id}">Ver datos</button>` : '-'}
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-danger delete-record" data-record-id="${record.id}" title="Eliminar registro">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+
+      container.innerHTML = tableHTML;
+      renderActivityPagination();
+      attachTableEventListeners();
+    }
+
+    // Función para renderizar paginación
+    function renderActivityPagination() {
+      const totalPages = Math.ceil(filteredActivityRecords.length / recordsPerPage);
+      const paginationContainer = document.getElementById('activity-pagination');
+
+      if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+      }
+
+      let paginationHTML = '<div class="pagination">';
+      
+      // Botón anterior
+      if (currentActivityPage > 1) {
+        paginationHTML += `<button class="page-btn" data-page="${currentActivityPage - 1}">Anterior</button>`;
+      }
+
+      // Números de página
+      for (let i = 1; i <= totalPages; i++) {
+        if (i === currentActivityPage) {
+          paginationHTML += `<button class="page-btn active" data-page="${i}">${i}</button>`;
+        } else if (i === 1 || i === totalPages || (i >= currentActivityPage - 2 && i <= currentActivityPage + 2)) {
+          paginationHTML += `<button class="page-btn" data-page="${i}">${i}</button>`;
+        } else if (i === currentActivityPage - 3 || i === currentActivityPage + 3) {
+          paginationHTML += '<span class="page-ellipsis">...</span>';
+        }
+      }
+
+      // Botón siguiente
+      if (currentActivityPage < totalPages) {
+        paginationHTML += `<button class="page-btn" data-page="${currentActivityPage + 1}">Siguiente</button>`;
+      }
+
+      paginationHTML += '</div>';
+      paginationContainer.innerHTML = paginationHTML;
+
+      // Event listeners para paginación
+      paginationContainer.querySelectorAll('.page-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const page = parseInt(e.target.getAttribute('data-page'));
+          if (page !== currentActivityPage) {
+            currentActivityPage = page;
+            renderActivityTable();
+          }
+        });
+      });
+    }
+
+    // Función para adjuntar event listeners a la tabla
+    function attachTableEventListeners() {
+      // Checkbox de seleccionar página
+      const selectPageCheckbox = document.getElementById('select-page-records');
+      if (selectPageCheckbox) {
+        selectPageCheckbox.addEventListener('change', (e) => {
+          const startIndex = (currentActivityPage - 1) * recordsPerPage;
+          const endIndex = startIndex + recordsPerPage;
+          const pageRecords = filteredActivityRecords.slice(startIndex, endIndex);
+          
+          if (e.target.checked) {
+            pageRecords.forEach(record => selectedRecords.add(record.id));
+          } else {
+            pageRecords.forEach(record => selectedRecords.delete(record.id));
+          }
+          
+          renderActivityTable();
+          updateRecordCounts();
+          updateDeleteButtonState();
+        });
+      }
+
+      // Checkboxes individuales
+      document.querySelectorAll('.record-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          const recordId = e.target.getAttribute('data-record-id');
+          
+          if (e.target.checked) {
+            selectedRecords.add(recordId);
+          } else {
+            selectedRecords.delete(recordId);
+          }
+          
+          updateRecordCounts();
+          updateDeleteButtonState();
+        });
+      });
+
+      // Botones de eliminar individual
+      document.querySelectorAll('.delete-record').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const recordId = e.target.closest('.delete-record').getAttribute('data-record-id');
+          await deleteActivityRecord(recordId);
+        });
+      });
+
+      // Botones de ver datos
+      document.querySelectorAll('.view-data').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const recordId = e.target.getAttribute('data-record-id');
+          showRecordData(recordId);
+        });
+      });
+    }
+
+    // Función para eliminar un registro individual
+    async function deleteActivityRecord(recordId) {
+      try {
+        const record = currentActivityRecords.find(r => r.id === recordId);
+        if (!record) {
+          throw new Error('Registro no encontrado');
+        }
+
+        const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar este registro?\n\nUsuario: ${record.usuario || 'Sistema'}\nAcción: ${record.accion}\nFecha: ${formatTimestamp(record.timestamp)}`);
+        
+        if (!confirmDelete) {
+          return;
+        }
+
+        console.log('🗑️ Eliminando registro:', recordId);
+
+        // Importar Firebase dinámicamente
+        const { getFirestore, doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js');
+        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js');
+        
+        // Configuración de Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyA-ZU02eVn2FiwkgpjveymB8VRUUeGSH3Y",
+          authDomain: "medicalweboffline.firebaseapp.com",
+          projectId: "medicalweboffline",
+          storageBucket: "medicalweboffline.firebasestorage.app",
+          messagingSenderId: "1038201454133",
+          appId: "1:1038201454133:web:f6ee7c6215f6b4d4febb7c"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Eliminar documento de Firebase
+        const docRef = doc(db, 'registro_actividades', recordId);
+        await deleteDoc(docRef);
+
+        console.log('✅ Registro eliminado exitosamente');
+
+        // Actualizar arrays locales
+        currentActivityRecords = currentActivityRecords.filter(r => r.id !== recordId);
+        filteredActivityRecords = filteredActivityRecords.filter(r => r.id !== recordId);
+        selectedRecords.delete(recordId);
+
+        // Re-renderizar tabla
+        renderActivityTable();
+        updateRecordCounts();
+        updateDeleteButtonState();
+
+        // Mostrar mensaje de éxito
+        showNotification('Registro eliminado exitosamente', 'success');
+
+      } catch (error) {
+        console.error('❌ Error eliminando registro:', error);
+        showNotification('Error eliminando registro: ' + error.message, 'error');
+      }
+    }
+
+    // Función para seleccionar todos los registros
+    function selectAllRecords() {
+      filteredActivityRecords.forEach(record => selectedRecords.add(record.id));
+      renderActivityTable();
+      updateRecordCounts();
+      updateDeleteButtonState();
+    }
+
+    // Función para deseleccionar todos los registros
+    function deselectAllRecords() {
+      selectedRecords.clear();
+      renderActivityTable();
+      updateRecordCounts();
+      updateDeleteButtonState();
+    }
+
+    // Función para eliminar registros seleccionados
+    async function deleteSelectedRecords() {
+      if (selectedRecords.size === 0) {
+        return;
+      }
+
+      const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar ${selectedRecords.size} registros seleccionados?\n\nEsta acción no se puede deshacer.`);
+      
+      if (!confirmDelete) {
+        return;
+      }
+
+      try {
+        console.log(`🗑️ Eliminando ${selectedRecords.size} registros seleccionados...`);
+
+        // Importar Firebase dinámicamente
+        const { getFirestore, doc, deleteDoc } = await import('https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js');
+        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js');
+        
+        // Configuración de Firebase
+        const firebaseConfig = {
+          apiKey: "AIzaSyA-ZU02eVn2FiwkgpjveymB8VRUUeGSH3Y",
+          authDomain: "medicalweboffline.firebaseapp.com",
+          projectId: "medicalweboffline",
+          storageBucket: "medicalweboffline.firebasestorage.app",
+          messagingSenderId: "1038201454133",
+          appId: "1:1038201454133:web:f6ee7c6215f6b4d4febb7c"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Eliminar registros en paralelo
+        const deletePromises = Array.from(selectedRecords).map(recordId => {
+          const docRef = doc(db, 'registro_actividades', recordId);
+          return deleteDoc(docRef);
+        });
+
+        await Promise.all(deletePromises);
+
+        console.log(`✅ Se eliminaron ${selectedRecords.size} registros exitosamente`);
+
+        // Actualizar arrays locales
+        const selectedIds = Array.from(selectedRecords);
+        currentActivityRecords = currentActivityRecords.filter(r => !selectedIds.includes(r.id));
+        filteredActivityRecords = filteredActivityRecords.filter(r => !selectedIds.includes(r.id));
+        selectedRecords.clear();
+
+        // Re-renderizar tabla
+        renderActivityTable();
+        updateRecordCounts();
+        updateDeleteButtonState();
+
+        // Mostrar mensaje de éxito
+        showNotification(`Se eliminaron ${selectedIds.length} registros exitosamente`, 'success');
+
+      } catch (error) {
+        console.error('❌ Error eliminando registros seleccionados:', error);
+        showNotification('Error eliminando registros: ' + error.message, 'error');
+      }
+    }
+
+    // Función para actualizar contadores
+    function updateRecordCounts() {
+      document.getElementById('total-records-count').textContent = `${filteredActivityRecords.length} registros`;
+      document.getElementById('selected-records-count').textContent = `${selectedRecords.size} seleccionados`;
+    }
+
+    // Función para actualizar estado del botón eliminar
+    function updateDeleteButtonState() {
+      const deleteBtn = document.getElementById('delete-selected-records');
+      deleteBtn.disabled = selectedRecords.size === 0;
+    }
+
+    // Función para mostrar datos de un registro
+    function showRecordData(recordId) {
+      const record = currentActivityRecords.find(r => r.id === recordId);
+      if (!record || !record.datos) {
+        return;
+      }
+
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h4>Datos del Registro</h4>
+              <button type="button" class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+              <pre>${JSON.stringify(record.datos, null, 2)}</pre>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary close-modal">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      modal.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.body.removeChild(modal);
+        });
+      });
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          document.body.removeChild(modal);
+        }
+      });
+    }
+
+    // Función para formatear timestamp
+    function formatTimestamp(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+
+    // Función para mostrar notificaciones
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `notification notification-${type}`;
+      notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+        ${message}
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.classList.add('show');
+      }, 100);
+      
+      setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+        }, 300);
+      }, 3000);
+    }
+
+  } catch (error) {
+    console.error('❌ Error renderizando gestión de actividades:', error);
+    const content = document.querySelector('.content');
+    content.innerHTML = `
+      <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i>
+        Error cargando gestión de actividades: ${error.message}
+      </div>
+    `;
   }
 }

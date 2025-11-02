@@ -2104,6 +2104,7 @@
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initPacienteController } from '../js/controllers/pacienteController.js';
     import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
+    import { FirebaseSyncManager } from '../js/utils/firebaseSyncManager.js';
     // HeaderComponent eliminado, ahora usamos header individual
     import '../js/utils/eventBusManager.js';      // Event Bus monitoring
     import '../js/utils/performanceMonitor.js';   // Performance monitoring
@@ -2150,6 +2151,28 @@
           initGlobalController();
           initPacienteController();
           ConnectionIndicator.init();
+          FirebaseSyncManager.init();
+          
+          // Configurar mensajes de sincronización específicos para pacientes
+          if (window.firebaseSyncManager) {
+            // Callback para refrescar contenido de pacientes
+            window.firebaseSyncManager.onContentRefresh(async () => {
+              console.log('🔄 Refrescando datos de pacientes...');
+              
+              // Refrescar lista de pacientes
+              if (window.pacienteController && window.pacienteController.cargarPacientes) {
+                await window.pacienteController.cargarPacientes();
+              }
+              
+              // Refrescar lista de pacientes pendientes
+              if (window.pacienteController && window.pacienteController.cargarPacientesPendientes) {
+                await window.pacienteController.cargarPacientesPendientes();
+              }
+            });
+            
+            // Mostrar mensaje de bienvenida
+            window.firebaseSyncManager.showSyncMessage('Módulo de Pacientes', 'info', 'Listo para gestionar pacientes');
+          }
           
           // Inicializar navegación entre secciones
           initNavegacionPacientes();

@@ -1,6 +1,7 @@
 // js/models/reporteModel.js
 import { pacienteModel } from './pacienteModel.js';
 import { authModel } from './storageModel.js';
+import ActivityLogger from '../utils/activityLogger.js';
 
 export const reporteModel = {
   // Obtener estadísticas generales del sistema
@@ -10,7 +11,10 @@ export const reporteModel = {
     const usuarios = await authModel.getAllUsers();
     const citas = await pacienteModel.getCitas();
     const historialMedico = await pacienteModel.getHistorialMedico();
-    const actividades = await authModel.getActividades();
+    const actividades = await ActivityLogger.getActivities({ limit: 100 });
+    
+    // Obtener registros médicos de Firebase para estadísticas más precisas
+    const registrosMedicos = await pacienteModel.getHistorialMedico();
     
     // Fecha para filtrar por periodo
     const fechaLimite = getFechaLimite(periodo);
@@ -19,7 +23,7 @@ export const reporteModel = {
     const pacientesRecientes = pacientes.filter(p => new Date(p.fechaRegistro) >= fechaLimite);
     const citasRecientes = citas.filter(c => new Date(c.fecha) >= fechaLimite);
     const consultasRecientes = historialMedico.filter(h => new Date(h.fecha) >= fechaLimite);
-    const actividadesRecientes = actividades.filter(a => new Date(a.fecha) >= fechaLimite);
+    const actividadesRecientes = actividades.filter(a => new Date(a.timestamp) >= fechaLimite);
     
     // Estadísticas de género de pacientes
     const pacientesPorGenero = pacientes.reduce((acc, paciente) => {
@@ -82,7 +86,213 @@ export const reporteModel = {
     };
   },
   
-  // Generar estadísticas personalizadas
+  // Nueva función para obtener datos médicos para gráficas de evolución
+  getEvolucionMedicaPaciente: async (pacienteId) => {
+    try {
+      console.log(`📊 Obteniendo evolución médica del paciente ${pacienteId}...`);
+      
+      // Obtener registros médicos específicos del paciente desde Firebase
+      const registrosMedicos = await pacienteModel.getRegistrosMedicosPaciente(pacienteId);
+      
+      if (!registrosMedicos || registrosMedicos.length === 0) {
+        console.log(`⚠️ No se encontraron registros médicos para el paciente ${pacienteId}`);
+        return {
+          temperatura: [],
+          peso: [],
+          talla: [],
+          frecuenciaRespiratoria: [],
+          presion: [],
+          glucosa: []
+        };
+      }
+
+      console.log(`📋 Procesando ${registrosMedicos.length} registros médicos para paciente ${pacienteId}:`, registrosMedicos);
+
+      // Procesar y organizar los datos por parámetro
+      const evolucion = {
+        temperatura: [],
+        peso: [],
+        talla: [],
+        frecuenciaRespiratoria: [],
+        presion: [],
+        glucosa: []
+      };
+
+      // Ordenar registros por fecha (usar timestamp o fecha)
+      registrosMedicos.sort((a, b) => {
+        const fechaA = new Date(a.timestamp?.toDate?.() || a.fecha?.toDate?.() || a.timestamp || a.fecha || 0);
+        const fechaB = new Date(b.timestamp?.toDate?.() || b.fecha?.toDate?.() || b.timestamp || b.fecha || 0);
+        return fechaA - fechaB;
+      });
+
+      registrosMedicos.forEach((registro, index) => {
+        console.log(`🔍 Procesando registro ${index + 1}:`, registro);
+        
+        // Extraer fecha del registro (puede ser timestamp de Firestore)
+        let fecha = null;
+        if (registro.timestamp?.toDate) {
+          fecha = registro.timestamp.toDate();
+        } else if (registro.fecha?.toDate) {
+          fecha = registro.fecha.toDate();
+        } else if (registro.timestamp) {
+          fecha = new Date(registro.timestamp);
+        } else if (registro.fecha) {
+          fecha = new Date(registro.fecha);
+        }
+        
+        if (!fecha || isNaN(fecha.getTime())) {
+          console.warn(`⚠️ Fecha inválida en registro ${index + 1}, saltando...`);
+          return;
+        }
+
+        const fechaFormateada = fecha.toLocaleDateString('es-ES');
+        const fechaRaw = fecha.toISOString();
+
+        console.log(`📅 Procesando datos médicos del ${fechaFormateada}:`, registro.datosMedicos);
+
+        // Extraer datos médicos de la estructura de Firebase
+        const datosMedicos = registro.datosMedicos || {};
+
+        // Temperatura corporal
+        if (datosMedicos.temperatura_corporal && !isNaN(parseFloat(datosMedicos.temperatura_corporal))) {
+          evolucion.temperatura.push({
+            fecha: fechaFormateada,
+            valor: parseFloat(datosMedicos.temperatura_corporal),
+            fechaRaw: fechaRaw
+          });
+          console.log(`🌡️ Temperatura: ${datosMedicos.temperatura_corporal}°C`);
+        }
+
+        // Peso
+        if (datosMedicos.peso && !isNaN(parseFloat(datosMedicos.peso))) {
+          evolucion.peso.push({
+            fecha: fechaFormateada,
+            valor: parseFloat(datosMedicos.peso),
+            fechaRaw: fechaRaw
+          });
+          console.log(`⚖️ Peso: ${datosMedicos.peso}kg`);
+        }
+
+        // Talla
+        if (datosMedicos.talla && !isNaN(parseFloat(datosMedicos.talla))) {
+          evolucion.talla.push({
+            fecha: fechaFormateada,
+            valor: parseFloat(datosMedicos.talla),
+            fechaRaw: fechaRaw
+          });
+          console.log(`📏 Talla: ${datosMedicos.talla}cm`);
+        }
+
+        // Frecuencia respiratoria
+        if (datosMedicos.frecuencia_respiratoria && !isNaN(parseFloat(datosMedicos.frecuencia_respiratoria))) {
+          evolucion.frecuenciaRespiratoria.push({
+            fecha: fechaFormateada,
+            valor: parseFloat(datosMedicos.frecuencia_respiratoria),
+            fechaRaw: fechaRaw
+          });
+          console.log(`🫁 Frecuencia respiratoria: ${datosMedicos.frecuencia_respiratoria}rpm`);
+        }
+
+        // Presión arterial
+        if (datosMedicos.presion_arterial) {
+          let presionValor = null;
+          const presionStr = String(datosMedicos.presion_arterial).trim();
+          
+          if (presionStr.includes('/')) {
+            const partes = presionStr.split('/');
+            if (partes.length >= 2) {
+              const sistolica = parseFloat(partes[0].trim());
+              const diastolica = parseFloat(partes[1].trim());
+              if (!isNaN(sistolica) && !isNaN(diastolica)) {
+                presionValor = sistolica; // Usar presión sistólica para la gráfica principal
+              }
+            }
+          } else if (!isNaN(parseFloat(presionStr))) {
+            presionValor = parseFloat(presionStr);
+          }
+
+          if (presionValor !== null) {
+            evolucion.presion.push({
+              fecha: fechaFormateada,
+              valor: presionValor,
+              presionCompleta: datosMedicos.presion_arterial,
+              fechaRaw: fechaRaw
+            });
+            console.log(`💓 Presión arterial: ${datosMedicos.presion_arterial}`);
+          }
+        }
+
+        // Glucosa (no está en el ejemplo pero por si existe)
+        if (datosMedicos.glucosa && !isNaN(parseFloat(datosMedicos.glucosa))) {
+          evolucion.glucosa.push({
+            fecha: fechaFormateada,
+            valor: parseFloat(datosMedicos.glucosa),
+            fechaRaw: fechaRaw
+          });
+          console.log(`🩸 Glucosa: ${datosMedicos.glucosa}mg/dL`);
+        }
+      });
+
+      console.log(`✅ Evolución médica procesada para paciente ${pacienteId}:`, evolucion);
+      
+      // Verificar que tengamos datos para mostrar
+      const totalPuntos = Object.values(evolucion).reduce((total, parametro) => total + parametro.length, 0);
+      console.log(`📊 Total de puntos de datos extraídos: ${totalPuntos}`);
+      
+      return evolucion;
+
+    } catch (error) {
+      console.error('❌ Error obteniendo evolución médica del paciente:', error);
+      return {
+        temperatura: [],
+        peso: [],
+        talla: [],
+        frecuenciaRespiratoria: [],
+        presion: [],
+        glucosa: []
+      };
+    }
+  },
+
+  // Función para obtener todos los pacientes con sus datos de evolución médica
+  getTodosPacientesConEvolucion: async () => {
+    try {
+      console.log('📊 Obteniendo evolución médica de todos los pacientes...');
+      
+      const pacientes = await pacienteModel.getPacientes();
+      console.log(`👥 Total de pacientes encontrados: ${pacientes.length}`);
+      
+      const pacientesConEvolucion = [];
+
+      for (const paciente of pacientes) {
+        console.log(`🔍 Procesando paciente: ${paciente.nombre} (ID: ${paciente.id})`);
+        
+        const evolucion = await reporteModel.getEvolucionMedicaPaciente(paciente.id);
+        
+        // Solo incluir pacientes que tengan al menos algunos datos médicos
+        const tieneRegistros = Object.values(evolucion).some(parametro => parametro.length > 0);
+        
+        if (tieneRegistros) {
+          const totalPuntos = Object.values(evolucion).reduce((total, parametro) => total + parametro.length, 0);
+          console.log(`✅ Paciente ${paciente.nombre} incluido con ${totalPuntos} puntos de datos médicos`);
+          
+          pacientesConEvolucion.push({
+            ...paciente,
+            evolucionMedica: evolucion
+          });
+        } else {
+          console.log(`⚠️ Paciente ${paciente.nombre} excluido - sin registros médicos`);
+        }
+      }
+
+      console.log(`✅ ${pacientesConEvolucion.length} pacientes con datos médicos obtenidos de ${pacientes.length} total`);
+      return pacientesConEvolucion;
+
+    } catch (error) {
+      console.error('❌ Error obteniendo pacientes con evolución médica:', error);
+      return [];
+    }
+  },
   getEstadisticasPersonalizadas: async (configuracion) => {
     const { periodo = 'mes', tipo = 'general' } = configuracion;
     const estadisticas = await reporteModel.getEstadisticas(periodo);
@@ -236,10 +446,75 @@ export const reporteModel = {
   
   // Generar reporte de actividad del sistema (solo registros de storageModel)
   getReporteActividades: async (filtro = {}) => {
-    // Usar solo los registros generados por storageModel/authModel con JWT
-    const actividades = await authModel.getActividades(filtro);
-    // Filtrar solo los registros con sistemaAuth: 'JWT'
-    return actividades.filter(a => a.sistemaAuth === 'JWT');
+    try {
+      // Usar el nuevo ActivityLogger para obtener actividades de Firebase
+      console.log('📊 Obteniendo reporte de actividades con filtros:', filtro);
+      
+      // Convertir filtros del formato anterior al nuevo formato
+      const activityFilters = {};
+      
+      if (filtro.fechaInicio) {
+        activityFilters.fechaInicio = filtro.fechaInicio;
+      }
+      
+      if (filtro.fechaFin) {
+        activityFilters.fechaFin = filtro.fechaFin;
+      }
+      
+      if (filtro.usuario) {
+        // Buscar por nombre de usuario en el nuevo sistema
+        activityFilters.usuarioNombre = filtro.usuario;
+      }
+      
+      if (filtro.accion) {
+        activityFilters.accion = filtro.accion;
+      }
+      
+      if (filtro.modulo) {
+        activityFilters.modulo = filtro.modulo;
+      }
+      
+      // Pasar el límite si existe
+      if (filtro.limit) {
+        activityFilters.limit = filtro.limit;
+      }
+      
+      console.log('🔍 Filtros convertidos para ActivityLogger:', activityFilters);
+      
+      // Obtener actividades usando el nuevo sistema
+      const actividades = await ActivityLogger.getActivities(activityFilters);
+      
+      console.log(`📊 ActivityLogger devolvió ${actividades.length} actividades`);
+      
+      // Convertir al formato esperado por la vista
+      const actividadesConvertidas = actividades.map(actividad => ({
+        id: actividad.id,
+        fecha: actividad.timestamp,
+        usuario: actividad.usuarioNombre || actividad.usuarioMatricula,
+        accion: actividad.accion,
+        descripcion: actividad.descripcion,
+        modulo: actividad.modulo,
+        detalles: actividad.detalles,
+        // Mantener compatibilidad con código anterior
+        sistemaAuth: 'Firebase'
+      }));
+      
+      console.log(`✅ Retornando ${actividadesConvertidas.length} actividades convertidas`);
+      return actividadesConvertidas;
+      
+    } catch (error) {
+      console.error('❌ Error obteniendo reporte de actividades:', error);
+      
+      // Fallback: usar método anterior si el nuevo falla
+      try {
+        console.log('🔄 Intentando fallback con authModel...');
+        const actividades = await authModel.getActividades(filtro);
+        return actividades.filter(a => a.sistemaAuth === 'JWT');
+      } catch (fallbackError) {
+        console.error('❌ Error en fallback de actividades:', fallbackError);
+        return [];
+      }
+    }
   },
   
   // Exportar a PDF (abre una vista imprimible; el usuario puede elegir "Guardar como PDF").

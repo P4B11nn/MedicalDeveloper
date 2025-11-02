@@ -156,7 +156,7 @@ export function initUsersController() {
   
   // Hacer disponible globalmente para depuración
   window.UsersController = {
-    createUser: (userData) => {
+    createUser: async (userData) => {
       console.log('UsersController.createUser llamado con:', userData);
       
       // Generar ID automático antes de crear el usuario
@@ -166,6 +166,18 @@ export function initUsersController() {
       
       const success = authModel.addUser(userData);
       if (success) {
+        // Registrar actividad de creación de usuario
+        try {
+          const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+          await ActivityLogger.createUserActivity(
+            userData.id,
+            userData.nombre,
+            userData.rol
+          );
+        } catch (error) {
+          console.warn('Error registrando actividad de creación de usuario:', error);
+        }
+
         eventBus.emit(EVENT_NAMES.USER_CREATED, { user: userData });
         const usuarioActual = obtenerUsuarioActual();
         mostrarMensaje('success', '✅ Usuario Registrado', 

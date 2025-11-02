@@ -66,14 +66,6 @@ export class AuthGuard {
         
         console.log(`AuthGuard: Acceso autorizado para rol "${usuarioActual.rol}"`);
         
-        // Registrar actividad de acceso exitoso
-        const actividadData = {
-            accion: 'page_access',
-            descripcion: `Acceso a página: ${fileName}`
-        };
-        
-        authModel.registrarActividad(actividadData);
-        
         // Emitir evento de acceso exitoso
         eventBus.emit(EVENT_NAMES.USER_LOGIN, { user: usuarioActual, page: fileName });
         

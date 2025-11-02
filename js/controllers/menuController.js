@@ -85,12 +85,6 @@ export function initMenuController() {
     });
   }
   
-  // Log menu initialization
-  authModel.registrarActividad({
-    accion: 'menu',
-    descripcion: `Acceso al menú principal como ${currentUser.rol}`
-  });
-  
   console.log('Menú inicializado correctamente');
 }
 
@@ -209,18 +203,12 @@ function setupCategoryButtons() {
         e.preventDefault();
         e.stopPropagation();
         console.log('menuController: Click en operaciones-control bloqueado (no navega)');
-        // Registrar intento de navegación pero no redirigir
-        authModel.registrarActividad({ accion: 'navegacion-bloqueada', descripcion: `Intento de navegar desde ${category}` });
       });
       return; // saltar configuración normal para este botón
     }
 
     button.addEventListener('click', () => {
       // Para otros botones, procesar navegación
-      authModel.registrarActividad({
-        accion: 'navegar',
-        descripcion: `Navegando a sección ${category}`
-      });
       window.location.href = `/js/views/pages/categoria-${category}.html`;
     });
   });

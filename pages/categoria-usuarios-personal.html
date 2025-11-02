@@ -891,6 +891,7 @@
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initUsersController } from '../js/controllers/usersController.js';
     import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
+    import { FirebaseSyncManager } from '../js/utils/firebaseSyncManager.js';
     // HeaderComponent eliminado, ahora usamos header individual
     
     document.addEventListener('DOMContentLoaded', () => {
@@ -905,6 +906,28 @@
           initGlobalController();
           initUsersController();
           ConnectionIndicator.init();
+          FirebaseSyncManager.init();
+          
+          // Configurar mensajes de sincronización específicos para usuarios
+          if (window.firebaseSyncManager) {
+            // Callback para refrescar contenido de usuarios
+            window.firebaseSyncManager.onContentRefresh(async () => {
+              console.log('🔄 Refrescando datos de usuarios...');
+              
+              // Refrescar lista de usuarios
+              if (window.usersController && window.usersController.cargarUsuarios) {
+                await window.usersController.cargarUsuarios();
+              }
+              
+              // Refrescar lista de roles/permisos si existe
+              if (window.usersController && window.usersController.cargarRoles) {
+                await window.usersController.cargarRoles();
+              }
+            });
+            
+            // Mostrar mensaje de bienvenida
+            window.firebaseSyncManager.showSyncMessage('Módulo de Usuarios', 'info', 'Listo para gestionar usuarios y personal');
+          }
         }, 100);
       }
     });

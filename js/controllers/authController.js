@@ -69,6 +69,14 @@ async function handleLogin() {
             throw new Error('Credenciales inválidas');
         }
 
+        // Registrar actividad de login
+        try {
+            const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+            await ActivityLogger.loginActivity(usuarioValido.uid || usuarioValido.id, 'web');
+        } catch (error) {
+            console.warn('Error registrando actividad de login:', error);
+        }
+
         // Limpiar campos sensibles
         contrasenaInput.value = '';
 
@@ -110,6 +118,17 @@ export function checkAuth() {
 // Agregar función para logout seguro
 export async function handleLogout() {
     try {
+        // Registrar actividad de logout antes de hacer logout
+        try {
+            const currentUser = authModel.getCurrentUser();
+            if (currentUser) {
+                const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+                await ActivityLogger.logoutActivity(currentUser.uid || currentUser.id);
+            }
+        } catch (error) {
+            console.warn('Error registrando actividad de logout:', error);
+        }
+
         await authModel.logout();
         window.location.href = '/index.html';
     } catch (error) {
@@ -125,6 +144,17 @@ export async function handleLogout() {
  */
 export async function logout() { // Convertido a async para el futuro
   console.log('AuthController: Iniciando proceso de logout');
+
+  // Registrar actividad de logout antes de hacer logout
+  try {
+    const currentUser = authModel.getCurrentUser();
+    if (currentUser) {
+      const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+      await ActivityLogger.logoutActivity(currentUser.uid || currentUser.id);
+    }
+  } catch (error) {
+    console.warn('Error registrando actividad de logout:', error);
+  }
 
   // authModel.logout() ya es asíncrono y maneja el registro de actividad
   await authModel.logout();

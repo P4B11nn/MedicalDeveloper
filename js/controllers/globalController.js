@@ -303,12 +303,6 @@ function setupBackButton() {
  * Manejar navegación de regreso al menú
  */
 function goBackToMenu() {
-  // Registrar la navegación
-  authModel.registrarActividad({
-    accion: 'navigation',
-    descripcion: 'Regreso al menú principal'
-  });
-  
   // Determinar la ruta correcta según la ubicación actual
   const currentPath = window.location.pathname;
   const isInPagesFolder = currentPath.includes('/pages/');
@@ -325,11 +319,6 @@ function goBackToMenu() {
  */
 function handleNavigation(data) {
   console.log('GlobalController: Manejando navegación', data);
-  
-  authModel.registrarActividad({
-    accion: 'navigation',
-    descripcion: `Navegación a: ${data.target} (${data.source})`
-  });
 }
 
 /**

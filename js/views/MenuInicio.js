@@ -61,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
           e.preventDefault();
           e.stopPropagation();
           console.log('MenuInicio: Click en operaciones-control bloqueado (no navega)');
-          authModel.registrarActividad({ accion: 'navegacion-bloqueada', descripcion: 'Intento de navegación desde operaciones-control' });
         });
         console.log(`MenuInicio: Sección '${category}' habilitada pero click bloqueado (usa submenu)`);
       } else {
@@ -76,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'gestion': url = 'pages/categoria-gestion.html'; break;
             default: url = 'index.html';
           }
-          authModel.registrarActividad({ accion: 'navigation', descripcion: `Navegación a categoría: ${category}` });
           eventBus.emit(EVENT_NAMES.NAVIGATE_TO, { target: url, category: category, source: 'menu_button' });
           window.location.href = url;
         });

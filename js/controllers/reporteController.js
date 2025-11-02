@@ -228,12 +228,6 @@ export async function initReporteController() {
       await renderEstadisticas();
     }
   }
-
-  // Registrar actividad de acceso a reportes (no await para no bloquear la UI)
-  authModel.registrarActividad({
-    accion: 'acceso',
-    descripcion: 'Acceso al módulo de reportes'
-  }).catch(() => {});
 }
 
 // Funciones para manejar la exportación de datos
@@ -397,7 +391,7 @@ export async function exportarDatosCSV(tipoExportacion) {
 
         const nombreArchivo = `historial_${paciente ? (paciente.matricula || pacienteId) : pacienteId}`;
 
-  const resultado = await reporteModel.exportarPDF(datosParaExport, nombreArchivo);
+        const resultado = await reporteModel.exportarPDF(datosParaExport, nombreArchivo);
         if (resultado && resultado.success) {
           mostrarConfirmacion('Éxito', `Historial del paciente preparado para exportación.`);
           authModel.registrarActividad({ accion: 'exportar', descripcion: `Exportación historial paciente: ${pacienteId}` }).catch(()=>{});
@@ -462,8 +456,8 @@ export async function exportarDatosCSV(tipoExportacion) {
     }
 
     // Pacientes y citas
-  const resultado = await reporteModel.exportarPDF(datos, nombreArchivo);
-  if (resultado && resultado.success) {
+    const resultado = await reporteModel.exportarPDF(datos, nombreArchivo);
+    if (resultado && resultado.success) {
       mostrarConfirmacion('Éxito', `Los datos de ${tipoExportacion} han sido preparados para exportación.`);
       authModel.registrarActividad({ accion: 'exportar', descripcion: `Exportación de datos: ${tipoExportacion}` }).catch(()=>{});
     } else {
@@ -478,44 +472,161 @@ export async function exportarDatosCSV(tipoExportacion) {
 // Funciones para filtrar actividades
 export async function filtrarActividades(filtros) {
   try {
+    console.log('🔍 Filtrando actividades con:', filtros);
+    
+    // Adaptar filtros para el nuevo sistema
+    const activityFilters = {
+      fechaInicio: filtros.fechaInicio,
+      fechaFin: filtros.fechaFin,
+      accion: filtros.accion,
+      modulo: filtros.modulo,
+      limit: parseInt(filtros.limite) || 100
+    };
+
+    // Si hay filtro de usuario, usar el campo correcto
+    if (filtros.usuario) {
+      activityFilters.usuarioNombre = filtros.usuario;
+    }
+
+    console.log('🔧 Filtros adaptados:', activityFilters);
+
     // Aplicar filtros y renderizar resultados
-    const actividades = await reporteModel.getReporteActividades(filtros);
+    console.log('📞 Llamando a reporteModel.getReporteActividades...');
+    const actividades = await reporteModel.getReporteActividades(activityFilters);
+    
+    console.log(`📊 reporteModel devolvió ${actividades.length} actividades:`, actividades);
     
     // Actualizar la vista con los resultados filtrados
     const contenedorResultados = document.getElementById('resultadosActividades');
-    if (!contenedorResultados) return;
+    if (!contenedorResultados) {
+      console.error('❌ No se encontró el contenedor resultadosActividades');
+      return;
+    }
+    
+    console.log('✅ Contenedor de resultados encontrado, actualizando...');
     
     if (actividades.length === 0) {
+      console.log('⚠️ No se encontraron actividades, mostrando mensaje de vacío');
       contenedorResultados.innerHTML = `
         <div class="alert-info">
+          <i class="fas fa-search"></i>
           No se encontraron actividades que coincidan con los filtros seleccionados.
+          <br><br>
+          <strong>💡 Sugerencias:</strong>
+          <ul style="margin-top: 10px; text-align: left;">
+            <li>Amplía el rango de fechas</li>
+            <li>Reduce los filtros específicos</li>
+            <li>Verifica que haya actividad en el período seleccionado</li>
+          </ul>
+          <br>
+          <strong>🔍 Filtros aplicados:</strong>
+          <ul style="margin-top: 10px; text-align: left; font-size: 0.9rem;">
+            <li>Fecha inicio: ${filtros.fechaInicio || 'Sin filtro'}</li>
+            <li>Fecha fin: ${filtros.fechaFin || 'Sin filtro'}</li>
+            <li>Usuario: ${filtros.usuario || 'Todos'}</li>
+            <li>Acción: ${filtros.accion || 'Todas'}</li>
+            <li>Módulo: ${filtros.modulo || 'Todos'}</li>
+            <li>Límite: ${filtros.limite || '100'}</li>
+          </ul>
         </div>
       `;
       return;
     }
     
+    console.log(`✅ Generando HTML para ${actividades.length} actividades...`);
+    
     let html = `
+      <div class="results-header" style="margin-bottom: 20px;">
+        <h4>📊 Resultados encontrados: <span class="badge">${actividades.length}</span></h4>
+        <div class="results-meta" style="color: #6b7280; font-size: 0.9rem;">
+          Mostrando las ${actividades.length} actividades más recientes que coinciden con los filtros.
+        </div>
+      </div>
+      
       <div class="table-responsive">
-        <table class="report-table">
+        <table class="report-table activity-table">
           <thead>
             <tr>
-              <th>Fecha</th>
-              <th>Usuario</th>
-              <th>Acción</th>
-              <th>Descripción</th>
+              <th>📅 Fecha/Hora</th>
+              <th>👤 Usuario</th>
+              <th>⚡ Acción</th>
+              <th>🏥 Módulo</th>
+              <th>📝 Descripción</th>
+              <th>🔧 Detalles</th>
             </tr>
           </thead>
           <tbody>
     `;
     
     actividades.forEach(actividad => {
-      const fecha = new Date(actividad.fecha).toLocaleString('es-MX');
+      const fecha = new Date(actividad.fecha).toLocaleString('es-MX', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      
+      // Iconos por tipo de acción
+      const iconosAccion = {
+        'login': '🔑',
+        'logout': '🚪',
+        'create': '➕',
+        'update': '✏️',
+        'delete': '🗑️',
+        'consulta': '👁️',
+        'exportar': '📤'
+      };
+      
+      // Iconos por módulo
+      const iconosModulo = {
+        'autenticacion': '🔐',
+        'pacientes': '👥',
+        'usuarios': '👤',
+        'reportes': '📊',
+        'operaciones': '⚕️'
+      };
+      
+      const iconoAccion = iconosAccion[actividad.accion] || '📋';
+      const iconoModulo = iconosModulo[actividad.modulo] || '📁';
+      
+      // Formatear detalles si existen
+      let detallesHtml = '-';
+      if (actividad.detalles && typeof actividad.detalles === 'object') {
+        const detallesArray = Object.entries(actividad.detalles).map(([key, value]) => 
+          `<strong>${key}:</strong> ${value}`
+        );
+        if (detallesArray.length > 0) {
+          detallesHtml = `<div class="activity-details">${detallesArray.join('<br>')}</div>`;
+        }
+      }
+      
       html += `
-        <tr>
-          <td>${fecha}</td>
-          <td>${actividad.usuario}</td>
-          <td>${actividad.accion}</td>
-          <td>${actividad.descripcion}</td>
+        <tr class="activity-row" data-activity-id="${actividad.id}">
+          <td class="fecha-col">
+            <div class="fecha-main">${fecha.split(' ')[0]}</div>
+            <div class="hora-sub">${fecha.split(' ')[1]}</div>
+          </td>
+          <td class="usuario-col">
+            <div class="usuario-name">${actividad.usuario}</div>
+          </td>
+          <td class="accion-col">
+            <span class="accion-badge ${actividad.accion}">
+              ${iconoAccion} ${actividad.accion}
+            </span>
+          </td>
+          <td class="modulo-col">
+            <span class="modulo-badge">
+              ${iconoModulo} ${actividad.modulo}
+            </span>
+          </td>
+          <td class="descripcion-col">
+            <div class="descripcion-text">${actividad.descripcion}</div>
+          </td>
+          <td class="detalles-col">
+            ${detallesHtml}
+          </td>
         </tr>
       `;
     });
@@ -524,49 +635,207 @@ export async function filtrarActividades(filtros) {
           </tbody>
         </table>
       </div>
-      <div class="action-buttons">
+      
+      <div class="action-buttons" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
         <button class="btn btn-secondary" id="btnExportarResultados">
-          <i class="fas fa-file-export"></i> Exportar estos resultados
+          <i class="fas fa-file-export"></i> 📄 Exportar Resultados
+        </button>
+        <button class="btn btn-info" id="btnVerEstadisticas">
+          <i class="fas fa-chart-bar"></i> 📊 Ver Estadísticas
+        </button>
+        <button class="btn btn-success" id="btnSincronizar">
+          <i class="fas fa-sync"></i> 🔄 Sincronizar
         </button>
       </div>
     `;
     
+    console.log('🖼️ HTML generado correctamente, actualizando DOM...');
     contenedorResultados.innerHTML = html;
+    console.log('✅ DOM actualizado exitosamente');
     
-    // Configurar botón de exportación de resultados (exportar solo los resultados filtrados)
+    // Configurar event listeners para los nuevos botones
     const btnExportarResultados = document.getElementById('btnExportarResultados');
     if (btnExportarResultados) {
       btnExportarResultados.addEventListener('click', () => {
-        // Generar una vista imprimible con los resultados actualmente filtrados
-        let html = `<!doctype html><html><head><meta charset="utf-8"><title>actividades_filtradas</title>`;
-        html += `<style>body{font-family:Arial,Helvetica,sans-serif;padding:18px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f3f4f6}</style>`;
-        html += `</head><body><h2>Actividades - Resultados Filtrados</h2><table><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Descripción</th></tr></thead><tbody>`;
-        actividades.forEach(act => {
-          const fecha = new Date(act.fecha).toLocaleString('es-MX');
-          html += `<tr><td>${fecha}</td><td>${act.usuario}</td><td>${act.accion}</td><td>${act.descripcion}</td></tr>`;
-        });
-        html += `</tbody></table></body></html>`;
+        exportarActividadesFiltradasHTML(actividades);
+      });
+    }
 
-        const newWin = window.open('', '_blank');
-        if (!newWin) {
-          mostrarConfirmacion('Error', 'No se pudo abrir la ventana de impresión. Desactive el bloqueador de ventanas emergentes.');
-          return;
-        }
-        newWin.document.open(); newWin.document.write(html); newWin.document.close();
-        setTimeout(() => { try { newWin.focus(); newWin.print(); } catch (e) {} }, 500);
+    const btnVerEstadisticas = document.getElementById('btnVerEstadisticas');
+    if (btnVerEstadisticas) {
+      btnVerEstadisticas.addEventListener('click', async () => {
+        await mostrarEstadisticasActividades(actividades);
+      });
+    }
 
-        mostrarConfirmacion('Éxito', 'Los resultados filtrados han sido preparados para impresión/PDF.');
+    const btnSincronizar = document.getElementById('btnSincronizar');
+    if (btnSincronizar) {
+      btnSincronizar.addEventListener('click', async () => {
+        await sincronizarActividadesOffline();
       });
     }
     
-    // Registrar actividad de filtro (no bloquear)
-    authModel.registrarActividad({
-      accion: 'consulta',
-      descripcion: 'Filtro de actividades del sistema'
-    }).catch(()=>{});
+    // Registrar filtros aplicados en consola para debugging (sin generar log en BD)
+    console.log('🔍 Filtros de actividades aplicados:', filtros);
+    console.log('📊 Actividades filtradas:', actividades.length);
     
   } catch (error) {
     mostrarConfirmacion('Error', `Error al filtrar las actividades: ${error.message}`);
+  }
+}
+
+// Función auxiliar para exportar actividades a HTML
+function exportarActividadesFiltradasHTML(actividades) {
+  let html = `<!doctype html><html><head><meta charset="utf-8"><title>Registro_Actividades_${new Date().toISOString().split('T')[0]}</title>`;
+  html += `<style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #f8f9fa; }
+    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #dee2e6; padding-bottom: 20px; }
+    .logo { color: #0d6efd; font-size: 24px; font-weight: bold; margin-bottom: 10px; }
+    .title { color: #495057; font-size: 18px; margin-bottom: 5px; }
+    .subtitle { color: #6c757d; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    th, td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
+    th { background: #0d6efd; color: white; font-weight: 600; }
+    tr:nth-child(even) { background: #f8f9fa; }
+    tr:hover { background: #e9ecef; }
+    .fecha-col { white-space: nowrap; font-family: monospace; }
+    .accion-col { text-transform: capitalize; font-weight: 500; }
+    .footer { margin-top: 30px; text-align: center; color: #6c757d; font-size: 12px; }
+  </style>`;
+  html += `</head><body>
+    <div class="header">
+      <div class="logo">🏥 Medical Developer</div>
+      <div class="title">📋 Registro de Actividades del Sistema</div>
+      <div class="subtitle">Generado el ${new Date().toLocaleDateString('es-MX')} a las ${new Date().toLocaleTimeString('es-MX')}</div>
+      <div class="subtitle">Total de registros: ${actividades.length}</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>📅 Fecha/Hora</th>
+          <th>👤 Usuario</th>
+          <th>⚡ Acción</th>
+          <th>🏥 Módulo</th>
+          <th>📝 Descripción</th>
+        </tr>
+      </thead>
+      <tbody>`;
+  
+  actividades.forEach(actividad => {
+    const fecha = new Date(actividad.fecha).toLocaleString('es-MX');
+    html += `<tr>
+      <td class="fecha-col">${fecha}</td>
+      <td>${actividad.usuario}</td>
+      <td class="accion-col">${actividad.accion}</td>
+      <td>${actividad.modulo || 'N/A'}</td>
+      <td>${actividad.descripcion}</td>
+    </tr>`;
+  });
+  
+  html += `</tbody></table>
+    <div class="footer">
+      <p>📄 Documento generado automáticamente por Medical Developer System</p>
+      <p>🔒 Este documento contiene información confidencial del sistema</p>
+    </div>
+  </body></html>`;
+
+  const newWin = window.open('', '_blank');
+  if (!newWin) {
+    mostrarConfirmacion('Error', 'No se pudo abrir la ventana de impresión. Desactive el bloqueador de ventanas emergentes.');
+    return;
+  }
+  newWin.document.open(); 
+  newWin.document.write(html); 
+  newWin.document.close();
+  setTimeout(() => { 
+    try { 
+      newWin.focus(); 
+      newWin.print(); 
+    } catch (e) {} 
+  }, 500);
+
+  mostrarConfirmacion('Éxito', 'Los resultados han sido preparados para impresión/PDF.');
+}
+
+// Función auxiliar para mostrar estadísticas de actividades
+async function mostrarEstadisticasActividades(actividades) {
+  try {
+    const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+    const stats = await ActivityLogger.getActivityStats();
+    
+    const statsHtml = `
+      <div class="modal-overlay" id="statsModal" style="
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: rgba(0,0,0,0.5); z-index: 9999; display: flex; 
+        align-items: center; justify-content: center;
+      ">
+        <div style="
+          background: white; padding: 30px; border-radius: 10px; 
+          max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;
+        ">
+          <h3>📊 Estadísticas de Actividades</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 24px; font-weight: bold; color: #0d6efd;">${stats.total}</div>
+              <div>Total de Actividades</div>
+            </div>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 24px; font-weight: bold; color: #198754;">${stats.usuarios.length}</div>
+              <div>Usuarios Únicos</div>
+            </div>
+          </div>
+          
+          <h4>📈 Por Acción:</h4>
+          <div style="margin: 10px 0;">
+            ${Object.entries(stats.porAccion).map(([accion, count]) => 
+              `<div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>${accion}</span><strong>${count}</strong>
+              </div>`
+            ).join('')}
+          </div>
+          
+          <h4>🏥 Por Módulo:</h4>
+          <div style="margin: 10px 0;">
+            ${Object.entries(stats.porModulo).map(([modulo, count]) => 
+              `<div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                <span>${modulo}</span><strong>${count}</strong>
+              </div>`
+            ).join('')}
+          </div>
+          
+          <div style="text-align: center; margin-top: 20px;">
+            <button onclick="document.getElementById('statsModal').remove()" 
+                    style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', statsHtml);
+    
+  } catch (error) {
+    console.error('Error mostrando estadísticas:', error);
+    mostrarConfirmacion('Error', 'No se pudieron cargar las estadísticas de actividades.');
+  }
+}
+
+// Función auxiliar para sincronizar actividades offline
+async function sincronizarActividadesOffline() {
+  try {
+    const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+    const syncedCount = await ActivityLogger.syncOfflineActivities();
+    
+    if (syncedCount > 0) {
+      mostrarConfirmacion('Éxito', `Se sincronizaron ${syncedCount} actividades offline con Firebase.`);
+    } else {
+      mostrarConfirmacion('Info', 'No hay actividades offline pendientes de sincronización.');
+    }
+    
+  } catch (error) {
+    console.error('Error sincronizando actividades:', error);
+    mostrarConfirmacion('Error', 'No se pudo completar la sincronización de actividades offline.');
   }
 }
 
@@ -577,12 +846,6 @@ export async function generarEstadisticasPersonalizadas(params) {
 
     // Renderizar las estadísticas en la vista
     await renderEstadisticas(estadisticas);
-
-    // Registrar actividad de generación de estadísticas
-    authModel.registrarActividad({
-      accion: 'consulta',
-      descripcion: `Generación de estadísticas personalizadas (${params.periodo}, ${params.tipo})`
-    }).catch(()=>{});
 
   } catch (error) {
     mostrarConfirmacion('Error', `Error al generar las estadísticas: ${error.message}`);

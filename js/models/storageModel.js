@@ -532,35 +532,55 @@ export const authModel = {
      * @returns {Promise<Object>} Actividad registrada
      */
     async registrarActividad(actividad) {
-        // TEMPORALMENTE DESHABILITADO - Solo para colección usuarios
-        console.log('📝 Actividad registrada (deshabilitado):', actividad.descripcion);
-        return {
-            id: 'temp-' + Date.now(),
-            ...actividad,
-            timestamp: new Date().toISOString()
-        };
-
-        /* CÓDIGO ORIGINAL COMENTADO:
         try {
-            const actividadData = {
+            // Usar el nuevo ActivityLogger centralizado
+            const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+            
+            return await ActivityLogger.log({
                 accion: actividad.accion,
                 descripcion: actividad.descripcion,
-                userId: actividad.userId || null,
-                timestamp: serverTimestamp(),
-                fecha: new Date().toISOString(),
-                ip: 'N/A', // Podrías obtener la IP si es necesario
-                userAgent: navigator.userAgent
-            };
-
-            const docRef = await addDoc(actividadesCollection, actividadData);
-
-            return { id: docRef.id, ...actividadData };
+                modulo: this.getModuleFromAction(actividad.accion),
+                recursoId: actividad.recursoId,
+                recursoTipo: actividad.recursoTipo,
+                detalles: actividad.detalles
+            });
+            
         } catch (error) {
             console.error('Error registrando actividad:', error);
-            // No lanzar error para no interrumpir el flujo principal
-            return null;
+            
+            // Fallback: mantener el sistema anterior como respaldo
+            console.log('📝 Actividad registrada (fallback):', actividad.descripcion);
+            return {
+                id: 'fallback-' + Date.now(),
+                ...actividad,
+                timestamp: new Date().toISOString()
+            };
         }
-        */
+    },
+
+    /**
+     * Obtiene el módulo basado en el tipo de acción
+     * @param {string} accion - Tipo de acción
+     * @returns {string} Nombre del módulo
+     */
+    getModuleFromAction(accion) {
+        const actionModuleMap = {
+            'login': 'autenticacion',
+            'logout': 'autenticacion',
+            'create_user': 'usuarios',
+            'update_user': 'usuarios',
+            'delete_user': 'usuarios',
+            'create_paciente': 'pacientes',
+            'update_paciente': 'pacientes',
+            'delete_paciente': 'pacientes',
+            'create_registro_medico': 'pacientes',
+            'update_registro_medico': 'pacientes',
+            'delete_registro_medico': 'pacientes',
+            'exportar': 'reportes',
+            'consulta': 'reportes'
+        };
+        
+        return actionModuleMap[accion] || 'general';
     },
 
     /**

@@ -242,7 +242,11 @@ export const EVENT_NAMES = {
     GROUP_CREATED: 'group:created',
     GROUP_UPDATED: 'group:updated',
     GROUP_DELETED: 'group:deleted',
-    GROUP_ASSIGNED: 'group:assigned'
+    GROUP_ASSIGNED: 'group:assigned',
+
+    // Activity logging events
+    ACTIVITY_LOGGED: 'activity:logged',
+    ACTIVITY_SYNC_COMPLETED: 'activity:sync:completed'
 };
 
 export default eventBus;

@@ -539,6 +539,18 @@ export async function handlePacienteSubmit(event) {
     const pacienteGuardado = await pacienteModel.addPaciente(nuevoPaciente);
     
     if (pacienteGuardado) {
+      // Registrar actividad de creación de paciente
+      try {
+        const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+        await ActivityLogger.createPatientActivity(
+          pacienteGuardado.id || pacienteGuardado.uid,
+          `${nuevoPaciente.nombre} ${nuevoPaciente.apellidos || ''}`,
+          nuevoPaciente.matricula
+        );
+      } catch (error) {
+        console.warn('Error registrando actividad de creación de paciente:', error);
+      }
+
       mostrarMensaje('success', '✅ Paciente Registrado', 
         `${nuevoPaciente.nombre} ${nuevoPaciente.apellidos || ''} ha sido registrado exitosamente.\nMatrícula: ${nuevoPaciente.matricula}`);
       
@@ -640,6 +652,26 @@ async function handleDatosMedicosSubmit(event) {
       const pacienteActualizado = await pacienteModel.updateDatosMedicos(pacienteSeleccionado, datosMedicos);
       
       if (pacienteActualizado) {
+        // Registrar actividad de datos médicos
+        try {
+          const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+          if (esActualizacion) {
+            await ActivityLogger.updateMedicalRecordActivity(
+              pacienteSeleccionado,
+              `${paciente.nombre} ${paciente.apellidos || ''}`,
+              Object.keys(datosMedicos).filter(key => datosMedicos[key] !== null && datosMedicos[key] !== '' && !['usuarioMedico', 'fechaRegistroMedico'].includes(key))
+            );
+          } else {
+            await ActivityLogger.createMedicalRecordActivity(
+              pacienteSeleccionado,
+              `${paciente.nombre} ${paciente.apellidos || ''}`,
+              Object.keys(datosMedicos).filter(key => datosMedicos[key] !== null && datosMedicos[key] !== '' && !['usuarioMedico', 'fechaRegistroMedico'].includes(key))
+            );
+          }
+        } catch (error) {
+          console.warn('Error registrando actividad de datos médicos:', error);
+        }
+
         // Mostrar mensaje de éxito detallado
           const datosGuardados = Object.entries(datosMedicos)
             .filter(([key, value]) => value !== null && value !== '' && !['usuarioMedico', 'fechaRegistroMedico'].includes(key))
@@ -1625,6 +1657,18 @@ async function eliminarPacienteConfirmado(pacienteId, paciente, tieneDatosMedico
     const eliminado = await pacienteModel.deletePaciente(pacienteId);
     
     if (eliminado) {
+      // Registrar actividad de eliminación de paciente
+      try {
+        const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+        await ActivityLogger.deletePatientActivity(
+          pacienteId,
+          `${paciente.nombre} ${paciente.apellidos || ''}`,
+          paciente.matricula
+        );
+      } catch (error) {
+        console.warn('Error registrando actividad de eliminación de paciente:', error);
+      }
+
       // Mostrar confirmación con detalles de lo eliminado
       let detallesEliminados = [];
       if (tieneDatosMedicos) detallesEliminados.push('Datos médicos');
@@ -2044,6 +2088,19 @@ async function eliminarRegistroHistorial(registroId, pacienteId, isActualizacion
         const eliminacionExitosa = await pacienteModel.deleteRegistroMedico(registroId);
 
         if (eliminacionExitosa) {
+          // Registrar actividad de eliminación de registro médico
+          try {
+            const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+            await ActivityLogger.deleteMedicalRecordActivity(
+              registroId,
+              pacienteId,
+              nombrePaciente,
+              tipoRegistro
+            );
+          } catch (error) {
+            console.warn('Error registrando actividad de eliminación de registro médico:', error);
+          }
+
           const usuarioActual = obtenerUsuarioActual();
 
           // Mostrar mensaje de éxito

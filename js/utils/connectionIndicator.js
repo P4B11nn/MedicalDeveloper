@@ -67,18 +67,20 @@ class ConnectionIndicator {
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(10px);
         border-radius: 25px;
-        padding: 8px 16px;
+        padding: 12px 20px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.2);
         transition: all 0.3s ease;
-        font-size: 14px;
-        font-weight: 500;
+        font-size: 16px;
+        font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         opacity: 0;
         transform: translateY(-10px);
         pointer-events: none;
+        min-width: 180px;
+        justify-content: center;
       }
 
       .connection-indicator.visible {
@@ -88,32 +90,35 @@ class ConnectionIndicator {
       }
 
       .connection-indicator.online {
-        background: rgba(34, 197, 94, 0.1);
-        border-color: rgba(34, 197, 94, 0.3);
-        color: #16a34a;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border-color: rgba(16, 185, 129, 0.4);
+        color: #ffffff;
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
       }
 
       .connection-indicator.offline {
-        background: rgba(239, 68, 68, 0.1);
-        border-color: rgba(239, 68, 68, 0.3);
-        color: #dc2626;
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border-color: rgba(239, 68, 68, 0.4);
+        color: #ffffff;
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
         animation: pulse 2s infinite;
       }
 
       .connection-indicator.reconnecting {
-        background: rgba(245, 158, 11, 0.1);
-        border-color: rgba(245, 158, 11, 0.3);
-        color: #d97706;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        border-color: rgba(245, 158, 11, 0.4);
+        color: #ffffff;
+        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
       }
 
       .connection-status {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
       }
 
       .connection-status i {
-        font-size: 16px;
+        font-size: 18px;
       }
 
       .connection-indicator.offline i:before {
@@ -127,12 +132,12 @@ class ConnectionIndicator {
 
       @keyframes pulse {
         0%, 100% { opacity: 1; }
-        50% { opacity: 0.7; }
+        50% { opacity: 0.8; }
       }
 
       .connection-indicator.just-reconnected {
         animation: bounceIn 0.5s ease-out;
-        box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
       }
 
       @keyframes bounceIn {
@@ -155,8 +160,9 @@ class ConnectionIndicator {
           top: 70px;
           right: 10px;
           left: 10px;
-          font-size: 13px;
-          padding: 6px 12px;
+          font-size: 14px;
+          padding: 10px 16px;
+          min-width: 160px;
         }
       }
     `;
@@ -214,6 +220,11 @@ class ConnectionIndicator {
         console.error('❌ Error ejecutando callback de restauración de conexión:', error);
       }
     });
+
+    // Integrar con FirebaseSyncManager si está disponible
+    if (window.firebaseSyncManager) {
+      window.firebaseSyncManager.handleConnectionRestored();
+    }
   }
 
   verifyOnlineStatus() {

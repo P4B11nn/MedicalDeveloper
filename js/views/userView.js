@@ -187,6 +187,18 @@ async function ejecutarEliminacion(userIndex, usuario) {
         const success = await authModel.deleteUser(usuario.uid);
         
         if (success) {
+            // Registrar actividad de eliminación de usuario
+            try {
+                const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+                await ActivityLogger.deleteUserActivity(
+                    usuario.uid,
+                    usuario.nombre,
+                    usuario.rol
+                );
+            } catch (error) {
+                console.warn('Error registrando actividad de eliminación de usuario:', error);
+            }
+
             showMiniModal('Usuario eliminado correctamente', 'success');
             eventBus.emit(EVENT_NAMES.USER_DELETED, { 
                 user: usuario,
@@ -509,6 +521,19 @@ async function ejecutarEdicion(userIndex, usuario, datosActualizados) {
         const success = await authModel.updateUser(usuario.uid, datosActualizados);
         
         if (success) {
+            // Registrar actividad de actualización de usuario
+            try {
+                const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+                await ActivityLogger.updateUserActivity(
+                    usuario.uid,
+                    datosActualizados.nombre || usuario.nombre,
+                    datosActualizados.rol || usuario.rol,
+                    Object.keys(datosActualizados)
+                );
+            } catch (error) {
+                console.warn('Error registrando actividad de actualización de usuario:', error);
+            }
+
             showMiniModal('Usuario actualizado correctamente', 'success');
             
             eventBus.emit(EVENT_NAMES.USER_UPDATED, { 
