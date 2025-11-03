@@ -126,6 +126,37 @@ function setupUserDropdown() {
       });
     };
   }
+
+  // Registrar callback para refrescar datos cuando se restaure la conexión
+  setTimeout(() => {
+    if (window.connectionIndicator) {
+      window.connectionIndicator.onConnectionRestored(async () => {
+        console.log('🔄 Refrescando datos del menú principal tras restaurar conexión...');
+        try {
+          // Refrescar el menú principal y los datos de usuario
+          await renderMenu();
+          
+          // Refrescar lista de usuarios si el modal está abierto
+          const modalUsuario = document.getElementById('modalUsuario');
+          if (modalUsuario && modalUsuario.style.display === 'flex') {
+            await renderUserList();
+          }
+
+          // Refrescar el log de actividades si el modal está abierto
+          const modalRegistroES = document.getElementById('modalRegistroES');
+          if (modalRegistroES && modalRegistroES.style.display === 'flex') {
+            await renderActivityLog('registroESLista');
+          }
+
+          console.log('✅ Datos del menú principal refrescados correctamente tras restaurar conexión');
+        } catch (error) {
+          console.error('❌ Error al refrescar datos del menú principal tras restaurar conexión:', error);
+        }
+      });
+    } else {
+      console.warn('⚠️ ConnectionIndicator no disponible para registrar callback de restauración de conexión en menuController');
+    }
+  }, 500);
 }
 
 /**

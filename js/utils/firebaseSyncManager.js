@@ -236,7 +236,7 @@ class FirebaseSyncManager {
 
   // Método para mostrar mensajes de sincronización
   showSyncMessage(title, type = 'info', text = '', duration = 4000) {
-    if (!this.messageContainer) return;
+    if (!this.messageContainer) return null;
 
     const messageId = Date.now();
     const message = document.createElement('div');
@@ -267,7 +267,7 @@ class FirebaseSyncManager {
     // Limitar a máximo 5 mensajes visibles
     this.limitMessages();
 
-    return messageId;
+    return messageId; // Devolver el ID para poder eliminar el mensaje posteriormente
   }
 
   getIconForType(type) {
@@ -312,12 +312,25 @@ class FirebaseSyncManager {
     }
   }
 
+  // Método para limpiar mensajes de sincronización (tipo 'sync')
+  clearSyncMessages() {
+    const syncMessages = this.messageContainer?.querySelectorAll('.sync-message.sync');
+    if (syncMessages) {
+      syncMessages.forEach(message => {
+        message.classList.add('fade-out');
+        setTimeout(() => {
+          message.remove();
+        }, 300);
+      });
+    }
+  }
+
   // Método para manejar la restauración de conexión
   handleConnectionRestored() {
     console.log('🔄 Conexión restaurada - Iniciando sincronización automática');
 
     // Mostrar mensaje de sincronización
-    this.showSyncMessage('Sincronizando datos', 'sync', 'Recuperando conexión con Firebase...', 0);
+    const syncMessageId = this.showSyncMessage('Sincronizando datos', 'sync', 'Recuperando conexión con Firebase...', 0);
 
     // Intentar sincronizar datos pendientes
     setTimeout(async () => {
@@ -326,8 +339,16 @@ class FirebaseSyncManager {
       // Después de sincronizar, refrescar contenido
       if (this.onContentRefreshCallbacks.length > 0) {
         setTimeout(() => {
-          this.refreshContent();
+          this.refreshContent().finally(() => {
+            // Eliminar mensaje de sincronización después de completar
+            this.removeMessage(syncMessageId);
+          });
         }, 500);
+      } else {
+        // Si no hay callbacks, eliminar el mensaje después de un delay
+        setTimeout(() => {
+          this.removeMessage(syncMessageId);
+        }, 2000);
       }
     }, 1000);
   }
@@ -343,7 +364,7 @@ class FirebaseSyncManager {
   async refreshContent() {
     console.log('🔄 Refrescando contenido después de sincronización...');
 
-    this.showSyncMessage('Actualizando contenido', 'sync', 'Refrescando datos desde Firebase...', 0);
+    const updateMessageId = this.showSyncMessage('Actualizando contenido', 'sync', 'Refrescando datos desde Firebase...', 0);
 
     try {
       // Ejecutar todos los callbacks de refresco de contenido
@@ -357,10 +378,16 @@ class FirebaseSyncManager {
 
       await Promise.all(refreshPromises);
 
-      this.showSyncMessage('Contenido actualizado', 'success', 'Los datos han sido refrescados exitosamente');
+      // Eliminar mensaje de "Actualizando contenido"
+      this.removeMessage(updateMessageId);
+      
+      // Mostrar mensaje de éxito por poco tiempo
+      this.showSyncMessage('Contenido actualizado', 'success', 'Los datos han sido refrescados exitosamente', 3000);
 
     } catch (error) {
       console.error('Error general en refresco de contenido:', error);
+      // Eliminar mensaje de "Actualizando contenido" en caso de error
+      this.removeMessage(updateMessageId);
       this.showSyncMessage('Error al actualizar', 'error', 'No se pudo refrescar el contenido');
     }
   }

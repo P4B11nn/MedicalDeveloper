@@ -856,6 +856,13 @@
       grid-template-columns: 1fr;
       gap: 20px;
     }
+    
+    /* En pantallas pequeñas, las tarjetas ocupan todo el ancho */
+    .admin-grid .dashboard-card:nth-child(3),
+    .admin-grid .dashboard-card:nth-child(4) {
+      grid-column: span 3; /* Hacer que ocupen todo el ancho disponible */
+      min-width: unset;
+    }
   }
 
   /* Dashboard Cards */
@@ -866,11 +873,45 @@
     overflow: hidden;
     border: 1px solid rgba(15, 86, 113, 0.1);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
   }
 
   .dashboard-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Carta de observaciones ampliada */
+  .dashboard-card:has(.observaciones-admin-content) {
+    min-width: 98%;
+    width: 98%;
+    max-width: none;
+    overflow: visible;
+  }
+
+  /* Estilo alternativo si :has no es compatible */
+  .dashboard-card.observaciones-card {
+    min-width: 98%;
+    width: 98%;
+    max-width: none;
+    overflow: visible;
+    padding: 0;
+  }
+
+  /* Contenedor específico para observaciones más ancho */
+  .observaciones-card .card-header,
+  .observaciones-card .observaciones-admin-content {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Forzar que la carta de observaciones use todo el grid */
+  .admin-grid .dashboard-card.observaciones-card {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    max-width: none !important;
   }
 
   .card-header {
@@ -1224,12 +1265,19 @@
   /* Practitioner Specific Styles */
   .assignment-details {
     padding: 20px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .assignment-main {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .module-assigned {
@@ -1399,89 +1447,206 @@
   }
 
   .checklist-section h4 {
-    margin: 0 0 15px 0;
     color: #0f5671;
-    font-size: 1rem;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
   }
 
   .checklist-items {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
   }
 
   .checklist-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px;
-    border-radius: 8px;
     background: #f8fafc;
-    cursor: pointer;
-    transition: background 0.2s ease;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.3s ease;
   }
 
   .checklist-item:hover {
-    background: #e2e8f0;
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+
+  .item-header {
+    margin-bottom: 12px;
+  }
+
+  .checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .item-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
   }
 
   .checkmark {
-    width: 20px;
-    height: 20px;
-    border: 2px solid #d1d5db;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  }
-
-  .checklist-item input[type="checkbox"] {
-    display: none;
-  }
-
-  .checklist-item input[type="checkbox"]:checked + .checkmark {
-    background: #22c55e;
-    border-color: #22c55e;
-  }
-
-  .checklist-item input[type="checkbox"]:checked + .checkmark::after {
-    content: "✓";
-    color: white;
-    font-weight: bold;
-    font-size: 0.8rem;
+    position: relative;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
   }
 
   .item-name {
+    font-size: 1rem;
     flex: 1;
-    color: #1f2937;
   }
 
-  .item-status {
-    padding: 3px 8px;
-    border-radius: 10px;
-    font-size: 0.75rem;
+  /* Status Buttons Container */
+  .status-buttons-container {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    opacity: 0.4;
+    transition: opacity 0.3s ease;
+  }
+
+  .status-buttons-container.enabled {
+    opacity: 1;
+  }
+
+  /* Status Buttons */
+  .status-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 110px;
+    justify-content: center;
+  }
+
+  .status-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .status-btn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  /* Status Button States */
+  .status-btn.good {
+    border-color: #22c55e;
+    background: #f0fdf4;
+    color: #16a34a;
+  }
+
+  .status-btn.good.active {
+    background: #22c55e;
+    color: white;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  }
+
+  .status-btn.damaged {
+    border-color: #ef4444;
+    background: #fef2f2;
+    color: #dc2626;
+  }
+
+  .status-btn.damaged.active {
+    background: #ef4444;
+    color: white;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+  }
+
+  .status-btn.missing {
+    border-color: #6b7280;
+    background: #f9fafb;
+    color: #4b5563;
+  }
+
+  .status-btn.missing.active {
+    background: #6b7280;
+    color: white;
+    box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+  }
+
+  .status-btn.low {
+    border-color: #f59e0b;
+    background: #fffbeb;
+    color: #d97706;
+  }
+
+  .status-btn.low.active {
+    background: #f59e0b;
+    color: white;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+  }
+
+  /* Animaciones para los iconos */
+  .status-btn i {
+    transition: transform 0.2s ease;
+  }
+
+  .status-btn.active i {
+    transform: scale(1.1);
+  }
+
+  /* Estados del checklist item */
+  .checklist-item.checked {
+    background: #f0f9ff;
+    border-color: #0ea5e9;
+  }
+
+  .checklist-item.checked .item-name {
+    color: #0f5671;
     font-weight: 600;
   }
 
-  .item-status.good {
-    background: #dcfce7;
-    color: #166534;
+  /* Estados visuales adicionales */
+  .checklist-item.status-good {
+    border-left: 4px solid #22c55e;
   }
 
-  .item-status.missing {
-    background: #fee2e2;
-    color: #991b1b;
+  .checklist-item.status-damaged {
+    border-left: 4px solid #ef4444;
   }
 
-  .item-status.damaged {
-    background: #fef3c7;
-    color: #92400e;
+  .checklist-item.status-missing {
+    border-left: 4px solid #6b7280;
   }
 
-  .item-status.low {
-    background: #fed7d7;
-    color: #c53030;
+  .checklist-item.status-low {
+    border-left: 4px solid #f59e0b;
+  }
+
+  /* Responsive adjustments para checklist */
+  @media (max-width: 768px) {
+    .status-buttons-container {
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .status-btn {
+      min-width: unset;
+      width: 100%;
+    }
+
+    .checklist-item {
+      padding: 12px;
+    }
   }
 
   /* Observations */
@@ -1600,9 +1765,26 @@
   }
 
   /* Responsive Design */
+  @media (max-width: 1400px) {
+    .practitioner-grid {
+      gap: 20px;
+    }
+  }
+
   @media (max-width: 1200px) {
     .admin-grid {
       grid-template-columns: 1fr 1fr;
+    }
+    
+    .practitioner-grid {
+      gap: 18px;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .practitioner-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
     }
   }
 
@@ -1864,6 +2046,1013 @@
         padding: 12px 18px;
       }
     }
+
+    /* Estilos para las tarjetas del administrador */
+    .admin-only {
+      display: none !important;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .admin-only.show {
+      display: block !important;
+      opacity: 1;
+    }
+
+    /* Asegurar que estén dentro del grid */
+    .admin-grid .admin-only.show {
+      display: block !important;
+      opacity: 1;
+    }
+
+    /* Forzar visibilidad para debug */
+    .admin-grid .dashboard-card.admin-only.show {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: relative !important;
+      z-index: auto !important;
+    }
+
+    /* Tarjetas específicas que necesitan más espacio */
+    .admin-grid .dashboard-card:nth-child(3),
+    .admin-grid .dashboard-card:nth-child(4) {
+      grid-column: span 2; /* Ocupar 2 columnas en tablet */
+      min-width: 400px;
+    }
+
+    /* La tarjeta de Registro de Instrumentos (tercera) puede ocupar más espacio si es necesario */
+    .admin-grid .dashboard-card:nth-child(3) {
+      grid-column: 1 / -1; /* Ocupar todo el ancho */
+    }
+
+    /* Registro de Instrumentos */
+    .registros-content {
+      padding: 20px;
+    }
+
+    .filters-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .filters-row select {
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: white;
+      font-size: 0.9rem;
+      color: #374151;
+      min-width: 150px;
+    }
+
+    .filters-row select:focus {
+      outline: none;
+      border-color: #0f5671;
+      box-shadow: 0 0 0 3px rgba(15, 86, 113, 0.1);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .refresh-btn, .filter-btn {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .refresh-btn:hover, .filter-btn:hover {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+    }
+
+    .refresh-btn:active, .filter-btn:active {
+      transform: translateY(0px);
+      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+    }
+
+    .refresh-btn i, .filter-btn i {
+      font-size: 1rem;
+    }
+
+    .registros-table-container {
+      background: white;
+      border-radius: 8px;
+      overflow: auto;
+      border: 1px solid #e2e8f0;
+      max-height: 450px;
+      min-height: 300px;
+    }
+
+    .registros-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .registros-table th {
+      background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+      padding: 16px 18px;
+      text-align: left;
+      font-weight: 700;
+      color: #1f2937;
+      border: none;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 0.8rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .registros-table td {
+      padding: 16px 18px;
+      border: none;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: top;
+      transition: all 0.2s ease;
+    }
+
+    .registros-table tr {
+      transition: all 0.3s ease;
+    }
+
+    .registros-table tr:hover {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      transform: scale(1.005);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .registros-table tr:nth-child(even) {
+      background: rgba(248, 250, 252, 0.5);
+    }
+
+    .loading-row td {
+      text-align: center;
+      color: #64748b;
+      font-style: italic;
+    }
+
+    .estado-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .estado-badge.completo {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    .estado-badge.parcial {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    .estado-badge.pendiente {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .instrumentos-lista {
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .instrumentos-count {
+      background: #eff6ff;
+      color: #2563eb;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .action-btn {
+      background: linear-gradient(135deg, #ffffff, #f8fafc);
+      border: 1.5px solid #e2e8f0;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .action-btn:hover {
+      background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .action-btn.view {
+      color: #2563eb;
+      border-color: #bfdbfe;
+    }
+
+    .action-btn.view:hover {
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      border-color: #3b82f6;
+      color: #1d4ed8;
+    }
+
+    .action-btn.edit {
+      color: #16a34a;
+      border-color: #bbf7d0;
+    }
+
+    .action-btn.edit:hover {
+      background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+      border-color: #22c55e;
+      color: #15803d;
+    }
+
+    /* Status Badges para la tabla */
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      display: inline-block;
+    }
+
+    .status-badge.success {
+      background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+      color: #15803d;
+      border: 1px solid #22c55e;
+    }
+
+    .status-badge.warning {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #92400e;
+      border: 1px solid #f59e0b;
+    }
+
+    .status-badge.error {
+      background: linear-gradient(135deg, #fecaca, #fca5a5);
+      color: #991b1b;
+      border: 1px solid #ef4444;
+    }
+
+    .status-badge.info {
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      color: #1e40af;
+      border: 1px solid #3b82f6;
+    }
+
+    /* Gestión de Observaciones */
+    .observaciones-admin-content {
+      padding: 15px;
+      overflow-x: auto; /* Permitir scroll horizontal si es necesario */
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid #e2e8f0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--accent-color);
+    }
+
+    .stat-card.urgent {
+      --accent-color: #ef4444;
+    }
+
+    .stat-card.pending {
+      --accent-color: #f59e0b;
+    }
+
+    .stat-card.progress {
+      --accent-color: #3b82f6;
+    }
+
+    .stat-card.resolved {
+      --accent-color: #10b981;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-top: 5px;
+      font-weight: 500;
+    }
+
+    .observaciones-list {
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      max-height: 500px;
+      overflow-y: auto;
+      overflow-x: auto;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .observacion-item {
+      padding: 15px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.2s ease;
+      width: 100%;
+      min-width: 800px; /* Ancho mínimo reducido */
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .observacion-item:hover {
+      background: #f8fafc;
+    }
+
+    .observacion-item:last-child {
+      border-bottom: none;
+    }
+
+    .obs-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .obs-priority {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .obs-priority.urgent {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .obs-priority.high {
+      background: #fed7aa;
+      color: #ea580c;
+    }
+
+    .obs-priority.medium {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    .obs-priority.low {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    .obs-status {
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .obs-status.pendiente {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .obs-status.en_proceso {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+
+    .obs-status.resuelto {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    .obs-content {
+      margin-bottom: 10px;
+    }
+
+    .obs-texto {
+      color: #374151;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    .obs-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: #64748b;
+    }
+
+    .obs-meta-left {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .obs-meta-right {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .obs-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      width: 100%;
+      justify-content: flex-start;
+      box-sizing: border-box;
+    }
+
+    .obs-action-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .obs-action-btn.cambiar-estado {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .obs-action-btn.cambiar-estado:hover {
+      background: #2563eb;
+    }
+
+    .obs-action-btn.resolver {
+      background: #10b981;
+      color: white;
+    }
+
+    .obs-action-btn.resolver:hover {
+      background: #059669;
+    }
+
+    .obs-action-btn.ver-detalles {
+      background: #f3f4f6;
+      color: #374151;
+      border: 1px solid #d1d5db;
+    }
+
+    .obs-action-btn.ver-detalles:hover {
+      background: #e5e7eb;
+    }
+
+    /* Nuevos estilos mejorados para observaciones ampliadas */
+    .observacion-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 12px 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .observacion-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border-color: #cbd5e1;
+    }
+
+    .observacion-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--priority-color);
+    }
+
+    .observacion-card.urgent::before { --priority-color: #dc2626; }
+    .observacion-card.high::before { --priority-color: #ea580c; }
+    .observacion-card.medium::before { --priority-color: #d97706; }
+    .observacion-card.low::before { --priority-color: #16a34a; }
+
+    .obs-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .obs-card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .obs-card-badges {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .obs-card-priority {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .obs-card-priority.urgent {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      color: #dc2626;
+      border: 1px solid #f87171;
+    }
+
+    .obs-card-priority.high {
+      background: linear-gradient(135deg, #fed7aa, #fdba74);
+      color: #ea580c;
+      border: 1px solid #fb923c;
+    }
+
+    .obs-card-priority.medium {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      color: #d97706;
+      border: 1px solid #f59e0b;
+    }
+
+    .obs-card-priority.low {
+      background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+      color: #16a34a;
+      border: 1px solid #4ade80;
+    }
+
+    .obs-card-status {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .obs-card-status.pendiente {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      color: #dc2626;
+      border: 1px solid #f87171;
+    }
+
+    .obs-card-status.en_proceso {
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      color: #2563eb;
+      border: 1px solid #60a5fa;
+    }
+
+    .obs-card-status.resuelto {
+      background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+      color: #16a34a;
+      border: 1px solid #4ade80;
+    }
+
+    .obs-card-content {
+      margin-bottom: 16px;
+    }
+
+    .obs-card-text {
+      color: #374151;
+      line-height: 1.6;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .obs-card-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 16px;
+    }
+
+    .obs-card-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .obs-card-meta-item i {
+      color: #0ea5e9;
+      width: 16px;
+    }
+
+    .obs-card-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .obs-card-btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      text-decoration: none;
+    }
+
+    .obs-card-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .obs-card-btn.proceso {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+    }
+
+    .obs-card-btn.proceso:hover {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    .obs-card-btn.resolver {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    }
+
+    .obs-card-btn.resolver:hover {
+      background: linear-gradient(135deg, #059669, #047857);
+    }
+
+    .obs-card-btn.detalles {
+      background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+      color: #374151;
+      border: 1px solid #d1d5db;
+    }
+
+    .obs-card-btn.detalles:hover {
+      background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+    }
+
+    .obs-card-btn.reabrir {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: white;
+    }
+
+    .obs-card-btn.reabrir:hover {
+      background: linear-gradient(135deg, #d97706, #b45309);
+    }
+
+    .obs-card-btn i {
+      font-size: 0.9rem;
+    }
+
+    /* Loading states mejorado */
+    .loading-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border-radius: 12px;
+      margin: 20px 0;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e2e8f0;
+      border-top: 4px solid #0ea5e9;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 12px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    /* Error states mejorado */
+    .error-card {
+      padding: 20px;
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      border: 1px solid #f87171;
+      border-radius: 12px;
+      color: #dc2626;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .error-card i {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    /* Empty states mejorado */
+    .empty-card {
+      padding: 40px;
+      text-align: center;
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border-radius: 12px;
+      color: #64748b;
+      margin: 20px 0;
+    }
+
+    .empty-card i {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      color: #94a3b8;
+      display: block;
+    }
+
+    .empty-card h3 {
+      margin: 0 0 8px 0;
+      color: #374151;
+    }
+
+    /* Controles de paginación */
+    .pagination-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-top: 20px;
+      padding: 15px;
+    }
+
+    .page-btn {
+      background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+      border: 1px solid #cbd5e1;
+      padding: 10px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: #374151;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .page-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+      border-color: #94a3b8;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      background: #f8fafc;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .page-info {
+      color: #64748b;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    /* Estilos elegantes para los filtros select */
+    .filters-row select {
+      background: linear-gradient(135deg, #ffffff, #f8fafc);
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #374151;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      min-width: 140px;
+    }
+
+    .filters-row select:hover {
+      border-color: #0ea5e9;
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .filters-row select:focus {
+      outline: none;
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1), 0 4px 12px rgba(14, 165, 233, 0.15);
+      transform: translateY(-1px);
+    }
+
+    /* Estilos para header-actions de observaciones */
+    .header-actions select {
+      background: linear-gradient(135deg, #ffffff, #f8fafc);
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #374151;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      min-width: 120px;
+    }
+
+    .header-actions select:hover {
+      border-color: #0ea5e9;
+      box-shadow: 0 3px 10px rgba(14, 165, 233, 0.15);
+    }
+
+    .header-actions select:focus {
+      outline: none;
+      border-color: #0ea5e9;
+      box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1), 0 3px 10px rgba(14, 165, 233, 0.15);
+    }
+
+    .loading-message {
+      padding: 40px;
+      text-align: center;
+      color: #64748b;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .filters-row {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .filters-row select {
+        min-width: unset;
+      }
+
+      .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .registros-table-container {
+        max-height: 300px;
+      }
+
+      .obs-header {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+      }
+
+      .obs-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+      }
+
+      .obs-actions {
+        flex-wrap: wrap;
+        min-width: auto; /* Eliminar ancho mínimo en móviles */
+        justify-content: center;
+      }
+
+      /* Responsividad para tarjetas de observaciones */
+      .observacion-card {
+        margin: 8px 0;
+        padding: 16px;
+      }
+
+      .observacion-item {
+        min-width: auto; /* Eliminar ancho mínimo en móviles */
+        padding: 12px 16px;
+      }
+
+      .observaciones-list {
+        min-width: auto; /* Eliminar ancho mínimo en móviles */
+        overflow-x: visible;
+      }
+
+      .observaciones-admin-content {
+        overflow-x: visible; /* Eliminar scroll horizontal en móviles */
+        padding: 10px;
+      }
+
+      .dashboard-card.observaciones-card {
+        min-width: 100%; /* Usar todo el ancho disponible en móviles */
+        width: 100%;
+      }
+
+      .obs-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .obs-card-badges {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .obs-card-meta {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 10px 12px;
+      }
+
+      .obs-card-actions {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .obs-card-btn {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+      }
+    }
   </style>
   
   <!-- Font Awesome CDN -->
@@ -2116,6 +3305,133 @@
             </div>
           </div>
         </div>
+
+        <!-- Registro de Instrumentos (Solo Admin) -->
+        <div class="dashboard-card admin-only">
+          <div class="card-header">
+            <h3><i class="fas fa-clipboard-list"></i> Registro de Instrumentos</h3>
+            <div class="header-actions">
+              <button class="refresh-btn" id="refresh-instrumentos">
+                <i class="fas fa-sync-alt"></i>
+              </button>
+              <button class="filter-btn" id="filter-instrumentos">
+                <i class="fas fa-filter"></i>
+              </button>
+            </div>
+          </div>
+          <div class="registros-content">
+            <div class="filters-row" id="filtros-instrumentos" style="display: none;">
+              <select id="filtro-modulo">
+                <option value="">Todos los módulos</option>
+                <option value="consulta">Consulta</option>
+                <option value="emergencia">Emergencia</option>
+                <option value="cirugia">Cirugía</option>
+                <option value="laboratorio">Laboratorio</option>
+              </select>
+              <select id="filtro-fecha">
+                <option value="">Todas las fechas</option>
+                <option value="hoy">Hoy</option>
+                <option value="semana">Esta semana</option>
+                <option value="mes">Este mes</option>
+              </select>
+              <select id="filtro-usuario">
+                <option value="">Todos los usuarios</option>
+              </select>
+            </div>
+            <div class="registros-table-container">
+              <table class="registros-table" id="tabla-registros-instrumentos">
+                <thead>
+                  <tr>
+                    <th>Fecha/Hora</th>
+                    <th>Usuario</th>
+                    <th>Módulo</th>
+                    <th>Ubicación</th>
+                    <th>Instrumentos</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="registros-body">
+                  <tr class="loading-row">
+                    <td colspan="7" style="text-align: center; padding: 20px;">
+                      <i class="fas fa-spinner fa-spin"></i>
+                      Cargando registros...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pagination-controls" id="pagination-instrumentos">
+              <button class="page-btn" id="prev-page" disabled>
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <span class="page-info" id="page-info">Página 1 de 1</span>
+              <button class="page-btn" id="next-page" disabled>
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gestión de Observaciones (Solo Admin) -->
+        <div class="dashboard-card admin-only observaciones-card">
+          <div class="card-header">
+            <h3><i class="fas fa-exclamation-circle"></i> Gestión de Observaciones</h3>
+            <div class="header-actions">
+              <button class="refresh-btn" id="refresh-observaciones">
+                <i class="fas fa-sync-alt"></i>
+              </button>
+              <select id="filtro-estado-obs">
+                <option value="">Todos los estados</option>
+                <option value="pendiente">Pendientes</option>
+                <option value="en_proceso">En proceso</option>
+                <option value="resuelto">Resueltos</option>
+              </select>
+              <select id="filtro-prioridad-obs">
+                <option value="">Todas las prioridades</option>
+                <option value="urgent">Urgente</option>
+                <option value="high">Alta</option>
+                <option value="medium">Media</option>
+                <option value="low">Baja</option>
+              </select>
+            </div>
+          </div>
+          <div class="observaciones-admin-content">
+            <div class="stats-row">
+              <div class="stat-card urgent">
+                <div class="stat-number" id="count-urgente">0</div>
+                <div class="stat-label">Urgentes</div>
+              </div>
+              <div class="stat-card pending">
+                <div class="stat-number" id="count-pendiente">0</div>
+                <div class="stat-label">Pendientes</div>
+              </div>
+              <div class="stat-card progress">
+                <div class="stat-number" id="count-proceso">0</div>
+                <div class="stat-label">En Proceso</div>
+              </div>
+              <div class="stat-card resolved">
+                <div class="stat-number" id="count-resuelto">0</div>
+                <div class="stat-label">Resueltos</div>
+              </div>
+            </div>
+            <div class="observaciones-list" id="lista-observaciones-admin">
+              <div class="loading-message" style="text-align: center; padding: 40px;">
+                <i class="fas fa-spinner fa-spin"></i>
+                Cargando observaciones...
+              </div>
+            </div>
+            <div class="pagination-controls" id="pagination-observaciones">
+              <button class="page-btn" id="prev-page-obs" disabled>
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <span class="page-info" id="page-info-obs">Página 1 de 1</span>
+              <button class="page-btn" id="next-page-obs" disabled>
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2209,53 +3525,177 @@
             <div class="checklist-section">
               <h4>Instrumentos Médicos</h4>
               <div class="checklist-items">
-                <label class="checklist-item">
-                  <input type="checkbox" checked>
-                  <span class="checkmark"></span>
-                  <span class="item-name">Estetoscopio</span>
-                  <span class="item-status good">Buen estado</span>
-                </label>
-                <label class="checklist-item">
-                  <input type="checkbox" checked>
-                  <span class="checkmark"></span>
-                  <span class="item-name">Tensiómetro</span>
-                  <span class="item-status good">Buen estado</span>
-                </label>
-                <label class="checklist-item">
-                  <input type="checkbox">
-                  <span class="checkmark"></span>
-                  <span class="item-name">Otoscopio</span>
-                  <span class="item-status missing">Faltante</span>
-                </label>
-                <label class="checklist-item">
-                  <input type="checkbox" checked>
-                  <span class="checkmark"></span>
-                  <span class="item-name">Termómetro digital</span>
-                  <span class="item-status damaged">Mal estado</span>
-                </label>
+                <div class="checklist-item" data-item="estetoscopio">
+                  <div class="item-header">
+                    <label class="checkbox-container">
+                      <input type="checkbox" class="item-checkbox">
+                      <span class="checkmark"></span>
+                      <span class="item-name">Estetoscopio</span>
+                    </label>
+                  </div>
+                  <div class="status-buttons-container">
+                    <button class="status-btn good" data-status="good" disabled>
+                      <i class="fas fa-check-circle"></i>
+                      Buen estado
+                    </button>
+                    <button class="status-btn damaged" data-status="damaged" disabled>
+                      <i class="fas fa-exclamation-triangle"></i>
+                      Mal estado
+                    </button>
+                    <button class="status-btn missing" data-status="missing" disabled>
+                      <i class="fas fa-times-circle"></i>
+                      Faltante
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="checklist-item" data-item="tensiometro">
+                  <div class="item-header">
+                    <label class="checkbox-container">
+                      <input type="checkbox" class="item-checkbox">
+                      <span class="checkmark"></span>
+                      <span class="item-name">Tensiómetro</span>
+                    </label>
+                  </div>
+                  <div class="status-buttons-container">
+                    <button class="status-btn good" data-status="good" disabled>
+                      <i class="fas fa-check-circle"></i>
+                      Buen estado
+                    </button>
+                    <button class="status-btn damaged" data-status="damaged" disabled>
+                      <i class="fas fa-exclamation-triangle"></i>
+                      Mal estado
+                    </button>
+                    <button class="status-btn missing" data-status="missing" disabled>
+                      <i class="fas fa-times-circle"></i>
+                      Faltante
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="checklist-item" data-item="otoscopio">
+                  <div class="item-header">
+                    <label class="checkbox-container">
+                      <input type="checkbox" class="item-checkbox">
+                      <span class="checkmark"></span>
+                      <span class="item-name">Otoscopio</span>
+                    </label>
+                  </div>
+                  <div class="status-buttons-container">
+                    <button class="status-btn good" data-status="good" disabled>
+                      <i class="fas fa-check-circle"></i>
+                      Buen estado
+                    </button>
+                    <button class="status-btn damaged" data-status="damaged" disabled>
+                      <i class="fas fa-exclamation-triangle"></i>
+                      Mal estado
+                    </button>
+                    <button class="status-btn missing" data-status="missing" disabled>
+                      <i class="fas fa-times-circle"></i>
+                      Faltante
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="checklist-item" data-item="termometro_digital">
+                  <div class="item-header">
+                    <label class="checkbox-container">
+                      <input type="checkbox" class="item-checkbox">
+                      <span class="checkmark"></span>
+                      <span class="item-name">Termómetro digital</span>
+                    </label>
+                  </div>
+                  <div class="status-buttons-container">
+                    <button class="status-btn good" data-status="good" disabled>
+                      <i class="fas fa-check-circle"></i>
+                      Buen estado
+                    </button>
+                    <button class="status-btn damaged" data-status="damaged" disabled>
+                      <i class="fas fa-exclamation-triangle"></i>
+                      Mal estado
+                    </button>
+                    <button class="status-btn missing" data-status="missing" disabled>
+                      <i class="fas fa-times-circle"></i>
+                      Faltante
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="checklist-section">
               <h4>Insumos Médicos</h4>
               <div class="checklist-items">
-                <label class="checklist-item">
-                  <input type="checkbox" checked>
-                  <span class="checkmark"></span>
-                  <span class="item-name">Guantes desechables (50 pares)</span>
-                  <span class="item-status good">Disponible</span>
-                </label>
-                <label class="checklist-item">
-                  <input type="checkbox" checked>
-                  <span class="checkmark"></span>
-                  <span class="item-name">Mascarillas quirúrgicas (25 uds)</span>
-                  <span class="item-status good">Disponible</span>
-                </label>
-                <label class="checklist-item">
-                  <input type="checkbox">
-                  <span class="checkmark"></span>
-                  <span class="item-name">Gasas estériles (20 paquetes)</span>
-                  <span class="item-status low">Bajo stock</span>
-                </label>
+                <div class="checklist-item" data-item="guantes_desechables">
+                  <div class="item-header">
+                    <label class="checkbox-container">
+                      <input type="checkbox" class="item-checkbox">
+                      <span class="checkmark"></span>
+                      <span class="item-name">Guantes desechables (50 pares)</span>
+                    </label>
+                  </div>
+                  <div class="status-buttons-container">
+                    <button class="status-btn good" data-status="good" disabled>
+                      <i class="fas fa-check-circle"></i>
+                      Disponible
+                    </button>
+                    <button class="status-btn low" data-status="low" disabled>
+                      <i class="fas fa-exclamation-circle"></i>
+                      Bajo stock
+                    </button>
+                    <button class="status-btn missing" data-status="missing" disabled>
+                      <i class="fas fa-times-circle"></i>
+                      Agotado
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="checklist-item" data-item="mascarillas_quirurgicas">
+                  <div class="item-header">
+                    <label class="checkbox-container">
+                      <input type="checkbox" class="item-checkbox">
+                      <span class="checkmark"></span>
+                      <span class="item-name">Mascarillas quirúrgicas (25 uds)</span>
+                    </label>
+                  </div>
+                  <div class="status-buttons-container">
+                    <button class="status-btn good" data-status="good" disabled>
+                      <i class="fas fa-check-circle"></i>
+                      Disponible
+                    </button>
+                    <button class="status-btn low" data-status="low" disabled>
+                      <i class="fas fa-exclamation-circle"></i>
+                      Bajo stock
+                    </button>
+                    <button class="status-btn missing" data-status="missing" disabled>
+                      <i class="fas fa-times-circle"></i>
+                      Agotado
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="checklist-item" data-item="gasas_esteriles">
+                  <div class="item-header">
+                    <label class="checkbox-container">
+                      <input type="checkbox" class="item-checkbox">
+                      <span class="checkmark"></span>
+                      <span class="item-name">Gasas estériles (20 paquetes)</span>
+                    </label>
+                  </div>
+                  <div class="status-buttons-container">
+                    <button class="status-btn good" data-status="good" disabled>
+                      <i class="fas fa-check-circle"></i>
+                      Disponible
+                    </button>
+                    <button class="status-btn low" data-status="low" disabled>
+                      <i class="fas fa-exclamation-circle"></i>
+                      Bajo stock
+                    </button>
+                    <button class="status-btn missing" data-status="missing" disabled>
+                      <i class="fas fa-times-circle"></i>
+                      Agotado
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -2305,6 +3745,7 @@
             </div>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -2343,8 +3784,14 @@
     import './js/utils/eventBusManager.js';      // Event Bus monitoring
     import './js/utils/performanceMonitor.js';   // Performance monitoring
     import './js/utils/architectureValidator.js'; // Architecture validation
-    import './js/utils/connectionIndicator.js';   // Connection status indicator
+    import { ConnectionIndicator } from './js/utils/connectionIndicator.js';   // Connection status indicator
     import './js/utils/firebaseSyncManager.js';  // Firebase sync messages manager
+    import { instrumentosController } from './js/controllers/instrumentosController.js'; // Controlador de instrumentos y observaciones
+    import { adminInstrumentosController } from './js/controllers/adminInstrumentosController.js'; // Controlador admin de instrumentos
+    import { authModel } from './js/models/storageModel.js'; // Modelo de autenticación
+    
+    // Hacer authModel disponible globalmente para debug
+    window.authModel = authModel;
     
     // Función para inicializar header individual
     function initIndividualHeader() {
@@ -2353,7 +3800,7 @@
       const logoutOption = document.getElementById('logoutBtn');
       
       // Obtener información del usuario
-      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const currentUser = authModel.getCurrentUser() || {};
       
       // Actualizar información del usuario
       if (currentUser.nombre) {
@@ -2501,9 +3948,8 @@
             initGlobalController();
             
             // Initialize connection indicator
-            if (typeof ConnectionIndicator !== 'undefined') {
-              ConnectionIndicator.init();
-            }
+            ConnectionIndicator.init();
+            console.log('ConnectionIndicator inicializado para Menú Principal');
           }, 100);
         }, 50);
         
@@ -2899,6 +4345,7 @@
       if (adminRoles.includes(normalizedRole)) {
         adminDashboard.style.display = 'block';
         console.log('🔧 Dashboard de administrador activado para rol:', normalizedRole);
+        console.log('🔍 Iniciando carga de datos de administrador...');
         loadAdminData();
         
         // Para administradores: mostrar todos los botones del sidebar
@@ -2919,13 +4366,31 @@
       console.log('🧪 TESTING: Forzando dashboard para rol:', role);
       showDashboardByRole(role);
     };
-    
-    window.debugAuth = function() {
-      debugLocalStorage();
-      const role = getUserRole();
-      console.log('🎯 Rol actual detectado:', role);
-      // REMOVIDO POR SEGURIDAD: No devolver localStorage completo
-      return { role, message: 'Información de localStorage oculta por seguridad' };
+
+    // Función de debug para tarjetas de admin
+    window.debugAdminCards = function() {
+      console.log('🔍 DEBUG: Estado de tarjetas de administrador');
+      const adminCards = document.querySelectorAll('.admin-only');
+      console.log('📊 Total tarjetas encontradas:', adminCards.length);
+      
+      adminCards.forEach((card, index) => {
+        const title = card.querySelector('h3')?.textContent || 'Sin título';
+        const isVisible = card.classList.contains('show');
+        const displayStyle = window.getComputedStyle(card).display;
+        
+        console.log(`📱 Tarjeta ${index + 1}:`);
+        console.log(`   - Título: ${title}`);
+        console.log(`   - Clase 'show': ${isVisible}`);
+        console.log(`   - Display CSS: ${displayStyle}`);
+        console.log(`   - Elemento:`, card);
+      });
+      
+      // Verificar si adminInstrumentosController está disponible
+      console.log('🔧 adminInstrumentosController disponible:', !!window.adminInstrumentosController);
+      
+      // Verificar rol actual
+      const currentUser = authModel.getCurrentUser() || {};
+      console.log('👤 Usuario actual:', currentUser.rol);
     };
 
     function loadAdminData() {
@@ -2936,6 +4401,38 @@
         updateWorkGroups();
         updateConsultationActivity();
         updateTeamAssignments();
+        
+        // Inicializar controlador de administración de instrumentos
+        if (window.adminInstrumentosController) {
+          adminInstrumentosController.init();
+          console.log('🔧 AdminInstrumentosController inicializado');
+        } else {
+          console.warn('⚠️ adminInstrumentosController no está disponible');
+        }
+        
+        // Mostrar tarjetas de administrador
+        const adminCards = document.querySelectorAll('.admin-only');
+        console.log('🔍 Tarjetas de admin encontradas:', adminCards.length);
+        adminCards.forEach((card, index) => {
+          card.classList.add('show');
+          card.style.display = 'block'; // Forzar display por si acaso
+          card.style.visibility = 'visible';
+          card.style.opacity = '1';
+          console.log(`📱 Tarjeta ${index + 1} mostrada:`, card.querySelector('h3')?.textContent);
+        });
+
+        // Hacer scroll suave hacia las nuevas tarjetas
+        setTimeout(() => {
+          const firstAdminCard = document.querySelector('.admin-only.show');
+          if (firstAdminCard) {
+            firstAdminCard.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'nearest' 
+            });
+            console.log('📜 Scroll hacia las tarjetas de administrador');
+          }
+        }, 500);
+        
         console.log('✅ Datos del administrador cargados exitosamente');
       } catch (error) {
         console.error('❌ Error cargando datos del administrador:', error);
@@ -3608,6 +5105,8 @@
               overflow: hidden;
               position: relative;
               width: 100%;
+              max-width: 100%;
+              box-sizing: border-box;
             ">
 
               <h3 style="
@@ -3710,17 +5209,36 @@
           moduleCardContainer.innerHTML = moduleHTML;
           console.log('✅ Módulo asignado correctamente con estilo de administrador');
 
+          // Inicializar controlador de instrumentos con datos del módulo
+          if (window.instrumentosController) {
+            await instrumentosController.init(moduloAsignado);
+            console.log('🔧 InstrumentosController inicializado con módulo asignado');
+          }
+
         } else {
           // Sin módulo asignado - mostrar mensaje
           console.log('⚠️ No se encontró módulo asignado para el usuario');
 
           moduleCardContainer.innerHTML = `
-            <div style="text-align: center; padding: 30px; color: #6b7280;">
+            <div style="
+              text-align: center; 
+              padding: 30px; 
+              color: #6b7280;
+              width: 100%;
+              max-width: 100%;
+              box-sizing: border-box;
+            ">
               <i class="fas fa-hospital" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
               <p style="margin: 0; font-size: 1rem;">No tienes un módulo asignado</p>
               <p style="margin: 8px 0 0 0; font-size: 0.85rem; opacity: 0.7;">Contacta a tu supervisor para ser asignado a un módulo</p>
             </div>
           `;
+
+          // Inicializar controlador de instrumentos sin módulo
+          if (window.instrumentosController) {
+            await instrumentosController.init(null);
+            console.log('🔧 InstrumentosController inicializado sin módulo asignado');
+          }
         }
 
       } catch (error) {
@@ -4504,106 +6022,33 @@
 
     // ========= CHECKLIST FUNCTIONALITY =========
     function initializeChecklistFunctionality() {
-      const checklistItems = document.querySelectorAll('.checklist-item input[type="checkbox"]');
-      
-      checklistItems.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-          const item = this.closest('.checklist-item');
-          const itemName = item.querySelector('.item-name').textContent;
-          const isChecked = this.checked;
-          
-          // Guardar estado en localStorage
-          saveChecklistState(itemName, isChecked);
-          
-          // Mostrar feedback visual
-          if (isChecked) {
-            item.style.background = '#f0f9ff';
-          } else {
-            item.style.background = '#fef3c7';
-          }
-        });
-      });
-
-      // Botón de actualizar checklist
-      const updateBtn = document.querySelector('.checklist-btn');
-      if (updateBtn) {
-        updateBtn.addEventListener('click', function() {
-          refreshChecklist();
-        });
-      }
+      // Las funciones del checklist ahora son manejadas por instrumentosController
+      console.log('📋 Checklist será manejado por instrumentosController');
     }
 
     function saveChecklistState(itemName, isChecked) {
-      let checklistData = JSON.parse(localStorage.getItem('checklistData') || '{}');
-      checklistData[itemName] = {
-        checked: isChecked,
-        timestamp: new Date().toISOString()
-      };
-      localStorage.setItem('checklistData', JSON.stringify(checklistData));
+      // Delegado al instrumentosController
+      if (window.instrumentosController) {
+        window.instrumentosController.saveChecklistState(itemName, isChecked);
+      }
     }
 
     function refreshChecklist() {
-      // Simular actualización del checklist
-      console.log('Refreshing checklist...');
-      alert('Checklist actualizado exitosamente');
+      // Delegado al instrumentosController
+      if (window.instrumentosController) {
+        window.instrumentosController.handleUpdateChecklist();
+      }
     }
 
     // ========= OBSERVATION FORM FUNCTIONALITY =========
     function initializeObservationForm() {
-      const submitBtn = document.querySelector('.submit-observation');
-      const textarea = document.getElementById('new-observation');
-      const prioritySelect = document.getElementById('priority-level');
-      
-      if (submitBtn && textarea && prioritySelect) {
-        submitBtn.addEventListener('click', function() {
-          const observationText = textarea.value.trim();
-          const priority = prioritySelect.value;
-          
-          if (!observationText) {
-            alert('Por favor describe la observación antes de enviar.');
-            return;
-          }
-          
-          submitObservation(observationText, priority);
-        });
-      }
-
-      // Auto-save draft
-      if (textarea) {
-        textarea.addEventListener('input', function() {
-          localStorage.setItem('observationDraft', this.value);
-        });
-        
-        // Load draft on page load
-        const draft = localStorage.getItem('observationDraft');
-        if (draft) {
-          textarea.value = draft;
-        }
-      }
+      // Las funciones de observaciones ahora son manejadas por instrumentosController
+      console.log('📝 Observaciones serán manejadas por instrumentosController');
     }
 
     function submitObservation(text, priority) {
-      const observation = {
-        id: Date.now(),
-        text: text,
-        priority: priority,
-        timestamp: new Date().toISOString(),
-        status: 'pending',
-        user: getCurrentUserName()
-      };
-      
-      // Guardar observación
-      saveObservation(observation);
-      
-      // Limpiar formulario
-      document.getElementById('new-observation').value = '';
-      localStorage.removeItem('observationDraft');
-      
-      // Mostrar confirmación
-      alert('Reporte enviado exitosamente. El personal administrativo será notificado.');
-      
-      // Actualizar lista de observaciones
-      addObservationToList(observation);
+      // Esta función es legacy, ahora se maneja directamente en el controlador
+      console.log('submitObservation es legacy, usar instrumentosController');
     }
 
     function saveObservation(observation) {
@@ -4666,7 +6111,7 @@
 
     function getCurrentUserName() {
       try {
-        const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const user = authModel.getCurrentUser() || {};
         return user.nombre || 'Usuario';
       } catch {
         return 'Usuario';

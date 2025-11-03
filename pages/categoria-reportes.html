@@ -749,6 +749,7 @@
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initReporteController } from '../js/controllers/reporteController.js';
+    import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
     // HeaderComponent eliminado, ahora usamos header individual
     
     document.addEventListener('DOMContentLoaded', () => {
@@ -762,6 +763,10 @@
         setTimeout(() => {
           initGlobalController();
           initReporteController();
+          
+          // TERCERO: Inicializar ConnectionIndicator
+          ConnectionIndicator.init();
+          console.log('ConnectionIndicator inicializado para Reportes');
         }, 100);
       }
     });

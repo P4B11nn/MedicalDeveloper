@@ -228,6 +228,44 @@ export async function initReporteController() {
       await renderEstadisticas();
     }
   }
+
+  // Registrar callback para refrescar datos cuando se restaure la conexión
+  setTimeout(() => {
+    if (window.connectionIndicator) {
+      window.connectionIndicator.onConnectionRestored(async () => {
+        console.log('🔄 Refrescando datos de reportes tras restaurar conexión...');
+        try {
+          // Mostrar mensaje de sincronización
+          if (typeof mostrarConfirmacion === 'function') {
+            mostrarConfirmacion('🔄 Sincronizando Datos', 'Actualizando información de reportes desde Firebase...');
+          }
+
+          // Refrescar la sección activa actualmente
+          const seccionActiva = document.querySelector('.report-section.active');
+          if (seccionActiva) {
+            if (seccionActiva.id === 'estadisticas-section') {
+              await renderEstadisticas();
+            } else if (seccionActiva.id === 'actividades-section') {
+              await renderActividades();
+            } else if (seccionActiva.id === 'exportacion-section') {
+              await renderExportacion();
+            }
+          }
+
+          if (typeof mostrarConfirmacion === 'function') {
+            mostrarConfirmacion('✅ Datos Actualizados', 'La información de reportes se ha sincronizado correctamente con Firebase.');
+          }
+        } catch (error) {
+          console.error('❌ Error al refrescar datos de reportes tras restaurar conexión:', error);
+          if (typeof mostrarConfirmacion === 'function') {
+            mostrarConfirmacion('⚠️ Error de Sincronización', 'No se pudieron actualizar los datos de reportes. Refresca la página manualmente.');
+          }
+        }
+      });
+    } else {
+      console.warn('⚠️ ConnectionIndicator no disponible para registrar callback de restauración de conexión en reporteController');
+    }
+  }, 500);
 }
 
 // Funciones para manejar la exportación de datos

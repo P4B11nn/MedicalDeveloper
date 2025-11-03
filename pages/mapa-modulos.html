@@ -863,11 +863,16 @@
     <script type="module">
       // Importar userDisplayGlobal para manejar la visualización del usuario
       import { initUserDisplay } from '../js/utils/userDisplayGlobal.js';
+      import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
 
       // Inicializar al cargar la página
       document.addEventListener('DOMContentLoaded', () => {
         console.log('Mapa de Módulos: Página cargada');
         initUserDisplay();
+        
+        // Inicializar ConnectionIndicator
+        ConnectionIndicator.init();
+        console.log('ConnectionIndicator inicializado para Mapa de Módulos');
       });
     </script>
 </body>

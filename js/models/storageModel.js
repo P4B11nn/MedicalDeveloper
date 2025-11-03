@@ -816,6 +816,315 @@ export const offlineStorage = {
     }
 };
 
+// --- MODELO DE INSTRUMENTOS ---
+export const instrumentosModel = {
+    /**
+     * Guardar checklist de instrumentos en Firebase
+     * @param {Object} checklistData - Datos del checklist
+     * @returns {Promise<Object|null>} Registro guardado o null
+     */
+    async saveChecklist(checklistData) {
+        try {
+            console.log('💾 Guardando checklist de instrumentos en Firebase...');
+            
+            const currentUser = authModel.getCurrentUser();
+            if (!currentUser) {
+                throw new Error('Usuario no autenticado');
+            }
+
+            const registro = {
+                usuarioId: currentUser.uid,
+                usuarioNombre: currentUser.nombre,
+                usuarioMatricula: currentUser.matricula,
+                moduloId: checklistData.moduloId,
+                moduloNombre: checklistData.moduloNombre,
+                ubicacion: checklistData.ubicacion,
+                instrumentos: checklistData.instrumentos || {},
+                insumos: checklistData.insumos || {},
+                observaciones: checklistData.observaciones || '',
+                fecha: new Date().toISOString(),
+                timestamp: serverTimestamp(),
+                tipo: 'checklist_instrumentos'
+            };
+
+            const registroInstrumentosCollection = collection(db, 'registro_instrumentos');
+            const docRef = await addDoc(registroInstrumentosCollection, registro);
+
+            console.log('✅ Checklist guardado en Firebase con ID:', docRef.id);
+            return { id: docRef.id, ...registro };
+
+        } catch (error) {
+            console.error('❌ Error guardando checklist en Firebase:', error);
+            
+            // Fallback a localStorage
+            try {
+                const fallbackData = {
+                    id: 'offline-' + Date.now(),
+                    ...checklistData,
+                    offline: true,
+                    timestamp: new Date().toISOString()
+                };
+                
+                const offlineChecklists = JSON.parse(localStorage.getItem('offline_checklists') || '[]');
+                offlineChecklists.push(fallbackData);
+                localStorage.setItem('offline_checklists', JSON.stringify(offlineChecklists));
+                
+                console.log('📱 Checklist guardado offline para sincronización posterior');
+                return fallbackData;
+            } catch (fallbackError) {
+                console.error('❌ Error en fallback de checklist:', fallbackError);
+                throw error;
+            }
+        }
+    },
+
+    /**
+     * Obtener registros de instrumentos
+     * @param {Object} filtros - Filtros de búsqueda
+     * @returns {Promise<Array>} Array de registros
+     */
+    async getRegistros(filtros = {}) {
+        try {
+            console.log('📋 Obteniendo registros de instrumentos desde Firebase...');
+            
+            // Verificar si Firebase está disponible
+            if (!db) {
+                throw new Error('Firebase no está inicializado');
+            }
+            
+            const registroInstrumentosCollection = collection(db, 'registro_instrumentos');
+            let q = registroInstrumentosCollection;
+
+            // Aplicar filtros si existen
+            if (filtros.usuarioId) {
+                q = query(q, where('usuarioId', '==', filtros.usuarioId));
+            }
+            if (filtros.moduloId) {
+                q = query(q, where('moduloId', '==', filtros.moduloId));
+            }
+            if (filtros.fecha) {
+                const fechaInicio = new Date(filtros.fecha + 'T00:00:00');
+                const fechaFin = new Date(filtros.fecha + 'T23:59:59');
+                q = query(q, where('timestamp', '>=', fechaInicio), where('timestamp', '<=', fechaFin));
+            }
+
+            console.log('🔍 Ejecutando consulta a Firestore...');
+            const snapshot = await getDocs(q);
+            
+            const registros = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                timestamp: doc.data().timestamp?.toDate?.() || new Date(doc.data().timestamp)
+            }));
+
+            console.log(`✅ ${registros.length} registros de instrumentos obtenidos desde Firebase`);
+            return registros;
+
+        } catch (error) {
+            console.error('❌ Error obteniendo registros de instrumentos:', error);
+            console.log('🔄 Intentando fallback a localStorage...');
+            
+            // Fallback a localStorage
+            const offlineChecklists = JSON.parse(localStorage.getItem('offline_checklists') || '[]');
+            console.log(`📦 ${offlineChecklists.length} registros obtenidos desde localStorage`);
+            return offlineChecklists;
+        }
+    },
+
+    /**
+     * Obtener el último registro de checklist de un usuario para un módulo específico
+     * @param {string} usuarioId - ID del usuario
+     * @param {string} moduloId - ID del módulo
+     * @returns {Promise<Object|null>} Último registro o null
+     */
+    async getLastChecklistRecord(usuarioId, moduloId) {
+        try {
+            console.log('📋 Obteniendo último registro de checklist...');
+            
+            const registroInstrumentosCollection = collection(db, 'registro_instrumentos');
+            const q = query(
+                registroInstrumentosCollection,
+                where('usuarioId', '==', usuarioId),
+                where('moduloId', '==', moduloId),
+                orderBy('timestamp', 'desc'),
+                limit(1)
+            );
+
+            const snapshot = await getDocs(q);
+            if (!snapshot.empty) {
+                const doc = snapshot.docs[0];
+                const data = {
+                    id: doc.id,
+                    ...doc.data(),
+                    timestamp: doc.data().timestamp?.toDate?.() || new Date(doc.data().timestamp)
+                };
+                
+                console.log('✅ Último registro encontrado:', data.id);
+                return data;
+            }
+
+            console.log('ℹ️ No se encontró registro previo');
+            return null;
+
+        } catch (error) {
+            console.error('❌ Error obteniendo último registro:', error);
+            
+            // Fallback a localStorage
+            const offlineChecklists = JSON.parse(localStorage.getItem('offline_checklists') || '[]');
+            const userModuleChecklists = offlineChecklists.filter(item => 
+                item.usuarioId === usuarioId && item.moduloId === moduloId
+            );
+            
+            if (userModuleChecklists.length > 0) {
+                // Ordenar por timestamp y tomar el más reciente
+                userModuleChecklists.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                return userModuleChecklists[0];
+            }
+            
+            return null;
+        }
+    }
+};
+
+// --- MODELO DE OBSERVACIONES Y REPORTES ---
+export const observacionesModel = {
+    /**
+     * Guardar observación/reporte en Firebase
+     * @param {Object} observacionData - Datos de la observación
+     * @returns {Promise<Object|null>} Observación guardada o null
+     */
+    async saveObservacion(observacionData) {
+        try {
+            console.log('💾 Guardando observación en Firebase...');
+            
+            const currentUser = authModel.getCurrentUser();
+            if (!currentUser) {
+                throw new Error('Usuario no autenticado');
+            }
+
+            const observacion = {
+                usuarioId: currentUser.uid,
+                usuarioNombre: currentUser.nombre,
+                usuarioMatricula: currentUser.matricula,
+                moduloId: observacionData.moduloId,
+                moduloNombre: observacionData.moduloNombre,
+                ubicacion: observacionData.ubicacion,
+                descripcion: observacionData.descripcion,
+                prioridad: observacionData.prioridad,
+                categoria: observacionData.categoria || 'general',
+                estado: 'pendiente',
+                fecha: new Date().toISOString(),
+                timestamp: serverTimestamp(),
+                tipo: 'observacion_reporte'
+            };
+
+            const observacionesCollection = collection(db, 'observaciones_reportes');
+            const docRef = await addDoc(observacionesCollection, observacion);
+
+            console.log('✅ Observación guardada en Firebase con ID:', docRef.id);
+            return { id: docRef.id, ...observacion };
+
+        } catch (error) {
+            console.error('❌ Error guardando observación en Firebase:', error);
+            
+            // Fallback a localStorage
+            try {
+                const fallbackData = {
+                    id: 'offline-' + Date.now(),
+                    ...observacionData,
+                    offline: true,
+                    timestamp: new Date().toISOString(),
+                    estado: 'pendiente'
+                };
+                
+                const offlineObservaciones = JSON.parse(localStorage.getItem('offline_observaciones') || '[]');
+                offlineObservaciones.push(fallbackData);
+                localStorage.setItem('offline_observaciones', JSON.stringify(offlineObservaciones));
+                
+                console.log('📱 Observación guardada offline para sincronización posterior');
+                return fallbackData;
+            } catch (fallbackError) {
+                console.error('❌ Error en fallback de observación:', fallbackError);
+                throw error;
+            }
+        }
+    },
+
+    /**
+     * Obtener observaciones/reportes
+     * @param {Object} filtros - Filtros de búsqueda
+     * @returns {Promise<Array>} Array de observaciones
+     */
+    async getObservaciones(filtros = {}) {
+        try {
+            console.log('📋 Obteniendo observaciones desde Firebase...');
+            
+            const observacionesCollection = collection(db, 'observaciones_reportes');
+            let q = observacionesCollection;
+
+            // Aplicar filtros si existen
+            if (filtros.usuarioId) {
+                q = query(q, where('usuarioId', '==', filtros.usuarioId));
+            }
+            if (filtros.moduloId) {
+                q = query(q, where('moduloId', '==', filtros.moduloId));
+            }
+            if (filtros.estado) {
+                q = query(q, where('estado', '==', filtros.estado));
+            }
+            if (filtros.prioridad) {
+                q = query(q, where('prioridad', '==', filtros.prioridad));
+            }
+
+            const snapshot = await getDocs(q);
+            const observaciones = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                timestamp: doc.data().timestamp?.toDate?.() || new Date(doc.data().timestamp)
+            }));
+
+            console.log(`✅ ${observaciones.length} observaciones obtenidas desde Firebase`);
+            return observaciones;
+
+        } catch (error) {
+            console.error('❌ Error obteniendo observaciones:', error);
+            
+            // Fallback a localStorage
+            const offlineObservaciones = JSON.parse(localStorage.getItem('offline_observaciones') || '[]');
+            return offlineObservaciones;
+        }
+    },
+
+    /**
+     * Actualizar estado de observación
+     * @param {string} observacionId - ID de la observación
+     * @param {string} nuevoEstado - Nuevo estado
+     * @param {string} comentarios - Comentarios opcionales
+     * @returns {Promise<boolean>} True si se actualizó correctamente
+     */
+    async updateEstado(observacionId, nuevoEstado, comentarios = '') {
+        try {
+            console.log(`🔄 Actualizando estado de observación ${observacionId} a ${nuevoEstado}...`);
+            
+            const observacionRef = doc(db, 'observaciones_reportes', observacionId);
+            const updateData = {
+                estado: nuevoEstado,
+                fechaResolucion: nuevoEstado === 'resuelto' ? new Date().toISOString() : null,
+                comentariosResolucion: comentarios,
+                timestampActualizacion: serverTimestamp()
+            };
+
+            await updateDoc(observacionRef, updateData);
+            console.log('✅ Estado de observación actualizado en Firebase');
+            return true;
+
+        } catch (error) {
+            console.error('❌ Error actualizando estado de observación:', error);
+            return false;
+        }
+    }
+};
+
 // Inicializar listener de cambios de autenticación
 onAuthStateChanged(auth, (user) => {
     if (user) {

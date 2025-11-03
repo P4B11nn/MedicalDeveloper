@@ -20,10 +20,8 @@ class ConnectionIndicator {
     this.isOnline = navigator.onLine;
     this.updateIndicator();
 
-    // Si está offline desde el inicio, mostrar el indicador inmediatamente
-    if (!this.isOnline) {
-      this.showIndicator();
-    }
+    // Mostrar el indicador siempre (no solo cuando está offline)
+    this.showIndicator();
 
     // Verificación inicial después de un breve delay
     setTimeout(() => {
@@ -61,25 +59,25 @@ class ConnectionIndicator {
     style.textContent = `
       .connection-indicator {
         position: fixed;
-        top: 80px; /* Debajo del header */
-        right: 20px;
+        top: 20px; /* Alineado con la parte superior del header */
+        right: 270px; /* A la izquierda del dropdown de usuario */
         z-index: 9999;
         background: rgba(255, 255, 255, 0.95);
         backdrop-filter: blur(10px);
-        border-radius: 25px;
-        padding: 12px 20px;
+        border-radius: 20px;
+        padding: 8px 16px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         border: 2px solid rgba(255, 255, 255, 0.2);
         transition: all 0.3s ease;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 10px;
-        opacity: 0;
-        transform: translateY(-10px);
-        pointer-events: none;
-        min-width: 180px;
+        gap: 8px;
+        opacity: 1; /* Siempre visible */
+        transform: translateY(0);
+        pointer-events: auto;
+        min-width: 140px;
         justify-content: center;
       }
 
@@ -87,6 +85,17 @@ class ConnectionIndicator {
         opacity: 1;
         transform: translateY(0);
         pointer-events: auto;
+      }
+
+      /* Responsivo para pantallas más pequeñas */
+      @media (max-width: 768px) {
+        .connection-indicator {
+          top: 15px;
+          right: 60px; /* Más cerca del borde en móviles */
+          min-width: 120px;
+          padding: 6px 12px;
+          font-size: 12px;
+        }
       }
 
       .connection-indicator.online {

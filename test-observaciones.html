@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba - Observaciones</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 95%; /* Ampliar contenedor */
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            min-width: 900px; /* Ancho mínimo para botones */
+        }
+
+        h1 {
+            color: #1f2937;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2rem;
+        }
+
+        .observacion-item {
+            margin-bottom: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .observacion-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .obs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .obs-user-info {
+            flex: 1;
+        }
+
+        .obs-badges {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+        }
+
+        .priority-badge, .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .priority-badge.urgent {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #dc2626;
+            border: 1px solid #f87171;
+        }
+
+        .priority-badge.high {
+            background: linear-gradient(135deg, #fed7aa, #fdba74);
+            color: #ea580c;
+            border: 1px solid #fb923c;
+        }
+
+        .status-badge.pendiente {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #dc2626;
+            border: 1px solid #f87171;
+        }
+
+        .status-badge.en_proceso {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #2563eb;
+            border: 1px solid #60a5fa;
+        }
+
+        .obs-content {
+            margin-bottom: 20px;
+        }
+
+        .obs-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding-top: 15px;
+            border-top: 1px solid #f1f5f9;
+            min-width: 600px; /* Asegurar espacio para botones */
+            justify-content: flex-start;
+        }
+
+        .obs-btn-action {
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .obs-btn-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 20px auto;
+            display: block;
+            transition: all 0.3s ease;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(6, 182, 212, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-clipboard-list"></i> Prueba de Observaciones Ampliadas</h1>
+        
+        <button class="test-button" onclick="cargarDatosPrueba()">
+            <i class="fas fa-play"></i> Cargar Datos de Prueba
+        </button>
+        
+        <div id="lista-observaciones-admin">
+            <!-- Aquí se cargarán las observaciones -->
+        </div>
+    </div>
+
+    <script>
+        function cargarDatosPrueba() {
+            const observaciones = [
+                {
+                    id: 'obs-1',
+                    usuarioNombre: 'Dr. María García',
+                    usuarioMatricula: 'MAT001',
+                    moduloNombre: 'Módulo 5 - Consultorios',
+                    timestamp: new Date(),
+                    descripcion: 'El tensiómetro del consultorio 3 está descalibrado. Las mediciones están consistentemente 10 mmHg por encima de otros dispositivos.',
+                    categoria: 'instrumentos',
+                    ubicacion: 'Consultorio 3',
+                    prioridad: 'urgent',
+                    estado: 'pendiente'
+                },
+                {
+                    id: 'obs-2',
+                    usuarioNombre: 'Enf. Carlos López',
+                    usuarioMatricula: 'MAT002',
+                    moduloNombre: 'Módulo 2 - Urgencias',
+                    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
+                    descripcion: 'Falta alcohol en gel en la estación de enfermería. Solo queda 1 botella y necesitamos restock urgente.',
+                    categoria: 'insumos',
+                    ubicacion: 'Estación de Enfermería',
+                    prioridad: 'high',
+                    estado: 'en_proceso'
+                },
+                {
+                    id: 'obs-3',
+                    usuarioNombre: 'Dra. Ana Martínez',
+                    usuarioMatricula: 'MAT003',
+                    moduloNombre: 'Módulo 1 - Recepción',
+                    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
+                    descripcion: 'La silla del escritorio principal está rota en el respaldo. Es necesario cambiarla para evitar lesiones.',
+                    categoria: 'infraestructura',
+                    ubicacion: 'Recepción Principal',
+                    prioridad: 'medium',
+                    estado: 'resuelto'
+                }
+            ];
+
+            mostrarObservaciones(observaciones);
+        }
+
+        function mostrarObservaciones(observaciones) {
+            const container = document.getElementById('lista-observaciones-admin');
+            
+            if (observaciones.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #64748b;">
+                        <i class="fas fa-clipboard-list" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i>
+                        <br><div style="font-weight: 600; margin-bottom: 8px;">No hay observaciones registradas</div>
+                        <div style="font-size: 0.9rem; color: #9ca3af;">Las observaciones aparecerán aquí cuando sean reportadas</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = observaciones.map(obs => {
+                const fecha = new Date(obs.timestamp);
+                const fechaFormateada = fecha.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+                const horaFormateada = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                
+                return `
+                    <div class="observacion-item" data-observacion-id="${obs.id}">
+                        
+                        <div class="obs-header">
+                            <div class="obs-user-info">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                    <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.1rem;">
+                                        ${(obs.usuarioNombre || 'U')[0].toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 1.1rem; color: #1f2937;">${obs.usuarioNombre}</div>
+                                        <div style="font-size: 0.9rem; color: #64748b;">Mat: ${obs.usuarioMatricula}</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 6px; color: #6b7280; font-size: 0.9rem;">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>${obs.moduloNombre || 'N/A'}</span>
+                                    <span style="margin-left: 10px;">•</span>
+                                    <i class="fas fa-clock"></i>
+                                    <span>${fechaFormateada} ${horaFormateada}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="obs-badges">
+                                <span class="priority-badge ${obs.prioridad}">
+                                    ${getPrioridadLabel(obs.prioridad)}
+                                </span>
+                                <span class="status-badge ${obs.estado}">
+                                    ${getEstadoLabel(obs.estado)}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="obs-content">
+                            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #06b6d4; margin-bottom: 12px;">
+                                <div style="font-size: 1rem; line-height: 1.5; color: #374151;">${obs.descripcion}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="background: rgba(99, 102, 241, 0.1); color: #6366f1; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 500;">
+                                    <i class="fas fa-tag"></i> ${getCategoriaLabel(obs.categoria)}
+                                </span>
+                                ${obs.ubicacion ? `
+                                    <span style="background: rgba(16, 185, 129, 0.1); color: #059669; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 500;">
+                                        <i class="fas fa-location-dot"></i> ${obs.ubicacion}
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <div class="obs-actions">
+                            ${obs.estado === 'pendiente' ? `
+                                <button class="obs-btn-action" style="background: linear-gradient(135deg, #3b82f6, #2563eb); color: white;" onclick="cambiarEstado('${obs.id}', 'en_proceso')">
+                                    <i class="fas fa-play"></i>
+                                    <span>Marcar en Proceso</span>
+                                </button>
+                                <button class="obs-btn-action" style="background: linear-gradient(135deg, #10b981, #059669); color: white;" onclick="cambiarEstado('${obs.id}', 'resuelto')">
+                                    <i class="fas fa-check"></i>
+                                    <span>Resolver</span>
+                                </button>
+                            ` : obs.estado === 'en_proceso' ? `
+                                <button class="obs-btn-action" style="background: linear-gradient(135deg, #10b981, #059669); color: white;" onclick="cambiarEstado('${obs.id}', 'resuelto')">
+                                    <i class="fas fa-check"></i>
+                                    <span>Resolver</span>
+                                </button>
+                                <button class="obs-btn-action" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;" onclick="cambiarEstado('${obs.id}', 'pendiente')">
+                                    <i class="fas fa-undo"></i>
+                                    <span>Volver a Pendiente</span>
+                                </button>
+                            ` : `
+                                <button class="obs-btn-action" style="background: linear-gradient(135deg, #6b7280, #4b5563); color: white;" onclick="cambiarEstado('${obs.id}', 'pendiente')">
+                                    <i class="fas fa-undo"></i>
+                                    <span>Reabrir</span>
+                                </button>
+                            `}
+                            
+                            <button class="obs-btn-action" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white;" onclick="verDetalles('${obs.id}')">
+                                <i class="fas fa-eye"></i>
+                                <span>Ver Detalles</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getPrioridadLabel(prioridad) {
+            const labels = {
+                'urgent': 'Urgente',
+                'high': 'Alta',
+                'medium': 'Media',
+                'low': 'Baja'
+            };
+            return labels[prioridad] || 'Media';
+        }
+
+        function getEstadoLabel(estado) {
+            const labels = {
+                'pendiente': 'Pendiente',
+                'en_proceso': 'En Proceso',
+                'resuelto': 'Resuelto'
+            };
+            return labels[estado] || 'Pendiente';
+        }
+
+        function getCategoriaLabel(categoria) {
+            const labels = {
+                'instrumentos': 'Instrumentos',
+                'insumos': 'Insumos',
+                'limpieza': 'Limpieza',
+                'infraestructura': 'Infraestructura',
+                'general': 'General'
+            };
+            return labels[categoria] || 'General';
+        }
+
+        function cambiarEstado(id, nuevoEstado) {
+            alert(`Cambiando estado de observación ${id} a: ${nuevoEstado}`);
+        }
+
+        function verDetalles(id) {
+            alert(`Mostrando detalles de observación: ${id}`);
+        }
+    </script>
+</body>
+</html>

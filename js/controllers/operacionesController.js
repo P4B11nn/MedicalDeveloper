@@ -127,6 +127,38 @@ export function initOperationsController() {
       }
     }
   }, 120);
+
+  // Registrar callback para refrescar datos cuando se restaure la conexión
+  setTimeout(() => {
+    if (window.connectionIndicator) {
+      window.connectionIndicator.onConnectionRestored(async () => {
+        console.log('🔄 Refrescando datos de operaciones tras restaurar conexión...');
+        try {
+          // Refrescar la sección activa actualmente
+          const seccionActiva = document.querySelector('.content-section.active');
+          if (seccionActiva) {
+            const asistenciaContainer = document.getElementById('asistenciaContainer');
+            const asistenciasGeneralesContainer = document.getElementById('asistenciasGeneralesContainer');
+            
+            if (asistenciaContainer && seccionActiva.contains(asistenciaContainer)) {
+              // Refrescar sección de asistencia
+              const usuarios = await authModel.getAllUsers() || [];
+              await renderAsistencia(usuarios, asistenciaContainer);
+            } else if (asistenciasGeneralesContainer && seccionActiva.contains(asistenciasGeneralesContainer)) {
+              // Refrescar sección de asistencias generales
+              await renderAsistenciasGenerales(asistenciasGeneralesContainer);
+            }
+          }
+
+          console.log('✅ Datos de operaciones refrescados correctamente tras restaurar conexión');
+        } catch (error) {
+          console.error('❌ Error al refrescar datos de operaciones tras restaurar conexión:', error);
+        }
+      });
+    } else {
+      console.warn('⚠️ ConnectionIndicator no disponible para registrar callback de restauración de conexión en operacionesController');
+    }
+  }, 500);
 }
 
 /**

@@ -2037,20 +2037,85 @@ async function handleEditarPacienteSubmit(event) {
   };
   
   try {
+    // Obtener datos actuales del paciente para comparar
+    const pacienteActual = await pacienteModel.getPaciente(pacienteId);
+    if (!pacienteActual) {
+      mostrarMensaje('error', '❌ Error', 'No se pudo encontrar el paciente para actualizar.');
+      return;
+    }
+    
     // Actualizar datos personales
     const pacienteActualizado = await pacienteModel.updatePaciente(pacienteId, datosPersonales);
     
     if (pacienteActualizado) {
-      // Actualizar datos médicos si hay algún valor
-      const hayDatosMedicos = Object.values(datosMedicos).some(v => v !== null && v !== '');
+      // Verificar si realmente han cambiado los datos médicos comparando con los existentes
+      const datosAnteriores = pacienteActual.datosMedicos || {};
+      let hayDatosMedicosCambiados = false;
       
-      if (hayDatosMedicos) {
+      // Comparar cada campo médico para detectar cambios reales
+      const camposMedicos = ['temperatura', 'presion', 'peso', 'talla', 'frecuenciaRespiratoria', 'glucosa', 'examenVista', 'examenOido', 'observacionesGenerales'];
+      
+      for (const campo of camposMedicos) {
+        const valorAnterior = datosAnteriores[campo] || '';
+        const valorNuevo = datosMedicos[campo] || '';
+        
+        if (valorAnterior !== valorNuevo) {
+          hayDatosMedicosCambiados = true;
+          break;
+        }
+      }
+      
+      // Solo actualizar datos médicos y registrar en historial si realmente cambiaron
+      if (hayDatosMedicosCambiados) {
         await pacienteModel.updateDatosMedicos(pacienteId, datosMedicos);
+        console.log('✅ Datos médicos actualizados y registrados en historial');
+        
+        // Registrar actividad de actualización de datos médicos
+        try {
+          const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+          await ActivityLogger.updateMedicalRecordActivity(
+            pacienteId,
+            `${datosPersonales.nombre} ${datosPersonales.apellidos || ''}`,
+            camposMedicos.filter(campo => {
+              const valorAnterior = datosAnteriores[campo] || '';
+              const valorNuevo = datosMedicos[campo] || '';
+              return valorAnterior !== valorNuevo;
+            })
+          );
+        } catch (error) {
+          console.warn('Error registrando actividad de actualización de datos médicos:', error);
+        }
+      } else {
+        console.log('ℹ️ No se detectaron cambios en datos médicos - no se registra en historial');
+        
+        // Registrar actividad de actualización de datos personales solamente
+        try {
+          const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+          await ActivityLogger.log({
+            accion: 'update_paciente_personal',
+            descripcion: `Datos personales actualizados: ${datosPersonales.nombre} ${datosPersonales.apellidos || ''} (${datosPersonales.matricula})`,
+            modulo: 'pacientes',
+            recursoId: pacienteId,
+            recursoTipo: 'paciente',
+            detalles: { 
+              nombre: datosPersonales.nombre,
+              apellidos: datosPersonales.apellidos,
+              matricula: datosPersonales.matricula,
+              tipoActualizacion: 'datos_personales'
+            }
+          });
+        } catch (error) {
+          console.warn('Error registrando actividad de actualización de datos personales:', error);
+        }
       }
       
       const usuarioActual = obtenerUsuarioActual();
+      const mensajeActualizacion = hayDatosMedicosCambiados ? 
+        'Los datos personales y médicos han sido actualizados exitosamente.' :
+        'Los datos personales han sido actualizados exitosamente.';
+      
       mostrarMensaje('success', '✅ Paciente Actualizado', 
-        `Los datos de ${datosPersonales.nombre} ${datosPersonales.apellidos || ''} han sido actualizados exitosamente.\n\nActualizado por: ${usuarioActual.nombre}`, 5000);
+        `${mensajeActualizacion}\nPaciente: ${datosPersonales.nombre} ${datosPersonales.apellidos || ''}\n\nActualizado por: ${usuarioActual.nombre}`, 5000);
       
       // Cerrar modal y actualizar vistas
       cerrarModalEditarPaciente();
