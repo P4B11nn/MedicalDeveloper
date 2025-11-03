@@ -225,7 +225,18 @@ export const ActivityLogger = {
         return dateB - dateA; // Más recientes primero
       });
 
+      // DEBUG: Mostrar qué actividades se encontraron
       console.log(`✅ Total de actividades devueltas: ${allActivities.length}`);
+      console.log('🔍 DEBUG - Resumen de actividades por usuario:');
+      const usuariosEnActividades = {};
+      allActivities.forEach(activity => {
+        if (!usuariosEnActividades[activity.usuarioNombre]) {
+          usuariosEnActividades[activity.usuarioNombre] = 0;
+        }
+        usuariosEnActividades[activity.usuarioNombre]++;
+      });
+      console.table(usuariosEnActividades);
+      
       return allActivities;
 
     } catch (error) {
@@ -319,10 +330,15 @@ export const ActivityLogger = {
         porModulo: {},
         porUsuario: {},
         porDia: {},
-        usuarios: new Set(),
+        usuarios: new Set(), // Todos los usuarios con actividades
+        usuariosConLogin: new Set(), // Usuarios que han hecho login alguna vez
+        usuariosActivos: new Set(), // Usuarios actualmente conectados (login sin logout)
         fechaInicio: null,
         fechaFin: null
       };
+
+      // Rastrear sesiones de usuarios para determinar quién está actualmente activo
+      const sesionesUsuarios = {};
 
       activities.forEach(activity => {
         // Contar por acción
@@ -341,6 +357,26 @@ export const ActivityLogger = {
         // Agregar usuario único
         stats.usuarios.add(activity.usuarioNombre);
         
+        // Rastrear sesiones de login/logout para usuarios activos
+        if (activity.accion === 'login' || activity.accion === 'logout') {
+          const usuario = activity.usuarioNombre;
+          const timestamp = new Date(activity.timestamp);
+          
+          if (!sesionesUsuarios[usuario]) {
+            sesionesUsuarios[usuario] = [];
+          }
+          
+          sesionesUsuarios[usuario].push({
+            accion: activity.accion,
+            timestamp: timestamp
+          });
+          
+          // Si hizo login alguna vez, agregarlo a usuariosConLogin
+          if (activity.accion === 'login') {
+            stats.usuariosConLogin.add(usuario);
+          }
+        }
+        
         // Actualizar fechas extremas
         const activityDate = new Date(activity.timestamp);
         if (!stats.fechaInicio || activityDate < stats.fechaInicio) {
@@ -351,7 +387,30 @@ export const ActivityLogger = {
         }
       });
 
+      // Determinar usuarios actualmente activos analizando sesiones
+      for (const [usuario, sesiones] of Object.entries(sesionesUsuarios)) {
+        // Ordenar sesiones por timestamp (más reciente primero)
+        sesiones.sort((a, b) => b.timestamp - a.timestamp);
+        
+        // Si la sesión más reciente es un login, el usuario está activo
+        if (sesiones.length > 0 && sesiones[0].accion === 'login') {
+          stats.usuariosActivos.add(usuario);
+          console.log(`🟢 Usuario actualmente activo: ${usuario} (último: ${sesiones[0].accion} a las ${sesiones[0].timestamp.toLocaleString()})`);
+        } else if (sesiones.length > 0) {
+          console.log(`🔴 Usuario no activo: ${usuario} (último: ${sesiones[0].accion} a las ${sesiones[0].timestamp.toLocaleString()})`);
+        }
+      }
+
+      // Convertir Sets a Arrays
       stats.usuarios = Array.from(stats.usuarios);
+      stats.usuariosConLogin = Array.from(stats.usuariosConLogin);
+      stats.usuariosActivos = Array.from(stats.usuariosActivos);
+      
+      // DEBUG: Mostrar análisis de usuarios
+      console.log('👥 DEBUG - Todos los usuarios únicos:', stats.usuarios);
+      console.log('� DEBUG - Usuarios que han hecho login:', stats.usuariosConLogin);
+      console.log('🟢 DEBUG - Usuarios actualmente activos:', stats.usuariosActivos);
+      console.log('� DEBUG - Total usuarios activos:', stats.usuariosActivos.length);
       
       return stats;
       
@@ -364,6 +423,8 @@ export const ActivityLogger = {
         porUsuario: {},
         porDia: {},
         usuarios: [],
+        usuariosConLogin: [],
+        usuariosActivos: [],
         fechaInicio: null,
         fechaFin: null
       };

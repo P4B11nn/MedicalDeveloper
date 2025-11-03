@@ -262,11 +262,31 @@ export async function renderActividades() {
         
         <div class="activity-stat-card users">
           <div class="activity-stat-icon">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <div class="activity-stat-content">
+            <div class="activity-stat-number">${activityStats.usuariosActivos?.length || 0}</div>
+            <div class="activity-stat-label">Usuarios Conectados</div>
+          </div>
+        </div>
+        
+        <div class="activity-stat-card login-users">
+          <div class="activity-stat-icon">
+            <i class="fas fa-key"></i>
+          </div>
+          <div class="activity-stat-content">
+            <div class="activity-stat-number">${activityStats.usuariosConLogin?.length || 0}</div>
+            <div class="activity-stat-label">Usuarios con Login</div>
+          </div>
+        </div>
+        
+        <div class="activity-stat-card unique-users">
+          <div class="activity-stat-icon">
             <i class="fas fa-users"></i>
           </div>
           <div class="activity-stat-content">
             <div class="activity-stat-number">${activityStats.usuarios?.length || 0}</div>
-            <div class="activity-stat-label">Usuarios Activos</div>
+            <div class="activity-stat-label">Usuarios Únicos</div>
           </div>
         </div>
         
@@ -293,7 +313,14 @@ export async function renderActividades() {
     </div>
     
     <div class="filtros-container">
-      <h3>🔍 Filtros de Búsqueda</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3>🔍 Filtros de Búsqueda</h3>
+        <button type="button" class="btn-estadisticas-completas" onclick="mostrarEstadisticasCompletas()" 
+                style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease;">
+          <i class="fas fa-chart-bar"></i>
+          Ver Estadísticas Completas
+        </button>
+      </div>
       <form id="formFiltroActividades" class="form-filtros">
         <div class="form-row">
           <div class="form-group col-md-6">
@@ -2586,4 +2613,190 @@ async function cleanNavigationRecords() {
     throw error;
   }
 }
+
+// ========================================
+// MODAL DE ESTADÍSTICAS COMPLETAS
+// ========================================
+
+/**
+ * Mostrar modal con estadísticas completas del sistema
+ */
+window.mostrarEstadisticasCompletas = async function() {
+  try {
+    console.log('📊 Cargando estadísticas completas...');
+    
+    // Importar ActivityLogger
+    const { default: ActivityLogger } = await import('../utils/activityLogger.js');
+    
+    // Obtener estadísticas completas
+    const stats = await ActivityLogger.getActivityStats({ limit: 100 });
+    
+    // Crear contenido del modal
+    const modalContent = `
+      <div class="modal-overlay" id="modalEstadisticasCompletas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <div class="modal-content" style="background: white; border-radius: 15px; padding: 30px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+          
+          <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #f1f5f9;">
+            <h2 style="margin: 0; color: #1f2937; font-size: 1.8rem;">
+              <i class="fas fa-chart-bar" style="color: #6366f1; margin-right: 10px;"></i>
+              Estadísticas Completas del Sistema
+            </h2>
+            <button onclick="cerrarModalEstadisticas()" style="background: none; border: none; font-size: 1.5rem; color: #64748b; cursor: pointer; padding: 5px; border-radius: 5px; transition: all 0.3s ease;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          
+          <div class="estadisticas-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+            
+            <div class="stat-card-modal" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+              <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 8px;">${stats.total || 0}</div>
+              <div style="font-size: 0.9rem; opacity: 0.9;">Total de Actividades</div>
+            </div>
+            
+            <div class="stat-card-modal" style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+              <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 8px;">${stats.usuariosActivos?.length || 0}</div>
+              <div style="font-size: 0.9rem; opacity: 0.9;">Usuarios Conectados</div>
+            </div>
+            
+            <div class="stat-card-modal" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+              <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 8px;">${stats.usuariosConLogin?.length || 0}</div>
+              <div style="font-size: 0.9rem; opacity: 0.9;">Usuarios con Login</div>
+            </div>
+            
+            <div class="stat-card-modal" style="background: linear-gradient(135deg, #06b6d4, #0891b2); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+              <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 8px;">${stats.usuarios?.length || 0}</div>
+              <div style="font-size: 0.9rem; opacity: 0.9;">Usuarios Únicos</div>
+            </div>
+            
+            <div class="stat-card-modal" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 20px; border-radius: 12px; text-align: center;">
+              <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 8px;">${Object.keys(stats.porAccion || {}).length}</div>
+              <div style="font-size: 0.9rem; opacity: 0.9;">Tipos de Acciones</div>
+            </div>
+            
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+            
+            <!-- Estado de Usuarios del Sistema -->
+            <div class="detalle-seccion">
+              <h3 style="color: #1f2937; margin-bottom: 15px; font-size: 1.2rem;">
+                <i class="fas fa-user-check" style="color: #10b981; margin-right: 8px;"></i>
+                Usuarios Conectados Ahora - ${stats.usuariosActivos?.length || 0}
+              </h3>
+              <div style="background: #f0fdf4; border-radius: 8px; padding: 15px; max-height: 150px; overflow-y: auto; border: 2px solid #10b981;">
+                ${stats.usuariosActivos && stats.usuariosActivos.length > 0 ? 
+                  stats.usuariosActivos.map((usuario, index) => {
+                    const actividades = stats.porUsuario[usuario] || 0;
+                    return `
+                      <div style="padding: 8px 0; border-bottom: 1px solid #bbf7d0; display: flex; justify-content: space-between;">
+                        <span style="font-weight: 600; color: #065f46;">� ${index + 1}. ${usuario}</span>
+                        <span style="color: #16a34a; font-size: 0.9rem; font-weight: 500;">${actividades} actividades</span>
+                      </div>
+                    `;
+                  }).join('') : 
+                  '<div style="text-align: center; color: #9ca3af; padding: 20px;">No hay usuarios conectados</div>'
+                }
+              </div>
+              
+              <h4 style="color: #1f2937; margin: 20px 0 10px 0; font-size: 1rem;">
+                <i class="fas fa-key" style="color: #f59e0b; margin-right: 8px;"></i>
+                Usuarios con Login - ${stats.usuariosConLogin?.length || 0}
+              </h4>
+              <div style="background: #fffbeb; border-radius: 8px; padding: 15px; max-height: 120px; overflow-y: auto; border: 1px solid #f59e0b;">
+                ${stats.usuariosConLogin && stats.usuariosConLogin.length > 0 ? 
+                  stats.usuariosConLogin.map((usuario, index) => {
+                    const actividades = stats.porUsuario[usuario] || 0;
+                    const estaConectado = stats.usuariosActivos?.includes(usuario);
+                    return `
+                      <div style="padding: 6px 0; border-bottom: 1px solid #fcd34d; display: flex; justify-content: space-between;">
+                        <span style="font-weight: 500; color: #92400e;">${estaConectado ? '�' : '�'} ${index + 1}. ${usuario}</span>
+                        <span style="color: #d97706; font-size: 0.9rem;">${actividades} actividades</span>
+                      </div>
+                    `;
+                  }).join('') : 
+                  '<div style="text-align: center; color: #9ca3af; padding: 15px;">No hay usuarios con login</div>'
+                }
+              </div>
+            </div>
+            
+            <!-- Actividades por Tipo -->
+            <div class="detalle-seccion">
+              <h3 style="color: #1f2937; margin-bottom: 15px; font-size: 1.2rem;">
+                <i class="fas fa-bolt" style="color: #8b5cf6; margin-right: 8px;"></i>
+                Actividades por Tipo
+              </h3>
+              <div style="background: #f8fafc; border-radius: 8px; padding: 15px; max-height: 200px; overflow-y: auto;">
+                ${stats.porAccion && Object.keys(stats.porAccion).length > 0 ? 
+                  Object.entries(stats.porAccion).map(([accion, count]) => `
+                    <div style="padding: 6px 0; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between;">
+                      <span style="font-weight: 500;">${accion}</span>
+                      <span style="color: #6b7280;">${count}</span>
+                    </div>
+                  `).join('') :
+                  '<div style="text-align: center; color: #9ca3af; padding: 20px;">No hay actividades registradas</div>'
+                }
+              </div>
+            </div>
+            
+          </div>
+          
+          <div style="margin-top: 30px;">
+            <!-- Actividades por Módulo -->
+            <div class="detalle-seccion">
+              <h3 style="color: #1f2937; margin-bottom: 15px; font-size: 1.2rem;">
+                <i class="fas fa-th-large" style="color: #f59e0b; margin-right: 8px;"></i>
+                Actividades por Módulo
+              </h3>
+              <div style="background: #f8fafc; border-radius: 8px; padding: 15px; max-height: 200px; overflow-y: auto;">
+                ${stats.porModulo && Object.keys(stats.porModulo).length > 0 ? 
+                  Object.entries(stats.porModulo).map(([modulo, count]) => `
+                    <div style="padding: 6px 0; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between;">
+                      <span style="font-weight: 500;">${modulo}</span>
+                      <span style="color: #6b7280;">${count}</span>
+                    </div>
+                  `).join('') :
+                  '<div style="text-align: center; color: #9ca3af; padding: 20px;">No hay actividades por módulo</div>'
+                }
+              </div>
+            </div>
+          </div>
+          
+          <div style="margin-top: 30px; text-align: center;">
+            <button onclick="cerrarModalEstadisticas()" style="background: linear-gradient(135deg, #6b7280, #4b5563); color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+              <i class="fas fa-times" style="margin-right: 8px;"></i>
+              Cerrar
+            </button>
+          </div>
+          
+        </div>
+      </div>
+    `;
+    
+    // Agregar modal al DOM
+    document.body.insertAdjacentHTML('beforeend', modalContent);
+    
+    // Cerrar modal al hacer clic fuera
+    document.getElementById('modalEstadisticasCompletas').addEventListener('click', function(e) {
+      if (e.target === this) {
+        cerrarModalEstadisticas();
+      }
+    });
+    
+    console.log('✅ Modal de estadísticas completas cargado');
+    
+  } catch (error) {
+    console.error('❌ Error cargando estadísticas completas:', error);
+    alert('Error al cargar las estadísticas completas. Revisa la consola para más detalles.');
+  }
+};
+
+/**
+ * Cerrar modal de estadísticas
+ */
+window.cerrarModalEstadisticas = function() {
+  const modal = document.getElementById('modalEstadisticasCompletas');
+  if (modal) {
+    modal.remove();
+  }
+};
 

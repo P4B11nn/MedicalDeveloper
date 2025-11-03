@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Usuarios Activos</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn.danger {
+            background: #dc3545;
+        }
+        .btn.danger:hover {
+            background: #c82333;
+        }
+        .output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug - Usuarios Activos en Estadísticas</h1>
+        
+        <div>
+            <button class="btn" onclick="verificarLocalStorage()">📊 Verificar localStorage</button>
+            <button class="btn" onclick="verificarActividades()">📋 Verificar Actividades</button>
+            <button class="btn danger" onclick="limpiarDatos()">🗑️ Limpiar Datos de Prueba</button>
+            <button class="btn" onclick="simularLogin()">👤 Simular Login</button>
+        </div>
+        
+        <div id="output" class="output">Haz clic en un botón para ver la información...</div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+
+        function log(message) {
+            output.textContent += message + '\n';
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearOutput() {
+            output.textContent = '';
+        }
+
+        function verificarLocalStorage() {
+            clearOutput();
+            log('🔍 VERIFICANDO LOCALSTORAGE...\n');
+            
+            // Verificar actividades offline
+            const offlineActivities = JSON.parse(localStorage.getItem('offline_activities') || '[]');
+            log(`📱 Actividades offline: ${offlineActivities.length}`);
+            if (offlineActivities.length > 0) {
+                log('📋 Detalle de actividades offline:');
+                offlineActivities.forEach((activity, index) => {
+                    log(`  ${index + 1}. Usuario: "${activity.usuarioNombre}" (ID: ${activity.usuarioId})`);
+                    log(`     Acción: ${activity.accion}, Módulo: ${activity.modulo}`);
+                    log(`     Fecha: ${activity.timestamp || activity.fecha}\n`);
+                });
+            }
+            
+            // Verificar checklists offline
+            const offlineChecklists = JSON.parse(localStorage.getItem('offline_checklists') || '[]');
+            log(`📝 Checklists offline: ${offlineChecklists.length}`);
+            if (offlineChecklists.length > 0) {
+                log('📋 Detalle de checklists offline:');
+                offlineChecklists.forEach((checklist, index) => {
+                    log(`  ${index + 1}. Usuario: "${checklist.usuarioNombre}" (ID: ${checklist.usuarioId})`);
+                    log(`     Módulo: ${checklist.moduloNombre}`);
+                    log(`     Fecha: ${checklist.timestamp}\n`);
+                });
+            }
+            
+            // Verificar observaciones offline
+            const offlineObservaciones = JSON.parse(localStorage.getItem('offline_observaciones') || '[]');
+            log(`📝 Observaciones offline: ${offlineObservaciones.length}`);
+            if (offlineObservaciones.length > 0) {
+                log('📋 Detalle de observaciones offline:');
+                offlineObservaciones.forEach((obs, index) => {
+                    log(`  ${index + 1}. Usuario: "${obs.usuarioNombre}" (ID: ${obs.usuarioId})`);
+                    log(`     Descripción: ${obs.descripcion}`);
+                    log(`     Fecha: ${obs.timestamp}\n`);
+                });
+            }
+            
+            // Verificar usuario actual
+            const currentUser = JSON.parse(sessionStorage.getItem('firebase_current_user') || '{}');
+            log(`👤 Usuario actual en sesión: ${currentUser.nombre || 'Ninguno'} (ID: ${currentUser.uid || 'N/A'})`);
+        }
+
+        async function verificarActividades() {
+            clearOutput();
+            log('🔍 VERIFICANDO ACTIVIDADES DEL SISTEMA...\n');
+            
+            try {
+                // Importar ActivityLogger dinámicamente
+                const { default: ActivityLogger } = await import('./js/utils/activityLogger.js');
+                
+                log('📊 Obteniendo estadísticas de actividades...\n');
+                const stats = await ActivityLogger.getActivityStats({ limit: 100 });
+                
+                log(`📈 ESTADÍSTICAS GENERALES:`);
+                log(`   Total de actividades: ${stats.total}`);
+                log(`   Usuarios únicos: ${stats.usuarios?.length || 0}`);
+                log(`   Módulos utilizados: ${Object.keys(stats.porModulo || {}).length}`);
+                log(`   Tipos de acciones: ${Object.keys(stats.porAccion || {}).length}\n`);
+                
+                if (stats.usuarios && stats.usuarios.length > 0) {
+                    log(`👥 USUARIOS ÚNICOS ENCONTRADOS:`);
+                    stats.usuarios.forEach((usuario, index) => {
+                        const actividades = stats.porUsuario[usuario] || 0;
+                        log(`   ${index + 1}. "${usuario}" - ${actividades} actividades`);
+                    });
+                    log('');
+                }
+                
+                if (stats.porAccion && Object.keys(stats.porAccion).length > 0) {
+                    log(`⚡ ACTIVIDADES POR TIPO:`);
+                    Object.entries(stats.porAccion).forEach(([accion, count]) => {
+                        log(`   ${accion}: ${count}`);
+                    });
+                    log('');
+                }
+                
+                if (stats.porModulo && Object.keys(stats.porModulo).length > 0) {
+                    log(`📦 ACTIVIDADES POR MÓDULO:`);
+                    Object.entries(stats.porModulo).forEach(([modulo, count]) => {
+                        log(`   ${modulo}: ${count}`);
+                    });
+                }
+                
+            } catch (error) {
+                log(`❌ Error verificando actividades: ${error.message}`);
+                console.error('Error:', error);
+            }
+        }
+
+        function limpiarDatos() {
+            clearOutput();
+            log('🗑️ LIMPIANDO DATOS DE PRUEBA...\n');
+            
+            // Limpiar actividades offline
+            const offlineActivities = localStorage.getItem('offline_activities');
+            if (offlineActivities) {
+                localStorage.removeItem('offline_activities');
+                log('✅ Actividades offline eliminadas');
+            }
+            
+            // Limpiar checklists offline
+            const offlineChecklists = localStorage.getItem('offline_checklists');
+            if (offlineChecklists) {
+                localStorage.removeItem('offline_checklists');
+                log('✅ Checklists offline eliminados');
+            }
+            
+            // Limpiar observaciones offline
+            const offlineObservaciones = localStorage.getItem('offline_observaciones');
+            if (offlineObservaciones) {
+                localStorage.removeItem('offline_observaciones');
+                log('✅ Observaciones offline eliminadas');
+            }
+            
+            log('\n🔄 Datos de localStorage limpiados. Recarga la página para verificar.');
+        }
+
+        async function simularLogin() {
+            clearOutput();
+            log('👤 SIMULANDO LOGIN PARA GENERAR ACTIVIDAD...\n');
+            
+            try {
+                // Importar ActivityLogger dinámicamente
+                const { default: ActivityLogger } = await import('./js/utils/activityLogger.js');
+                
+                const userData = {
+                    uid: 'debug-user-' + Date.now(),
+                    nombre: 'Usuario Debug',
+                    matricula: 'DEBUG123',
+                    rol: 'admin'
+                };
+                
+                log(`📝 Registrando login para: ${userData.nombre}`);
+                
+                const result = await ActivityLogger.logLogin(userData);
+                
+                if (result) {
+                    log('✅ Actividad de login registrada exitosamente');
+                    log(`   ID: ${result.id}`);
+                    log(`   Acción: ${result.accion}`);
+                    log(`   Descripción: ${result.descripcion}`);
+                } else {
+                    log('❌ No se pudo registrar la actividad de login');
+                }
+                
+            } catch (error) {
+                log(`❌ Error simulando login: ${error.message}`);
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
