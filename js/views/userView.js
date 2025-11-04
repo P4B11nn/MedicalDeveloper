@@ -2,6 +2,7 @@
 import { authModel } from '../models/storageModel.js';
 import { gestionModel } from '../models/gestionModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
+import { mostrarCredencialesUsuario } from '../utils/credentialsModal.js';
 
 let contenedorUsuarios = null;
 
@@ -128,9 +129,194 @@ function configurarOyenteDeEventosPrincipal() {
 
         const resetPasswordButton = e.target.closest('.btn-reset-password');
         if (resetPasswordButton) {
-            confirmarResetPassword(parseInt(resetPasswordButton.dataset.userIndex));
+            mostrarOpcionesReset(parseInt(resetPasswordButton.dataset.userIndex));
         }
     });
+}
+
+/**
+ * Muestra opciones de reset de contraseña al administrador
+ */
+async function mostrarOpcionesReset(userIndex) {
+    try {
+        const usuarios = await authModel.getAllUsers();
+        const usuario = usuarios[userIndex];
+        
+        if (!usuario) {
+            showMiniModal('Usuario no encontrado', 'error');
+            return;
+        }
+
+        const currentUser = authModel.getCurrentUser();
+        if (!currentUser || currentUser.rol !== 'admin') {
+            showMiniModal('Solo los administradores pueden resetear contraseñas', 'error');
+            return;
+        }
+
+        if (currentUser.uid === usuario.uid) {
+            showMiniModal('Para cambiar tu propia contraseña, usa el botón amarillo (🔑)', 'warning');
+            return;
+        }
+
+        // Crear modal de opciones
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        `;
+
+        modal.innerHTML = `
+            <div class="modal-content" style="
+                background: white;
+                border-radius: 20px;
+                padding: 30px;
+                max-width: 500px;
+                width: 90%;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+                text-align: center;
+            ">
+                <h2 style="color: #1f2937; margin-bottom: 10px;">🔄 Resetear Contraseña</h2>
+                <p style="color: #6b7280; margin-bottom: 25px;">
+                    <strong>${usuario.nombre}</strong><br>
+                    ${usuario.correo}
+                </p>
+                
+                <div style="text-align: left; margin-bottom: 25px;">
+                    <h4 style="color: #374151; margin-bottom: 15px;">Selecciona el método de reset:</h4>
+                    
+                    <button id="reset-email-btn" style="
+                        width: 100%;
+                        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+                        color: white;
+                        border: none;
+                        padding: 15px;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        cursor: pointer;
+                        margin-bottom: 15px;
+                        transition: transform 0.2s;
+                    " onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        📧 Enviar Email de Restablecimiento
+                        <br><small style="opacity: 0.8;">El usuario recibirá un enlace por correo para crear una nueva contraseña</small>
+                    </button>
+                    
+                    <button id="reset-temporal-btn" style="
+                        width: 100%;
+                        background: linear-gradient(135deg, #f59e0b, #d97706);
+                        color: white;
+                        border: none;
+                        padding: 15px;
+                        border-radius: 12px;
+                        font-size: 16px;
+                        cursor: pointer;
+                        margin-bottom: 15px;
+                        transition: transform 0.2s;
+                    " onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        🔑 Generar Contraseña Temporal
+                        <br><small style="opacity: 0.8;">Crear una contraseña temporal que deberás compartir con el usuario</small>
+                    </button>
+                </div>
+                
+                <button id="cancel-reset-btn" style="
+                    background: #6b7280;
+                    color: white;
+                    border: none;
+                    padding: 12px 25px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                ">Cancelar</button>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Event listeners
+        modal.querySelector('#reset-email-btn').addEventListener('click', async () => {
+            modal.remove();
+            await ejecutarResetEmail(userIndex, usuario);
+        });
+
+        modal.querySelector('#reset-temporal-btn').addEventListener('click', async () => {
+            modal.remove();
+            await ejecutarResetTemporal(userIndex, usuario);
+        });
+
+        modal.querySelector('#cancel-reset-btn').addEventListener('click', () => {
+            modal.remove();
+        });
+
+        // Cerrar al hacer clic fuera
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+
+    } catch (error) {
+        console.error('Error mostrando opciones de reset:', error);
+        showMiniModal('Error: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Ejecuta reset por email
+ */
+async function ejecutarResetEmail(userIndex, usuario) {
+    try {
+        const result = await authModel.resetUserPassword(usuario.uid, 'email');
+        
+        mostrarMensajeReset(
+            '📧 Email de Restablecimiento Enviado',
+            `Se ha enviado un email de restablecimiento a ${result.email}.\n\nEl usuario debe:\n1. Revisar su correo electrónico\n2. Hacer clic en el enlace recibido\n3. Crear una nueva contraseña\n4. Iniciar sesión normalmente con la nueva contraseña`,
+            'success'
+        );
+        
+        await mostrarUsuarios(); // Refrescar lista
+        
+    } catch (error) {
+        console.error('Error en reset por email:', error);
+        mostrarMensajeReset(
+            '❌ Error en Reset por Email',
+            `No se pudo enviar el email de restablecimiento a ${usuario.nombre}:\n\n${error.message}`,
+            'error'
+        );
+    }
+}
+
+/**
+ * Ejecuta reset con contraseña temporal forzada
+ */
+async function ejecutarResetTemporal(userIndex, usuario) {
+    try {
+        // Forzar uso de contraseña temporal
+        const result = await authModel.resetUserPasswordTemporal(usuario.uid);
+        
+        mostrarCredencialesUsuario(result, true);
+        mostrarMensajeReset(
+            '🔑 Contraseña Temporal Generada',
+            `Se ha generado una contraseña temporal para ${result.nombre}.\n\nEl usuario debe:\n1. Usar esta contraseña para iniciar sesión\n2. Cambiar la contraseña en el primer login\n3. Completar el proceso de login`,
+            'success'
+        );
+        
+        await mostrarUsuarios(); // Refrescar lista
+        
+    } catch (error) {
+        console.error('Error en reset temporal:', error);
+        mostrarMensajeReset(
+            '❌ Error en Reset Temporal',
+            `No se pudo generar contraseña temporal para ${usuario.nombre}:\n\n${error.message}`,
+            'error'
+        );
+    }
 }
 
 /**
@@ -635,27 +821,171 @@ async function confirmarResetPassword(userIndex) {
  */
 async function ejecutarResetPassword(userIndex, usuario) {
     try {
-        // Llamar a la función del modelo que almacena la contraseña temporal en Firestore
+        // Llamar a la función del modelo para resetear contraseña
         const result = await authModel.resetUserPassword(usuario.uid);
-        const nuevaContrasena = result.temporaryPassword;
         
         if (result) {
-            // Mostrar modal con la nueva contraseña
-            mostrarNuevaContrasenaUsuario(usuario, nuevaContrasena);
+            // Manejar diferentes métodos de reset
+            switch (result.resetMethod) {
+                case 'email':
+                    // Reset por email
+                    mostrarMensajeReset(
+                        '📧 Email de Restablecimiento Enviado',
+                        `Se ha enviado un email de restablecimiento de contraseña a ${result.email}.\n\nEl usuario debe revisar su correo electrónico y seguir las instrucciones para crear una nueva contraseña.`,
+                        'info'
+                    );
+                    break;
+                    
+                case 'account_recreated':
+                    // Cuenta recreada con nueva contraseña
+                    mostrarCredencialesUsuario(result, true);
+                    mostrarMensajeReset(
+                        '✅ Cuenta Recreada',
+                        `La cuenta de ${result.nombre} ha sido recreada con una nueva contraseña.\n\n⚠️ Nota: Es posible que necesites volver a autenticarte como administrador.`,
+                        'success'
+                    );
+                    break;
+                    
+                case 'temporal':
+                default:
+                    // Contraseña temporal
+                    mostrarCredencialesUsuario(result, true);
+                    mostrarMensajeReset(
+                        '🔑 Contraseña Temporal Generada',
+                        `Se ha generado una contraseña temporal para ${result.nombre}.\n\nEl usuario debe usar esta contraseña para iniciar sesión y luego cambiarla por una nueva.`,
+                        'warning'
+                    );
+                    break;
+            }
             
             eventBus.emit('user-password-reset', { 
                 user: usuario,
                 userId: usuario.uid,
+                resetMethod: result.resetMethod,
                 timestamp: new Date().toISOString(),
                 success: true
             });
-        } else {
-            showMiniModal('Error al resetear contraseña', 'error');
+            
+            // Refrescar la lista de usuarios
+            await mostrarUsuarios();
         }
     } catch (error) {
-        console.error('Error reseteando contraseña:', error);
-        showMiniModal('Error al resetear contraseña: ' + error.message, 'error');
+        console.error('Error ejecutando reset de contraseña:', error);
+        mostrarMensajeReset(
+            '❌ Error en el Reset',
+            `No se pudo resetear la contraseña de ${usuario.nombre}:\n\n${error.message}`,
+            'error'
+        );
+        
+        eventBus.emit('user-password-reset', { 
+            user: usuario,
+            userId: usuario.uid,
+            error: error.message,
+            timestamp: new Date().toISOString(),
+            success: false
+        });
     }
+}
+
+/**
+ * Muestra mensajes específicos para el reset de contraseña
+ */
+function mostrarMensajeReset(titulo, mensaje, tipo = 'info') {
+    // Crear container si no existe
+    let container = document.getElementById('reset-message-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'reset-message-container';
+        container.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10001;
+            max-width: 500px;
+            width: 90%;
+        `;
+        document.body.appendChild(container);
+    }
+
+    const messageEl = document.createElement('div');
+    messageEl.className = `reset-message ${tipo}`;
+    
+    const colores = {
+        success: '#10b981',
+        error: '#ef4444', 
+        warning: '#f59e0b',
+        info: '#3b82f6'
+    };
+    
+    const iconos = {
+        success: '✅',
+        error: '❌', 
+        warning: '⚠️',
+        info: '📧'
+    };
+
+    messageEl.style.cssText = `
+        background: ${colores[tipo]};
+        color: white;
+        padding: 20px;
+        margin-bottom: 15px;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        animation: resetMessageSlideIn 0.4s ease-out;
+        position: relative;
+    `;
+
+    messageEl.innerHTML = `
+        <div style="display: flex; align-items: flex-start; gap: 15px;">
+            <div style="font-size: 24px; flex-shrink: 0;">${iconos[tipo]}</div>
+            <div style="flex: 1;">
+                <div style="font-weight: bold; margin-bottom: 8px; font-size: 16px;">${titulo}</div>
+                <div style="font-size: 14px; line-height: 1.5; white-space: pre-line;">${mensaje}</div>
+            </div>
+            <button style="
+                background: none; 
+                border: none; 
+                color: white; 
+                font-size: 20px; 
+                cursor: pointer; 
+                flex-shrink: 0;
+                padding: 5px;
+                border-radius: 50%;
+                transition: background-color 0.2s;
+            " 
+            onclick="this.parentElement.parentElement.remove()"
+            onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'"
+            onmouseout="this.style.backgroundColor='transparent'">×</button>
+        </div>
+    `;
+
+    // Añadir estilos de animación si no existen
+    if (!document.getElementById('reset-message-styles')) {
+        const style = document.createElement('style');
+        style.id = 'reset-message-styles';
+        style.textContent = `
+            @keyframes resetMessageSlideIn {
+                from { transform: translateY(-100%); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    container.appendChild(messageEl);
+
+    // Auto-cerrar después de 8 segundos
+    setTimeout(() => {
+        if (messageEl.parentNode) {
+            messageEl.style.animation = 'resetMessageSlideIn 0.4s ease-in reverse';
+            setTimeout(() => {
+                if (messageEl.parentNode) {
+                    messageEl.remove();
+                }
+            }, 400);
+        }
+    }, 8000);
 }
 
 /**

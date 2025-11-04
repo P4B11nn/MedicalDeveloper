@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico Firebase - Medical Developer</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        
+        .container {
+            background: #000;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            background: #111;
+        }
+        
+        .test-section h3 {
+            color: #ffff00;
+            margin-top: 0;
+        }
+        
+        button {
+            background: #000;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-family: inherit;
+        }
+        
+        button:hover {
+            background: #00ff00;
+            color: #000;
+        }
+        
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #222;
+            border-left: 4px solid #00ff00;
+            white-space: pre-wrap;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .error {
+            border-left-color: #ff0000;
+            color: #ff9999;
+        }
+        
+        .success {
+            border-left-color: #00ff00;
+            color: #99ff99;
+        }
+        
+        .warning {
+            border-left-color: #ffff00;
+            color: #ffff99;
+        }
+        
+        .info {
+            border-left-color: #00aaff;
+            color: #99ccff;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-left: 10px;
+        }
+        
+        .status.ok { background: #004400; color: #00ff00; }
+        .status.error { background: #440000; color: #ff0000; }
+        .status.pending { background: #444400; color: #ffff00; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 DIAGNÓSTICO FIREBASE</h1>
+        
+        <div class="test-section">
+            <h3>1. Conexión Básica</h3>
+            <button onclick="testConnection()">Probar Conexión Firebase</button>
+            <div id="connection-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. Permisos Firestore</h3>
+            <button onclick="testFirestorePermissions()">Probar Lectura Firestore</button>
+            <button onclick="testFirestoreWrite()">Probar Escritura Firestore</button>
+            <div id="firestore-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. Autenticación</h3>
+            <button onclick="testAnonymousAuth()">Probar Auth Anónimo</button>
+            <button onclick="testExistingUser()">Probar Usuario Existente</button>
+            <div id="auth-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. Estado del Sistema</h3>
+            <button onclick="getSystemStatus()">Estado Completo</button>
+            <div id="system-result" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>5. Test de Usuario Manual</h3>
+            <input type="text" id="manual-email" placeholder="Email o matrícula" style="background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 5px; margin-right: 10px;">
+            <input type="password" id="manual-password" placeholder="Contraseña" style="background: #000; color: #00ff00; border: 1px solid #00ff00; padding: 5px; margin-right: 10px;">
+            <button onclick="testManualLogin()">Probar Login Manual</button>
+            <div id="manual-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Importar Firebase directamente
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+        import { 
+            initializeFirestore, 
+            CACHE_SIZE_UNLIMITED, 
+            collection, 
+            getDocs, 
+            addDoc, 
+            doc, 
+            getDoc,
+            query,
+            where,
+            serverTimestamp 
+        } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            signInWithEmailAndPassword,
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-ZU02eVn2FiwkgpjveymB8VRUUeGSH3Y",
+            authDomain: "medicalweboffline.firebaseapp.com",
+            projectId: "medicalweboffline",
+            storageBucket: "medicalweboffline.firebasestorage.app",
+            messagingSenderId: "1038201454133",
+            appId: "1:1038201454133:web:f6ee7c6215f6b4d4febb7c"
+        };
+
+        // Inicializar Firebase
+        let app, db, auth;
+        
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            element.textContent = `[${timestamp}] ${message}`;
+        }
+
+        // Test 1: Conexión básica
+        window.testConnection = async function() {
+            try {
+                log('connection-result', 'Inicializando Firebase...', 'info');
+                
+                app = initializeApp(firebaseConfig);
+                log('connection-result', '✅ App inicializada', 'success');
+                
+                db = initializeFirestore(app, {
+                    cacheSizeBytes: CACHE_SIZE_UNLIMITED
+                });
+                log('connection-result', '✅ Firestore inicializado', 'success');
+                
+                auth = getAuth(app);
+                log('connection-result', '✅ Auth inicializado', 'success');
+                
+                // Test de estado de autenticación
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        log('connection-result', `✅ Usuario autenticado: ${user.uid}`, 'success');
+                    } else {
+                        log('connection-result', '⚪ No hay usuario autenticado', 'warning');
+                    }
+                });
+                
+            } catch (error) {
+                log('connection-result', `❌ Error de conexión: ${error.message}`, 'error');
+                console.error('Error completo:', error);
+            }
+        };
+
+        // Test 2: Permisos Firestore
+        window.testFirestorePermissions = async function() {
+            try {
+                if (!db) {
+                    log('firestore-result', '❌ Firestore no inicializado. Ejecuta primero el test de conexión.', 'error');
+                    return;
+                }
+                
+                log('firestore-result', 'Probando lectura de usuarios...', 'info');
+                
+                const usuariosCol = collection(db, 'usuarios');
+                const snapshot = await getDocs(usuariosCol);
+                
+                log('firestore-result', `✅ Lectura exitosa. ${snapshot.size} usuarios encontrados`, 'success');
+                
+                // Mostrar algunos usuarios sin contraseñas
+                let usuarios = '';
+                snapshot.forEach((doc, index) => {
+                    if (index < 3) { // Solo mostrar los primeros 3
+                        const data = doc.data();
+                        usuarios += `\n- ${data.nombre || 'Sin nombre'} (${data.correo || 'Sin email'})`;
+                    }
+                });
+                
+                log('firestore-result', `✅ Lectura exitosa. ${snapshot.size} usuarios encontrados:${usuarios}`, 'success');
+                
+            } catch (error) {
+                log('firestore-result', `❌ Error de lectura: ${error.message}`, 'error');
+                console.error('Error completo:', error);
+            }
+        };
+
+        window.testFirestoreWrite = async function() {
+            try {
+                if (!db) {
+                    log('firestore-result', '❌ Firestore no inicializado', 'error');
+                    return;
+                }
+                
+                log('firestore-result', 'Probando escritura de test...', 'info');
+                
+                const testCol = collection(db, 'test_permissions');
+                await addDoc(testCol, {
+                    test: true,
+                    timestamp: serverTimestamp(),
+                    message: 'Test de permisos'
+                });
+                
+                log('firestore-result', '✅ Escritura exitosa', 'success');
+                
+            } catch (error) {
+                log('firestore-result', `❌ Error de escritura: ${error.message}`, 'error');
+                console.error('Error completo:', error);
+            }
+        };
+
+        // Test 3: Autenticación
+        window.testAnonymousAuth = async function() {
+            try {
+                if (!auth) {
+                    log('auth-result', '❌ Auth no inicializado', 'error');
+                    return;
+                }
+                
+                log('auth-result', 'Probando autenticación anónima...', 'info');
+                
+                const userCredential = await signInAnonymously(auth);
+                log('auth-result', `✅ Auth anónimo exitoso: ${userCredential.user.uid}`, 'success');
+                
+            } catch (error) {
+                log('auth-result', `❌ Error de auth anónimo: ${error.message}`, 'error');
+                console.error('Error completo:', error);
+            }
+        };
+
+        window.testExistingUser = async function() {
+            try {
+                if (!db || !auth) {
+                    log('auth-result', '❌ Firebase no inicializado', 'error');
+                    return;
+                }
+                
+                log('auth-result', 'Buscando usuarios existentes...', 'info');
+                
+                const usuariosCol = collection(db, 'usuarios');
+                const snapshot = await getDocs(usuariosCol);
+                
+                if (snapshot.empty) {
+                    log('auth-result', '⚠️ No hay usuarios en la base de datos', 'warning');
+                    return;
+                }
+                
+                let resultado = `Usuarios encontrados (${snapshot.size}):\n\n`;
+                
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    resultado += `• ${data.nombre || 'Sin nombre'}\n`;
+                    resultado += `  Email: ${data.correo || 'Sin email'}\n`;
+                    resultado += `  Matrícula: ${data.matricula || 'Sin matrícula'}\n`;
+                    resultado += `  Reset pendiente: ${data.passwordResetRequired ? 'SÍ' : 'NO'}\n`;
+                    if (data.passwordResetMethod) {
+                        resultado += `  Método reset: ${data.passwordResetMethod}\n`;
+                    }
+                    resultado += `  UID: ${doc.id}\n\n`;
+                });
+                
+                log('auth-result', resultado, 'success');
+                
+            } catch (error) {
+                log('auth-result', `❌ Error obteniendo usuarios: ${error.message}`, 'error');
+                console.error('Error completo:', error);
+            }
+        };
+
+        // Test 4: Estado del sistema
+        window.getSystemStatus = async function() {
+            try {
+                log('system-result', 'Obteniendo estado del sistema...', 'info');
+                
+                let status = 'ESTADO DEL SISTEMA:\n\n';
+                
+                // Firebase status
+                status += `Firebase App: ${app ? '✅ OK' : '❌ NO'}\n`;
+                status += `Firestore: ${db ? '✅ OK' : '❌ NO'}\n`;
+                status += `Auth: ${auth ? '✅ OK' : '❌ NO'}\n`;
+                
+                // Auth state
+                if (auth && auth.currentUser) {
+                    status += `Usuario actual: ${auth.currentUser.uid}\n`;
+                    status += `Email: ${auth.currentUser.email || 'Sin email'}\n`;
+                } else {
+                    status += `Usuario actual: No autenticado\n`;
+                }
+                
+                // Environment
+                status += `\nENTORNO:\n`;
+                status += `URL: ${window.location.href}\n`;
+                status += `User Agent: ${navigator.userAgent.slice(0, 50)}...\n`;
+                status += `Fecha: ${new Date().toISOString()}\n`;
+                
+                // Local Storage
+                status += `\nLOCAL STORAGE:\n`;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.includes('firebase') || key.includes('user') || key.includes('auth')) {
+                        status += `${key}: ${localStorage.getItem(key).slice(0, 30)}...\n`;
+                    }
+                }
+                
+                log('system-result', status, 'info');
+                
+            } catch (error) {
+                log('system-result', `❌ Error obteniendo estado: ${error.message}`, 'error');
+            }
+        };
+
+        // Test 5: Login manual
+        window.testManualLogin = async function() {
+            try {
+                const email = document.getElementById('manual-email').value;
+                const password = document.getElementById('manual-password').value;
+                
+                if (!email || !password) {
+                    log('manual-result', '❌ Ingresa email y contraseña', 'error');
+                    return;
+                }
+                
+                if (!auth || !db) {
+                    log('manual-result', '❌ Firebase no inicializado', 'error');
+                    return;
+                }
+                
+                log('manual-result', `Probando login con: ${email}`, 'info');
+                
+                let loginEmail = email;
+                
+                // Si no es email, buscar por matrícula
+                if (!email.includes('@')) {
+                    log('manual-result', 'Buscando usuario por matrícula...', 'info');
+                    
+                    const usuariosCol = collection(db, 'usuarios');
+                    const q = query(usuariosCol, where('matricula', '==', email));
+                    const snapshot = await getDocs(q);
+                    
+                    if (snapshot.empty) {
+                        log('manual-result', '❌ No se encontró usuario con esa matrícula', 'error');
+                        return;
+                    }
+                    
+                    const userData = snapshot.docs[0].data();
+                    loginEmail = userData.correo;
+                    log('manual-result', `Email encontrado: ${loginEmail}`, 'info');
+                }
+                
+                // Intentar login
+                const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password);
+                
+                // Obtener datos del usuario
+                const userDoc = await getDoc(doc(db, 'usuarios', userCredential.user.uid));
+                const userData = userDoc.data();
+                
+                let resultado = `✅ LOGIN EXITOSO:\n\n`;
+                resultado += `UID: ${userCredential.user.uid}\n`;
+                resultado += `Email: ${userCredential.user.email}\n`;
+                resultado += `Nombre: ${userData.nombre}\n`;
+                resultado += `Rol: ${userData.rol}\n`;
+                resultado += `Reset requerido: ${userData.passwordResetRequired ? 'SÍ' : 'NO'}\n`;
+                
+                if (userData.passwordResetMethod) {
+                    resultado += `Método reset: ${userData.passwordResetMethod}\n`;
+                }
+                
+                log('manual-result', resultado, 'success');
+                
+            } catch (error) {
+                log('manual-result', `❌ Error de login: ${error.message}`, 'error');
+                console.error('Error completo:', error);
+            }
+        };
+
+        // Auto-inicializar
+        setTimeout(() => {
+            testConnection();
+        }, 500);
+        
+    </script>
+</body>
+</html>

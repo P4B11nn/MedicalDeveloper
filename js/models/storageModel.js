@@ -23,7 +23,8 @@ import {
     onAuthStateChanged,
     updatePassword,
     reauthenticateWithCredential,
-    EmailAuthProvider
+    EmailAuthProvider,
+    sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
 
 // --- CONSTANTES ---
@@ -396,11 +397,12 @@ export const authModel = {
     },
 
     /**
-     * Resetea la contraseña de un usuario y genera una nueva temporal
+     * Resetea la contraseña de un usuario con múltiples métodos
      * @param {string} uid - UID del usuario
-     * @returns {Promise<Object>} Usuario con nueva contraseña temporal
+     * @param {string} method - Método: 'email', 'temporal', o 'account_recreated'
+     * @returns {Promise<Object>} Resultado del reset
      */
-    async resetUserPassword(uid) {
+    async resetUserPassword(uid, method = 'email') {
         try {
             // Verificar que el usuario existe
             const userRef = doc(usuariosCollection, uid);
@@ -411,35 +413,129 @@ export const authModel = {
             }
 
             const userData = userDoc.data();
-            const newPassword = this.generateTemporaryPassword();
 
-            // Almacenar la nueva contraseña temporal en Firestore
-            await updateDoc(userRef, {
-                temporaryPassword: newPassword,
-                passwordResetRequired: true,
-                passwordResetTimestamp: new Date().toISOString(),
-                updatedAt: serverTimestamp()
-            });
+            // Método 1: Reset por email usando Firebase
+            if (method === 'email') {
+                if (!userData.correo) {
+                    throw new Error('El usuario no tiene email registrado');
+                }
 
-            // Registrar actividad
-            await this.registrarActividad({
-                accion: 'password_reset',
-                descripcion: `Contraseña resetada para usuario ${userData.nombre}`,
-                userId: uid
-            });
+                try {
+                    // Enviar email de reset usando Firebase Auth
+                    await sendPasswordResetEmail(auth, userData.correo);
 
-            return {
-                uid: uid,
-                email: userData.correo,
-                nombre: userData.nombre,
-                temporaryPassword: newPassword,
-                resetTimestamp: new Date().toISOString(),
-                ...userData
-            };
+                    // Marcar en Firestore que se envió el email (sin bloquear login normal)
+                    await updateDoc(userRef, {
+                        passwordResetMethod: 'email',
+                        passwordResetEmailSent: true,
+                        passwordResetTimestamp: new Date().toISOString(),
+                        // NO establecer passwordResetRequired para email reset
+                        updatedAt: serverTimestamp()
+                    });
+
+                    // Registrar actividad
+                    await this.registrarActividad({
+                        accion: 'password_reset_email',
+                        descripcion: `Email de reset enviado a ${userData.correo}`,
+                        userId: uid
+                    });
+
+                    return {
+                        resetMethod: 'email',
+                        email: userData.correo,
+                        message: 'Email de restablecimiento enviado correctamente',
+                        resetTimestamp: new Date().toISOString(),
+                        uid: uid,
+                        nombre: userData.nombre
+                    };
+
+                } catch (emailError) {
+                    console.error('Error enviando email de reset:', emailError);
+                    throw new Error(`No se pudo enviar el email de restablecimiento: ${emailError.message}`);
+                }
+            }
+
+            // Método 2: Contraseña temporal
+            else if (method === 'temporal') {
+                const newPassword = this.generateTemporaryPassword();
+
+                // Almacenar la nueva contraseña temporal en Firestore
+                await updateDoc(userRef, {
+                    temporaryPassword: newPassword,
+                    passwordResetRequired: true,
+                    passwordResetMethod: 'temporal',
+                    passwordResetTimestamp: new Date().toISOString(),
+                    updatedAt: serverTimestamp()
+                });
+
+                // Registrar actividad
+                await this.registrarActividad({
+                    accion: 'password_reset_temporal',
+                    descripcion: `Contraseña temporal generada para ${userData.nombre}`,
+                    userId: uid
+                });
+
+                return {
+                    resetMethod: 'temporal',
+                    uid: uid,
+                    email: userData.correo,
+                    nombre: userData.nombre,
+                    temporaryPassword: newPassword,
+                    message: 'Contraseña temporal generada correctamente',
+                    resetTimestamp: new Date().toISOString(),
+                    ...userData
+                };
+            }
+
+            // Método 3: Recrear cuenta
+            else if (method === 'account_recreated') {
+                const newPassword = this.generateTemporaryPassword();
+
+                // Marcar como cuenta recreada
+                await updateDoc(userRef, {
+                    temporaryPassword: newPassword,
+                    passwordResetRequired: true,
+                    passwordResetMethod: 'account_recreated',
+                    passwordResetTimestamp: new Date().toISOString(),
+                    updatedAt: serverTimestamp()
+                });
+
+                // Registrar actividad
+                await this.registrarActividad({
+                    accion: 'account_recreated',
+                    descripcion: `Cuenta recreada para ${userData.nombre}`,
+                    userId: uid
+                });
+
+                return {
+                    resetMethod: 'account_recreated',
+                    uid: uid,
+                    email: userData.correo,
+                    nombre: userData.nombre,
+                    temporaryPassword: newPassword,
+                    message: 'Cuenta recreada con contraseña temporal',
+                    resetTimestamp: new Date().toISOString(),
+                    ...userData
+                };
+            }
+
+            else {
+                throw new Error(`Método de reset no válido: ${method}`);
+            }
+
         } catch (error) {
             console.error('Error reseteando contraseña:', error);
             throw error;
         }
+    },
+
+    /**
+     * Resetea contraseña usando método temporal específicamente
+     * @param {string} uid - UID del usuario
+     * @returns {Promise<Object>} Usuario con nueva contraseña temporal
+     */
+    async resetUserPasswordTemporal(uid) {
+        return await this.resetUserPassword(uid, 'temporal');
     },
 
     /**
