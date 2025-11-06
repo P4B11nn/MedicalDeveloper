@@ -159,7 +159,9 @@ export const ActivityLogger = {
       }
 
       // Construir query con condiciones
+      console.log(`🔧 Total condiciones where a aplicar: ${conditions.length}`);
       if (conditions.length > 0) {
+        console.log('🔧 Condiciones:', conditions.map((c, i) => `${i+1}. ${c.constructor.name}`));
         q = query(q, ...conditions, orderBy('timestamp', 'desc'));
       } else {
         q = query(q, orderBy('timestamp', 'desc'));
@@ -227,15 +229,6 @@ export const ActivityLogger = {
 
       // DEBUG: Mostrar qué actividades se encontraron
       console.log(`✅ Total de actividades devueltas: ${allActivities.length}`);
-      console.log('🔍 DEBUG - Resumen de actividades por usuario:');
-      const usuariosEnActividades = {};
-      allActivities.forEach(activity => {
-        if (!usuariosEnActividades[activity.usuarioNombre]) {
-          usuariosEnActividades[activity.usuarioNombre] = 0;
-        }
-        usuariosEnActividades[activity.usuarioNombre]++;
-      });
-      console.table(usuariosEnActividades);
       
       return allActivities;
 

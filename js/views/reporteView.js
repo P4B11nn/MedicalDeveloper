@@ -240,7 +240,7 @@ export async function renderActividades() {
   let activityStats = {};
   try {
     const { default: ActivityLogger } = await import('../utils/activityLogger.js');
-    activityStats = await ActivityLogger.getActivityStats({ limit: 100 });
+    activityStats = await ActivityLogger.getActivityStats({ limit: 10000 }); // Límite alto para obtener total real
   } catch (error) {
     console.warn('No se pudieron cargar estadísticas de actividades:', error);
   }
@@ -345,13 +345,40 @@ export async function renderActividades() {
             <label for="accion">⚡ Acción:</label>
             <select id="accion" name="accion">
               <option value="">Todas las acciones</option>
-              <option value="login">🔑 Inicio de sesión</option>
-              <option value="logout">🚪 Cierre de sesión</option>
-              <option value="create">➕ Creación de registros</option>
-              <option value="update">✏️ Actualización de registros</option>
-              <option value="delete">🗑️ Eliminación de registros</option>
-              <option value="consulta">👁️ Consulta/Visualización</option>
-              <option value="exportar">📤 Exportación de datos</option>
+              <optgroup label="🔐 Autenticación">
+                <option value="login">🔑 Inicio de sesión</option>
+                <option value="logout">🚪 Cierre de sesión</option>
+              </optgroup>
+              <optgroup label="👥 Gestión de Pacientes">
+                <option value="create_paciente">➕ Crear paciente</option>
+                <option value="update_paciente_personal">✏️ Actualizar info personal</option>
+                <option value="delete_paciente">🗑️ Eliminar paciente</option>
+              </optgroup>
+              <optgroup label="📋 Registros Médicos">
+                <option value="create_registro_medico">➕ Crear registro médico</option>
+                <option value="update_registro_medico">✏️ Actualizar registro médico</option>
+                <option value="delete_registro_medico">🗑️ Eliminar registro médico</option>
+              </optgroup>
+              <optgroup label="👤 Gestión de Usuarios">
+                <option value="create_user">➕ Crear usuario</option>
+                <option value="update_user">✏️ Actualizar usuario</option>
+                <option value="delete_user">🗑️ Eliminar usuario</option>
+                <option value="password_reset_email">📧 Reset contraseña por email</option>
+                <option value="password_reset_temporal">🔄 Reset contraseña temporal</option>
+                <option value="password_changed">🔐 Cambio de contraseña</option>
+                <option value="account_recreated">🔄 Cuenta recreada</option>
+              </optgroup>
+              <optgroup label="⚕️ Operaciones Médicas">
+                <option value="checklist_instrumentos">✅ Checklist instrumentos</option>
+                <option value="crear_observacion">📝 Crear observación</option>
+              </optgroup>
+              <optgroup label="📊 Acciones Generales">
+                <option value="create">➕ Creación de registros</option>
+                <option value="update">✏️ Actualización de registros</option>
+                <option value="delete">🗑️ Eliminación de registros</option>
+                <option value="consulta">👁️ Consulta/Visualización</option>
+                <option value="exportar">📤 Exportación de datos</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -364,17 +391,19 @@ export async function renderActividades() {
               <option value="autenticacion">🔐 Autenticación</option>
               <option value="pacientes">👥 Pacientes</option>
               <option value="usuarios">👤 Usuarios</option>
-              <option value="reportes">📊 Reportes</option>
               <option value="operaciones">⚕️ Operaciones</option>
+              <option value="reportes">📊 Reportes</option>
+              <option value="gestion">⚙️ Gestión</option>
+              <option value="instrumentos">🩺 Instrumentos</option>
             </select>
           </div>
           <div class="form-group col-md-6">
             <label for="limite">📊 Límite de resultados:</label>
             <select id="limite" name="limite">
               <option value="50">50 más recientes</option>
-              <option value="100" selected>100 más recientes</option>
+              <option value="100">100 más recientes</option>
               <option value="200">200 más recientes</option>
-              <option value="500">500 más recientes</option>
+              <option value="500" selected>500 más recientes</option>
             </select>
           </div>
         </div>
@@ -459,7 +488,6 @@ export async function renderActividades() {
     });
   }
 }
-
 // Renderiza la sección de exportación
 export function renderExportacion() {
   const section = document.getElementById('exportacion-section');
@@ -2799,4 +2827,7 @@ window.cerrarModalEstadisticas = function() {
     modal.remove();
   }
 };
+
+// ========================================
+
 

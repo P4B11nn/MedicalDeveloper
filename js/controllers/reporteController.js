@@ -308,63 +308,50 @@ export async function exportarDatosCSV(tipoExportacion) {
         const pacienteId = select.value;
         const paciente = await pacienteModel.getPaciente(pacienteId);
 
+        // Debug: verificar datos del paciente obtenido
+        console.log('🔍 Paciente obtenido para exportación:', {
+          id: pacienteId,
+          paciente: paciente,
+          tieneHistorialCambios: !!(paciente?.historialCambios),
+          cantidadCambios: paciente?.historialCambios?.length || 0,
+          tieneDatosMedicos: !!(paciente?.datosMedicos),
+          datosMedicos: paciente?.datosMedicos
+        });
+
         // Obtener registros del historial centralizado
         const historialRegistros = await reporteModel.getReporteHistorialMedico({ pacienteId });
 
-        // Construir series de parámetros a partir de historialCambios y datosMedicos actuales
+        // 🎯 USAR LA MISMA FUNCIÓN QUE USAN LAS GRÁFICAS QUE SÍ FUNCIONAN
+        console.log('📊 Obteniendo evolución médica usando la misma función que las gráficas...');
+        const evolucionMedica = await reporteModel.getEvolucionMedicaPaciente(pacienteId);
+        
+        // Convertir la estructura de evolucionMedica al formato que espera exportarPDF
         const parametrosSeries = {
-          temperatura: [],
-          peso: [],
-          talla: [],
-          frecuenciaRespiratoria: [],
-          presion_combined: []
+          temperatura: evolucionMedica.temperatura || [],
+          peso: evolucionMedica.peso || [],
+          talla: evolucionMedica.talla || [],
+          frecuenciaRespiratoria: evolucionMedica.frecuenciaRespiratoria || [],
+          presion: evolucionMedica.presion || [],
+          presion_sistolica: (evolucionMedica.presion || []).map(p => ({ fecha: p.fecha, valor: p.valor })),
+          presion_diastolica: [], // TODO: extraer de presionCompleta si es necesario
+          glucosa: evolucionMedica.glucosa || []
         };
 
+        console.log('🎯 Datos obtenidos con getEvolucionMedicaPaciente:', {
+          evolucionMedica,
+          parametrosSeries,
+          totalPuntos: Object.values(parametrosSeries).reduce((acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0), 0)
+        });
+
         // Incluir registro inicial (datos actuales del paciente si existen)
-        if (paciente) {
-          // Si el paciente tiene historialCambios (array de actualizaciones), recorrerlo
-          const cambios = paciente.historialCambios || [];
+        // REMOVIDO: Ahora usamos getEvolucionMedicaPaciente que ya obtiene todos los datos correctamente
 
-          cambios.forEach(cambio => {
-            const fecha = cambio.fecha || cambio.datos?.fechaRegistroMedico || null;
-            const datos = cambio.datos || {};
-            if (datos.temperatura) parametrosSeries.temperatura.push({ fecha, valor: parseFloat(datos.temperatura) });
-            if (datos.peso) parametrosSeries.peso.push({ fecha, valor: parseFloat(datos.peso) });
-            if (datos.talla) parametrosSeries.talla.push({ fecha, valor: parseFloat(datos.talla) });
-            if (datos.frecuenciaRespiratoria) parametrosSeries.frecuenciaRespiratoria.push({ fecha, valor: parseFloat(datos.frecuenciaRespiratoria) });
-            if (datos.presion) {
-              // intentar parsear "120/80" y guardar combinado
-              const m = String(datos.presion).match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
-              if (m) {
-                parametrosSeries.presion_combined.push({ fecha, systolic: parseInt(m[1]), diastolic: parseInt(m[2]) });
-              } else if (!isNaN(Number(datos.presion))) {
-                parametrosSeries.presion_combined.push({ fecha, systolic: Number(datos.presion), diastolic: null });
-              }
-            }
-          });
-
-          // Agregar el estado actual de datosMedicos si existe
-          const dm = paciente.datosMedicos || null;
-          if (dm && dm.fechaRegistroMedico) {
-            const fecha = dm.fechaRegistroMedico;
-            if (dm.temperatura) parametrosSeries.temperatura.push({ fecha, valor: parseFloat(dm.temperatura) });
-            if (dm.peso) parametrosSeries.peso.push({ fecha, valor: parseFloat(dm.peso) });
-            if (dm.talla) parametrosSeries.talla.push({ fecha, valor: parseFloat(dm.talla) });
-            if (dm.frecuenciaRespiratoria) parametrosSeries.frecuenciaRespiratoria.push({ fecha, valor: parseFloat(dm.frecuenciaRespiratoria) });
-            if (dm.presion) {
-              const m = String(dm.presion).match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
-              if (m) {
-                parametrosSeries.presion_combined.push({ fecha, systolic: parseInt(m[1]), diastolic: parseInt(m[2]) });
-              } else if (!isNaN(Number(dm.presion))) {
-                parametrosSeries.presion_combined.push({ fecha, systolic: Number(dm.presion), diastolic: null });
-              }
-            }
-          }
-        }
-
-        // Ordenar series por fecha
-        Object.keys(parametrosSeries).forEach(k => {
-          if (Array.isArray(parametrosSeries[k])) parametrosSeries[k].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+        // Los datos ya vienen ordenados por fecha de getEvolucionMedicaPaciente
+        // Debug: Mostrar los datos construidos
+        console.log('📊 Datos médicos finales para PDF:', {
+          pacienteId,
+          parametrosSeries,
+          totalPuntos: Object.values(parametrosSeries).reduce((acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0), 0)
         });
 
         // Construir observaciones agrupadas y sin duplicados: examenVista, examenOido, general
@@ -449,8 +436,59 @@ export async function exportarDatosCSV(tipoExportacion) {
 
     switch (tipoExportacion) {
       case 'pacientes':
-        datos = await reporteModel.getReportePacientes();
+        console.log('📋 Obteniendo pacientes con datos médicos completos...');
+        const pacientesBasicos = await reporteModel.getReportePacientes();
+        console.log(`👥 Se encontraron ${pacientesBasicos.length} pacientes`);
+        
+        // Procesar cada paciente para incluir datos médicos
+        datos = [];
+        for (const paciente of pacientesBasicos) {
+          try {
+            console.log(`🔄 Procesando datos médicos para paciente: ${paciente.nombre} (ID: ${paciente.id})`);
+            
+            // Obtener evolución médica usando la misma función que funciona
+            const evolucionMedica = await reporteModel.getEvolucionMedicaPaciente(paciente.id);
+            
+            // Convertir a la estructura que espera exportarPDF
+            const parametrosSeries = {
+              temperatura: evolucionMedica.temperatura || [],
+              peso: evolucionMedica.peso || [],
+              talla: evolucionMedica.talla || [],
+              frecuenciaRespiratoria: evolucionMedica.frecuenciaRespiratoria || [],
+              presion: evolucionMedica.presion || [],
+              presion_sistolica: (evolucionMedica.presion || []).map(p => ({ fecha: p.fecha, valor: p.valor })),
+              presion_diastolica: [], // TODO: extraer de presionCompleta si es necesario
+              glucosa: evolucionMedica.glucosa || []
+            };
+            
+            console.log(`📊 Datos médicos obtenidos para ${paciente.nombre}:`, {
+              totalPuntos: Object.values(parametrosSeries).reduce((acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0), 0),
+              parametrosConDatos: Object.entries(parametrosSeries).filter(([k,v]) => Array.isArray(v) && v.length > 0).map(([k,v]) => `${k}: ${v.length}`)
+            });
+            
+            datos.push({
+              paciente: paciente,
+              parametrosSeries: parametrosSeries,
+              observaciones: { examenVista: [], examenOido: [], general: [] }, // TODO: obtener observaciones si es necesario
+              historial: [] // TODO: obtener historial si es necesario
+            });
+          } catch (error) {
+            console.error(`❌ Error procesando paciente ${paciente.nombre}:`, error);
+            // Incluir el paciente sin datos médicos para que no se pierda
+            datos.push({
+              paciente: paciente,
+              parametrosSeries: {
+                temperatura: [], peso: [], talla: [], frecuenciaRespiratoria: [],
+                presion: [], presion_sistolica: [], presion_diastolica: [], glucosa: []
+              },
+              observaciones: { examenVista: [], examenOido: [], general: [] },
+              historial: []
+            });
+          }
+        }
+        
         nombreArchivo = 'pacientes';
+        console.log(`✅ Datos completos preparados para ${datos.length} pacientes`);
         break;
       case 'citas':
         datos = await reporteModel.getReporteCitas();
@@ -518,21 +556,27 @@ export async function filtrarActividades(filtros) {
       fechaFin: filtros.fechaFin,
       accion: filtros.accion,
       modulo: filtros.modulo,
-      limit: parseInt(filtros.limite) || 100
+      limit: parseInt(filtros.limite) || 500
     };
 
     // Si hay filtro de usuario, usar el campo correcto
     if (filtros.usuario) {
-      activityFilters.usuarioNombre = filtros.usuario;
+      // El select puede enviar "Nombre" o "Nombre (matricula)", pero en Firebase 
+      // solo se guarda el nombre sin matrícula
+      let nombreUsuario = filtros.usuario;
+      
+      // Si el filtro incluye matrícula entre paréntesis, extraer solo el nombre
+      const matchNombre = filtros.usuario.match(/^(.+?)\s*\([^)]+\)$/);
+      if (matchNombre) {
+        nombreUsuario = matchNombre[1].trim();
+        console.log(`🔧 Nombre extraído de "${filtros.usuario}" → "${nombreUsuario}"`);
+      }
+      
+      activityFilters.usuarioNombre = nombreUsuario;
     }
 
-    console.log('🔧 Filtros adaptados:', activityFilters);
-
     // Aplicar filtros y renderizar resultados
-    console.log('📞 Llamando a reporteModel.getReporteActividades...');
     const actividades = await reporteModel.getReporteActividades(activityFilters);
-    
-    console.log(`📊 reporteModel devolvió ${actividades.length} actividades:`, actividades);
     
     // Actualizar la vista con los resultados filtrados
     const contenedorResultados = document.getElementById('resultadosActividades');
@@ -564,7 +608,7 @@ export async function filtrarActividades(filtros) {
             <li>Usuario: ${filtros.usuario || 'Todos'}</li>
             <li>Acción: ${filtros.accion || 'Todas'}</li>
             <li>Módulo: ${filtros.modulo || 'Todos'}</li>
-            <li>Límite: ${filtros.limite || '100'}</li>
+            <li>Límite: ${filtros.limite || '500'}</li>
           </ul>
         </div>
       `;

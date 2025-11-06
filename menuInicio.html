@@ -4420,18 +4420,6 @@
           card.style.opacity = '1';
           console.log(`📱 Tarjeta ${index + 1} mostrada:`, card.querySelector('h3')?.textContent);
         });
-
-        // Hacer scroll suave hacia las nuevas tarjetas
-        setTimeout(() => {
-          const firstAdminCard = document.querySelector('.admin-only.show');
-          if (firstAdminCard) {
-            firstAdminCard.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'nearest' 
-            });
-            console.log('📜 Scroll hacia las tarjetas de administrador');
-          }
-        }, 500);
         
         console.log('✅ Datos del administrador cargados exitosamente');
       } catch (error) {

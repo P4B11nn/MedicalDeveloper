@@ -461,9 +461,22 @@ export const reporteModel = {
         activityFilters.fechaFin = filtro.fechaFin;
       }
       
-      if (filtro.usuario) {
+      // Verificar si hay filtro de usuario
+      if (filtro.usuarioNombre && filtro.usuarioNombre.trim() !== '') {
         // Buscar por nombre de usuario en el nuevo sistema
-        activityFilters.usuarioNombre = filtro.usuario;
+        // El select puede enviar "Nombre" o "Nombre (matricula)", pero en Firebase 
+        // solo se guarda el nombre sin matrícula
+        let nombreUsuario = filtro.usuarioNombre.trim();
+        
+        // Si el filtro incluye matrícula entre paréntesis, extraer solo el nombre
+        const matchNombre = nombreUsuario.match(/^(.+?)\s*\([^)]+\)$/);
+        if (matchNombre) {
+          nombreUsuario = matchNombre[1].trim();
+        }
+        
+        if (nombreUsuario && nombreUsuario.trim() !== '') {
+          activityFilters.usuarioNombre = nombreUsuario;
+        }
       }
       
       if (filtro.accion) {
@@ -531,7 +544,15 @@ export const reporteModel = {
     function generarSVGSerie(puntos, opts = {}) {
       const width = opts.width || 520;
       const height = opts.height || 120;
-      const padding = 8;
+      const padding = 20; // Aumentado para etiquetas
+      
+      // Debug: verificar datos recibidos
+      console.log('🎨 generarSVGSerie recibió:', { 
+        puntos: puntos?.length || 0, 
+        primerosElementos: puntos?.slice(0, 3),
+        formatosFecha: puntos?.slice(0, 3).map(p => ({ fecha: p.fecha, fechaRaw: p.fechaRaw }))
+      });
+      
       if (!puntos || puntos.length === 0) {
         return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><text x="${width/2}" y="${height/2}" font-size="12" text-anchor="middle" fill="#888">Sin datos</text></svg>`;
       }
@@ -544,11 +565,15 @@ export const reporteModel = {
       const max = Math.max(...vals);
       const range = max - min || 1;
 
+      // Área de gráfico
+      const chartWidth = width - padding * 2;
+      const chartHeight = height - padding * 2;
+
       // Mapear puntos a coordenadas
-      const stepX = (width - padding * 2) / (vals.length - 1 || 1);
+      const stepX = chartWidth / (vals.length - 1 || 1);
       const coords = vals.map((v, i) => {
         const x = padding + i * stepX;
-        const y = padding + (height - padding * 2) * (1 - (v - min) / range);
+        const y = padding + chartHeight * (1 - (v - min) / range);
         return { x, y, v };
       });
 
@@ -559,25 +584,82 @@ export const reporteModel = {
       const fill = opts.fill || 'rgba(6,182,212,0.12)';
 
       // Area path (close to bottom)
-      const areaD = coords.map((c, i) => (i === 0 ? `M ${c.x} ${c.y}` : `L ${c.x} ${c.y}`)).join(' ') + ` L ${padding + (coords.length - 1) * stepX} ${height - padding} L ${padding} ${height - padding} Z`;
+      const areaD = coords.map((c, i) => (i === 0 ? `M ${c.x} ${c.y}` : `L ${c.x} ${c.y}`)).join(' ') + ` L ${padding + (coords.length - 1) * stepX} ${padding + chartHeight} L ${padding} ${padding + chartHeight} Z`;
 
-      // Labels: min/max
-      const minLabel = min.toFixed(1);
-      const maxLabel = max.toFixed(1);
+      // Generar cuadrícula del eje Y (5 líneas horizontales)
+      let gridY = '';
+      for (let i = 0; i <= 4; i++) {
+        const y = padding + (chartHeight * i / 4);
+        const valor = max - (range * i / 4);
+        gridY += `<line x1="${padding}" y1="${y}" x2="${padding + chartWidth}" y2="${y}" stroke="#e5e7eb" stroke-width="0.5"/>`;
+        gridY += `<text x="${padding - 5}" y="${y + 3}" font-size="9" text-anchor="end" fill="#6b7280">${valor.toFixed(1)}</text>`;
+      }
+
+      // Generar cuadrícula del eje X (máximo 6 puntos para no sobrecargar)
+      let gridX = '';
+      const maxXPoints = Math.min(6, puntos.length);
+      const xStep = Math.max(1, Math.floor(puntos.length / maxXPoints));
+      for (let i = 0; i < puntos.length; i += xStep) {
+        const x = padding + i * stepX;
+        gridX += `<line x1="${x}" y1="${padding}" x2="${x}" y2="${padding + chartHeight}" stroke="#e5e7eb" stroke-width="0.5"/>`;
+        
+        // Mejorar formateo de fecha con validación
+        let fecha = `P${i+1}`;
+        try {
+          if (puntos[i].fechaRaw) {
+            // Usar fechaRaw si está disponible (formato ISO)
+            fecha = new Date(puntos[i].fechaRaw).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+          } else if (puntos[i].fecha) {
+            // Intentar parsear fecha formateada, manejando formato DD/MM/YYYY
+            const fechaStr = String(puntos[i].fecha);
+            if (fechaStr.includes('/')) {
+              const partes = fechaStr.split('/');
+              if (partes.length === 3) {
+                // Asumir formato DD/MM/YYYY y convertir a MM/DD/YYYY para Date()
+                const fechaISO = `${partes[2]}-${partes[1].padStart(2,'0')}-${partes[0].padStart(2,'0')}`;
+                const fechaObj = new Date(fechaISO);
+                if (!isNaN(fechaObj.getTime())) {
+                  fecha = fechaObj.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+                }
+              }
+            } else {
+              // Intentar parseo directo
+              const fechaObj = new Date(fechaStr);
+              if (!isNaN(fechaObj.getTime())) {
+                fecha = fechaObj.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Error formateando fecha:', puntos[i].fecha, e);
+          fecha = `P${i+1}`;
+        }
+        
+        gridX += `<text x="${x}" y="${padding + chartHeight + 15}" font-size="8" text-anchor="middle" fill="#6b7280">${fecha}</text>`;
+      }
+
+      const gradientId = `g${Math.random().toString(36).slice(2,8)}`;
 
       return `
         <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="background:transparent">
           <defs>
-            <linearGradient id="g${Math.random().toString(36).slice(2,8)}" x1="0" x2="0" y1="0" y2="1">
+            <linearGradient id="${gradientId}" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stop-color="${stroke}" stop-opacity="0.18" />
               <stop offset="100%" stop-color="${stroke}" stop-opacity="0" />
             </linearGradient>
           </defs>
           <rect width="100%" height="100%" fill="transparent" />
-          <path d="${areaD}" fill="url(#g${Math.random().toString(36).slice(2,8)})" stroke="none" />
+          
+          <!-- Cuadrícula -->
+          ${gridY}
+          ${gridX}
+          
+          <!-- Área y línea -->
+          <path d="${areaD}" fill="url(#${gradientId})" stroke="none" />
           <path d="${pathD}" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          <text x="${padding}" y="${padding + 10}" font-size="10" fill="#444">Max: ${maxLabel}</text>
-          <text x="${padding}" y="${height - 4}" font-size="10" fill="#666">Min: ${minLabel}</text>
+          
+          <!-- Puntos de datos -->
+          ${coords.map(c => `<circle cx="${c.x}" cy="${c.y}" r="2" fill="${stroke}" stroke="white" stroke-width="1"/>`).join('')}
         </svg>
       `;
     }
@@ -586,7 +668,15 @@ export const reporteModel = {
     function generarSVGPresionCombinada(puntos, opts = {}) {
       const width = opts.width || 520;
       const height = opts.height || 120;
-      const padding = 8;
+      const padding = 25; // Aumentado para etiquetas más grandes
+      
+      // Debug: verificar datos recibidos
+      console.log('🩺 generarSVGPresionCombinada recibió:', { 
+        puntos: puntos?.length || 0, 
+        primerosElementos: puntos?.slice(0, 3),
+        formatosFecha: puntos?.slice(0, 3).map(p => ({ fecha: p.fecha, fechaRaw: p.fechaRaw }))
+      });
+      
       if (!puntos || puntos.length === 0) {
         return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><text x="${width/2}" y="${height/2}" font-size="12" text-anchor="middle" fill="#888">Sin datos</text></svg>`;
       }
@@ -601,12 +691,76 @@ export const reporteModel = {
       const max = Math.max(...allVals);
       const range = max - min || 1;
 
-      const stepX = (width - padding * 2) / (puntos.length - 1 || 1);
-      const coordsSys = puntos.map((p, i) => ({ x: padding + i * stepX, y: padding + (height - padding * 2) * (1 - ((Number(p.systolic) - min) / range)), v: p.systolic }));
-      const coordsDia = puntos.map((p, i) => ({ x: padding + i * stepX, y: padding + (height - padding * 2) * (1 - ((Number(p.diastolic) - min) / range)), v: p.diastolic }));
+      // Área de gráfico
+      const chartWidth = width - padding * 2;
+      const chartHeight = height - padding * 2;
+
+      const stepX = chartWidth / (puntos.length - 1 || 1);
+      const coordsSys = puntos.map((p, i) => ({ 
+        x: padding + i * stepX, 
+        y: padding + chartHeight * (1 - ((Number(p.systolic) - min) / range)), 
+        v: p.systolic 
+      }));
+      const coordsDia = puntos.map((p, i) => ({ 
+        x: padding + i * stepX, 
+        y: padding + chartHeight * (1 - ((Number(p.diastolic) - min) / range)), 
+        v: p.diastolic 
+      }));
 
       const pathSys = coordsSys.map((c, i) => (i === 0 ? `M ${c.x} ${c.y}` : `L ${c.x} ${c.y}`)).join(' ');
       const pathDia = coordsDia.map((c, i) => (i === 0 ? `M ${c.x} ${c.y}` : `L ${c.x} ${c.y}`)).join(' ');
+
+      // Generar cuadrícula del eje Y (5 líneas horizontales)
+      let gridY = '';
+      for (let i = 0; i <= 4; i++) {
+        const y = padding + (chartHeight * i / 4);
+        const valor = max - (range * i / 4);
+        gridY += `<line x1="${padding}" y1="${y}" x2="${padding + chartWidth}" y2="${y}" stroke="#e5e7eb" stroke-width="0.5"/>`;
+        gridY += `<text x="${padding - 5}" y="${y + 3}" font-size="9" text-anchor="end" fill="#6b7280">${valor.toFixed(0)}</text>`;
+      }
+
+      // Generar cuadrícula del eje X
+      let gridX = '';
+      const maxXPoints = Math.min(6, puntos.length);
+      const xStep = Math.max(1, Math.floor(puntos.length / maxXPoints));
+      for (let i = 0; i < puntos.length; i += xStep) {
+        const x = padding + i * stepX;
+        gridX += `<line x1="${x}" y1="${padding}" x2="${x}" y2="${padding + chartHeight}" stroke="#e5e7eb" stroke-width="0.5"/>`;
+        
+        // Mejorar formateo de fecha con validación (mismo que generarSVGSerie)
+        let fecha = `P${i+1}`;
+        try {
+          if (puntos[i].fechaRaw) {
+            // Usar fechaRaw si está disponible (formato ISO)
+            fecha = new Date(puntos[i].fechaRaw).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+          } else if (puntos[i].fecha) {
+            // Intentar parsear fecha formateada, manejando formato DD/MM/YYYY
+            const fechaStr = String(puntos[i].fecha);
+            if (fechaStr.includes('/')) {
+              const partes = fechaStr.split('/');
+              if (partes.length === 3) {
+                // Asumir formato DD/MM/YYYY y convertir a MM/DD/YYYY para Date()
+                const fechaISO = `${partes[2]}-${partes[1].padStart(2,'0')}-${partes[0].padStart(2,'0')}`;
+                const fechaObj = new Date(fechaISO);
+                if (!isNaN(fechaObj.getTime())) {
+                  fecha = fechaObj.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+                }
+              }
+            } else {
+              // Intentar parseo directo
+              const fechaObj = new Date(fechaStr);
+              if (!isNaN(fechaObj.getTime())) {
+                fecha = fechaObj.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Error formateando fecha en presión:', puntos[i].fecha, e);
+          fecha = `P${i+1}`;
+        }
+        
+        gridX += `<text x="${x}" y="${padding + chartHeight + 15}" font-size="8" text-anchor="middle" fill="#6b7280">${fecha}</text>`;
+      }
 
       // Labels: min/max
       const minLabel = min.toFixed(0);
@@ -617,18 +771,34 @@ export const reporteModel = {
       puntos.forEach((p, i) => {
         const cs = coordsSys[i];
         const cd = coordsDia[i];
-        const label = (p.systolic || p.diastolic) ? `${p.systolic || '-'} / ${p.diastolic || '-'}` : '-';
-        pointsLabels += `<text x="${cs.x}" y="${Math.min(cs.y, cd.y) - 6}" font-size="10" text-anchor="middle" fill="#0f172a">${label}</text>`;
+        const label = (p.systolic || p.diastolic) ? `${p.systolic || '-'}/${p.diastolic || '-'}` : '-';
+        // Posicionar etiqueta encima del punto más alto con más espacio
+        const topY = Math.min(cs.y, cd.y) - 12;
+        pointsLabels += `<text x="${cs.x}" y="${topY}" font-size="9" text-anchor="middle" fill="#0f172a" font-weight="500">${label}</text>`;
       });
 
       return `
         <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="background:transparent">
           <rect width="100%" height="100%" fill="transparent" />
-          <path d="${pathDia}" fill="none" stroke="#a78bfa" stroke-width="2" stroke-dasharray="6 4" stroke-linecap="round" stroke-linejoin="round" />
+          
+          <!-- Cuadrícula -->
+          ${gridY}
+          ${gridX}
+          
+          <!-- Líneas de presión -->
+          <path d="${pathDia}" fill="none" stroke="#a78bfa" stroke-width="2" stroke-dasharray="4 2" stroke-linecap="round" stroke-linejoin="round" />
           <path d="${pathSys}" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          
+          <!-- Puntos de datos -->
+          ${coordsSys.map(c => `<circle cx="${c.x}" cy="${c.y}" r="2.5" fill="#7c3aed" stroke="white" stroke-width="1"/>`).join('')}
+          ${coordsDia.map(c => `<circle cx="${c.x}" cy="${c.y}" r="2.5" fill="#a78bfa" stroke="white" stroke-width="1"/>`).join('')}
+          
+          <!-- Etiquetas de valores -->
           ${pointsLabels}
-          <text x="${padding}" y="${padding + 10}" font-size="10" fill="#444">Max: ${maxLabel}</text>
-          <text x="${padding}" y="${height - 4}" font-size="10" fill="#666">Min: ${minLabel}</text>
+          
+          <!-- Leyenda -->
+          <text x="${padding}" y="${height - 5}" font-size="9" fill="#7c3aed">● Sistólica</text>
+          <text x="${padding + 60}" y="${height - 5}" font-size="9" fill="#a78bfa">● Diastólica</text>
         </svg>
       `;
     }
@@ -730,6 +900,14 @@ export const reporteModel = {
         const ps = fila.parametrosSeries || {};
         const pid = paciente.id || paciente.matricula || paciente.pacienteId || paciente.pacienteNombre || tituloP;
         const imgs = imagesMap[pid] || {};
+
+        // Debug: verificar datos de parámetros
+        console.log('📈 Datos para gráficas PDF:', { 
+          pacienteId: pid, 
+          parametrosSeries: ps,
+          tieneImagenes: Object.keys(imgs).length > 0,
+          parametrosConDatos: Object.entries(ps).filter(([k,v]) => Array.isArray(v) && v.length > 0).map(([k,v]) => `${k}: ${v.length} puntos`)
+        });
 
         // Helper para renderizar imagen o fallback SVG
         const renderImgOrSVG = (imgKey, svgHtml) => {
