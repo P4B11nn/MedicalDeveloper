@@ -776,6 +776,101 @@
     
     // La inicialización del header ahora se hace arriba en el script principal
   </script>
+</script>
 
+  <!-- Botón flotante de ayuda (esquina inferior derecha) para menú Pacientes -->
+  <style>
+    /* Wrapper que contiene la etiqueta y el botón */
+    #floatingHelpWrapper {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 1100;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    /* Leyenda "Ayuda" a la izquierda del botón */
+    #floatingHelpLabel {
+      pointer-events: auto;
+      background: #ffffff;
+      color: #0f172a;
+      border: 2px solid #3b82f6;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 6px 18px rgba(59,130,246,0.06);
+      white-space: nowrap;
+      cursor: default;
+    }
+
+    /* Estilos del botón flotante de ayuda */
+    #floatingHelpBtn {
+      pointer-events: auto;
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+      background: #ffffff;
+      color: #0f172a;
+      border: 2px solid #3b82f6;
+      box-shadow: 0 6px 18px rgba(59,130,246,0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    #floatingHelpBtn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(59,130,246,0.16);
+      background: #ffffff;
+    }
+
+    #floatingHelpBtn:focus {
+      outline: 3px solid rgba(59,130,246,0.18);
+      outline-offset: 2px;
+    }
+
+    @media (max-width: 480px) {
+      #floatingHelpLabel { display: none; }
+      #floatingHelpWrapper { right: 12px; bottom: 12px; }
+    }
+  </style>
+
+  <div id="floatingHelpWrapper">
+    <span id="floatingHelpLabel">Ayuda</span>
+    <button id="floatingHelpBtn" aria-label="Abrir manual de usuario" title="Ayuda - Manual de usuario">❓</button>
+  </div>
+
+  <script>
+    (function(){
+      // Ruta relativa al PDF desde esta página
+      const pdfRelativePath = encodeURI('../help/Manual de Usuario.pdf');
+
+      const btn = document.getElementById('floatingHelpBtn');
+      if(!btn) return;
+
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        try {
+          window.open(pdfRelativePath, '_blank');
+        } catch (err) {
+          window.location.href = pdfRelativePath;
+        }
+      });
+
+      btn.addEventListener('keydown', function(e){
+        if(e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          btn.click();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
