@@ -4,6 +4,27 @@ import { reporteModel } from '../models/reporteModel.js';
 import { renderEstadisticas, renderActividades, renderExportacion, insertarEstilosGraficos } from '../views/reporteView.js';
 import { pacienteModel } from '../models/pacienteModel.js';
 
+// Funciones auxiliares para conversión de imágenes
+async function convertBlobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function convertUrlToBase64(url) {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return await convertBlobToBase64(blob);
+  } catch (error) {
+    console.error('Error convirtiendo URL a base64:', error);
+    return null;
+  }
+}
+
 // Función para mostrar confirmaciones
 function mostrarConfirmacion(titulo, mensaje, callback = null) {
   const modalConfirmacion = document.createElement('div');
@@ -157,8 +178,12 @@ export async function initReporteController() {
   // Configurar eventos de los botones
   if (btnEstadisticas) {
     btnEstadisticas.addEventListener('click', async () => {
-      cambiarSeccion(seccionEstadisticas);
-      await renderEstadisticas();
+      try {
+        cambiarSeccion(seccionEstadisticas);
+        await renderEstadisticas();
+      } catch (error) {
+        console.error('Error mostrando estadísticas:', error);
+      }
     });
   }
   
@@ -225,7 +250,11 @@ export async function initReporteController() {
   if (!openedByUrl) {
     if (btnEstadisticas) {
       cambiarSeccion(seccionEstadisticas);
-      await renderEstadisticas();
+      try {
+        await renderEstadisticas();
+      } catch (error) {
+        console.error('Error cargando estadísticas por defecto:', error);
+      }
     }
   }
 
@@ -243,12 +272,16 @@ export async function initReporteController() {
           // Refrescar la sección activa actualmente
           const seccionActiva = document.querySelector('.report-section.active');
           if (seccionActiva) {
-            if (seccionActiva.id === 'estadisticas-section') {
-              await renderEstadisticas();
-            } else if (seccionActiva.id === 'actividades-section') {
-              await renderActividades();
-            } else if (seccionActiva.id === 'exportacion-section') {
-              await renderExportacion();
+            try {
+              if (seccionActiva.id === 'estadisticas-section') {
+                await renderEstadisticas();
+              } else if (seccionActiva.id === 'actividades-section') {
+                await renderActividades();
+              } else if (seccionActiva.id === 'exportacion-section') {
+                await renderExportacion();
+              }
+            } catch (error) {
+              console.error('Error refrescando sección activa:', error);
             }
           }
 
@@ -308,6 +341,28 @@ export async function exportarDatosCSV(tipoExportacion) {
         const pacienteId = select.value;
         const paciente = await pacienteModel.getPaciente(pacienteId);
 
+        // Obtener foto de perfil si existe
+        let fotoPerfilUrl = null;
+        if (paciente && paciente.fotoPerfilId) {
+          try {
+            const { imageStorage } = await import('../models/imageStorageAlternative.js');
+            
+            // Asegurar que IndexedDB esté inicializado
+            if (!imageStorage.db) {
+              await imageStorage.init();
+            }
+            
+            const imagenData = await imageStorage.getImageById(paciente.fotoPerfilId);
+            if (imagenData && imagenData.blob) {
+              // Convertir blob a base64 para uso en PDF
+              fotoPerfilUrl = await convertBlobToBase64(imagenData.blob);
+              console.log(`📸 Foto de perfil convertida a base64 para historial de ${paciente.nombre}`);
+            }
+          } catch (fotoError) {
+            console.warn(`⚠️ No se pudo obtener foto para historial de ${paciente.nombre}:`, fotoError);
+          }
+        }
+
         // Debug: verificar datos del paciente obtenido
         console.log('🔍 Paciente obtenido para exportación:', {
           id: pacienteId,
@@ -315,7 +370,8 @@ export async function exportarDatosCSV(tipoExportacion) {
           tieneHistorialCambios: !!(paciente?.historialCambios),
           cantidadCambios: paciente?.historialCambios?.length || 0,
           tieneDatosMedicos: !!(paciente?.datosMedicos),
-          datosMedicos: paciente?.datosMedicos
+          datosMedicos: paciente?.datosMedicos,
+          tieneFoto: !!fotoPerfilUrl
         });
 
         // Obtener registros del historial centralizado
@@ -407,7 +463,11 @@ export async function exportarDatosCSV(tipoExportacion) {
         });
 
         const datosParaExport = {
-          paciente: paciente || { id: pacienteId },
+          paciente: paciente ? {
+            ...paciente,
+            photo: fotoPerfilUrl, // Agregar la URL de la foto para el PDF
+            photoUrl: fotoPerfilUrl // Campo alternativo por compatibilidad
+          } : { id: pacienteId },
           parametrosSeries,
           // Observaciones agrupadas: { examenVista:[], examenOido:[], general:[] }
           observaciones: grouped,
@@ -446,6 +506,31 @@ export async function exportarDatosCSV(tipoExportacion) {
           try {
             console.log(`🔄 Procesando datos médicos para paciente: ${paciente.nombre} (ID: ${paciente.id})`);
             
+            // Obtener foto de perfil si existe
+            let fotoPerfilUrl = null;
+            if (paciente.fotoPerfilId) {
+              try {
+                const { imageStorage } = await import('../models/imageStorageAlternative.js');
+                
+                // Asegurar que IndexedDB esté inicializado
+                if (!imageStorage.db) {
+                  await imageStorage.init();
+                }
+                
+                const imagenData = await imageStorage.getImageById(paciente.fotoPerfilId);
+                console.log(`🔍 Imagen obtenida para ${paciente.nombre}:`, imagenData ? 'Encontrada' : 'No encontrada');
+                if (imagenData && imagenData.blob) {
+                  // Convertir blob a base64 para uso en PDF
+                  fotoPerfilUrl = await convertBlobToBase64(imagenData.blob);
+                  console.log(`📸 Foto de perfil convertida a base64 para ${paciente.nombre} (${fotoPerfilUrl.substring(0, 50)}...)`);
+                } else {
+                  console.log(`❌ No se encontró blob para ${paciente.nombre}, imagenData:`, imagenData);
+                }
+              } catch (fotoError) {
+                console.warn(`⚠️ No se pudo obtener foto para ${paciente.nombre}:`, fotoError);
+              }
+            }
+            
             // Obtener evolución médica usando la misma función que funciona
             const evolucionMedica = await reporteModel.getEvolucionMedicaPaciente(paciente.id);
             
@@ -467,16 +552,46 @@ export async function exportarDatosCSV(tipoExportacion) {
             });
             
             datos.push({
-              paciente: paciente,
+              paciente: {
+                ...paciente,
+                photo: fotoPerfilUrl, // Agregar la URL de la foto para el PDF
+                photoUrl: fotoPerfilUrl // Campo alternativo por compatibilidad
+              },
               parametrosSeries: parametrosSeries,
               observaciones: { examenVista: [], examenOido: [], general: [] }, // TODO: obtener observaciones si es necesario
               historial: [] // TODO: obtener historial si es necesario
             });
           } catch (error) {
             console.error(`❌ Error procesando paciente ${paciente.nombre}:`, error);
+            
+            // Intentar obtener foto incluso si fallan los datos médicos
+            let fotoPerfilUrl = null;
+            if (paciente.fotoPerfilId) {
+              try {
+                const { imageStorage } = await import('../models/imageStorageAlternative.js');
+                
+                // Asegurar que IndexedDB esté inicializado
+                if (!imageStorage.db) {
+                  await imageStorage.init();
+                }
+                
+                const imagenData = await imageStorage.getImageById(paciente.fotoPerfilId);
+                if (imagenData && imagenData.blob) {
+                  // Convertir blob a base64 para uso en PDF
+                  fotoPerfilUrl = await convertBlobToBase64(imagenData.blob);
+                }
+              } catch (fotoError) {
+                console.warn(`⚠️ No se pudo obtener foto para ${paciente.nombre}:`, fotoError);
+              }
+            }
+            
             // Incluir el paciente sin datos médicos para que no se pierda
             datos.push({
-              paciente: paciente,
+              paciente: {
+                ...paciente,
+                photo: fotoPerfilUrl,
+                photoUrl: fotoPerfilUrl
+              },
               parametrosSeries: {
                 temperatura: [], peso: [], talla: [], frecuenciaRespiratoria: [],
                 presion: [], presion_sistolica: [], presion_diastolica: [], glucosa: []

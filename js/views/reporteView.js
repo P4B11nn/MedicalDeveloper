@@ -20,6 +20,59 @@ export async function renderEstadisticas(estadisticasPrevia = null, options = {}
   try { document.getElementById('actividades-section').innerHTML = ''; } catch(e) {}
   try { document.getElementById('exportacion-section').innerHTML = ''; } catch(e) {}
 
+  // Mostrar loading spinner
+  section.innerHTML = `
+    <div class="loading-container" id="estadisticsLoader">
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+      </div>
+      <div class="loading-text">
+        <h3>📊 Cargando Estadísticas</h3>
+        <p>Procesando datos y generando gráficas...</p>
+      </div>
+    </div>
+    <style>
+      .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        padding: 40px;
+        text-align: center;
+      }
+      .loading-spinner {
+        margin-bottom: 30px;
+      }
+      .spinner {
+        width: 60px;
+        height: 60px;
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1.2s linear infinite;
+        margin: 0 auto;
+      }
+      .loading-text h3 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+        font-size: 1.4rem;
+      }
+      .loading-text p {
+        color: #7f8c8d;
+        font-size: 1rem;
+        margin: 0;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  `;
+
+  // Pequeña pausa para mostrar el spinner
+  await new Promise(resolve => setTimeout(resolve, 500));
+
   // Mostrar versión compacta solo si se solicita explícitamente via options.compact
   const compactMode = options && options.compact === true;
   if (compactMode) {
@@ -63,7 +116,108 @@ export async function renderEstadisticas(estadisticasPrevia = null, options = {}
   }
 
   // Obtener estadísticas actualizadas si no se proporcionan
-  const estadisticas = estadisticasPrevia || await reporteModel.getEstadisticas();
+  try {
+    const estadisticas = estadisticasPrevia || await reporteModel.getEstadisticas();
+    
+    // Verificar si hay datos
+    const hasData = estadisticas && (
+      (estadisticas.general && estadisticas.general.totalUsuarios > 0) ||
+      (estadisticas.pacientes && estadisticas.pacientes.totalPacientes > 0) ||
+      (estadisticas.actividades && estadisticas.actividades.total > 0)
+    );
+    
+    if (!hasData) {
+      // Mostrar mensaje de no datos
+      section.innerHTML = `
+        <div class="no-data-container">
+          <div class="no-data-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="no-data-content">
+            <h3>📊 No hay datos disponibles</h3>
+            <p>Aún no se han registrado suficientes datos para generar estadísticas.</p>
+            <div class="no-data-suggestions">
+              <h4>💡 Para ver estadísticas necesitas:</h4>
+              <ul>
+                <li>✅ Registrar usuarios en el sistema</li>
+                <li>✅ Agregar pacientes</li>
+                <li>✅ Registrar actividades y consultas</li>
+              </ul>
+            </div>
+            <button onclick="location.reload()" class="btn btn-primary">
+              <i class="fas fa-sync-alt"></i> Recargar datos
+            </button>
+          </div>
+        </div>
+        <style>
+          .no-data-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 500px;
+            padding: 40px;
+            text-align: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            margin: 20px;
+          }
+          .no-data-icon {
+            font-size: 4rem;
+            color: #3498db;
+            margin-bottom: 30px;
+            opacity: 0.7;
+          }
+          .no-data-content h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.6rem;
+          }
+          .no-data-content p {
+            color: #5d6d7e;
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            max-width: 400px;
+          }
+          .no-data-suggestions {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+          }
+          .no-data-suggestions h4 {
+            color: #e67e22;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+          }
+          .no-data-suggestions ul {
+            list-style: none;
+            padding: 0;
+            text-align: left;
+          }
+          .no-data-suggestions li {
+            color: #27ae60;
+            margin: 8px 0;
+            font-size: 0.95rem;
+          }
+          .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+          }
+          .btn:hover {
+            background: #2980b9;
+          }
+        </style>
+      `;
+      return;
+    }
   
     let html = `
     <div class="estadisticas-container">
@@ -221,6 +375,67 @@ export async function renderEstadisticas(estadisticasPrevia = null, options = {}
     await generarGraficasEstadisticasConChartJS(estadisticas);
   } catch (e) {
     console.warn('No se pudieron generar las gráficas de estadísticas con Chart.js:', e);
+  }
+
+  } catch (error) {
+    // Error cargando estadísticas
+    console.error('Error cargando estadísticas:', error);
+    section.innerHTML = `
+      <div class="error-container">
+        <div class="error-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="error-content">
+          <h3>❌ Error cargando estadísticas</h3>
+          <p>No se pudieron cargar los datos. Por favor, inténtalo de nuevo.</p>
+          <div class="error-details">
+            <strong>Detalles:</strong> ${error.message || 'Error desconocido'}
+          </div>
+          <button onclick="location.reload()" class="btn btn-primary">
+            <i class="fas fa-sync-alt"></i> Reintentar
+          </button>
+        </div>
+      </div>
+      <style>
+        .error-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 400px;
+          padding: 40px;
+          text-align: center;
+          background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+          border-radius: 10px;
+          margin: 20px;
+        }
+        .error-icon {
+          font-size: 4rem;
+          color: #e17055;
+          margin-bottom: 25px;
+        }
+        .error-content h3 {
+          color: #2d3436;
+          margin-bottom: 15px;
+          font-size: 1.5rem;
+        }
+        .error-content p {
+          color: #636e72;
+          font-size: 1.1rem;
+          margin-bottom: 20px;
+        }
+        .error-details {
+          background: white;
+          padding: 15px;
+          border-radius: 5px;
+          margin-bottom: 20px;
+          border-left: 4px solid #e17055;
+          font-family: monospace;
+          font-size: 0.9rem;
+          color: #2d3436;
+        }
+      </style>
+    `;
   }
 }
 

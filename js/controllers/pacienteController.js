@@ -2,6 +2,58 @@
 
 import { pacienteModel } from '../models/pacienteModel.js';
 import { renderPacienteForm } from '../views/pacienteView.js';
+import { ImageUploadComponent } from '../utils/imageUploadComponent.js';
+import imageStorageModelDefault, { imageStorageModel } from '../models/imageStorageModelNew.js';
+
+/**
+ * Service layer - Maneja la lógica de negocio sin exponer modelos
+ */
+const PacienteImageService = {
+  /**
+   * Obtener URL de imagen de perfil de un paciente
+   * @param {Object} paciente - Objeto paciente
+   * @returns {Promise<string|null>} URL de la imagen o null
+   */
+  async obtenerImagenPerfil(paciente) {
+    try {
+      // Usar el modelo importado directamente
+      const modelToUse = imageStorageModel || imageStorageModelDefault;
+      
+      if (!modelToUse) {
+        console.error('❌ imageStorageModel no disponible');
+        return null;
+      }
+      
+      // Prioridad 1: Nuevo sistema con fotoPerfilId
+      if (paciente.fotoPerfilId) {
+        const imagen = await modelToUse.obtenerImagenPorId(paciente.fotoPerfilId);
+        
+        if (imagen && imagen.url) {
+          return imagen.url;
+        }
+      }
+      
+      // Prioridad 2: Sistema anterior con imagenPerfil (fallback)
+      if (paciente.imagenPerfil && paciente.imagenPerfil.url) {
+        return paciente.imagenPerfil.url;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error obteniendo imagen de perfil:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Verificar si un paciente tiene imagen de perfil
+   * @param {Object} paciente - Objeto paciente
+   * @returns {boolean} True si tiene imagen
+   */
+  tieneImagenPerfil(paciente) {
+    return !!(paciente.fotoPerfilId || (paciente.imagenPerfil && paciente.imagenPerfil.url));
+  }
+};
 
 /**
  * Función de validación completa para formularios
@@ -326,7 +378,12 @@ function validateDatosMedicosForm(formData) {
 }
 
 export async function initPacienteController() {
-  console.log('🚀 Controlador de Pacientes inicializado');
+  // Verificar disponibilidad de modelos críticos
+  const modelToUse = imageStorageModel || imageStorageModelDefault;
+  
+  if (!modelToUse) {
+    console.error('CRÍTICO: imageStorageModel no disponible');
+  }
   
   // Configurar eventos para todas las secciones
   setupEventListeners();
@@ -398,6 +455,8 @@ function handleMainContentClick(event) {
         verDetallesPaciente(pacienteId);
       } else if (action.includes('editar')) {
         editarPaciente(pacienteId);
+      } else if (action.includes('imágenes') || action.includes('fotos')) {
+        mostrarImagenesPaciente(pacienteId);
       }
     }
   }
@@ -413,6 +472,22 @@ function handleMainContentClick(event) {
   // Manejar botón cancelar en datos médicos
   if (target.matches('.btn-secondary') && target.textContent.includes('Cancelar') && target.closest('#ingresar-datos-medicos-section')) {
     cancelarDatosMedicos();
+  }
+  
+  // Manejar botones de agregar imágenes
+  if (target.matches('.btn-add-images') || target.closest('.btn-add-images')) {
+    const pacienteId = target.dataset.pacienteId || target.closest('.btn-add-images').dataset.pacienteId;
+    if (pacienteId) {
+      mostrarModalAgregarImagenes(pacienteId);
+    }
+  }
+  
+  // Manejar ver galería de imágenes
+  if (target.matches('.btn-view-gallery') || target.closest('.btn-view-gallery')) {
+    const pacienteId = target.dataset.pacienteId || target.closest('.btn-view-gallery').dataset.pacienteId;
+    if (pacienteId) {
+      mostrarGaleriaImagenes(pacienteId);
+    }
   }
 }
 
@@ -534,6 +609,10 @@ export async function handlePacienteSubmit(event) {
     fechaRegistro: new Date().toISOString()
     // El status se asigna automáticamente en el modelo como 'sin_datos_medicos'
   };
+
+  // Obtener archivo de imagen si fue seleccionado
+  const imagenFile = formData.get('fotoPerfil');
+  const tieneImagen = imagenFile && imagenFile.size > 0;
   
   try {
     // Verificar si ya existe un paciente con esa matrícula
@@ -552,6 +631,37 @@ export async function handlePacienteSubmit(event) {
     const pacienteGuardado = await pacienteModel.addPaciente(nuevoPaciente);
     
     if (pacienteGuardado) {
+      // Si hay imagen, subirla después de crear el paciente
+      if (tieneImagen) {
+        try {
+          console.log('📸 Procesando imagen de perfil...', {
+            fileName: imagenFile.name,
+            size: imagenFile.size,
+            type: imagenFile.type,
+            usuarioActual: usuarioActual
+          });
+          
+          const metadataImagen = {
+            usuarioId: usuarioActual.id,
+            usuarioNombre: usuarioActual.nombre
+          };
+          
+          const resultado = await pacienteModel.actualizarFotoPerfil(
+            pacienteGuardado.id, 
+            imagenFile, 
+            metadataImagen
+          );
+          
+          console.log('✅ Foto de perfil agregada al paciente:', resultado);
+        } catch (error) {
+          console.error('❌ Error subiendo foto de perfil:', error);
+          mostrarMensaje('warning', '⚠️ Advertencia', 
+            'El paciente fue registrado exitosamente, pero no se pudo subir la foto de perfil. Puedes agregarla después desde Editar.');
+        }
+      } else {
+        console.log('📷 No se seleccionó imagen de perfil para el paciente');
+      }
+
       // Registrar actividad de creación de paciente
       try {
         const { default: ActivityLogger } = await import('../utils/activityLogger.js');
@@ -564,10 +674,16 @@ export async function handlePacienteSubmit(event) {
         console.warn('Error registrando actividad de creación de paciente:', error);
       }
 
-      mostrarMensaje('success', '✅ Paciente Registrado', 
-        `${nuevoPaciente.nombre} ${nuevoPaciente.apellidos || ''} ha sido registrado exitosamente.\nMatrícula: ${nuevoPaciente.matricula}`);
+      const mensajeExito = tieneImagen ? 
+        `${nuevoPaciente.nombre} ${nuevoPaciente.apellidos || ''} ha sido registrado exitosamente con foto de perfil.\nMatrícula: ${nuevoPaciente.matricula}` :
+        `${nuevoPaciente.nombre} ${nuevoPaciente.apellidos || ''} ha sido registrado exitosamente.\nMatrícula: ${nuevoPaciente.matricula}`;
+
+      mostrarMensaje('success', '✅ Paciente Registrado', mensajeExito);
       
       event.target.reset();
+      
+      // Limpiar preview de imagen si existe
+      limpiarPreviewImagen('registro');
       
       // Actualizar la lista de pacientes
       await renderPacientesList();
@@ -1503,7 +1619,7 @@ async function verDetallesPaciente(pacienteId) {
     }
     
     // Llenar datos del modal
-    llenarModalVerPaciente(paciente);
+    await llenarModalVerPaciente(paciente);
     
     // Mostrar modal
     mostrarModalVerPaciente();
@@ -1513,10 +1629,16 @@ async function verDetallesPaciente(pacienteId) {
   }
 }
 
-function llenarModalVerPaciente(paciente) {
+async function llenarModalVerPaciente(paciente) {
   // Información básica
   document.getElementById('modalTituloPaciente').textContent = `${paciente.nombre} ${paciente.apellidos || ''}`;
   document.getElementById('modalSubtituloPaciente').textContent = `${paciente.matricula} • ${abreviarFacultad(paciente.facultad)}`;
+  
+  // Mostrar imagen de perfil usando la nueva función optimizada
+  const modalImagenPerfil = document.getElementById('modalImagenPerfil');
+  if (modalImagenPerfil) {
+    await cargarImagenPacienteConProgreso(paciente, modalImagenPerfil, true);
+  }
   
   // Información personal
   document.getElementById('modalMatricula').textContent = paciente.matricula;
@@ -1572,6 +1694,8 @@ function llenarModalVerPaciente(paciente) {
     document.getElementById('modalUsuarioMedico').textContent = 'Sin datos médicos';
     document.getElementById('modalUltimaActualizacion').textContent = 'Sin datos médicos';
   }
+
+  // Nota: Se eliminó cargarResumenImagenes ya que ahora solo manejamos fotos de perfil
     
   // Guardar ID del paciente para edición
   window.currentPacienteId = paciente.id;
@@ -1589,7 +1713,7 @@ async function editarPaciente(pacienteId) {
     window.currentPacienteId = pacienteId;
     
     // Llenar formulario de edición
-    llenarFormularioEdicion(paciente);
+    await llenarFormularioEdicion(paciente);
     
     // Inicializar dropdowns de facultad y carrera
     await initFacultadesCarrerasEditar();
@@ -1888,7 +2012,639 @@ function obtenerUsuarioActual() {
     nombre: 'Usuario Anónimo',
     rol: 'sin-rol'
   };
-}// Funciones para manejar modales
+}
+
+// === FUNCIONES PARA MANEJO DE IMÁGENES MÉDICAS ===
+
+/**
+ * Muestra el modal para agregar imágenes a un paciente
+ * @param {string} pacienteId - ID del paciente
+ */
+async function mostrarModalAgregarImagenes(pacienteId) {
+  try {
+    // Obtener datos del paciente
+    const paciente = await pacienteModel.getPaciente(pacienteId);
+    if (!paciente) {
+      mostrarMensaje('error', '❌ Error', 'No se pudo encontrar el paciente.');
+      return;
+    }
+
+    // Crear modal dinámicamente
+    const modalHtml = `
+      <div id="modalAgregarImagenes" class="modal" style="display: flex;">
+        <div class="modal-content" style="width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto;">
+          <div class="modal-header">
+            <h3>
+              <i class="fas fa-camera"></i>
+              Agregar Imágenes Médicas
+            </h3>
+            <span class="close" onclick="cerrarModalAgregarImagenes()">&times;</span>
+          </div>
+          
+          <div class="modal-body">
+            <div class="patient-info-header">
+              <div class="patient-avatar">${paciente.nombre.charAt(0).toUpperCase()}</div>
+              <div class="patient-details">
+                <h4>${paciente.nombre} ${paciente.apellidos || ''}</h4>
+                <p><strong>Matrícula:</strong> ${paciente.matricula}</p>
+                <p><strong>Carrera:</strong> ${paciente.carrera || 'No especificada'}</p>
+              </div>
+            </div>
+            
+            <div id="imageUploadContainer" class="mt-20"></div>
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalAgregarImagenes()">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Insertar modal en el DOM
+    const existingModal = document.getElementById('modalAgregarImagenes');
+    if (existingModal) {
+      existingModal.remove();
+    }
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Inicializar componente de carga de imágenes
+    const uploadComponent = new ImageUploadComponent('imageUploadContainer', {
+      allowMultiple: true,
+      maxFiles: 20,
+      tipoImagen: 'historial',
+      showPreview: true,
+      onUploadStart: (files, metadata) => {
+        console.log('Iniciando subida de imágenes...', files.length);
+      },
+      onUploadComplete: async (resultado) => {
+        if (resultado.exitosas && resultado.exitosas.length > 0) {
+          mostrarMensaje('success', '✅ Imágenes Subidas', 
+            `Se subieron ${resultado.exitosas.length} imagen(es) exitosamente.`);
+          
+          // Cerrar modal y actualizar vista si es necesario
+          cerrarModalAgregarImagenes();
+          
+          // Actualizar cualquier vista de imágenes abierta
+          if (window.currentGalleryPacienteId === pacienteId) {
+            mostrarGaleriaImagenes(pacienteId);
+          }
+        }
+        
+        if (resultado.errores && resultado.errores.length > 0) {
+          mostrarMensaje('warning', '⚠️ Algunas imágenes fallaron', 
+            `${resultado.errores.length} imagen(es) no se pudieron subir.`);
+        }
+      }
+    });
+
+    // Manejar evento de subida del componente
+    const uploadButton = document.querySelector('#imageUploadContainer .btn-upload-images');
+    if (uploadButton) {
+      uploadButton.addEventListener('click', async () => {
+        try {
+          const uploadData = await uploadComponent.uploadImages();
+          
+          if (uploadData && uploadData.files.length > 0) {
+            // Subir imágenes usando el modelo de pacientes
+            const resultado = await pacienteModel.guardarImagenesMedicas(
+              pacienteId, 
+              uploadData.files, 
+              uploadData.metadata
+            );
+            
+            // Completar progreso en el componente
+            uploadComponent.completeProgress();
+            
+            // Notificar resultado
+            if (uploadComponent.callbacks.onUploadComplete) {
+              uploadComponent.callbacks.onUploadComplete(resultado);
+            }
+          }
+        } catch (error) {
+          console.error('Error subiendo imágenes:', error);
+          uploadComponent.showProgress(false);
+          mostrarMensaje('error', '❌ Error', 'No se pudieron subir las imágenes: ' + error.message);
+        }
+      });
+    }
+
+  } catch (error) {
+    console.error('Error mostrando modal de imágenes:', error);
+    mostrarMensaje('error', '❌ Error', 'No se pudo abrir el modal de imágenes.');
+  }
+}
+
+/**
+ * Cierra el modal de agregar imágenes
+ */
+function cerrarModalAgregarImagenes() {
+  const modal = document.getElementById('modalAgregarImagenes');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+/**
+ * Muestra la galería de imágenes de un paciente
+ * @param {string} pacienteId - ID del paciente
+ */
+async function mostrarGaleriaImagenes(pacienteId) {
+  try {
+    // Guardar referencia global para actualizaciones
+    window.currentGalleryPacienteId = pacienteId;
+    
+    const [paciente, imagenes] = await Promise.all([
+      pacienteModel.getPaciente(pacienteId),
+      pacienteModel.getImagenesMedicasPaciente(pacienteId)
+    ]);
+
+    if (!paciente) {
+      mostrarMensaje('error', '❌ Error', 'No se pudo encontrar el paciente.');
+      return;
+    }
+
+    // Crear modal de galería
+    const modalHtml = `
+      <div id="modalGaleriaImagenes" class="modal" style="display: flex;">
+        <div class="modal-content" style="width: 95%; max-width: 1200px; max-height: 90vh;">
+          <div class="modal-header">
+            <h3>
+              <i class="fas fa-images"></i>
+              Galería de Imágenes Médicas
+            </h3>
+            <span class="close" onclick="cerrarModalGaleriaImagenes()">&times;</span>
+          </div>
+          
+          <div class="modal-body" style="max-height: calc(90vh - 120px); overflow-y: auto;">
+            <div class="patient-info-header">
+              <div class="patient-avatar">${paciente.nombre.charAt(0).toUpperCase()}</div>
+              <div class="patient-details">
+                <h4>${paciente.nombre} ${paciente.apellidos || ''}</h4>
+                <p><strong>Matrícula:</strong> ${paciente.matricula}</p>
+                <p><strong>Total de imágenes:</strong> ${imagenes.length}</p>
+              </div>
+              <div class="gallery-actions">
+                <button type="button" class="btn btn-primary btn-sm" onclick="mostrarModalAgregarImagenes('${pacienteId}')">
+                  <i class="fas fa-plus"></i>
+                  Agregar Más Imágenes
+                </button>
+              </div>
+            </div>
+            
+            ${imagenes.length === 0 ? 
+              `<div class="no-images-message">
+                <i class="fas fa-images" style="font-size: 3rem; color: #ccc; margin-bottom: 20px;"></i>
+                <h4>No hay imágenes registradas</h4>
+                <p>Este paciente aún no tiene imágenes médicas en su historial.</p>
+                <button type="button" class="btn btn-primary" onclick="mostrarModalAgregarImagenes('${pacienteId}')">
+                  <i class="fas fa-camera"></i>
+                  Agregar Primera Imagen
+                </button>
+              </div>` :
+              `<div class="gallery-filters">
+                <div class="filter-group">
+                  <label for="filtroTipoImagen">Filtrar por tipo:</label>
+                  <select id="filtroTipoImagen" class="form-control" onchange="filtrarImagenesGaleria()">
+                    <option value="">Todos los tipos</option>
+                    <option value="historial">Historial General</option>
+                    <option value="rayos_x">Rayos X</option>
+                    <option value="laboratorio">Laboratorio</option>
+                    <option value="general">General</option>
+                  </select>
+                </div>
+                
+                <div class="filter-group">
+                  <label for="filtroCategoriaImagen">Filtrar por categoría:</label>
+                  <select id="filtroCategoriaImagen" class="form-control" onchange="filtrarImagenesGaleria()">
+                    <option value="">Todas las categorías</option>
+                    <option value="general">General</option>
+                    <option value="sintomas">Síntomas</option>
+                    <option value="lesiones">Lesiones</option>
+                    <option value="medicamentos">Medicamentos</option>
+                    <option value="rayos_x">Rayos X</option>
+                    <option value="laboratorio">Laboratorio</option>
+                    <option value="tratamiento">Tratamiento</option>
+                    <option value="seguimiento">Seguimiento</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div id="galeriaImagenesGrid" class="gallery-grid">
+                ${renderizarImagenesGaleria(imagenes)}
+              </div>`
+            }
+          </div>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalGaleriaImagenes()">
+              Cerrar Galería
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Insertar modal en el DOM
+    const existingModal = document.getElementById('modalGaleriaImagenes');
+    if (existingModal) {
+      existingModal.remove();
+    }
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Guardar imágenes para filtrado
+    window.currentGalleryImages = imagenes;
+
+  } catch (error) {
+    console.error('Error mostrando galería de imágenes:', error);
+    mostrarMensaje('error', '❌ Error', 'No se pudo cargar la galería de imágenes.');
+  }
+}
+
+/**
+ * Renderiza las imágenes en la galería
+ * @param {Array} imagenes - Array de imágenes
+ * @returns {string} HTML de las imágenes
+ */
+function renderizarImagenesGaleria(imagenes) {
+  return imagenes.map(imagen => {
+    const fechaFormat = new Date(imagen.fechaSubida).toLocaleString('es-ES');
+    
+    return `
+      <div class="gallery-item" data-tipo="${imagen.tipoImagen}" data-categoria="${imagen.categoria}">
+        <div class="gallery-image-container">
+          <img src="${imagen.downloadURL}" 
+               alt="${imagen.originalName}"
+               class="gallery-image"
+               onclick="mostrarImagenCompleta('${imagen.downloadURL}', '${imagen.originalName}', '${imagen.descripcion}')">
+          
+          <div class="gallery-overlay">
+            <div class="gallery-actions">
+              <button class="btn btn-sm btn-primary" title="Ver imagen completa" 
+                      onclick="mostrarImagenCompleta('${imagen.downloadURL}', '${imagen.originalName}', '${imagen.descripcion}')">
+                <i class="fas fa-expand"></i>
+              </button>
+              <button class="btn btn-sm btn-info" title="Editar información"
+                      onclick="editarInfoImagen('${imagen.id}', '${imagen.pacienteId}')">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-danger" title="Eliminar imagen"
+                      onclick="confirmarEliminarImagen('${imagen.id}', '${imagen.pacienteId}', '${imagen.filePath}', '${imagen.originalName}')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="gallery-info">
+          <div class="gallery-title" title="${imagen.originalName}">
+            ${imagen.originalName.length > 25 ? imagen.originalName.substring(0, 22) + '...' : imagen.originalName}
+          </div>
+          <div class="gallery-meta">
+            <div class="gallery-date">${fechaFormat}</div>
+            <div class="gallery-size">${formatFileSize(imagen.size)}</div>
+          </div>
+          <div class="gallery-tags">
+            <span class="badge badge-primary">${imagen.tipoImagen}</span>
+            <span class="badge badge-secondary">${imagen.categoria}</span>
+          </div>
+          ${imagen.descripcion ? 
+            `<div class="gallery-description" title="${imagen.descripcion}">
+              ${imagen.descripcion.length > 50 ? imagen.descripcion.substring(0, 47) + '...' : imagen.descripcion}
+            </div>` : 
+            ''
+          }
+          <div class="gallery-user">Por: ${imagen.usuarioRegistro}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * Filtra las imágenes en la galería
+ */
+function filtrarImagenesGaleria() {
+  const tipoFiltro = document.getElementById('filtroTipoImagen')?.value || '';
+  const categoriaFiltro = document.getElementById('filtroCategoriaImagen')?.value || '';
+  
+  const imagenesFiltradas = window.currentGalleryImages.filter(imagen => {
+    const matchTipo = !tipoFiltro || imagen.tipoImagen === tipoFiltro;
+    const matchCategoria = !categoriaFiltro || imagen.categoria === categoriaFiltro;
+    return matchTipo && matchCategoria;
+  });
+  
+  const galeriaGrid = document.getElementById('galeriaImagenesGrid');
+  if (galeriaGrid) {
+    galeriaGrid.innerHTML = renderizarImagenesGaleria(imagenesFiltradas);
+  }
+}
+
+/**
+ * Muestra una imagen en tamaño completo
+ * @param {string} imageUrl - URL de la imagen
+ * @param {string} imageName - Nombre de la imagen
+ * @param {string} description - Descripción de la imagen
+ */
+function mostrarImagenCompleta(imageUrl, imageName, description) {
+  const modalHtml = `
+    <div id="modalImagenCompleta" class="modal" style="display: flex; background: rgba(0,0,0,0.9);">
+      <div class="modal-content" style="width: 95%; max-width: none; background: transparent; border: none; box-shadow: none;">
+        <div class="modal-header" style="background: rgba(0,0,0,0.8); color: white; border: none;">
+          <h4 style="color: white;">${imageName}</h4>
+          <span class="close" onclick="cerrarImagenCompleta()" style="color: white; font-size: 2rem;">&times;</span>
+        </div>
+        
+        <div class="modal-body" style="padding: 0; text-align: center; background: transparent;">
+          <img src="${imageUrl}" 
+               alt="${imageName}"
+               style="max-width: 100%; max-height: 80vh; object-fit: contain;">
+          
+          ${description ? 
+            `<div style="background: rgba(0,0,0,0.8); color: white; padding: 15px; margin-top: 10px; border-radius: 5px;">
+              <strong>Descripción:</strong> ${description}
+            </div>` : 
+            ''
+          }
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+/**
+ * Cierra el modal de imagen completa
+ */
+function cerrarImagenCompleta() {
+  const modal = document.getElementById('modalImagenCompleta');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+/**
+ * Cierra el modal de galería de imágenes
+ */
+function cerrarModalGaleriaImagenes() {
+  const modal = document.getElementById('modalGaleriaImagenes');
+  if (modal) {
+    modal.remove();
+  }
+  
+  // Limpiar referencias globales
+  window.currentGalleryPacienteId = null;
+  window.currentGalleryImages = null;
+}
+
+/**
+ * Confirma la eliminación de una imagen
+ * @param {string} imagenId - ID de la imagen
+ * @param {string} pacienteId - ID del paciente
+ * @param {string} filePath - Ruta del archivo
+ * @param {string} imageName - Nombre de la imagen
+ */
+async function confirmarEliminarImagen(imagenId, pacienteId, filePath, imageName) {
+  const mensaje = `
+    <div class="delete-warning">
+      <p>¿Estás seguro de que deseas eliminar esta imagen?</p>
+      <p><strong>Imagen:</strong> ${imageName}</p>
+      <p class="text-danger"><strong>Esta acción no se puede deshacer.</strong></p>
+    </div>
+  `;
+  
+  mostrarConfirmacion('🗑️ Eliminar Imagen', mensaje, async () => {
+    try {
+      await pacienteModel.eliminarImagenMedica(pacienteId, imagenId, filePath);
+      
+      mostrarMensaje('success', '✅ Imagen Eliminada', 
+        `La imagen "${imageName}" ha sido eliminada exitosamente.`);
+      
+      // Actualizar galería si está abierta
+      if (window.currentGalleryPacienteId === pacienteId) {
+        mostrarGaleriaImagenes(pacienteId);
+      }
+    } catch (error) {
+      console.error('Error eliminando imagen:', error);
+      mostrarMensaje('error', '❌ Error', 'No se pudo eliminar la imagen: ' + error.message);
+    }
+  }, 'danger');
+}
+
+/**
+ * Edita la información de una imagen
+ * @param {string} imagenId - ID de la imagen
+ * @param {string} pacienteId - ID del paciente
+ */
+async function editarInfoImagen(imagenId, pacienteId) {
+  // Por implementar - modal para editar descripción y categoría
+  mostrarMensaje('info', 'ℹ️ Función en Desarrollo', 
+    'La edición de información de imágenes estará disponible próximamente.');
+}
+
+/**
+ * Formatea el tamaño de archivo
+ * @param {number} bytes - Tamaño en bytes
+ * @returns {string} Tamaño formateado
+ */
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+/**
+ * Muestra las imágenes de un paciente (función de conveniencia)
+ * @param {string} pacienteId - ID del paciente
+ */
+async function mostrarImagenesPaciente(pacienteId) {
+  mostrarGaleriaImagenes(pacienteId);
+}
+
+// === FUNCIONES AUXILIARES PARA MANEJO DE IMÁGENES EN FORMULARIOS ===
+
+/**
+ * Configura el input de imagen en un formulario
+ * @param {string} formType - Tipo de formulario ('registro' o 'edicion')
+ */
+function configurarInputImagen(formType) {
+  const inputId = formType === 'registro' ? 'imagenPerfil' : 'imagenPerfilEdit';
+  const previewId = formType === 'registro' ? 'previewImagenRegistro' : 'previewImagenEdicion';
+  
+  const input = document.getElementById(inputId);
+  const preview = document.getElementById(previewId);
+  
+  if (input && preview) {
+    input.addEventListener('change', (event) => {
+      manejarCambioImagen(event, previewId, formType);
+    });
+  }
+}
+
+/**
+ * Maneja el cambio de imagen en el input file
+ * @param {Event} event - Evento de cambio
+ * @param {string} previewId - ID del elemento de previsualización
+ * @param {string} formType - Tipo de formulario
+ */
+function manejarCambioImagen(event, previewId, formType) {
+  const file = event.target.files[0];
+  const previewContainer = document.getElementById(previewId);
+  
+  if (!file) {
+    limpiarPreviewImagen(formType);
+    return;
+  }
+  
+  // Validar archivo
+  try {
+    validarArchivoImagen(file);
+  } catch (error) {
+    mostrarMensaje('error', '❌ Archivo no válido', error.message);
+    event.target.value = '';
+    limpiarPreviewImagen(formType);
+    return;
+  }
+  
+  // Crear previsualización
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    mostrarPreviewImagen(e.target.result, file.name, formatFileSize(file.size), previewId, formType);
+  };
+  reader.readAsDataURL(file);
+}
+
+/**
+ * Muestra la previsualización de la imagen
+ * @param {string} imageSrc - Src de la imagen
+ * @param {string} fileName - Nombre del archivo
+ * @param {string} fileSize - Tamaño del archivo formateado
+ * @param {string} previewId - ID del contenedor de preview
+ * @param {string} formType - Tipo de formulario
+ */
+function mostrarPreviewImagen(imageSrc, fileName, fileSize, previewId, formType) {
+  const previewContainer = document.getElementById(previewId);
+  
+  if (previewContainer) {
+    previewContainer.innerHTML = `
+      <div class="image-preview-container">
+        <div class="image-preview-header">
+          <h5><i class="fas fa-camera"></i> Foto de Perfil</h5>
+          <button type="button" class="btn btn-sm btn-danger" onclick="limpiarPreviewImagen('${formType}')">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="image-preview-content">
+          <img src="${imageSrc}" alt="Preview" class="preview-image">
+          <div class="image-info">
+            <div class="image-name" title="${fileName}">${fileName.length > 30 ? fileName.substring(0, 27) + '...' : fileName}</div>
+            <div class="image-size">${fileSize}</div>
+          </div>
+        </div>
+      </div>
+    `;
+    previewContainer.style.display = 'block';
+  }
+}
+
+/**
+ * Limpia la previsualización de imagen
+ * @param {string} formType - Tipo de formulario
+ */
+function limpiarPreviewImagen(formType) {
+  const inputId = formType === 'registro' ? 'imagenPerfil' : 'imagenPerfilEdit';
+  const previewId = formType === 'registro' ? 'previewImagenRegistro' : 'previewImagenEdicion';
+  
+  const input = document.getElementById(inputId);
+  const previewContainer = document.getElementById(previewId);
+  
+  if (input) {
+    input.value = '';
+  }
+  
+  if (previewContainer) {
+    previewContainer.innerHTML = '';
+    previewContainer.style.display = 'none';
+  }
+  
+  // Limpiar checkbox de eliminar si existe
+  const eliminarCheckbox = document.getElementById('eliminarImagenActual');
+  if (eliminarCheckbox) {
+    eliminarCheckbox.checked = false;
+  }
+}
+
+/**
+ * Valida un archivo de imagen
+ * @param {File} file - Archivo a validar
+ * @throws {Error} Si el archivo no es válido
+ */
+function validarArchivoImagen(file) {
+  // Validar tipo MIME
+  const tiposPermitidos = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+  
+  if (!tiposPermitidos.includes(file.type)) {
+    throw new Error(`Tipo de archivo no permitido: ${file.type}. Solo se permiten: JPG, PNG, WebP, GIF`);
+  }
+  
+  // Validar tamaño (máximo 5MB para foto de perfil)
+  const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+  if (file.size > MAX_SIZE) {
+    throw new Error(`El archivo es demasiado grande: ${formatFileSize(file.size)}. Máximo permitido: 5MB`);
+  }
+  
+  // Validar nombre del archivo
+  if (file.name.length > 255) {
+    throw new Error('El nombre del archivo es demasiado largo');
+  }
+}
+
+/**
+ * Muestra la imagen actual del paciente en el modal de edición
+ * @param {Object} paciente - Datos del paciente
+ */
+async function mostrarImagenActualPaciente(paciente) {
+  const currentContainer = document.getElementById('editCurrentImageContainer');
+  const uploadArea = document.getElementById('editImageUploadArea');
+  const currentImage = document.getElementById('editCurrentImage');
+  
+  if (!currentContainer || !uploadArea || !currentImage) {
+    console.warn('Elementos de imagen en modal de edición no encontrados');
+    return;
+  }
+  
+  try {
+    // Intentar obtener imagen del paciente
+    const imageUrl = await PacienteImageService.obtenerImagenPerfil(paciente);
+    
+    if (imageUrl) {
+      // Mostrar imagen actual
+      currentImage.src = imageUrl;
+      currentImage.alt = `Foto de ${paciente.nombre}`;
+      currentContainer.style.display = 'block';
+      uploadArea.style.display = 'none';
+      
+      // Resetear flag de eliminación
+      window.removeCurrentPhoto = false;
+    } else {
+      // No tiene imagen, mostrar área de upload
+      currentContainer.style.display = 'none';
+      uploadArea.style.display = 'block';
+    }
+  } catch (error) {
+    console.error('Error cargando imagen actual del paciente:', error);
+    // En caso de error, mostrar área de upload
+    currentContainer.style.display = 'none';
+    uploadArea.style.display = 'block';
+  }
+}
+
+// Función eliminada: cargarResumenImagenes - Ya no se usa con el nuevo sistema de fotos de perfil// Funciones para manejar modales
 function mostrarModalVerPaciente() {
   document.getElementById('modalVerPaciente').style.display = 'flex';
 }
@@ -1904,7 +2660,7 @@ async function initFacultadesCarrerasEditar() {
   }
 }
 
-function llenarFormularioEdicion(paciente) {
+async function llenarFormularioEdicion(paciente) {
   // Datos personales
   document.getElementById('editMatricula').value = paciente.matricula;
   document.getElementById('editNombres').value = paciente.nombre;
@@ -1913,6 +2669,12 @@ function llenarFormularioEdicion(paciente) {
   document.getElementById('editGrado').value = paciente.grado;
   document.getElementById('editGrupo').value = paciente.grupo;
   document.getElementById('editTelefono').value = paciente.telefono;
+  
+  // Mostrar imagen actual del paciente
+  await mostrarImagenActualPaciente(paciente);
+  
+  // Configurar input de imagen para edición
+  configurarInputImagen('edicion');
   
   // Seleccionar facultad y carrera
   const editFacultadSelect = document.getElementById('editFacultad');
@@ -1974,6 +2736,18 @@ function cerrarModalEditarPaciente() {
   if (typeof window.resetFacultadesCarrerasEditar === 'function') {
     window.resetFacultadesCarrerasEditar();
   }
+  
+  // Limpiar estado de imagen
+  window.removeCurrentPhoto = false;
+  
+  // Limpiar vista previa de imagen
+  const previewContainer = document.getElementById('editImagePreviewContainer');
+  const uploadArea = document.getElementById('editUploadArea');
+  const currentContainer = document.getElementById('editCurrentImageContainer');
+  
+  if (previewContainer) previewContainer.style.display = 'none';
+  if (uploadArea) uploadArea.style.display = 'block';
+  if (currentContainer) currentContainer.style.display = 'none';
 }
 
 async function handleEditarPacienteSubmit(event) {
@@ -1995,6 +2769,11 @@ async function handleEditarPacienteSubmit(event) {
     mostrarMensaje('error', '❌ Errores de Validación', errorMessage, 8000);
     return;
   }
+  
+  // Verificar si hay nueva imagen
+  const nuevaImagen = formData.get('fotoPerfil') || document.getElementById('editFotoPerfil').files[0];
+  const tieneNuevaImagen = nuevaImagen && nuevaImagen.size > 0;
+  const eliminarImagenActual = window.removeCurrentPhoto === true;
   
   // Mostrar advertencias si existen
   if (validation.warnings.length > 0) {
@@ -2042,6 +2821,48 @@ async function handleEditarPacienteSubmit(event) {
     if (!pacienteActual) {
       mostrarMensaje('error', '❌ Error', 'No se pudo encontrar el paciente para actualizar.');
       return;
+    }
+    
+    // Manejar cambios de imagen de perfil
+    if (eliminarImagenActual && pacienteActual.fotoPerfilId) {
+      try {
+        // Usar el nuevo sistema de imágenes para eliminar
+        const modelToUse = imageStorageModel || imageStorageModelDefault;
+        await modelToUse.eliminarImagen(pacienteActual.fotoPerfilId);
+        
+        // Actualizar paciente para remover referencia
+        await pacienteModel.updatePaciente(pacienteId, { fotoPerfilId: null });
+        console.log('✅ Foto de perfil eliminada');
+        
+        mostrarMensaje('success', '✅ Éxito', 'Foto de perfil eliminada correctamente.');
+      } catch (error) {
+        console.warn('⚠️ Error eliminando foto de perfil:', error);
+        mostrarMensaje('warning', '⚠️ Advertencia', 'Los datos se actualizaron, pero hubo un problema eliminando la foto.');
+      }
+    } else if (tieneNuevaImagen) {
+      try {
+        const metadataImagen = {
+          descripcion: `Foto de perfil de ${nombre} ${apellidos}`,
+          usuarioId: usuarioActual.id,
+          usuarioNombre: usuarioActual.nombre,
+          fechaSubida: new Date().toISOString()
+        };
+        
+        // Usar el nuevo sistema de imágenes para subir
+        const modelToUse = imageStorageModel || imageStorageModelDefault;
+        const resultado = await modelToUse.subirFotoPerfil(nuevaImagen, pacienteId, metadataImagen);
+        
+        if (resultado && resultado.success) {
+          // Actualizar referencia en el paciente
+          await pacienteModel.updatePaciente(pacienteId, { fotoPerfilId: resultado.imageId });
+          mostrarMensaje('success', '✅ Éxito', 'Foto de perfil actualizada correctamente.');
+        } else {
+          throw new Error('Error en el resultado de subida');
+        }
+      } catch (error) {
+        console.error('Error actualizando foto de perfil:', error);
+        mostrarMensaje('warning', '⚠️ Advertencia', 'Los datos del paciente se actualizaron, pero hubo un problema con la foto de perfil: ' + error.message);
+      }
     }
     
     // Actualizar datos personales
@@ -2225,6 +3046,86 @@ async function abrirModalEditarPaciente() {
   await editarPaciente(pacienteId);
 }
 
+// ======================================
+// FUNCIONES HELPER PARA NUEVO SISTEMA DE IMÁGENES
+// ======================================
+
+/**
+ * Obtener imagen del sistema local de almacenamiento
+ */
+// Función eliminada - reemplazada por PacienteImageService.obtenerImagenPerfil()
+
+/**
+ * Mostrar imagen por defecto cuando no hay foto de perfil
+ */
+function mostrarImagenPorDefecto(contenedor) {
+  contenedor.innerHTML = `
+    <div class="modal-no-image">
+      <i class="fas fa-user-circle"></i>
+    </div>
+  `;
+}
+
+/**
+ * Mostrar indicador de carga mientras se obtiene la imagen
+ */
+function mostrarCargandoImagen(contenedor) {
+  contenedor.innerHTML = `
+    <div class="modal-loading-image">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Cargando imagen...</span>
+    </div>
+  `;
+}
+
+/**
+ * Cargar imagen de paciente con indicador de progreso
+ */
+async function cargarImagenPacienteConProgreso(paciente, contenedor, esParaModal = true) {
+  if (!contenedor) {
+    console.warn('⚠️ No se proporcionó contenedor para cargar imagen');
+    return;
+  }
+  
+  // Mostrar indicador de carga
+  mostrarCargandoImagen(contenedor);
+  
+  try {
+    // Usar el service para obtener la imagen
+    const imageUrl = await PacienteImageService.obtenerImagenPerfil(paciente);
+    
+    if (imageUrl) {
+      if (esParaModal) {
+        contenedor.innerHTML = `
+          <img src="${imageUrl}" 
+               alt="Foto de ${paciente.nombre}" 
+               class="modal-profile-image"
+               onclick="mostrarImagenCompleta('${imageUrl}', 'Foto de ${paciente.nombre} ${paciente.apellidos || ''}', 'Foto de perfil del paciente')">
+        `;
+      } else {
+        // Para otros contextos (como el modal de edición)
+        if (typeof setupCurrentImageDisplay === 'function') {
+          setupCurrentImageDisplay(imageUrl);
+        }
+      }
+      return;
+    }
+    
+    // No hay imagen
+    console.log('⚠️ No se encontró imagen para mostrar, usando imagen por defecto');
+    mostrarImagenPorDefecto(contenedor);
+    
+  } catch (error) {
+    console.error('💥 Error cargando imagen del paciente:', error);
+    mostrarImagenPorDefecto(contenedor);
+  }
+}
+
+// Exponer service layer para testing (solo en desarrollo)
+if (window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+  window.PacienteImageService = PacienteImageService;
+}
+
 // Hacer funciones globales para compatibilidad con HTML
 window.cargarDatosPaciente = cargarDatosPaciente;
 window.cargarDatosPacienteSelect = cargarDatosPacienteSelect;
@@ -2242,5 +3143,6 @@ window.abrirModalEditarPaciente = abrirModalEditarPaciente;
 window.cerrarModalEditarPaciente = cerrarModalEditarPaciente;
 window.verDetallesHistorialMedico = verDetallesHistorialMedico;
 window.eliminarRegistroHistorial = eliminarRegistroHistorial;
+// cargarImagenPacienteConProgreso - solo para uso interno del controlador
 window.mostrarModalHistorialMedico = mostrarModalHistorialMedico;
 window.cerrarModalHistorialMedico = cerrarModalHistorialMedico;

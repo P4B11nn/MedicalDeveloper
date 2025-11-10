@@ -404,6 +404,188 @@
       left: auto;
     }
 
+    /* Estilos para imagen de perfil en modales */
+    .modal-profile-section {
+      text-align: center;
+      padding: 20px;
+      border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 20px;
+    }
+
+    .modal-profile-container {
+      display: inline-block;
+      position: relative;
+    }
+
+    .modal-profile-image {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #e2e8f0;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .modal-profile-image:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .modal-no-image {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      font-size: 48px;
+      border: 3px solid #e2e8f0;
+    }
+
+    /* Estilos para componente de carga de imagen */
+    .image-upload-container {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .upload-area {
+      border: 2px dashed #d1d5db;
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f9fafb;
+    }
+
+    .upload-area:hover {
+      border-color: #3b82f6;
+      background: #f0f9ff;
+    }
+
+    .upload-content i {
+      font-size: 48px;
+      color: #6b7280;
+      margin-bottom: 16px;
+    }
+
+    .upload-content p {
+      font-size: 16px;
+      font-weight: 600;
+      color: #374151;
+      margin: 0 0 8px 0;
+    }
+
+    .upload-content span {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .image-preview {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 0 auto 20px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 3px solid #e5e7eb;
+    }
+
+    .preview-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .btn-remove-image {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(220, 38, 38, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn-remove-image:hover {
+      background: rgba(220, 38, 38, 1);
+    }
+
+    /* Estilos para edición de imagen */
+    .edit-image-container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .current-image-preview {
+      text-align: center;
+      padding: 20px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      background: #f9fafb;
+      margin-bottom: 20px;
+    }
+
+    .current-profile-image {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #e5e7eb;
+      margin-bottom: 15px;
+    }
+
+    .image-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-change-image, .btn-remove-current {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-change-image {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-change-image:hover {
+      background: #2563eb;
+    }
+
+    .btn-remove-current {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-remove-current:hover {
+      background: #dc2626;
+    }
+
     .user-dropdown {
       position: absolute;
       top: 100%;
@@ -1476,6 +1658,29 @@
                   <input type="tel" id="telefono" name="telefono" placeholder="Ej: 5551234567" required>
                 </div>
               </div>
+
+              <!-- Campo de foto de perfil -->
+              <div class="form-row">
+                <div class="form-group col-md-12">
+                  <label>Foto de Perfil (opcional):</label>
+                  <div class="image-upload-container">
+                    <div class="image-preview" id="imagePreviewContainer" style="display: none;">
+                      <img id="imagePreview" src="" alt="Vista previa" class="preview-image">
+                      <button type="button" class="btn-remove-image" onclick="removeImagePreview()" title="Quitar imagen">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
+                    <div class="upload-area" id="uploadArea">
+                      <input type="file" id="fotoPerfil" name="fotoPerfil" accept="image/jpeg,image/png,image/jpg" style="display: none;">
+                      <div class="upload-content" onclick="document.getElementById('fotoPerfil').click()">
+                        <i class="fas fa-camera"></i>
+                        <p>Seleccionar foto de perfil</p>
+                        <span>JPG, PNG - Máximo 5MB</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               
                 <div class="form-actions">
                   <button type="button" class="btn-secondary">
@@ -1550,6 +1755,15 @@
               <button type="button" class="modal-close" onclick="cerrarModalVerPaciente()">&times;</button>
             </div>
             <div class="modal-body modal-scrollable">
+              <!-- Foto de perfil -->
+              <div class="modal-profile-section">
+                <div id="modalImagenPerfil" class="modal-profile-container">
+                  <div class="modal-no-image">
+                    <i class="fas fa-user-circle"></i>
+                  </div>
+                </div>
+              </div>
+              
               <!-- Información Personal -->
               <div class="info-section">
                 <h4><i class="fas fa-user"></i> Información Personal</h4>
@@ -1731,6 +1945,48 @@
                     <select id="editCarrera" name="carrera" required>
                       <option value="">Seleccione una carrera</option>
                     </select>
+                  </div>
+
+                  <!-- Campo de foto de perfil -->
+                  <div class="form-group">
+                    <label>Foto de Perfil:</label>
+                    <div class="edit-image-container">
+                      <!-- Imagen actual -->
+                      <div id="editCurrentImageContainer" style="display: none;">
+                        <div class="current-image-preview">
+                          <div class="image-wrapper" style="position: relative;">
+                            <img id="editCurrentImage" src="" alt="Foto actual" class="current-profile-image">
+                            <!-- Botón eliminar en esquina superior derecha -->
+                            <button type="button" class="btn-remove-image-overlay" onclick="removeCurrentImage()" title="Eliminar foto">
+                              <i class="fas fa-times"></i>
+                            </button>
+                          </div>
+                          <div class="image-actions">
+                            <button type="button" class="btn-change-image" onclick="selectNewImage()">
+                              <i class="fas fa-camera"></i> Cambiar foto
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- Área para nueva imagen -->
+                      <div id="editImageUploadArea" class="image-upload-container">
+                        <div class="image-preview" id="editImagePreviewContainer" style="display: none;">
+                          <img id="editImagePreview" src="" alt="Vista previa" class="preview-image">
+                          <button type="button" class="btn-remove-image" onclick="removeEditImagePreview()" title="Quitar imagen">
+                            <i class="fas fa-times"></i>
+                          </button>
+                        </div>
+                        <div class="upload-area" id="editUploadArea">
+                          <input type="file" id="editFotoPerfil" name="fotoPerfil" accept="image/jpeg,image/png,image/jpg" style="display: none;">
+                          <div class="upload-content" onclick="document.getElementById('editFotoPerfil').click()">
+                            <i class="fas fa-camera"></i>
+                            <p>Seleccionar nueva foto</p>
+                            <span>JPG, PNG - Máximo 5MB</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -2148,7 +2404,13 @@
     // HeaderComponent eliminado, ahora usamos header individual
     import '../js/utils/eventBusManager.js';      // Event Bus monitoring
     import '../js/utils/performanceMonitor.js';   // Performance monitoring
-    import '../js/utils/architectureValidator.js'; // Architecture validation
+    
+    // Nuevo sistema de imágenes
+    import '../js/models/imageStorageAlternative.js';
+    import { imageStorageModel } from '../js/models/imageStorageModelNew.js';
+    
+    // Hacer imageStorageModel disponible para verificación (temporal)
+    window._imageStorageModelTest = imageStorageModel;
     
     // "Mini-Modelo" para facultades y carreras (igual que en pacienteView.js)
     const facultadesYCarreras = {
@@ -2518,7 +2780,6 @@
 
   <script type="module">
     import '../js/utils/userDisplayGlobal.js'; // Cargar userDisplayGlobal antes del header
-    import '../categories-debug-tool.js'; // Debug tool para categorías
     import '../js/utils/debug-logout-modal.js'; // Debug tool para modal de logout
     import { authModel } from '../js/models/storageModel.js'; // Importar authModel
     
@@ -2587,6 +2848,42 @@
       outline-offset: 2px;
     }
 
+    /* Estilos para el botón de eliminar foto en overlay */
+    .image-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .btn-remove-image-overlay {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(220, 38, 38, 0.9);
+      color: white;
+      border: 2px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 12px;
+      z-index: 10;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-remove-image-overlay:hover {
+      background: rgba(185, 28, 28, 1);
+      transform: scale(1.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn-remove-image-overlay:active {
+      transform: scale(0.95);
+    }
+
     @media (max-width: 480px) {
       #floatingHelpLabel { display: none; }
       #floatingHelpWrapper { right: 12px; bottom: 12px; }
@@ -2622,6 +2919,230 @@
         }
       });
     })();
+
+    // Función para mostrar imagen en tamaño completo
+    function mostrarImagenCompleta(url, alt, titulo) {
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.style.display = 'block';
+      modal.style.background = 'rgba(0,0,0,0.8)';
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 90vw; max-height: 90vh; text-align: center; background: white; border-radius: 10px; padding: 20px;">
+          <div class="modal-header">
+            <h3>${titulo}</h3>
+            <button type="button" class="modal-close" onclick="this.closest('.modal').remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666; position: absolute; right: 15px; top: 15px;">&times;</button>
+          </div>
+          <div style="display: flex; justify-content: center; align-items: center; max-height: 70vh; overflow: hidden; margin-top: 20px;">
+            <img src="${url}" alt="${alt}" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px;">
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Cerrar al hacer clic fuera de la imagen
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+      
+      // Cerrar con la tecla Escape
+      document.addEventListener('keydown', function escHandler(e) {
+        if (e.key === 'Escape') {
+          modal.remove();
+          document.removeEventListener('keydown', escHandler);
+        }
+      });
+    }
+
+    // Funciones para manejar la vista previa de imagen
+    function setupImagePreview() {
+      const fileInput = document.getElementById('fotoPerfil');
+      if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (file) {
+            handleImageSelection(file);
+          }
+        });
+      }
+    }
+
+    function handleImageSelection(file) {
+      // Validar tipo de archivo
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!validTypes.includes(file.type)) {
+        alert('Por favor selecciona un archivo JPG o PNG válido.');
+        return;
+      }
+
+      // Validar tamaño (5MB máximo)
+      const maxSize = 5 * 1024 * 1024; // 5MB en bytes
+      if (file.size > maxSize) {
+        alert('La imagen es muy grande. Por favor selecciona una imagen menor a 5MB.');
+        return;
+      }
+
+      // Mostrar vista previa
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        showImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function showImagePreview(imageSrc) {
+      const previewContainer = document.getElementById('imagePreviewContainer');
+      const previewImg = document.getElementById('imagePreview');
+      const uploadArea = document.getElementById('uploadArea');
+
+      if (previewContainer && previewImg && uploadArea) {
+        previewImg.src = imageSrc;
+        previewContainer.style.display = 'block';
+        uploadArea.style.display = 'none';
+      }
+    }
+
+    function removeImagePreview() {
+      const previewContainer = document.getElementById('imagePreviewContainer');
+      const uploadArea = document.getElementById('uploadArea');
+      const fileInput = document.getElementById('fotoPerfil');
+
+      if (previewContainer && uploadArea && fileInput) {
+        previewContainer.style.display = 'none';
+        uploadArea.style.display = 'block';
+        fileInput.value = ''; // Limpiar el input
+      }
+    }
+
+    // Funciones para edición de imagen
+    function setupEditImagePreview() {
+      const editFileInput = document.getElementById('editFotoPerfil');
+      if (editFileInput) {
+        editFileInput.addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (file) {
+            handleEditImageSelection(file);
+          }
+        });
+      }
+    }
+
+    function handleEditImageSelection(file) {
+      // Validar tipo de archivo
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!validTypes.includes(file.type)) {
+        alert('Por favor selecciona un archivo JPG o PNG válido.');
+        return;
+      }
+
+      // Validar tamaño (5MB máximo)
+      const maxSize = 5 * 1024 * 1024; // 5MB en bytes
+      if (file.size > maxSize) {
+        alert('La imagen es muy grande. Por favor selecciona una imagen menor a 5MB.');
+        return;
+      }
+
+      // Mostrar vista previa
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        showEditImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function showEditImagePreview(imageSrc) {
+      const previewContainer = document.getElementById('editImagePreviewContainer');
+      const previewImg = document.getElementById('editImagePreview');
+      const uploadArea = document.getElementById('editUploadArea');
+
+      if (previewContainer && previewImg && uploadArea) {
+        previewImg.src = imageSrc;
+        previewContainer.style.display = 'block';
+        uploadArea.style.display = 'none';
+      }
+    }
+
+    function removeEditImagePreview() {
+      const previewContainer = document.getElementById('editImagePreviewContainer');
+      const uploadArea = document.getElementById('editUploadArea');
+      const fileInput = document.getElementById('editFotoPerfil');
+
+      if (previewContainer && uploadArea && fileInput) {
+        previewContainer.style.display = 'none';
+        uploadArea.style.display = 'block';
+        fileInput.value = ''; // Limpiar el input
+      }
+    }
+
+    function selectNewImage() {
+      document.getElementById('editFotoPerfil').click();
+    }
+
+    function removeCurrentImage() {
+      const currentContainer = document.getElementById('editCurrentImageContainer');
+      const uploadArea = document.getElementById('editImageUploadArea');
+      
+      if (currentContainer && uploadArea) {
+        currentContainer.style.display = 'none';
+        uploadArea.style.display = 'block';
+        // Marcar para eliminación
+        window.removeCurrentPhoto = true;
+      }
+    }
+
+    function setupCurrentImageDisplay(imageUrl) {
+      const currentContainer = document.getElementById('editCurrentImageContainer');
+      const currentImage = document.getElementById('editCurrentImage');
+      const uploadArea = document.getElementById('editImageUploadArea');
+      
+      if (imageUrl && currentContainer && currentImage && uploadArea) {
+        currentImage.src = imageUrl;
+        currentContainer.style.display = 'block';
+        uploadArea.style.display = 'none';
+        window.removeCurrentPhoto = false;
+      } else if (currentContainer && uploadArea) {
+        currentContainer.style.display = 'none';
+        uploadArea.style.display = 'block';
+        window.removeCurrentPhoto = false;
+      }
+    }
+
+    // Funciones globales para el modal de editar paciente
+    window.selectNewImage = function() {
+      document.getElementById('editFotoPerfil').click();
+    };
+    
+    window.removeCurrentImage = function() {
+      const currentContainer = document.getElementById('editCurrentImageContainer');
+      const uploadArea = document.getElementById('editImageUploadArea');
+      
+      if (currentContainer && uploadArea) {
+        currentContainer.style.display = 'none';
+        uploadArea.style.display = 'block';
+        // Marcar para eliminación
+        window.removeCurrentPhoto = true;
+      }
+    };
+    
+    window.removeEditImagePreview = function() {
+      const previewContainer = document.getElementById('editImagePreviewContainer');
+      const uploadArea = document.getElementById('editUploadArea');
+      const fileInput = document.getElementById('editFotoPerfil');
+
+      if (previewContainer && uploadArea && fileInput) {
+        previewContainer.style.display = 'none';
+        uploadArea.style.display = 'block';
+        fileInput.value = ''; // Limpiar el input
+      }
+    };
+
+    // Inicializar cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+      setupImagePreview();
+      setupEditImagePreview();
+    });
   </script>
 </body>
 </html>

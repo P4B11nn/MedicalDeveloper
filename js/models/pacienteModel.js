@@ -15,6 +15,7 @@ import {
     setDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { imageStorageModel } from './imageStorageModelNew.js';
 
 // --- CONSTANTES ---
 const PACIENTES_COLLECTION = "pacientes";
@@ -157,6 +158,9 @@ export const pacienteModel = {
         examenOido: null,
         fechaRegistroMedico: null
       };
+
+      // Inicializar campo para el nuevo sistema de imágenes
+      pacienteParaGuardar.fotoPerfilId = null;
 
       // El status será 'sin_datos_medicos' hasta que se complete la información médica
       pacienteParaGuardar.status = 'sin_datos_medicos';
@@ -647,5 +651,442 @@ export const pacienteModel = {
       const nombreB = `${b.nombre} ${b.apellidos || ''}`.toLowerCase().trim();
       return nombreA.localeCompare(nombreB);
     });
+  },
+
+  // === FUNCIONES PARA MANEJO DE IMÁGENES MÉDICAS ===
+
+  /**
+   * Guarda una o múltiples imágenes médicas para un paciente
+   * @param {string} pacienteId - ID del paciente
+   * @param {FileList|Array|File} files - Archivos de imagen
+   * @param {Object} metadata - Metadata adicional
+   * @returns {Promise<Object>} Resultado de la subida
+   */
+  async guardarImagenesMedicas(pacienteId, files, metadata = {}) {
+    try {
+      console.log(`📸 Guardando imágenes médicas para paciente ${pacienteId}...`);
+      
+      // Verificar que el paciente existe
+      const paciente = await this.getPaciente(pacienteId);
+      if (!paciente) {
+        throw new Error('Paciente no encontrado');
+      }
+
+      // Convertir File único a array si es necesario
+      const filesArray = files instanceof FileList ? Array.from(files) : 
+                        files instanceof File ? [files] : 
+                        Array.isArray(files) ? files : [files];
+
+      if (filesArray.length === 0) {
+        throw new Error('No se proporcionaron archivos para subir');
+      }
+
+      // Metadata completo para las imágenes
+      const imageMetadata = {
+        pacienteNombre: `${paciente.nombre} ${paciente.apellidos || ''}`.trim(),
+        pacienteMatricula: paciente.matricula,
+        tipoImagen: metadata.tipoImagen || 'historial',
+        categoria: metadata.categoria || 'general',
+        descripcion: metadata.descripcion || '',
+        usuarioId: metadata.usuarioId,
+        usuarioNombre: metadata.usuarioNombre,
+        fechaRegistro: new Date().toISOString()
+      };
+
+      let resultado;
+      
+      if (filesArray.length === 1) {
+        // Subir imagen única
+        resultado = await imageStorageModel.subirImagenMedica(
+          filesArray[0], 
+          pacienteId, 
+          imageMetadata.tipoImagen, 
+          imageMetadata
+        );
+        
+        // Crear registro en colección de imágenes médicas
+        await this.registrarImagenEnHistorial(pacienteId, resultado, imageMetadata);
+        
+      } else {
+        // Subir múltiples imágenes
+        resultado = await imageStorageModel.subirMultiplesImagenes(
+          filesArray, 
+          pacienteId, 
+          imageMetadata.tipoImagen, 
+          imageMetadata
+        );
+        
+        // Registrar cada imagen exitosa en el historial
+        for (const imagen of resultado.exitosas) {
+          await this.registrarImagenEnHistorial(pacienteId, imagen, imageMetadata);
+        }
+      }
+
+      console.log('✅ Imágenes médicas guardadas exitosamente');
+      return resultado;
+
+    } catch (error) {
+      console.error('❌ Error guardando imágenes médicas:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Registra una imagen en el historial médico del paciente
+   * @param {string} pacienteId - ID del paciente
+   * @param {Object} imagenData - Datos de la imagen
+   * @param {Object} metadata - Metadata adicional
+   * @returns {Promise<Object>} Registro creado
+   */
+  async registrarImagenEnHistorial(pacienteId, imagenData, metadata) {
+    try {
+      const registroImagen = {
+        // Información del paciente
+        pacienteId: pacienteId,
+        pacienteNombre: metadata.pacienteNombre,
+        pacienteMatricula: metadata.pacienteMatricula,
+        
+        // Información de la imagen
+        imagenId: imagenData.id,
+        imagenURL: imagenData.downloadURL,
+        imagenPath: imagenData.filePath,
+        nombreArchivo: imagenData.fileName,
+        nombreOriginal: imagenData.originalName,
+        tipoImagen: imagenData.tipoImagen,
+        categoria: metadata.categoria,
+        descripcion: metadata.descripcion,
+        tamañoArchivo: imagenData.size,
+        tipoContenido: imagenData.contentType,
+        
+        // Información del registro
+        fechaSubida: imagenData.fechaSubida,
+        fechaRegistro: metadata.fechaRegistro,
+        usuarioId: metadata.usuarioId,
+        usuarioNombre: metadata.usuarioNombre,
+        
+        // Metadatos del sistema
+        timestamp: serverTimestamp(),
+        tipoRegistro: 'imagen_medica',
+        activo: true
+      };
+
+      // Guardar en colección específica de imágenes médicas
+      const imagenesCollection = collection(db, 'imagenes_medicas');
+      const docRef = await addDoc(imagenesCollection, registroImagen);
+
+      console.log(`✅ Imagen registrada en historial con ID: ${docRef.id}`);
+      
+      return {
+        id: docRef.id,
+        ...registroImagen
+      };
+
+    } catch (error) {
+      console.error('❌ Error registrando imagen en historial:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtiene todas las imágenes médicas de un paciente
+   * @param {string} pacienteId - ID del paciente
+   * @param {string} tipoImagen - Filtro por tipo (opcional)
+   * @returns {Promise<Array>} Array de imágenes
+   */
+  async getImagenesMedicasPaciente(pacienteId, tipoImagen = null) {
+    try {
+      console.log(`🖼️ Obteniendo imágenes médicas del paciente ${pacienteId}...`);
+
+      // Obtener desde Firebase Storage
+      const imagenesStorage = await imageStorageModel.obtenerImagenesPaciente(pacienteId, tipoImagen);
+      
+      // Obtener registros del historial médico (para metadata adicional)
+      const imagenesCollection = collection(db, 'imagenes_medicas');
+      let q = query(imagenesCollection, where('pacienteId', '==', pacienteId), where('activo', '==', true));
+      
+      if (tipoImagen) {
+        q = query(q, where('tipoImagen', '==', tipoImagen));
+      }
+
+      const snapshot = await getDocs(q);
+      const registrosImagenes = {};
+      
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        registrosImagenes[data.imagenId] = {
+          registroId: doc.id,
+          ...data
+        };
+      });
+
+      // Combinar datos de Storage con registros del historial
+      const imagenesCombinadas = imagenesStorage.map(imagen => {
+        const registro = registrosImagenes[imagen.id] || {};
+        return {
+          ...imagen,
+          registroId: registro.registroId,
+          categoria: registro.categoria || 'general',
+          descripcion: registro.descripcion || '',
+          fechaRegistro: registro.fechaRegistro || imagen.fechaSubida,
+          usuarioRegistro: registro.usuarioNombre || 'Sistema'
+        };
+      });
+
+      console.log(`✅ ${imagenesCombinadas.length} imágenes médicas obtenidas para paciente ${pacienteId}`);
+      return imagenesCombinadas;
+
+    } catch (error) {
+      console.error('❌ Error obteniendo imágenes médicas del paciente:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Elimina una imagen médica
+   * @param {string} pacienteId - ID del paciente
+   * @param {string} imagenId - ID de la imagen
+   * @param {string} filePath - Ruta del archivo en Storage
+   * @returns {Promise<boolean>} True si se eliminó correctamente
+   */
+  async eliminarImagenMedica(pacienteId, imagenId, filePath) {
+    try {
+      console.log(`🗑️ Eliminando imagen médica ${imagenId} del paciente ${pacienteId}...`);
+
+      // Marcar como inactivo en el registro del historial (soft delete)
+      const imagenesCollection = collection(db, 'imagenes_medicas');
+      const q = query(imagenesCollection, where('pacienteId', '==', pacienteId), where('imagenId', '==', imagenId));
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        const registroDoc = snapshot.docs[0];
+        await updateDoc(registroDoc.ref, {
+          activo: false,
+          fechaEliminacion: new Date().toISOString(),
+          eliminadoPor: this.getCurrentUserName(),
+          updatedAt: serverTimestamp()
+        });
+      }
+
+      // Eliminar archivo de Storage
+      await imageStorageModel.eliminarImagen(filePath);
+
+      console.log(`✅ Imagen médica ${imagenId} eliminada exitosamente`);
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error eliminando imagen médica:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Actualiza la metadata de una imagen médica
+   * @param {string} pacienteId - ID del paciente
+   * @param {string} imagenId - ID de la imagen
+   * @param {Object} nuevaMetadata - Nueva metadata
+   * @returns {Promise<boolean>} True si se actualizó correctamente
+   */
+  async actualizarMetadataImagen(pacienteId, imagenId, nuevaMetadata) {
+    try {
+      console.log(`🔄 Actualizando metadata de imagen ${imagenId}...`);
+
+      const imagenesCollection = collection(db, 'imagenes_medicas');
+      const q = query(imagenesCollection, where('pacienteId', '==', pacienteId), where('imagenId', '==', imagenId));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        throw new Error('Registro de imagen no encontrado');
+      }
+
+      const registroDoc = snapshot.docs[0];
+      const updateData = {
+        ...nuevaMetadata,
+        fechaActualizacion: new Date().toISOString(),
+        actualizadoPor: this.getCurrentUserName(),
+        updatedAt: serverTimestamp()
+      };
+
+      await updateDoc(registroDoc.ref, updateData);
+
+      console.log(`✅ Metadata de imagen ${imagenId} actualizada exitosamente`);
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error actualizando metadata de imagen:', error);
+      throw error;
+    }
+  },
+
+  // Función eliminada: getEstadisticasImagenesPaciente - Ya no se usa con el nuevo sistema de fotos de perfil
+
+  /**
+   * Obtiene el nombre del usuario actual
+   * @returns {string} Nombre del usuario
+   */
+  getCurrentUserName() {
+    try {
+      const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+      return currentUser.nombre || 'Sistema';
+    } catch (error) {
+      return 'Sistema';
+    }
+  },
+
+  // === FUNCIONES PARA FOTO DE PERFIL ===
+
+  /**
+   * Actualiza la foto de perfil de un paciente
+   * @param {string} pacienteId - ID del paciente
+   * @param {File} imagenFile - Archivo de imagen
+   * @param {Object} metadata - Metadata adicional
+   * @returns {Promise<Object>} Resultado de la actualización
+   */
+  async actualizarFotoPerfil(pacienteId, imagenFile, metadata = {}) {
+    try {
+      console.log(`📸 Actualizando foto de perfil del paciente ${pacienteId}...`);
+      console.log('📋 Metadata recibida:', metadata);
+      console.log('📄 Archivo de imagen:', {
+        name: imagenFile.name,
+        size: imagenFile.size,
+        type: imagenFile.type
+      });
+      
+      // Verificar que el paciente existe
+      const paciente = await this.getPaciente(pacienteId);
+      if (!paciente) {
+        throw new Error('Paciente no encontrado');
+      }
+
+      // Eliminar foto anterior si existe (nuevo sistema)
+      if (paciente.fotoPerfilId) {
+        try {
+          await imageStorageModel.eliminarImagen(paciente.fotoPerfilId);
+          console.log('✅ Foto anterior eliminada');
+        } catch (error) {
+          console.warn('⚠️ No se pudo eliminar la foto anterior:', error);
+        }
+      }
+      // Fallback: eliminar del sistema anterior si existe
+      else if (paciente.imagenPerfil && paciente.imagenPerfil.filePath) {
+        try {
+          await imageStorageModel.eliminarImagen(paciente.imagenPerfil.filePath);
+          console.log('✅ Foto anterior (sistema legacy) eliminada');
+        } catch (error) {
+          console.warn('⚠️ No se pudo eliminar la foto anterior:', error);
+        }
+      }
+
+      // Subir nueva imagen
+      const imageMetadata = {
+        pacienteNombre: `${paciente.nombre} ${paciente.apellidos || ''}`.trim(),
+        pacienteMatricula: paciente.matricula,
+        tipoImagen: 'perfil',
+        categoria: 'foto_perfil',
+        descripcion: 'Foto de perfil del paciente',
+        usuarioId: metadata.usuarioId || this.getCurrentUserId(),
+        usuarioNombre: metadata.usuarioNombre || this.getCurrentUserName()
+      };
+
+      console.log('📤 Metadata para imageStorage:', imageMetadata);
+
+      // Usar método nuevo sistema de almacenamiento local
+      const imagenSubida = await imageStorageModel.subirFotoPerfil(
+        imagenFile,
+        pacienteId, 
+        imageMetadata
+      );
+
+      console.log('📥 Resultado del nuevo sistema local:', imagenSubida);
+
+      // Actualizar información del paciente con nuevo sistema local
+      const updateData = {
+        // Solo los campos del nuevo sistema de almacenamiento local
+        fotoPerfilId: imagenSubida.imageId
+      };
+
+      console.log('📝 Actualizando paciente con nueva foto de perfil...');
+      await this.updatePaciente(pacienteId, updateData);
+
+      console.log('✅ Foto de perfil actualizada exitosamente');
+      return {
+        success: true,
+        fotoPerfilId: updateData.fotoPerfilId
+      };
+
+    } catch (error) {
+      console.error('❌ Error actualizando foto de perfil:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Elimina la foto de perfil de un paciente
+   * @param {string} pacienteId - ID del paciente
+   * @returns {Promise<boolean>} True si se eliminó correctamente
+   */
+  async eliminarFotoPerfil(pacienteId) {
+    try {
+      console.log(`🗑️ Eliminando foto de perfil del paciente ${pacienteId}...`);
+
+      const paciente = await this.getPaciente(pacienteId);
+      if (!paciente) {
+        throw new Error('Paciente no encontrado');
+      }
+
+      let imagenEliminada = false;
+
+      // Eliminar imagen del nuevo sistema si existe
+      if (paciente.fotoPerfilId) {
+        try {
+          await imageStorageModel.eliminarImagen(paciente.fotoPerfilId);
+          imagenEliminada = true;
+          console.log('✅ Imagen eliminada del nuevo sistema');
+        } catch (error) {
+          console.warn('⚠️ Error eliminando imagen del nuevo sistema:', error);
+        }
+      }
+
+      // Eliminar imagen del sistema anterior si existe (fallback)
+      if (paciente.imagenPerfil && paciente.imagenPerfil.filePath) {
+        try {
+          await imageStorageModel.eliminarImagen(paciente.imagenPerfil.filePath);
+          imagenEliminada = true;
+          console.log('✅ Imagen eliminada del sistema anterior');
+        } catch (error) {
+          console.warn('⚠️ Error eliminando imagen del sistema anterior:', error);
+        }
+      }
+
+      if (!imagenEliminada) {
+        throw new Error('El paciente no tiene foto de perfil');
+      }
+
+      // Limpiar referencias en el paciente
+      const updateData = {
+        fotoPerfilId: null
+      };
+
+      await this.updatePaciente(pacienteId, updateData);
+
+      console.log('✅ Foto de perfil eliminada exitosamente');
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error eliminando foto de perfil:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtiene el ID del usuario actual
+   * @returns {string} ID del usuario
+   */
+  getCurrentUserId() {
+    try {
+      const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+      return currentUser.uid || currentUser.id || 'unknown';
+    } catch (error) {
+      return 'unknown';
+    }
   }
 };

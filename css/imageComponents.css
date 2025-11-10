@@ -1,0 +1,588 @@
+/* CSS adicional para componente de imágenes médicas */
+
+/* === COMPONENTE DE CARGA DE IMÁGENES === */
+.image-upload-component {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    background: #fafafa;
+    margin-bottom: 20px;
+}
+
+.upload-header {
+    margin-bottom: 20px;
+}
+
+.upload-title {
+    color: #333;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.upload-info {
+    margin-top: 5px;
+}
+
+.upload-dropzone {
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    background: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-dropzone:hover,
+.upload-dropzone.dragover {
+    border-color: #007bff;
+    background: #f8f9ff;
+}
+
+.dropzone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.dropzone-icon {
+    font-size: 3rem;
+    color: #007bff;
+    margin-bottom: 15px;
+}
+
+.dropzone-title {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+.dropzone-subtitle {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.btn-select-files {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-select-files:hover {
+    background: #0056b3;
+}
+
+/* === SECCIÓN DE METADATA === */
+.metadata-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.metadata-section .form-group {
+    margin-bottom: 15px;
+}
+
+.metadata-section label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    display: block;
+    color: #333;
+}
+
+.metadata-section .form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.metadata-section textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* === SECCIÓN DE PREVISUALIZACIÓN === */
+.preview-section {
+    margin-top: 20px;
+}
+
+.preview-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.preview-title .file-count {
+    background: #007bff;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+}
+
+.preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+    background: white;
+    border-radius: 6px;
+}
+
+.preview-item {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+    background: white;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.preview-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.preview-image-container {
+    position: relative;
+    width: 100%;
+    height: 100px;
+    background: #f8f9fa;
+}
+
+.preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.remove-preview {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.remove-preview:hover {
+    background: #dc3545;
+}
+
+.preview-info {
+    padding: 8px;
+    font-size: 0.8rem;
+}
+
+.preview-name {
+    font-weight: 600;
+    margin-bottom: 2px;
+    color: #333;
+}
+
+.preview-size {
+    color: #666;
+    font-size: 0.75rem;
+}
+
+/* === BARRA DE PROGRESO === */
+.upload-progress {
+    margin-top: 20px;
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.progress-text {
+    font-weight: 600;
+    color: #333;
+}
+
+.progress-percentage {
+    font-weight: 600;
+    color: #007bff;
+}
+
+.progress {
+    width: 100%;
+    height: 10px;
+    background: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    transition: width 0.3s ease;
+}
+
+/* === ACCIONES === */
+.upload-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.upload-actions .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.btn-upload-images {
+    background: #28a745;
+    color: white;
+}
+
+.btn-upload-images:hover {
+    background: #218838;
+}
+
+.btn-clear-all {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-clear-all:hover {
+    background: #5a6268;
+}
+
+/* === GALERÍA DE IMÁGENES === */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.gallery-item {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.gallery-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+
+.gallery-image-container {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    background: #f8f9fa;
+    overflow: hidden;
+}
+
+.gallery-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.gallery-image:hover {
+    transform: scale(1.05);
+}
+
+.gallery-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.gallery-item:hover .gallery-overlay {
+    opacity: 1;
+}
+
+.gallery-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.gallery-actions .btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.gallery-actions .btn:hover {
+    transform: scale(1.1);
+}
+
+.gallery-info {
+    padding: 15px;
+}
+
+.gallery-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.gallery-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.gallery-tags {
+    margin-bottom: 8px;
+}
+
+.gallery-tags .badge {
+    margin-right: 5px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.badge-primary {
+    background: #007bff;
+    color: white;
+}
+
+.badge-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.gallery-description {
+    font-size: 0.85rem;
+    color: #555;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.gallery-user {
+    font-size: 0.75rem;
+    color: #888;
+    font-style: italic;
+}
+
+/* === FILTROS DE GALERÍA === */
+.gallery-filters {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.filter-group .form-control {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+/* === INFORMACIÓN DEL PACIENTE === */
+.patient-info-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.patient-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.patient-details {
+    flex: 1;
+}
+
+.patient-details h4 {
+    margin: 0 0 8px 0;
+    color: #333;
+}
+
+.patient-details p {
+    margin: 0 0 4px 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.gallery-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* === MENSAJE SIN IMÁGENES === */
+.no-images-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.no-images-message h4 {
+    margin: 20px 0 10px 0;
+    color: #333;
+}
+
+.no-images-message p {
+    margin-bottom: 30px;
+}
+
+/* === BOTONES DE ACCIÓN EN TABLA === */
+.action-btn.images-btn {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.action-btn.images-btn:hover {
+    background: rgba(16, 185, 129, 0.2);
+}
+
+.action-btn.add-images-btn {
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.action-btn.add-images-btn:hover {
+    background: rgba(139, 92, 246, 0.2);
+}
+
+/* === UTILIDADES === */
+.file-input-hidden {
+    display: none !important;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+.mt-10 {
+    margin-top: 10px;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .gallery-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    
+    .preview-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+    }
+    
+    .upload-actions {
+        flex-direction: column;
+    }
+    
+    .gallery-filters {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .patient-info-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .gallery-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .preview-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+    
+    .gallery-actions .btn {
+        width: 35px;
+        height: 35px;
+    }
+}

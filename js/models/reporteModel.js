@@ -878,6 +878,8 @@ export const reporteModel = {
         // Área para fotografía del paciente (arriba derecha). Si existe url en paciente.photo/paciente.foto/paciente.imagen la mostramos; si no, silueta gris.
         try {
           const photoSrc = paciente.photo || paciente.photoUrl || paciente.foto || paciente.imagen || null;
+
+          
           if (photoSrc) {
             html += `<div style="position:absolute;right:16px;top:16px;width:96px;height:96px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;background:#fff"><img src="${photoSrc}" style="width:100%;height:100%;object-fit:cover"/></div>`;
           } else {

@@ -651,14 +651,25 @@
     import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
     // HeaderComponent eliminado, ahora usamos header individual
     import '../js/utils/eventBusManager.js';      // Event Bus monitoring
-    import '../js/utils/performanceMonitor.js';   // Performance monitoring  
-    import '../js/utils/architectureValidator.js'; // Architecture validation
-    import '../js/utils/testSuite.js';            // Automated testing
+    import '../js/utils/performanceMonitor.js';   // Performance monitoring
     
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       console.log('🚀 Operaciones: Sistema MVC completo con herramientas de desarrollo');
       
       if (AuthGuard.validateSession()) {
+        // Verificar permisos específicos para Operaciones y Control
+        const { authModel } = await import('../js/models/storageModel.js');
+        const usuario = authModel.getCurrentUser();
+        
+        if (!usuario || usuario.rol !== 'admin') {
+          console.warn('⚠️ Acceso denegado: Solo administradores pueden acceder a Operaciones y Control');
+          alert('Acceso denegado: No tienes permisos para acceder a esta sección.');
+          window.location.href = '../menuInicio.html';
+          return;
+        }
+        
+        console.log('✅ Permisos verificados para usuario administrador');
+        
         // PRIMERO: Inicializar header component
         // Inicializar header individual
         initIndividualHeader();

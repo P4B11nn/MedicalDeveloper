@@ -8,7 +8,7 @@ import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
 const CATEGORY_PERMISSIONS = {
   'pacientes': ['admin', 'practicante'],
   'usuarios-personal': ['admin'], // Solo administradores
-  'operaciones-control': ['admin', 'practicante'],
+  'operaciones-control': ['admin'], // Solo administradores
   'reportes': ['admin', 'practicante'],
   'gestion': ['admin'] // Solo administradores pueden acceder a Gestión Administrativa
 };

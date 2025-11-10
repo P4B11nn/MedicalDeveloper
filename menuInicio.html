@@ -791,36 +791,120 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 25px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+  }
+
+  .welcome-section {
+    flex: 1;
   }
 
   .dashboard-header h2 {
     color: #0f5671;
-    margin: 0;
-    font-size: 1.8rem;
+    margin: 0 0 5px 0;
+    font-size: 1.9rem;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+  }
+
+  .welcome-subtitle {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.95rem;
+    font-weight: 400;
+    opacity: 0.8;
   }
 
   .header-stats {
     display: flex;
-    gap: 20px;
+    gap: 25px;
+    flex-wrap: wrap;
   }
 
   .stat-item {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    color: #64748b;
-    font-weight: 500;
+    gap: 4px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 12px;
+    border: 1px solid rgba(15, 86, 113, 0.1);
+    min-width: 120px;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .stat-item.clickable {
+    cursor: pointer;
+  }
+
+  .stat-item.clickable:hover {
+    background: rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
   }
 
   .stat-item i {
     color: #0f5671;
+    font-size: 1.2rem;
+    margin-bottom: 2px;
+  }
+
+  .stat-item [data-stat-value] {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #0f5671;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  /* Tooltip para estadísticas */
+  .stat-item[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #374151;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .stat-item[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid #374151;
+    z-index: 1001;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(5px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
   }
 
   /* Grid Layouts */
@@ -883,6 +967,408 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   }
 
+  /* 🎨 ANIMACIONES AVANZADAS PARA DASHBOARDS */
+  
+  /* Animación de entrada para las tarjetas */
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  @keyframes glow {
+    0% {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+    50% {
+      box-shadow: 0 6px 25px rgba(59, 130, 246, 0.15);
+    }
+    100% {
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  @keyframes bounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% center;
+    }
+    100% {
+      background-position: 200% center;
+    }
+  }
+
+  /* Aplicar animaciones a elementos específicos */
+  .role-dashboard {
+    animation: fadeInScale 0.6s ease-out;
+  }
+
+  .dashboard-header {
+    animation: slideInUp 0.8s ease-out;
+  }
+
+  .dashboard-card {
+    animation: slideInUp 0.6s ease-out;
+    animation-fill-mode: both;
+  }
+
+  /* Animaciones escalonadas para múltiples tarjetas */
+  .dashboard-card:nth-child(1) { animation-delay: 0.1s; }
+  .dashboard-card:nth-child(2) { animation-delay: 0.2s; }
+  .dashboard-card:nth-child(3) { animation-delay: 0.3s; }
+  .dashboard-card:nth-child(4) { animation-delay: 0.4s; }
+  .dashboard-card:nth-child(5) { animation-delay: 0.5s; }
+
+  .admin-grid .dashboard-card:nth-child(1) { animation: slideInLeft 0.6s ease-out 0.2s both; }
+  .admin-grid .dashboard-card:nth-child(2) { animation: slideInRight 0.6s ease-out 0.3s both; }
+  .admin-grid .dashboard-card:nth-child(3) { animation: slideInLeft 0.6s ease-out 0.4s both; }
+  .admin-grid .dashboard-card:nth-child(4) { animation: slideInRight 0.6s ease-out 0.5s both; }
+
+  .practitioner-grid .dashboard-card:nth-child(1) { animation: slideInLeft 0.6s ease-out 0.2s both; }
+  .practitioner-grid .dashboard-card:nth-child(2) { animation: slideInRight 0.6s ease-out 0.3s both; }
+
+  /* Animaciones para elementos internos */
+  .stat-item {
+    animation: bounceIn 0.8s ease-out;
+    animation-fill-mode: both;
+  }
+
+  .stat-item:nth-child(1) { animation-delay: 0.6s; }
+  .stat-item:nth-child(2) { animation-delay: 0.7s; }
+  .stat-item:nth-child(3) { animation-delay: 0.8s; }
+
+  .status-indicator.active {
+    animation: pulse 2s infinite;
+  }
+
+  .card-header {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -200%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+      transparent, 
+      rgba(255, 255, 255, 0.2), 
+      transparent
+    );
+    animation: shimmer 3s infinite;
+  }
+
+  /* Efectos hover mejorados */
+  .dashboard-card:hover .card-header h3 {
+    color: #3b82f6;
+    transition: color 0.3s ease;
+  }
+
+  .dashboard-card:hover {
+    animation: glow 2s infinite;
+  }
+
+  /* Animaciones para módulos */
+  .module-item {
+    animation: fadeInScale 0.5s ease-out;
+    animation-fill-mode: both;
+    transition: all 0.3s ease;
+  }
+
+  .module-item:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Animaciones para actividad en consulta */
+  .activity-item {
+    animation: slideInUp 0.4s ease-out;
+    animation-fill-mode: both;
+    transition: all 0.3s ease;
+  }
+
+  .activity-item:nth-child(1) { animation-delay: 0.1s; }
+  .activity-item:nth-child(2) { animation-delay: 0.2s; }
+  .activity-item:nth-child(3) { animation-delay: 0.3s; }
+
+  .activity-item:hover {
+    transform: translateX(5px);
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  }
+
+  /* Indicadores animados */
+  .time-indicator {
+    position: relative;
+  }
+
+  .time-indicator::before {
+    content: '●';
+    color: #10b981;
+    animation: pulse 1.5s infinite;
+    margin-right: 5px;
+  }
+
+  /* Animación de carga mejorada */
+  .fa-spinner.fa-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* Transiciones suaves para cambios de estado */
+  .dashboard-card, .module-item, .activity-item {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                background-color 0.3s ease, 
+                color 0.3s ease;
+  }
+
+  /* Efectos mejorados para elementos interactivos */
+  .dashboard-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+  }
+
+  .dashboard-card:active {
+    transform: translateY(-2px) scale(1.01);
+    transition: transform 0.1s ease;
+  }
+
+  /* Animaciones específicas para tipos de tarjetas */
+  .dashboard-card.observaciones-card:hover {
+    box-shadow: 0 15px 35px rgba(16, 185, 129, 0.2);
+  }
+
+  .dashboard-card.admin-only:hover {
+    box-shadow: 0 15px 35px rgba(239, 68, 68, 0.2);
+  }
+
+  /* Estados de carga mejorados */
+  .loading-state {
+    opacity: 0.7;
+    pointer-events: none;
+    position: relative;
+  }
+
+  .loading-state::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+      transparent, 
+      rgba(255, 255, 255, 0.4), 
+      transparent
+    );
+    animation: shimmer 1.5s infinite;
+    z-index: 1;
+  }
+
+  /* Mejoras para iconos */
+  .card-header i {
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+
+  .dashboard-card:hover .card-header i {
+    transform: rotate(5deg) scale(1.1);
+    color: #3b82f6;
+  }
+
+  /* Estados de actividad */
+  .status-indicator.active::before {
+    content: '●';
+    color: #10b981;
+    animation: pulse 1.5s infinite;
+    margin-right: 5px;
+  }
+
+  .status-indicator.inactive::before {
+    content: '●';
+    color: #64748b;
+    margin-right: 5px;
+  }
+
+  /* Animaciones de datos en tiempo real */
+  .real-time-update {
+    animation: glow 2s ease-in-out;
+  }
+
+  @keyframes dataUpdate {
+    0% { background-color: transparent; }
+    50% { background-color: rgba(59, 130, 246, 0.1); }
+    100% { background-color: transparent; }
+  }
+
+  .data-updated {
+    animation: dataUpdate 1s ease-in-out;
+  }
+
+  /* Animaciones responsivas - reducir en móviles */
+  @media (max-width: 768px) {
+    .dashboard-card {
+      animation-duration: 0.4s;
+    }
+    
+    .dashboard-card:hover {
+      transform: translateY(-2px) scale(1.01);
+    }
+    
+    .module-item:hover {
+      transform: translateY(-1px);
+    }
+
+    /* Reducir animaciones en dispositivos táctiles */
+    .dashboard-card:hover .card-header i {
+      transform: scale(1.05);
+    }
+
+    /* Estilos responsivos para encabezados de dashboard */
+    .dashboard-header {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 20px;
+      gap: 15px;
+    }
+
+    .dashboard-header h2 {
+      font-size: 1.4rem;
+    }
+
+    .welcome-subtitle {
+      font-size: 0.85rem;
+    }
+
+    .header-stats {
+      width: 100%;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      min-width: calc(50% - 5px);
+      padding: 10px 12px;
+    }
+
+    .stat-item [data-stat-value] {
+      font-size: 1.2rem;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+    }
+
+    /* Ocultar tooltips en móvil */
+    .stat-item[data-tooltip]:hover::after,
+    .stat-item[data-tooltip]:hover::before {
+      display: none;
+    }
+  }
+
+  /* Soporte para preferencias de movimiento reducido */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    
+    .dashboard-card:hover {
+      transform: none;
+    }
+  }
+
+  /* Animaciones para elementos de lista */
+  .activity-item, .module-item {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .activity-item:hover {
+    transform: translateX(8px);
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-left: 3px solid #3b82f6;
+  }
+
+  .module-item:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+
   /* Carta de observaciones ampliada */
   .dashboard-card:has(.observaciones-admin-content) {
     min-width: 98%;
@@ -934,6 +1420,52 @@
 
   .card-header h3 i {
     font-size: 0.9rem;
+  }
+
+  /* Module Map Preview Styles */
+  .module-map-preview-card {
+    margin-bottom: 20px;
+  }
+
+  .module-map-container {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .map-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(248, 250, 252, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    z-index: 1000;
+    transition: opacity 0.3s ease;
+  }
+
+  .map-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .view-full-link {
+    color: #0f5671;
+    text-decoration: none;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s ease;
+  }
+
+  .view-full-link:hover {
+    color: #2563eb;
   }
 
   /* Status Indicators */
@@ -3103,9 +3635,6 @@
   <!-- Sidebar + main content layout -->
   <div class="sidebar">
     <div class="sidebar-panel">
-      <div class="welcome-card">
-        <h3>Bienvenido</h3>
-      </div>
       <div class="menu">
         <div class="menu-item">
           <button data-category="pacientes" data-disabled="true" aria-disabled="true" tabindex="-1" class="disabled-menu-btn">👥 <span>Pacientes</span></button>
@@ -3114,6 +3643,7 @@
             <a href="pages/categoria-pacientes.html?compact=1#registro-paciente-section"><i class="fas fa-user-plus"></i> Registro de paciente</a>
             <a href="pages/categoria-pacientes.html?compact=1#ingresar-datos-medicos-section"><i class="fas fa-notes-medical"></i> Ingresar datos médicos</a>
             <a href="pages/categoria-pacientes.html?compact=1#historial-medico-completo-section"><i class="fas fa-file-medical"></i> Historial médico completo</a>
+            <a href="visualizador-imagenes.html" target="_blank"><i class="fas fa-images"></i> Visualizador de imágenes</a>
           </div>
         </div>
         <div class="menu-item">
@@ -3212,15 +3742,25 @@
     <!-- Dashboard para Administrador -->
     <div id="admin-dashboard" class="role-dashboard" style="display: none;">
       <div class="dashboard-header">
-        <h2><i class="fas fa-user-shield"></i> Panel de Administración</h2>
+        <div class="welcome-section">
+          <h2><i class="fas fa-user-shield"></i> Bienvenido(a), <span id="admin-user-name">Administrador</span></h2>
+          <p class="welcome-subtitle">Panel de Administración - <span id="current-date-admin"></span></p>
+        </div>
         <div class="header-stats">
-          <span class="stat-item">
+          <span class="stat-item clickable" id="practicantes-stat" data-tooltip="Ver lista de practicantes activos">
             <i class="fas fa-users"></i>
-            <span id="total-practicantes">12</span> Practicantes
+            <span id="total-practicantes" data-stat-value="0">0</span> 
+            <span class="stat-label">Practicantes Activos</span>
           </span>
-          <span class="stat-item">
+          <span class="stat-item clickable" id="consultas-stat" data-tooltip="Ver consultas de hoy">
             <i class="fas fa-heartbeat"></i>
-            <span id="consultas-hoy">8</span> Consultas hoy
+            <span id="consultas-hoy" data-stat-value="0">0</span> 
+            <span class="stat-label">Consultas Hoy</span>
+          </span>
+          <span class="stat-item clickable" id="horario-stat" data-tooltip="Configurar horarios">
+            <i class="fas fa-clock"></i>
+            <span id="horario-actual">08:00 - 18:00</span>
+            <span class="stat-label">Horario Clínica</span>
           </span>
         </div>
       </div>
@@ -3236,6 +3776,23 @@
           <div style="text-align: center; padding: 20px; color: #64748b;">
             <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
             Cargando módulos...
+          </div>
+        </div>
+      </div>
+
+      <!-- Mapa de Módulos Vista Previa -->
+      <div class="dashboard-card module-map-preview-card">
+        <div class="card-header">
+          <h3><i class="fas fa-map"></i> Mapa de Módulos</h3>
+          <a href="pages/mapa-modulos.html" class="view-full-link">
+            <i class="fas fa-external-link-alt"></i> Ver completo
+          </a>
+        </div>
+        <div class="module-map-container" id="moduleMapContainer">
+          <div id="moduleMapPreview" style="height: 300px; width: 100%; border-radius: 8px;"></div>
+          <div class="map-overlay" id="mapOverlay">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Cargando mapa...</span>
           </div>
         </div>
       </div>
@@ -3432,15 +3989,25 @@
     <!-- Dashboard para Practicante -->
     <div id="practitioner-dashboard" class="role-dashboard" style="display: none;">
       <div class="dashboard-header">
-        <h2><i class="fas fa-user-md"></i> Panel del Practicante</h2>
+        <div class="welcome-section">
+          <h2><i class="fas fa-user-md"></i> Bienvenido(a), <span id="practitioner-user-name">Practicante</span></h2>
+          <p class="welcome-subtitle">Panel del Practicante - <span id="current-date-practitioner"></span></p>
+        </div>
         <div class="header-stats">
-          <span class="stat-item">
+          <span class="stat-item clickable" id="turno-stat" data-tooltip="Cambiar turno">
             <i class="fas fa-calendar"></i>
             <span id="turno-actual">Turno Matutino</span>
+            <span class="stat-label">Mi Turno</span>
           </span>
-          <span class="stat-item">
+          <span class="stat-item clickable" id="tiempo-stat" data-tooltip="Ver horario completo">
             <i class="fas fa-clock"></i>
             <span id="tiempo-restante">4h 30m restantes</span>
+            <span class="stat-label">Tiempo Restante</span>
+          </span>
+          <span class="stat-item clickable" id="pacientes-asignados-stat" data-tooltip="Ver mis pacientes">
+            <i class="fas fa-user-injured"></i>
+            <span id="pacientes-asignados" data-stat-value="0">0</span>
+            <span class="stat-label">Pacientes Asignados</span>
           </span>
         </div>
       </div>
@@ -3777,7 +4344,8 @@
     import './js/views/MenuInicio.js';
     import './js/utils/eventBusManager.js';      // Event Bus monitoring
     import './js/utils/performanceMonitor.js';   // Performance monitoring
-    import './js/utils/architectureValidator.js'; // Architecture validation
+    import './js/utils/dashboardAnimations.js';  // Dashboard animations system
+    import './js/utils/dashboardHeaderManager.js'; // Dashboard header management
     import { ConnectionIndicator } from './js/utils/connectionIndicator.js';   // Connection status indicator
     import './js/utils/firebaseSyncManager.js';  // Firebase sync messages manager
     import { instrumentosController } from './js/controllers/instrumentosController.js'; // Controlador de instrumentos y observaciones
@@ -4242,6 +4810,7 @@
         console.log('⚙️ Inicializando funcionalidades adicionales...');
         initializeChecklistFunctionality();
         initializeObservationForm();
+        setupDashboardEventListeners();
         
         // Marcar como inicializado
         dashboardInitialized = true;
@@ -4303,6 +4872,27 @@
       }
     }
 
+    function setupDashboardEventListeners() {
+      console.log('🔧 Configurando event listeners del dashboard...');
+      
+      // Configurar botón "Gestionar" de Grupos de Trabajo
+      const btnGestionarGrupos = document.getElementById('btn-gestionar-grupos');
+      if (btnGestionarGrupos) {
+        btnGestionarGrupos.addEventListener('click', (e) => {
+          e.preventDefault();
+          console.log('🎯 Navegando a gestión de grupos...');
+          
+          // Navegar a la página de gestión de grupos
+          window.location.href = 'pages/categoria-gestion.html?compact=1#grupos';
+        });
+        console.log('✅ Event listener configurado para botón Gestionar Grupos');
+      } else {
+        console.warn('⚠️ No se encontró el botón btn-gestionar-grupos');
+      }
+      
+      // Aquí se pueden agregar más event listeners para otros botones del dashboard
+    }
+
     function showDashboardByRole(role) {
       console.log('=== DASHBOARD ROLE DETECTION ===');
       console.log('🎯 Rol recibido:', role);
@@ -4351,7 +4941,7 @@
         loadPractitionerData();
         
         // Para practicantes: ocultar el botón de "Usuarios y Personal"
-        hideUsersButtonForPractitioners();
+        hideRestrictedButtonsForPractitioners();
       }
 
       console.log('=== FIN DASHBOARD ROLE DETECTION ===');
@@ -4395,6 +4985,9 @@
         updateWorkGroups();
         updateConsultationActivity();
         updateTeamAssignments();
+        
+        // Inicializar vista previa del mapa de módulos
+        initModuleMapPreview();
         
         // Inicializar controlador de administración de instrumentos
         if (window.adminInstrumentosController) {
@@ -4943,10 +5536,10 @@
       // No necesitamos hacer nada especial aquí
     }
     
-    function hideUsersButtonForPractitioners() {
-      console.log('� Ocultando botón de Usuarios y Personal para practicante');
+    function hideRestrictedButtonsForPractitioners() {
+      console.log('� Ocultando botones restringidos para practicante');
       
-      // Buscar el botón de usuarios y personal
+      // Buscar y ocultar el botón de usuarios y personal
       const usersButton = document.querySelector('.menu-item button[data-category="usuarios-personal"]');
       const usersMenuItem = usersButton ? usersButton.closest('.menu-item') : null;
       
@@ -4956,6 +5549,18 @@
         console.log('✅ Botón de Usuarios y Personal ocultado completamente');
       } else {
         console.warn('⚠️ No se encontró el botón de Usuarios y Personal para ocultar');
+      }
+      
+      // Buscar y ocultar el botón de operaciones y control
+      const operacionesButton = document.querySelector('.menu-item button[data-category="operaciones-control"]');
+      const operacionesMenuItem = operacionesButton ? operacionesButton.closest('.menu-item') : null;
+      
+      if (operacionesMenuItem) {
+        // Ocultar completamente el elemento del menú
+        operacionesMenuItem.style.display = 'none';
+        console.log('✅ Botón de Operaciones y Control ocultado completamente');
+      } else {
+        console.warn('⚠️ No se encontró el botón de Operaciones y Control para ocultar');
       }
     }
 
@@ -5024,7 +5629,7 @@
         if (!moduloAsignado && currentUser.grupoId) {
           moduloAsignado = modulos.find(m =>
             m.grupoAsignadoId === currentUser.grupoId ||
-            (m.practicantes && m.practicantes.includes(currentUser.id))
+            (m.practicantes && m.practicantes.includes(currentUser.uid))
           );
           console.log('🔍 Buscando módulo por grupoId:', currentUser.grupoId, '- Encontrado:', !!moduloAsignado);
         }
@@ -5033,7 +5638,7 @@
         if (!moduloAsignado && !currentUser.grupoId && currentUser.grupo_trabajo) {
           moduloAsignado = modulos.find(m =>
             m.grupoAsignadoId === currentUser.grupo_trabajo ||
-            (m.practicantes && m.practicantes.includes(currentUser.id))
+            (m.practicantes && m.practicantes.includes(currentUser.uid))
           );
           console.log('🔍 Buscando módulo por grupo_trabajo:', currentUser.grupo_trabajo, '- Encontrado:', !!moduloAsignado);
         }
@@ -5275,10 +5880,10 @@
           let miembrosGrupo = [];
           let infoGrupo = null;
           
-          // 1. Buscar en usuarios por grupoId
+          // 1. Buscar en usuarios por grupoId (solo usuarios con grupoId válido)
           miembrosGrupo = todosLosUsuarios.filter(u => 
-            u.grupoId === grupoIdToUse || 
-            u.grupo_trabajo === grupoIdToUse
+            (u.grupoId && u.grupoId === grupoIdToUse) || 
+            (u.grupo_trabajo && u.grupo_trabajo === grupoIdToUse)
           );
           
           console.log('🔍 Miembros del grupo ' + grupoIdToUse + ':', miembrosGrupo.length);
@@ -5319,10 +5924,12 @@
               const userGroupId = u.grupoId?.toLowerCase();
               const userGrupoTrabajo = u.grupo_trabajo?.toLowerCase();
               const targetGroupId = grupoIdToUse?.toLowerCase();
-              return userGroupId === targetGroupId || 
-                     userGrupoTrabajo === targetGroupId ||
-                     userGroupId?.includes(targetGroupId) ||
-                     userGrupoTrabajo?.includes(targetGroupId);
+              
+              // Solo incluir usuarios que tengan grupoId o grupo_trabajo válidos (no vacíos)
+              return (userGroupId && userGroupId === targetGroupId) || 
+                     (userGrupoTrabajo && userGrupoTrabajo === targetGroupId) ||
+                     (userGroupId && userGroupId.includes(targetGroupId)) ||
+                     (userGrupoTrabajo && userGrupoTrabajo.includes(targetGroupId));
             });
             
             if (posiblesMiembros.length > 0) {
@@ -5331,7 +5938,14 @@
             }
           }
           
-          // 5. Si aún no hay miembros, al menos incluir al usuario actual
+          // 5. Validar contra la lista oficial de miembros del grupo si existe
+          if (infoGrupo && infoGrupo.miembros && Array.isArray(infoGrupo.miembros)) {
+            // Filtrar solo los miembros que están oficialmente en el grupo
+            miembrosGrupo = miembrosGrupo.filter(u => infoGrupo.miembros.includes(u.uid));
+            console.log('✅ Miembros filtrados por lista oficial del grupo:', miembrosGrupo.length);
+          }
+          
+          // 6. Si aún no hay miembros, al menos incluir al usuario actual
           if (miembrosGrupo.length === 0) {
             miembrosGrupo = [currentUser];
             console.log('👤 Solo se incluye el usuario actual como miembro');
@@ -5343,7 +5957,7 @@
           
           const moduloAsignado = todosLosModulos.find(m => 
             m.grupoAsignadoId === grupoIdToUse ||
-            (m.practicantes && m.practicantes.includes(currentUser.id))
+            (m.practicantes && m.practicantes.includes(currentUser.uid))
           );
           
           console.log('🎯 Módulo asignado encontrado:', moduloAsignado ? moduloAsignado.nombre : 'Ninguno');
@@ -5384,7 +5998,8 @@
                         .substring(0, 2)
                         .toUpperCase();
                       
-                      const isCurrentUser = practicante.id === currentUser.id;
+                      // Comparar usando uid de Firebase (lo que realmente identifica al usuario)
+                      const isCurrentUser = practicante.uid === currentUser.uid;
                       
                       return `
                         <div class="member-avatar" 
@@ -5746,7 +6361,7 @@
           const grupoSeleccionado = gruposExistentes[0];
           
           // Actualizar el usuario en localStorage
-          const userIndex = todosLosUsuarios.findIndex(u => u.id === currentUser.id);
+          const userIndex = todosLosUsuarios.findIndex(u => u.uid === currentUser.uid);
           
           if (userIndex !== -1) {
             todosLosUsuarios[userIndex].grupoId = grupoSeleccionado.id;
@@ -5783,7 +6398,7 @@
         localStorage.setItem('grupos', JSON.stringify(gruposActualizados));
         
         // Asignar el usuario al nuevo grupo
-        const userIndex = todosLosUsuarios.findIndex(u => u.id === currentUser.id);
+        const userIndex = todosLosUsuarios.findIndex(u => u.uid === currentUser.uid);
         
         if (userIndex !== -1) {
           todosLosUsuarios[userIndex].grupoId = nuevoGrupo.id;
@@ -6234,6 +6849,285 @@
     <span id="floatingHelpLabel">Ayuda</span>
     <button id="floatingHelpBtn" aria-label="Abrir manual de usuario" title="Ayuda - Manual de usuario">❓</button>
   </div>
+
+  <script>
+    // Función para inicializar la vista previa del mapa de módulos
+    async function initModuleMapPreview() {
+      console.log('🗺️ Inicializando vista previa del mapa de módulos...');
+      
+      try {
+        const mapContainer = document.getElementById('moduleMapPreview');
+        const overlay = document.getElementById('mapOverlay');
+        
+        if (!mapContainer) {
+          console.warn('⚠️ Contenedor del mapa no encontrado');
+          return;
+        }
+
+        // Cargar Leaflet dinámicamente si no está disponible
+        if (typeof L === 'undefined') {
+          await loadLeafletLibrary();
+        }
+
+        // Obtener módulos desde Firebase
+        const { gestionModel } = await import('./js/models/gestionModel.js');
+        const modulos = await gestionModel.getModulos();
+        
+        console.log('🏥 Módulos obtenidos:', modulos ? modulos.length : 0);
+        if (modulos && modulos.length > 0) {
+          console.log('📋 Primer módulo:', modulos[0]);
+        }
+        
+        if (!modulos || modulos.length === 0) {
+          console.warn('⚠️ No se encontraron módulos, agregando ejemplos...');
+          // Agregar módulos de ejemplo
+          addSampleModules(map, iconos);
+          overlay.classList.add('hidden');
+          return;
+        }
+
+        // Inicializar el mapa
+        const map = L.map(mapContainer, {
+          zoomControl: false,
+          dragging: true,
+          touchZoom: true,
+          doubleClickZoom: false,
+          scrollWheelZoom: false,
+          boxZoom: false,
+          keyboard: false
+        });
+
+        // Agregar capa base de OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap contributors',
+          maxZoom: 18
+        }).addTo(map);
+
+        // Crear grupos de marcadores por estado
+        const marcadores = [];
+        let bounds = [];
+
+        // Definir iconos con colores según el estado del módulo
+        const iconos = {
+          activo: createCustomIcon('#22c55e', '🏥'),      // Verde
+          inactivo: createCustomIcon('#ef4444', '🏥'),    // Rojo  
+          mantenimiento: createCustomIcon('#f59e0b', '🔧'), // Amarillo
+          default: createCustomIcon('#6b7280', '🏥')      // Gris
+        };
+
+        // Agregar marcadores para cada módulo
+        modulos.forEach(modulo => {
+          // Manejar diferentes estructuras de coordenadas
+          let lat, lng;
+          
+          // Priorizar latitud/longitud directas
+          if (modulo.latitud && modulo.longitud) {
+            lat = parseFloat(modulo.latitud);
+            lng = parseFloat(modulo.longitud);
+          }
+          // Alternativamente, usar ubicacion.latitude/longitude
+          else if (modulo.ubicacion && modulo.ubicacion.latitude && modulo.ubicacion.longitude) {
+            lat = parseFloat(modulo.ubicacion.latitude);
+            lng = parseFloat(modulo.ubicacion.longitude);
+          }
+          // También verificar lat/lng por compatibilidad
+          else if (modulo.ubicacion && modulo.ubicacion.lat && modulo.ubicacion.lng) {
+            lat = parseFloat(modulo.ubicacion.lat);
+            lng = parseFloat(modulo.ubicacion.lng);
+          }
+          
+          if (lat && lng && !isNaN(lat) && !isNaN(lng)) {
+            const estado = modulo.estado || 'activo';
+            const icono = iconos[estado] || iconos.default;
+            
+            const marker = L.marker([lat, lng], { icon: icono }).addTo(map);
+            
+            // Tooltip simple con información del módulo
+            marker.bindTooltip(`
+              <strong>${modulo.nombre}</strong><br>
+              📍 ${modulo.nombreLugar || modulo.lugar || 'Ubicación no especificada'}<br>
+              📊 Estado: ${estado}
+            `, {
+              permanent: false,
+              direction: 'top',
+              className: 'module-tooltip'
+            });
+            
+            marcadores.push(marker);
+            bounds.push([lat, lng]);
+            
+            console.log(`📍 Marcador agregado: ${modulo.nombre} en [${lat}, ${lng}]`);
+          } else {
+            console.warn(`⚠️ Módulo sin coordenadas válidas:`, modulo.nombre, modulo);
+          }
+        });
+
+        // Ajustar vista del mapa para mostrar todos los módulos
+        if (bounds.length > 0) {
+          if (bounds.length === 1) {
+            map.setView(bounds[0], 15);
+          } else {
+            map.fitBounds(bounds, { padding: [10, 10] });
+          }
+        } else {
+          // Vista por defecto usando la misma ubicación que la página del mapa completo
+          map.setView([22.27546821201615, -97.86079278482266], 16); // Campus universitario
+        }
+
+        // Ocultar overlay de carga
+        setTimeout(() => {
+          overlay.classList.add('hidden');
+        }, 1000);
+
+        console.log(`✅ Mapa de módulos inicializado con ${marcadores.length} marcadores`);
+
+      } catch (error) {
+        console.error('❌ Error inicializando vista previa del mapa:', error);
+        const overlay = document.getElementById('mapOverlay');
+        if (overlay) {
+          overlay.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>Error cargando mapa</span>';
+        }
+      }
+    }
+
+    // Función para agregar módulos de ejemplo
+    function addSampleModules(map, iconos) {
+      const ejemplos = [
+        {
+          nombre: "Módulo de Medicina General",
+          nombreLugar: "Edificio Principal",
+          estado: "activo",
+          latitud: 22.27546821201615,
+          longitud: -97.86079278482266
+        },
+        {
+          nombre: "Módulo de Cardiología", 
+          nombreLugar: "Torre Médica Norte",
+          estado: "activo",
+          latitud: 22.27600000000000,
+          longitud: -97.86100000000000
+        },
+        {
+          nombre: "Módulo de Radiología",
+          nombreLugar: "Edificio de Diagnóstico", 
+          estado: "mantenimiento",
+          latitud: 22.27500000000000,
+          longitud: -97.86050000000000
+        },
+        {
+          nombre: "Módulo de Urgencias",
+          nombreLugar: "Hospital Universitario",
+          estado: "inactivo", 
+          latitud: 22.27580000000000,
+          longitud: -97.86120000000000
+        },
+        {
+          nombre: "Módulo de Pediatría",
+          nombreLugar: "Área Especializada",
+          estado: "activo",
+          latitud: 22.27520000000000, 
+          longitud: -97.86090000000000
+        }
+      ];
+
+      ejemplos.forEach(modulo => {
+        const lat = parseFloat(modulo.latitud);
+        const lng = parseFloat(modulo.longitud);
+        const estado = modulo.estado || 'activo';
+        const icono = iconos[estado] || iconos.default;
+        
+        const marker = L.marker([lat, lng], { icon: icono }).addTo(map);
+        
+        marker.bindTooltip(`
+          <strong>${modulo.nombre}</strong><br>
+          📍 ${modulo.nombreLugar}<br>
+          📊 Estado: ${estado}
+        `, {
+          permanent: false,
+          direction: 'top',
+          className: 'module-tooltip'
+        });
+        
+        console.log(`📍 Módulo de ejemplo agregado: ${modulo.nombre}`);
+      });
+    }
+
+    // Función para cargar la librería Leaflet dinámicamente
+    function loadLeafletLibrary() {
+      return new Promise((resolve, reject) => {
+        // CSS de Leaflet
+        const cssLink = document.createElement('link');
+        cssLink.rel = 'stylesheet';
+        cssLink.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        cssLink.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+        cssLink.crossOrigin = '';
+        document.head.appendChild(cssLink);
+
+        // JavaScript de Leaflet
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+        script.crossOrigin = '';
+        
+        script.onload = () => {
+          console.log('📍 Leaflet cargado exitosamente');
+          resolve();
+        };
+        
+        script.onerror = () => {
+          console.error('❌ Error cargando Leaflet');
+          reject(new Error('Failed to load Leaflet'));
+        };
+        
+        document.head.appendChild(script);
+      });
+    }
+
+    // Función para crear iconos personalizados
+    function createCustomIcon(color, emoji) {
+      return L.divIcon({
+        html: `
+          <div style="
+            background: ${color};
+            border: 3px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          ">${emoji}</div>
+        `,
+        className: 'custom-module-marker',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+      });
+    }
+
+    // Estilos adicionales para tooltips del mapa
+    const mapStyles = document.createElement('style');
+    mapStyles.textContent = `
+      .module-tooltip {
+        background: rgba(15, 86, 113, 0.95) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        color: white !important;
+        font-size: 12px !important;
+        padding: 8px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+      }
+      .module-tooltip:before {
+        border-top-color: rgba(15, 86, 113, 0.95) !important;
+      }
+      .custom-module-marker {
+        background: none !important;
+        border: none !important;
+      }
+    `;
+    document.head.appendChild(mapStyles);
+  </script>
 
   <script>
     (function(){
