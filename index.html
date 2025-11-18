@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Medical Developer</title>
+  <link rel="icon" type="image/png" href="img/logo-medical-developer.jpg">
   <style>
     * {
       margin: 0;
@@ -208,27 +209,59 @@
     <!-- No es necesario cargar templates vía router -->
   </div>
   
-  <!-- Firebase SDKs -->
+  <!-- Firebase Loader with robust error handling -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-    import { getFirestore } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-
-    // Hacer Firebase disponible globalmente para compatibilidad
-    window.firebase = {
-      initializeApp,
-      auth: { getAuth },
-      firestore: { getFirestore }
-    };
+    // Importar el cargador de Firebase
+    import firebaseLoader from './js/utils/firebaseLoader.js';
+    
+    // Cargar Firebase automáticamente
+    firebaseLoader.loadFirebase().then(services => {
+      console.log('🎉 Firebase services ready:', services ? 'loaded' : 'mock');
+      
+      // Dispatch evento para notificar que Firebase está listo
+      window.dispatchEvent(new CustomEvent('firebaseReady', {
+        detail: { services, isLoaded: firebaseLoader.isFirebaseLoaded() }
+      }));
+    }).catch(error => {
+      console.error('❌ Error crítico cargando Firebase:', error);
+    });
   </script>
   
   <script type="module">
     import { initAuthController } from "./js/controllers/authController.js";
     import { authModel } from "./js/models/storageModel.js";
 
-    document.addEventListener("DOMContentLoaded", () => {
+    // Esperar a que Firebase esté listo antes de inicializar
+    function initializeApp() {
       console.log("Inicializando controlador de autenticación");
-      initAuthController();
+      
+      try {
+        initAuthController();
+        console.log('✅ Auth controller initialized');
+      } catch (error) {
+        console.error('❌ Error initializing auth controller:', error);
+        
+        // Mostrar notificación de error
+        setTimeout(() => {
+          const notification = document.createElement('div');
+          notification.style.cssText = `
+            position: fixed; top: 70px; right: 20px; background: #f44336; color: white;
+            padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 10000; max-width: 350px; font-family: Arial, sans-serif; font-size: 14px;
+          `;
+          notification.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 5px;">⚠️ Error de Inicialización</div>
+            <div>Hubo un problema inicializando la autenticación. Intenta recargar la página.</div>
+          `;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.parentNode.removeChild(notification);
+            }
+          }, 8000);
+        }, 1000);
+      }
 
       // Mostrar comandos disponibles en consola después de un momento
       setTimeout(() => {
@@ -240,8 +273,27 @@
           console.log('✅ authModel disponible globalmente en la consola');
         }
       }, 3000);
+    }
+
+    // Escuchar cuando Firebase esté listo
+    window.addEventListener('firebaseReady', (event) => {
+      console.log('🔥 Firebase ready event received:', event.detail);
+      initializeApp();
     });
-    
+
+    // También inicializar cuando el DOM esté listo (fallback)
+    document.addEventListener("DOMContentLoaded", () => {
+      // Si Firebase ya está listo, inicializar inmediatamente
+      if (window.firebaseServices) {
+        initializeApp();
+      } else {
+        // Si no, esperar un poco más
+        setTimeout(() => {
+          console.log('🕐 Fallback initialization after DOM ready');
+          initializeApp();
+        }, 2000);
+      }
+    });
   </script>
   
   <!-- 🌍 GLOBAL: Gestor de sincronización offline para todas las páginas -->

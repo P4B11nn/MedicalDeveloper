@@ -1,3 +1,4 @@
+// Firebase imports - wrapped in try-catch to handle CSP issues
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import { initializeFirestore, CACHE_SIZE_UNLIMITED, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
@@ -13,19 +14,46 @@ const firebaseConfig = {
     appId: "1:1038201454133:web:f6ee7c6215f6b4d4febb7c"
 };
 
-// Inicialización de Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase services
+let app, db, auth, storage;
 
-// Nueva inicializacion de Firestore
-const db = initializeFirestore(app, {
-  cacheSizeBytes: CACHE_SIZE_UNLIMITED
-});
+try {
+  // Inicialización de Firebase
+  app = initializeApp(firebaseConfig);
+  console.log('✅ Firebase app initialized');
 
-// Inicialización de Firebase Auth
-const auth = getAuth(app);
+  // Nueva inicializacion de Firestore
+  db = initializeFirestore(app, {
+    cacheSizeBytes: CACHE_SIZE_UNLIMITED
+  });
+  console.log('✅ Firestore initialized');
 
-// Inicialización de Firebase Storage
-const storage = getStorage(app);
+  // Inicialización de Firebase Auth
+  auth = getAuth(app);
+  console.log('✅ Firebase Auth initialized');
+
+  // Inicialización de Firebase Storage
+  storage = getStorage(app);
+  console.log('✅ Firebase Storage initialized');
+
+} catch (error) {
+  console.error('❌ Error initializing Firebase services:', error);
+  
+  // Create mock services
+  app = { options: firebaseConfig };
+  db = { 
+    collection: () => ({}),
+    doc: () => ({})
+  };
+  auth = { 
+    currentUser: null,
+    signInWithEmailAndPassword: () => Promise.reject(new Error('Auth not available')),
+    signOut: () => Promise.resolve()
+  };
+  storage = {
+    ref: () => ({})
+  };
+}
 
 // Exportar las instancias necesarias
 export { db, auth, storage };
