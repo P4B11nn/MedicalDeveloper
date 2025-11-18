@@ -5,23 +5,44 @@
  */
 
 import eventBus, { EVENT_NAMES } from './eventBus.js';
-import { db } from '../models/firebaseConfig.js';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  serverTimestamp,
-  Timestamp
-} from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
+
+// Obtener Firebase desde el contexto global cuando esté disponible
+function getFirebaseServices() {
+  if (window.firebaseServices) {
+    return window.firebaseServices;
+  }
+  
+  // Fallback para Firebase v8 compatibility
+  if (typeof firebase !== 'undefined') {
+    return {
+      db: firebase.firestore(),
+      collection: (db, path) => firebase.firestore().collection(path),
+      doc: (db, path) => firebase.firestore().doc(path),
+      getDocs: (query) => query.get(),
+      getDoc: (docRef) => docRef.get(),
+      addDoc: (collection, data) => collection.add(data),
+      setDoc: (docRef, data) => docRef.set(data),
+      updateDoc: (docRef, data) => docRef.update(data),
+      deleteDoc: (docRef) => docRef.delete(),
+      query: (collection, ...constraints) => {
+        let q = collection;
+        constraints.forEach(constraint => {
+          if (constraint.field && constraint.op && constraint.value !== undefined) {
+            q = q.where(constraint.field, constraint.op, constraint.value);
+          }
+        });
+        return q;
+      },
+      where: (field, op, value) => ({ field, op, value }),
+      orderBy: (field, direction) => ({ field, direction }),
+      limit: (num) => ({ limit: num }),
+      serverTimestamp: () => firebase.firestore.FieldValue.serverTimestamp(),
+      Timestamp: firebase.firestore.Timestamp
+    };
+  }
+  
+  throw new Error('Firebase services not available');
+}
 
 class OfflineSyncService {
   constructor() {
@@ -368,6 +389,7 @@ class OfflineSyncService {
     let failed = 0;
     const remaining = [];
 
+    const { db, collection, addDoc, serverTimestamp } = getFirebaseServices();
     const actividadesCol = collection(db, 'registro_actividades');
 
     for (const activity of activities) {

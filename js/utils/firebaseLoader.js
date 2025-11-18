@@ -23,6 +23,15 @@ class FirebaseLoader {
     console.log('🔄 Cargando Firebase SDKs...');
 
     try {
+      // Verificar si Firebase ya está disponible globalmente (cargado desde HTML)
+      if (typeof firebase !== 'undefined') {
+        console.log('✅ Firebase detectado globalmente');
+        return this._initializeFromGlobalFirebase();
+      }
+
+      // Si no está disponible, intentar cargar dinámicamente
+      console.log('🔄 Intentando cargar Firebase dinámicamente...');
+      
       // Intentar cargar Firebase App
       const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js");
       
@@ -182,6 +191,91 @@ class FirebaseLoader {
       serverTimestamp: () => new Date(),
       Timestamp: { now: () => new Date() }
     };
+  }
+
+  _initializeFromGlobalFirebase() {
+    console.log('🔄 Inicializando Firebase desde variables globales...');
+
+    // Configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyA-ZU02eVn2FiwkgpjveymB8VRUUeGSH3Y",
+      authDomain: "medicalweboffline.firebaseapp.com", 
+      projectId: "medicalweboffline",
+      storageBucket: "medicalweboffline.firebasestorage.app",
+      messagingSenderId: "1038201454133",
+      appId: "1:1038201454133:web:f6ee7c6215f6b4d4febb7c"
+    };
+
+    // Inicializar con Firebase v9 si está disponible
+    if (firebase.initializeApp && firebase.getAuth && firebase.getFirestore) {
+      const app = firebase.initializeApp(firebaseConfig);
+      const auth = firebase.getAuth(app);
+      const db = firebase.getFirestore(app);
+      const storage = firebase.getStorage ? firebase.getStorage(app) : null;
+
+      this.services = {
+        app,
+        auth,
+        db,
+        storage,
+        // Firebase v9 functions
+        signInWithEmailAndPassword: firebase.signInWithEmailAndPassword,
+        signOut: firebase.signOut,
+        onAuthStateChanged: firebase.onAuthStateChanged,
+        collection: firebase.collection,
+        doc: firebase.doc,
+        getDocs: firebase.getDocs,
+        getDoc: firebase.getDoc,
+        addDoc: firebase.addDoc,
+        setDoc: firebase.setDoc,
+        updateDoc: firebase.updateDoc,
+        deleteDoc: firebase.deleteDoc,
+        query: firebase.query,
+        where: firebase.where,
+        orderBy: firebase.orderBy,
+        limit: firebase.limit,
+        serverTimestamp: firebase.serverTimestamp,
+        Timestamp: firebase.Timestamp
+      };
+
+      this.isLoaded = true;
+      console.log('🎉 Firebase inicializado desde variables globales');
+      return this.services;
+    }
+    
+    // Fallback para Firebase v8 legacy
+    if (firebase.apps && firebase.apps.length === 0) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    this.services = {
+      app: firebase.app(),
+      auth: firebase.auth(),
+      db: firebase.firestore(),
+      storage: firebase.storage ? firebase.storage() : null,
+      // Firebase v8 style - wrap in promises
+      signInWithEmailAndPassword: (auth, email, password) => firebase.auth().signInWithEmailAndPassword(email, password),
+      signOut: (auth) => firebase.auth().signOut(),
+      onAuthStateChanged: (auth, callback) => firebase.auth().onAuthStateChanged(callback),
+      collection: (db, path) => firebase.firestore().collection(path),
+      doc: (db, path) => firebase.firestore().doc(path),
+      getDocs: (query) => query.get(),
+      getDoc: (docRef) => docRef.get(),
+      addDoc: (collection, data) => collection.add(data),
+      setDoc: (docRef, data) => docRef.set(data),
+      updateDoc: (docRef, data) => docRef.update(data),
+      deleteDoc: (docRef) => docRef.delete(),
+      query: firebase.firestore().query || ((collection) => collection),
+      where: (field, op, value) => ({ field, op, value }),
+      orderBy: (field, direction) => ({ field, direction }),
+      limit: (num) => ({ limit: num }),
+      serverTimestamp: firebase.firestore.FieldValue?.serverTimestamp || (() => new Date()),
+      Timestamp: firebase.firestore.Timestamp || { now: () => new Date() }
+    };
+
+    this.isLoaded = true;
+    console.log('🎉 Firebase inicializado (v8 compatibility)');
+    return this.services;
   }
 
   _showOfflineNotification() {
