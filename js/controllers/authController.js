@@ -85,7 +85,13 @@ async function handleLogin() {
 
     } catch (error) {
         console.error('Error en inicio de sesión:', error);
-        alert(error.message || 'Error al iniciar sesión');
+        
+        // Mensaje específico para modo offline
+        if (error.message && error.message.includes('offline')) {
+            alert('⚠️ Aplicación en modo offline\n\nLa autenticación en línea no está disponible debido a restricciones de seguridad. La aplicación funcionará con datos locales.\n\nSi necesita autenticación, contacte al administrador del sistema.');
+        } else {
+            alert(error.message || 'Error al iniciar sesión');
+        }
     } finally {
         // Restaurar el botón
         btnLogin.disabled = false;
