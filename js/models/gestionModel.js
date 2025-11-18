@@ -3,6 +3,7 @@ import { db } from './firebaseConfig.js';
 import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, query, where, GeoPoint } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
 import { authModel } from './storageModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
+import globalOfflineSync from '../utils/globalOfflineSync.js';
 
 // Colecciones de Firebase
 const MODULOS_COLLECTION = 'modulos';
@@ -77,24 +78,60 @@ export const gestionModel = {
                 turno: grupo.turno,
                 horario: grupo.horario,
                 miembros: [], // Array de IDs de usuarios asignados
-                createdAt: new Date(),
-                updatedAt: new Date()
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             };
 
-            // Crear documento en Firebase
-            const docRef = await addDoc(collection(db, GRUPOS_COLLECTION), grupoData);
+            // Verificar conexión
+            const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
 
-            const newGrupo = {
-                id: docRef.id,
-                ...grupoData
-            };
+            if (isOnline) {
+                // Modo online: guardar en Firebase
+                const docRef = await addDoc(collection(db, GRUPOS_COLLECTION), {
+                    ...grupoData,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                });
 
-            // Emitir evento de grupo creado
-            eventBus.emit(EVENT_NAMES.GROUP_CREATED, { group: newGrupo });
+                const newGrupo = {
+                    id: docRef.id,
+                    ...grupoData
+                };
 
-            return newGrupo;
+                // Emitir evento de grupo creado
+                eventBus.emit(EVENT_NAMES.GROUP_CREATED, { group: newGrupo });
+                console.log('✅ Grupo creado online:', newGrupo.id);
+                return newGrupo;
+            } else {
+                // Modo offline: usar el servicio global de sincronización
+                console.log('📱 Sin conexión - Guardando grupo offline');
+                const offlineGrupo = await globalOfflineSync.saveOfflineData('gestion', grupoData);
+                
+                // Emitir evento de grupo creado
+                eventBus.emit(EVENT_NAMES.GROUP_CREATED, { group: offlineGrupo });
+                console.log('✅ Grupo guardado offline:', offlineGrupo.id);
+                return offlineGrupo;
+            }
         } catch (error) {
-            console.error('Error al crear grupo:', error);
+            console.error('❌ Error al crear grupo:', error);
+            
+            // Si falla online, intentar guardar offline como respaldo
+            if (navigator.onLine) {
+                console.log('🔄 Error online - Intentando guardar grupo offline como respaldo');
+                try {
+                    const grupoData = {
+                        nombre: grupo.nombre,
+                        turno: grupo.turno,
+                        horario: grupo.horario,
+                        miembros: [],
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+                    return await globalOfflineSync.saveOfflineData('gestion', grupoData);
+                } catch (offlineError) {
+                    console.error('❌ Error guardando grupo offline como respaldo:', offlineError);
+                }
+            }
             return null;
         }
     },
@@ -389,39 +426,75 @@ export const gestionModel = {
                 modulo.nombre.trim() : 
                 String(modulo.nombre || '').trim();
 
-            // Preparar datos del módulo con nueva estructura de horario
+            // Preparar datos del módulo
             const moduloData = {
                 nombre: nombreModulo,
                 nombreLugar: modulo.nombreLugar,
-                // Ubicación como GeoPoint si se proporcionan coordenadas
+                // Ubicación como objeto plano para compatibilidad offline
                 ubicacion: (modulo.latitud && modulo.longitud) ? 
-                    new GeoPoint(parseFloat(modulo.latitud), parseFloat(modulo.longitud)) : null,
+                    {
+                        latitude: parseFloat(modulo.latitud),
+                        longitude: parseFloat(modulo.longitud),
+                        _type: 'geopoint'
+                    } : null,
                 estado: modulo.estado || 'Inactivo',
                 grupoAsignadoId: modulo.grupoAsignadoId || null,
                 // Nueva estructura: horario como mapa por día
                 horarioPorDia: modulo.horarioPorDia || {},
-                // Mantener compatibilidad con campos antiguos (se migrarán gradualmente)
+                // Mantener compatibilidad con campos antiguos
                 horaInicio: modulo.horaInicio || null,
                 horaFin: modulo.horaFin || null,
                 diasAtencion: modulo.diasAtencion || [],
-                createdAt: new Date(),
-                updatedAt: new Date()
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             };
 
-            // Crear documento en Firebase
-            const docRef = await addDoc(collection(db, MODULOS_COLLECTION), moduloData);
+            // Verificar conexión
+            const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
 
-            const newModulo = {
-                id: docRef.id,
-                ...moduloData
-            };
+            if (isOnline) {
+                // Modo online: convertir ubicación a GeoPoint y guardar en Firebase
+                const firestoreData = {
+                    ...moduloData,
+                    ubicacion: (moduloData.ubicacion) ? 
+                        new GeoPoint(moduloData.ubicacion.latitude, moduloData.ubicacion.longitude) : null,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                };
 
-            // Emitir evento de módulo creado
-            eventBus.emit(EVENT_NAMES.MODULE_CREATED, { module: newModulo });
+                const docRef = await addDoc(collection(db, MODULOS_COLLECTION), firestoreData);
 
-            return newModulo;
+                const newModulo = {
+                    id: docRef.id,
+                    ...moduloData
+                };
+
+                // Emitir evento de módulo creado
+                eventBus.emit(EVENT_NAMES.MODULE_CREATED, { module: newModulo });
+                console.log('✅ Módulo creado online:', newModulo.id);
+                return newModulo;
+            } else {
+                // Modo offline: usar el servicio global de sincronización
+                console.log('📱 Sin conexión - Guardando módulo offline');
+                const offlineModulo = await globalOfflineSync.saveOfflineData('gestion', moduloData);
+                
+                // Emitir evento de módulo creado
+                eventBus.emit(EVENT_NAMES.MODULE_CREATED, { module: offlineModulo });
+                console.log('✅ Módulo guardado offline:', offlineModulo.id);
+                return offlineModulo;
+            }
         } catch (error) {
-            console.error('Error al crear módulo:', error);
+            console.error('❌ Error al crear módulo:', error);
+            
+            // Si falla online, intentar guardar offline como respaldo
+            if (navigator.onLine) {
+                console.log('🔄 Error online - Intentando guardar módulo offline como respaldo');
+                try {
+                    return await globalOfflineSync.saveOfflineData('gestion', moduloData);
+                } catch (offlineError) {
+                    console.error('❌ Error guardando módulo offline como respaldo:', offlineError);
+                }
+            }
             return null;
         }
     },

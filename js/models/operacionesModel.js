@@ -4,6 +4,7 @@ import { db } from './firebaseConfig.js';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, limit, Timestamp } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
 import { authModel } from './storageModel.js';
 import { gestionModel } from './gestionModel.js';
+import globalOfflineSync from '../utils/globalOfflineSync.js';
 
 export function getRegistroEntradasSalidas() {
   console.warn('getRegistroEntradasSalidas: Función obsoleta, use getAsistencias() para Firebase');
@@ -323,34 +324,75 @@ export async function registrarAsistencia(asistencia) {
   try {
     console.log('OperacionesModel: Registrando nueva asistencia:', asistencia);
     
+    // Verificar conexión
+    const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+    
     const asistenciaData = {
       usuarioId: asistencia.usuarioId,
       nombreUsuario: asistencia.nombreUsuario,
       matricula: asistencia.matricula,
       moduloId: asistencia.moduloId || null,
-      fecha: Timestamp.fromDate(new Date(asistencia.fecha)),
-      horaEntrada: asistencia.horaEntrada ? Timestamp.fromDate(new Date(asistencia.horaEntrada)) : null,
-      horaSalida: asistencia.horaSalida ? Timestamp.fromDate(new Date(asistencia.horaSalida)) : null,
+      fecha: asistencia.fecha,
+      horaEntrada: asistencia.horaEntrada,
+      horaSalida: asistencia.horaSalida,
       estado: asistencia.estado || 'activa',
       observaciones: asistencia.observaciones || '',
       registradoPor: asistencia.registradoPor,
-      fechaCreacion: Timestamp.fromDate(new Date())
+      fechaCreacion: new Date().toISOString()
     };
-    
-    const docRef = await addDoc(collection(db, 'asistencias_usuarios'), asistenciaData);
-    
-    console.log('OperacionesModel: Asistencia registrada con ID:', docRef.id);
-    return {
-      id: docRef.id,
-      ...asistenciaData,
-      fecha: asistenciaData.fecha.toDate(),
-      horaEntrada: asistenciaData.horaEntrada?.toDate(),
-      horaSalida: asistenciaData.horaSalida?.toDate(),
-      fechaCreacion: asistenciaData.fechaCreacion.toDate()
-    };
+
+    if (isOnline) {
+      // Modo online: guardar en Firebase
+      const firestoreData = {
+        ...asistenciaData,
+        fecha: Timestamp.fromDate(new Date(asistenciaData.fecha)),
+        horaEntrada: asistenciaData.horaEntrada ? Timestamp.fromDate(new Date(asistenciaData.horaEntrada)) : null,
+        horaSalida: asistenciaData.horaSalida ? Timestamp.fromDate(new Date(asistenciaData.horaSalida)) : null,
+        fechaCreacion: Timestamp.fromDate(new Date())
+      };
+      
+      const docRef = await addDoc(collection(db, 'asistencias_usuarios'), firestoreData);
+      
+      console.log('✅ Asistencia registrada online con ID:', docRef.id);
+      return {
+        id: docRef.id,
+        ...asistenciaData,
+        fechaCreacion: new Date().toISOString()
+      };
+    } else {
+      // Modo offline: usar el servicio global de sincronización
+      console.log('📱 Sin conexión - Guardando asistencia offline');
+      const offlineAsistencia = await globalOfflineSync.saveOfflineData('operaciones', asistenciaData);
+      console.log('✅ Asistencia guardada offline:', offlineAsistencia.id);
+      return offlineAsistencia;
+    }
     
   } catch (error) {
-    console.error('Error registrando asistencia:', error);
+    console.error('❌ Error registrando asistencia:', error);
+    
+    // Si falla online, intentar guardar offline como respaldo
+    if (navigator.onLine) {
+      console.log('🔄 Error online - Intentando guardar offline como respaldo');
+      try {
+        const asistenciaData = {
+          usuarioId: asistencia.usuarioId,
+          nombreUsuario: asistencia.nombreUsuario,
+          matricula: asistencia.matricula,
+          moduloId: asistencia.moduloId || null,
+          fecha: asistencia.fecha,
+          horaEntrada: asistencia.horaEntrada,
+          horaSalida: asistencia.horaSalida,
+          estado: asistencia.estado || 'activa',
+          observaciones: asistencia.observaciones || '',
+          registradoPor: asistencia.registradoPor,
+          fechaCreacion: new Date().toISOString()
+        };
+        return await globalOfflineSync.saveOfflineData('operaciones', asistenciaData);
+      } catch (offlineError) {
+        console.error('❌ Error guardando offline como respaldo:', offlineError);
+        return null;
+      }
+    }
     return null;
   }
 }

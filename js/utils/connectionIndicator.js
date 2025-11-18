@@ -31,6 +31,9 @@ class ConnectionIndicator {
         this.verifyOfflineStatus();
       }
     }, 2000);
+    
+    // Registrar en window para acceso global
+    window.connectionIndicator = this;
   }
 
   createIndicator() {
@@ -192,12 +195,12 @@ class ConnectionIndicator {
   }
 
   handleOffline() {
-    console.log('📴 Evento offline del navegador detectado');
+
 
     // Cuando el navegador reporta offline, asumimos desconexión inmediata
     // No necesitamos verificar con fetch ya que el navegador ya lo confirmó
     if (this.isOnline) {
-      console.log('📴 Desconexión confirmada por navegador');
+
       this.isOnline = false;
       this.updateIndicator();
       this.showIndicator();
@@ -205,8 +208,8 @@ class ConnectionIndicator {
   }
 
   handleOnline() {
-    console.log('🔗 Evento online del navegador detectado');
-
+    console.log('🌐 Evento online detectado - verificando conexión real...');
+    
     // Verificar inmediatamente si realmente está online
     this.verifyOnlineStatus();
   }
@@ -215,13 +218,13 @@ class ConnectionIndicator {
   onConnectionRestored(callback) {
     if (typeof callback === 'function') {
       this.onConnectionRestoredCallbacks.push(callback);
-      console.log('🔗 Callback registrado para restauración de conexión');
+
     }
   }
 
   // Método privado para ejecutar callbacks cuando se restaure la conexión
   _triggerConnectionRestored() {
-    console.log('🔄 Ejecutando callbacks de restauración de conexión...');
+
     this.onConnectionRestoredCallbacks.forEach(callback => {
       try {
         callback();
@@ -319,7 +322,7 @@ class ConnectionIndicator {
 
       if (response.ok) {
         // En realidad está online, no cambiar estado
-        console.log('🔍 Verificación: conexión disponible a pesar del evento offline');
+
       } else {
         // Confirmado: está offline
         if (this.isOnline) {
@@ -335,7 +338,7 @@ class ConnectionIndicator {
 
       // Confirmado: está offline
       if (this.isOnline) {
-        console.log('📴 Verificación confirma desconexión');
+
         this.isOnline = false;
         this.updateIndicator();
         this.showIndicator();
@@ -398,7 +401,7 @@ class ConnectionIndicator {
 
   // Método para forzar actualización del indicador
   refresh() {
-    console.log('🔄 Refrescando indicador de conexión...');
+
     if (navigator.onLine) {
       this.verifyOnlineStatus();
     } else {
@@ -408,7 +411,7 @@ class ConnectionIndicator {
 
   // Método para verificación agresiva (ignora navigator.onLine)
   forceCheck() {
-    console.log('🔍 Verificación agresiva de conexión...');
+
     this.isChecking = false; // Reset flag
 
     // Usar una URL del mismo dominio para evitar problemas de CORS
@@ -427,7 +430,7 @@ class ConnectionIndicator {
       if (response.ok) {
         // Conexión exitosa
         if (!this.isOnline) {
-          console.log('🔗 Conexión verificada exitosamente');
+
           this.isOnline = true;
           this.updateIndicator();
           this.showIndicator();
@@ -447,7 +450,7 @@ class ConnectionIndicator {
       } else {
         // Respuesta no ok
         if (this.isOnline) {
-          console.log('📴 Conexión perdida - respuesta no ok');
+
           this.isOnline = false;
           this.updateIndicator();
           this.showIndicator();
@@ -458,7 +461,7 @@ class ConnectionIndicator {
       clearTimeout(timeoutId);
       // Error de conexión
       if (this.isOnline) {
-        console.log('📴 Conexión perdida durante verificación:', error.message);
+
         this.isOnline = false;
         this.updateIndicator();
         this.showIndicator();
@@ -470,7 +473,7 @@ class ConnectionIndicator {
   static init() {
     if (!window.connectionIndicator) {
       window.connectionIndicator = new ConnectionIndicator();
-      console.log('🔗 ConnectionIndicator inicializado');
+
     }
     return window.connectionIndicator;
   }
@@ -519,7 +522,7 @@ if (typeof window !== 'undefined') {
     checkNow: () => {
       if (window.connectionIndicator) {
         window.connectionIndicator.refresh();
-        console.log('🔍 Verificando conexión manualmente...');
+
       }
     },
 
@@ -527,7 +530,7 @@ if (typeof window !== 'undefined') {
     forceCheck: () => {
       if (window.connectionIndicator) {
         window.connectionIndicator.forceCheck();
-        console.log('🔍 Verificación agresiva iniciada...');
+
       }
     },
 
@@ -543,7 +546,7 @@ if (typeof window !== 'undefined') {
     refresh: () => {
       if (window.connectionIndicator) {
         window.connectionIndicator.refresh();
-        console.log('🔄 Refrescando indicador...');
+
       }
     }
   };

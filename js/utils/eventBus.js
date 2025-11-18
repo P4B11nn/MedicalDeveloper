@@ -246,7 +246,15 @@ export const EVENT_NAMES = {
 
     // Activity logging events
     ACTIVITY_LOGGED: 'activity:logged',
-    ACTIVITY_SYNC_COMPLETED: 'activity:sync:completed'
+    ACTIVITY_SYNC_COMPLETED: 'activity:sync:completed',
+    
+    // Offline sync events
+    OFFLINE_DATA_SAVED: 'offline:data:saved',
+    SYNC_STARTED: 'sync:started',
+    SYNC_PROGRESS: 'sync:progress',
+    SYNC_COMPLETED: 'sync:completed',
+    SYNC_FAILED: 'sync:failed',
+    CONNECTION_STATUS_CHANGED: 'connection:status:changed'
 };
 
 export default eventBus;

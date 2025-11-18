@@ -84,16 +84,14 @@ function validateUsuarioForm(formData) {
   const errors = [];
   const warnings = [];
 
-  // Email
+  // Email (opcional)
   const email = formData.get('email')?.trim();
-  if (!email) {
-    errors.push('El correo electrónico es obligatorio');
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     errors.push('El formato del correo electrónico no es válido');
   }
 
-  // Nombre
-  const nombre = formData.get('nombre')?.trim();
+  // Nombre (usar 'nombres' que es el campo real del formulario)
+  const nombre = formData.get('nombres')?.trim();
   if (!nombre) {
     errors.push('El nombre es obligatorio');
   } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombre)) {
@@ -385,14 +383,36 @@ export async function initPacienteController() {
     console.error('CRÍTICO: imageStorageModel no disponible');
   }
   
+  // Verificar estado de conexión inicial
+  const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+  console.log(`🌐 Estado inicial de conexión: ${isOnline ? 'Online' : 'Offline'}`);
+  
   // Configurar eventos para todas las secciones
   setupEventListeners();
   
   // Inicializar todas las vistas de forma asíncrona
-  await renderPacientesList();
-  await renderDatosMedicosForm();
-  await renderHistorialCompleto();
+  try {
+    console.log('🔄 Inicializando vistas del controlador de pacientes...');
+    
+    await Promise.all([
+      renderPacientesList(),
+      renderDatosMedicosForm(),
+      renderHistorialCompleto()
+    ]);
+    
+    console.log('✅ Vistas de pacientes inicializadas correctamente');
+  } catch (error) {
+    console.error('❌ Error inicializando vistas de pacientes:', error);
+    
+    // Mostrar mensaje de error si hay un sistema de notificaciones disponible
+    if (pacienteModel && typeof pacienteModel.showNotification === 'function') {
+      pacienteModel.showNotification('Error al cargar la interfaz de pacientes', 'error');
+    }
+  }
 
+  // Registrar listeners para cambios de conexión
+  setupConnectionListeners();
+  
   // Registrar callback para refrescar datos cuando se restaure la conexión
   // Usar un timeout para asegurar que ConnectionIndicator esté inicializado
   setTimeout(() => {
@@ -400,8 +420,28 @@ export async function initPacienteController() {
       window.connectionIndicator.onConnectionRestored(async () => {
         console.log('🔄 Refrescando datos de pacientes tras restaurar conexión...');
         try {
-          // Mostrar mensaje de carga
-          mostrarMensaje('info', '🔄 Sincronizando Datos', 'Actualizando información desde Firebase...', 3000);
+          // Verificar si hay pacientes offline pendientes
+          const pendingCount = pacienteModel.getPendingOfflinePatients();
+          
+          if (pendingCount > 0) {
+            // Mostrar mensaje de sincronización de datos offline
+            if (pacienteModel && typeof pacienteModel.showNotification === 'function') {
+              pacienteModel.showNotification(`🔄 Sincronizando ${pendingCount} pacientes guardados localmente...`, 'info');
+            } else {
+              mostrarMensaje('info', '🔄 Sincronizando Datos', `Subiendo ${pendingCount} pacientes guardados localmente...`, 3000);
+            }
+            
+            // Sincronizar pacientes offline
+            const syncResult = await pacienteModel.syncOfflinePatients();
+            console.log('📊 Resultado de sincronización:', syncResult);
+          } else {
+            // Mostrar mensaje de actualización normal
+            if (pacienteModel && typeof pacienteModel.showNotification === 'function') {
+              pacienteModel.showNotification('🔄 Actualizando información desde el servidor...', 'info');
+            } else {
+              mostrarMensaje('info', '🔄 Sincronizando Datos', 'Actualizando información desde Firebase...', 3000);
+            }
+          }
 
           // Refrescar todas las vistas que dependen de Firebase
           await Promise.all([
@@ -410,16 +450,80 @@ export async function initPacienteController() {
             renderHistorialCompleto()
           ]);
 
-          mostrarMensaje('success', '✅ Datos Actualizados', 'La información se ha sincronizado correctamente con Firebase.', 3000);
+          // Mostrar mensaje de éxito
+          if (pacienteModel && typeof pacienteModel.showNotification === 'function') {
+            pacienteModel.showNotification('✅ Datos sincronizados correctamente', 'success');
+          } else {
+            mostrarMensaje('success', '✅ Datos Actualizados', 'La información se ha sincronizado correctamente con Firebase.', 3000);
+          }
         } catch (error) {
           console.error('❌ Error al refrescar datos tras restaurar conexión:', error);
-          mostrarMensaje('warning', '⚠️ Error de Sincronización', 'No se pudieron actualizar algunos datos. Refresca la página manualmente.', 5000);
+          if (pacienteModel && typeof pacienteModel.showNotification === 'function') {
+            pacienteModel.showNotification('⚠️ Error en sincronización - Algunos datos podrían no estar actualizados', 'warning');
+          } else {
+            mostrarMensaje('warning', '⚠️ Error de Sincronización', 'No se pudieron actualizar algunos datos. Refresca la página manualmente.', 5000);
+          }
         }
       });
     } else {
       console.warn('⚠️ ConnectionIndicator no disponible para registrar callback de restauración de conexión');
     }
   }, 500);
+}
+
+/**
+ * Configura listeners para cambios de conexión
+ */
+function setupConnectionListeners() {
+  // Listener para eventos online/offline del navegador
+  window.addEventListener('online', async () => {
+    console.log('🌐 Conexión restaurada - Iniciando sincronización...');
+    try {
+      // Verificar si hay pacientes offline pendientes
+      const pendingCount = pacienteModel.getPendingOfflinePatients();
+      
+      if (pendingCount > 0) {
+        // Sincronizar pacientes offline
+        console.log(`🔄 Sincronizando ${pendingCount} pacientes offline...`);
+        const syncResult = await pacienteModel.syncOfflinePatients();
+        
+        console.log('📊 Resultado de sincronización:', syncResult);
+      }
+      
+      // Refrescar datos desde Firebase
+      await renderPacientesList();
+      
+      if (pacienteModel && typeof pacienteModel.showNotification === 'function') {
+        if (pendingCount > 0) {
+          pacienteModel.showNotification('✅ Conexión restaurada y datos sincronizados', 'success');
+        } else {
+          pacienteModel.showNotification('✅ Conexión restaurada - Datos actualizados', 'success');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error en sincronización al restaurar conexión:', error);
+      if (pacienteModel && typeof pacienteModel.showNotification === 'function') {
+        pacienteModel.showNotification('⚠️ Error en sincronización - Algunos datos podrían no estar actualizados', 'warning');
+      }
+    }
+  });
+
+  window.addEventListener('offline', () => {
+    console.log('📡 Conexión perdida - Modo offline activado');
+    
+    if (pacienteModel && typeof pacienteModel.showNotification === 'function') {
+      pacienteModel.showNotification('📱 Sin conexión - Mostrando datos offline', 'warning');
+    }
+    
+    // Actualizar contador para mostrar estado offline
+    const contadorElement = document.getElementById('contador-pacientes');
+    if (contadorElement) {
+      const currentText = contadorElement.textContent;
+      if (!currentText.includes('offline')) {
+        contadorElement.innerHTML = `${currentText} <small style="color: #f59e0b; font-size: 10px;">📱 offline</small>`;
+      }
+    }
+  });
 }
 
 function setupEventListeners() {
@@ -579,13 +683,16 @@ export async function handlePacienteSubmit(event) {
   
   const formData = new FormData(event.target);
   
-  // Validación completa del formulario
+  // Verificar estado de conexión
+  const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+  
+  // Validación básica del formulario (campos requeridos y formato)
   const validation = validateForm('paciente', formData);
   if (!validation.isValid) {
     // Mostrar errores de validación
     const errorMessage = validation.errors.join('\n');
     mostrarMensaje('error', '❌ Errores de Validación', errorMessage, 8000);
-    throw new Error('Datos inválidos en el formulario');
+    return; // Cambiar throw por return para evitar errores no manejados
   }
   
   // Mostrar advertencias si existen
@@ -594,51 +701,124 @@ export async function handlePacienteSubmit(event) {
     mostrarMensaje('warning', '⚠️ Advertencias', warningMessage, 6000);
   }
   
-  // Crear objeto paciente con todos los campos, incluyendo facultad
+  // ============ DEBUG DETALLADO DE FORMDATA ============
+  console.log('🔍 DEBUG CONTROLLER - FormData recibido:');
+  for (let [key, value] of formData.entries()) {
+    console.log(`  • ${key}: "${value}" (tipo: ${typeof value})`);
+  }
+  
+  // Verificar campos críticos específicamente
+  const gradoRaw = formData.get('grado');
+  const grupoRaw = formData.get('grupo');
+  const semestreRaw = formData.get('semestre');
+  
+  console.log('🎯 DEBUG - Campos críticos del FormData:');
+  console.log(`  • grado RAW: "${gradoRaw}" (tipo: ${typeof gradoRaw})`);
+  console.log(`  • grupo RAW: "${grupoRaw}" (tipo: ${typeof grupoRaw})`);
+  console.log(`  • semestre RAW: "${semestreRaw}" (tipo: ${typeof semestreRaw})`);
+
+  // ============ VALIDACIÓN CRÍTICA DE CAMPOS REQUERIDOS ============
+  if (!gradoRaw || gradoRaw.trim() === '') {
+    console.error('❌ GRADO está vacío o undefined en FormData!');
+    mostrarMensaje('error', '❌ Error de Datos', 'El campo Grado no se recibió correctamente. Por favor, selecciona un grado válido.');
+    return;
+  }
+  
+  if (!grupoRaw || grupoRaw.trim() === '') {
+    console.error('❌ GRUPO está vacío o undefined en FormData!');
+    mostrarMensaje('error', '❌ Error de Datos', 'El campo Grupo no se recibió correctamente. Por favor, ingresa un grupo válido.');
+    return;
+  }
+
+  // Crear objeto paciente con todos los campos (SIN email y genero)
   const nuevoPaciente = {
     matricula: formData.get('matricula'),
-    nombre: formData.get('nombres') || formData.get('nombre'),
+    nombre: formData.get('nombres'), // Usar el campo correcto del formulario
     apellidos: formData.get('apellidos') || '',
     fechaNacimiento: formData.get('fecha-nacimiento') || formData.get('fechaNacimiento'),
-    grado: formData.get('grado'),
-    grupo: formData.get('grupo'),
+    grado: gradoRaw, // Usar valor crudo sin fallback
+    grupo: grupoRaw.trim(), // Usar valor crudo limpio sin fallback
     facultad: formData.get('facultad'),
     carrera: formData.get('carrera'),
     telefono: formData.get('telefono'),
     antecedentes: formData.get('antecedentes') || '',
+    semestre: formData.get('semestre') || '',
     fechaRegistro: new Date().toISOString()
     // El status se asigna automáticamente en el modelo como 'sin_datos_medicos'
   };
+  
+  console.log('🏗️ DEBUG - Objeto paciente construido:', nuevoPaciente);
+  console.log('🔍 VERIFICACIÓN FINAL:');
+  console.log(`  • grado final: "${nuevoPaciente.grado}"`);
+  console.log(`  • grupo final: "${nuevoPaciente.grupo}"`)
 
   // Obtener archivo de imagen si fue seleccionado
   const imagenFile = formData.get('fotoPerfil');
   const tieneImagen = imagenFile && imagenFile.size > 0;
+
+  // El modelo pacienteModel.addPaciente() ya maneja automáticamente el modo offline
   
   try {
-    // Verificar si ya existe un paciente con esa matrícula
-    const pacienteExistente = await pacienteModel.getPaciente(nuevoPaciente.matricula);
-    if (pacienteExistente) {
-      mostrarMensaje('error', '❌ Matrícula Duplicada', `Ya existe un paciente registrado con la matrícula ${nuevoPaciente.matricula}. Verifica el número e intenta nuevamente.`);
-      return;
-    }
-    
-    // Agregar información del usuario que registra
+            // Agregar información del usuario que registra
     const usuarioActual = obtenerUsuarioActual();
     nuevoPaciente.usuarioRegistro = usuarioActual.nombre;
     nuevoPaciente.fechaRegistro = nuevoPaciente.fechaRegistro || new Date().toISOString();
     
-    // Guardar el paciente
+    // Los campos críticos ya fueron validados arriba - NO aplicar fallbacks aquí
+    console.log('✅ Saltando validación adicional - campos críticos ya verificados');
+    
+    // ============ MANEJO DE IMAGEN PARA REGISTRO ============
+    if (tieneImagen) {
+      console.log('📸 Imagen detectada para registro:', {
+        name: imagenFile.name,
+        size: imagenFile.size,
+        type: imagenFile.type,
+        isOnline: navigator.onLine
+      });
+      
+      // CRÍTICO: Incluir imagen en los datos del paciente para todos los modos
+      nuevoPaciente._imagenFile = imagenFile;
+      console.log('✅ Imagen adjuntada al objeto paciente como _imagenFile');
+      
+      // Marcar que este paciente tendrá imagen offline si se registra offline
+      if (!navigator.onLine) {
+        nuevoPaciente._hasOfflineImage = true;
+        console.log('📱 Paciente marcado como teniendo imagen offline');
+      }
+    } else {
+      console.log('📷 No se seleccionó imagen para el registro');
+      nuevoPaciente._imagenFile = null;
+      nuevoPaciente._hasOfflineImage = false;
+    }    // Verificar duplicados solo si estamos online
+    if (isOnline) {
+      try {
+        const pacienteExistente = await pacienteModel.getPaciente(nuevoPaciente.matricula);
+        if (pacienteExistente) {
+          mostrarMensaje('error', '❌ Matrícula Duplicada', `Ya existe un paciente registrado con la matrícula ${nuevoPaciente.matricula}. Verifica el número e intenta nuevamente.`);
+          return;
+        }
+      } catch (error) {
+        console.warn('No se pudo verificar duplicados (modo offline):', error);
+        // Continuar con el registro en modo offline
+      }
+    } else {
+      console.log('📱 Modo offline: saltando verificación de duplicados');
+    }
+    
+    // Guardar el paciente (el modelo maneja automáticamente offline/online)
     const pacienteGuardado = await pacienteModel.addPaciente(nuevoPaciente);
     
     if (pacienteGuardado) {
-      // Si hay imagen, subirla después de crear el paciente
+      // ============ PROCESAMIENTO DE IMAGEN EN TODOS LOS CASOS ============
+      // Procesar imagen tanto online como offline
       if (tieneImagen) {
         try {
           console.log('📸 Procesando imagen de perfil...', {
             fileName: imagenFile.name,
             size: imagenFile.size,
             type: imagenFile.type,
-            usuarioActual: usuarioActual
+            usuarioActual: usuarioActual,
+            isOnline: navigator.onLine
           });
           
           const metadataImagen = {
@@ -646,17 +826,48 @@ export async function handlePacienteSubmit(event) {
             usuarioNombre: usuarioActual.nombre
           };
           
-          const resultado = await pacienteModel.actualizarFotoPerfil(
-            pacienteGuardado.id, 
-            imagenFile, 
-            metadataImagen
-          );
+          if (navigator.onLine) {
+            // ===== MODO ONLINE: Subir a Firebase + IndexedDB =====
+            const resultado = await pacienteModel.actualizarFotoPerfil(
+              pacienteGuardado.id, 
+              imagenFile, 
+              metadataImagen
+            );
+            console.log('✅ Foto de perfil agregada al paciente (online):', resultado);
+          } else {
+            // ===== MODO OFFLINE: Guardar solo en IndexedDB =====
+            console.log('📱 Modo offline: Guardando imagen localmente...');
+            
+            // Importar el sistema de almacenamiento local
+            const { imageStorage } = await import('../models/imageStorageAlternative.js');
+            
+            // Subir imagen al almacenamiento local IndexedDB
+            const resultadoOffline = await imageStorage.uploadImage(pacienteGuardado.id, imagenFile, {
+              tipo: 'perfil',
+              descripcion: 'Foto de perfil (offline)',
+              categoria: 'paciente',
+              usuarioId: usuarioActual.id,
+              usuarioNombre: usuarioActual.nombre
+            });
+            
+            if (resultadoOffline && resultadoOffline.id) {
+              // Actualizar el paciente en localStorage con el ID de imagen
+              await pacienteModel.updatePacienteLocal(pacienteGuardado.id, {
+                fotoPerfilId: resultadoOffline.id,
+                _hasOfflineImage: true // Marcar para sincronización posterior
+              });
+              
+              console.log('✅ Foto de perfil guardada offline:', resultadoOffline.id);
+            } else {
+              throw new Error('No se pudo guardar la imagen offline');
+            }
+          }
           
-          console.log('✅ Foto de perfil agregada al paciente:', resultado);
         } catch (error) {
-          console.error('❌ Error subiendo foto de perfil:', error);
+          console.error('❌ Error procesando foto de perfil:', error);
+          const modoTexto = navigator.onLine ? 'en el servidor' : 'localmente';
           mostrarMensaje('warning', '⚠️ Advertencia', 
-            'El paciente fue registrado exitosamente, pero no se pudo subir la foto de perfil. Puedes agregarla después desde Editar.');
+            `El paciente fue registrado exitosamente, pero no se pudo subir la foto de perfil ${modoTexto}. Puedes agregarla después desde Editar.`);
         }
       } else {
         console.log('📷 No se seleccionó imagen de perfil para el paciente');
@@ -674,11 +885,11 @@ export async function handlePacienteSubmit(event) {
         console.warn('Error registrando actividad de creación de paciente:', error);
       }
 
-      const mensajeExito = tieneImagen ? 
-        `${nuevoPaciente.nombre} ${nuevoPaciente.apellidos || ''} ha sido registrado exitosamente con foto de perfil.\nMatrícula: ${nuevoPaciente.matricula}` :
-        `${nuevoPaciente.nombre} ${nuevoPaciente.apellidos || ''} ha sido registrado exitosamente.\nMatrícula: ${nuevoPaciente.matricula}`;
-
-      mostrarMensaje('success', '✅ Paciente Registrado', mensajeExito);
+      // El mensaje ya se muestra desde pacienteModel.addPaciente()
+      // Solo mostrar mensaje adicional si hay imagen y se procesó correctamente
+      if (tieneImagen && navigator.onLine) {
+        console.log('✅ Paciente registrado con imagen exitosamente');
+      }
       
       event.target.reset();
       
@@ -691,11 +902,25 @@ export async function handlePacienteSubmit(event) {
       // Actualizar lista de pacientes pendientes en datos médicos
       await renderDatosMedicosForm();
     } else {
-      mostrarMensaje('error', '❌ Error de Registro', 'No se pudo registrar el paciente. Intenta nuevamente.');
+      const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+      const errorMsg = isOnline 
+        ? 'No se pudo registrar el paciente en el servidor. Intenta nuevamente.'
+        : 'No se pudo guardar el paciente localmente. Verifica los datos e intenta nuevamente.';
+      mostrarMensaje('error', '❌ Error de Registro', errorMsg);
     }
   } catch (error) {
     console.error('Error al registrar paciente:', error);
-    mostrarMensaje('error', '❌ Error del Sistema', 'Error interno al registrar el paciente. Contacta al administrador.');
+    
+    const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+    let errorMessage;
+    
+    if (!isOnline) {
+      errorMessage = 'Error guardando paciente offline: ' + error.message;
+    } else {
+      errorMessage = 'Error registrando paciente en el servidor: ' + error.message;
+    }
+    
+    mostrarMensaje('error', '❌ Error al Registrar', errorMessage);
   }
 }
 
@@ -750,6 +975,59 @@ async function handleDatosMedicosSubmit(event) {
       const warningMessage = validation.warnings.join('\n');
       mostrarMensaje('warning', '⚠️ Advertencias', warningMessage, 6000);
     }
+
+    // ============ MANEJO DE MODO OFFLINE PARA DATOS MÉDICOS ============
+    // Verificar si estamos offline
+    if (!navigator.onLine) {
+      try {
+        // Importar servicios offline dinámicamente
+        const { default: offlineSyncService } = await import('../utils/offlineSyncService.js');
+        const { default: offlineNotificationManager } = await import('../utils/offlineNotificationManager.js');
+
+        // Crear objeto de datos médicos para la cola offline
+        const usuarioActual = obtenerUsuarioActual();
+        const datosMedicosOffline = {
+          pacienteId: pacienteSeleccionado,
+          temperatura: temperatura || null,
+          presion: presion || null,
+          peso: peso || null,
+          talla: talla || null,
+          frecuenciaRespiratoria: frecuenciaRespiratoria || null,
+          glucosa: glucosa || null,
+          examenVista: examenVista || null,
+          examenOido: examenOido || null,
+          observacionesGenerales: observacionesGenerales || null,
+          usuarioId: usuarioActual.id,
+          usuarioNombre: usuarioActual.nombre,
+          fechaRegistroMedico: new Date().toISOString()
+        };
+
+        // Agregar datos médicos a cola offline
+        const queueId = await offlineSyncService.addMedicalDataToQueue(datosMedicosOffline);
+        
+        // Mostrar notificación offline
+        offlineNotificationManager.showOfflineActionNotification(
+          'Datos médicos agregados a cola offline',
+          `Los datos médicos de ${paciente.nombre} ${paciente.apellidos || ''} serán sincronizados cuando recuperes conexión`
+        );
+
+        // Limpiar formulario
+        event.target.reset();
+        document.getElementById('paciente-info-section').style.display = 'none';
+        
+        // Actualizar vistas con datos locales
+        await renderPacientesList();
+        await renderDatosMedicosForm();
+        
+        console.log('📱 Datos médicos agregados a cola offline:', queueId);
+        return;
+      } catch (error) {
+        console.error('❌ Error en modo offline para datos médicos:', error);
+        mostrarMensaje('error', '❌ Error Offline', 'No se pudieron guardar los datos médicos offline. Verifica tu conexión.');
+        return;
+      }
+    }
+    // ============ FIN MANEJO OFFLINE DATOS MÉDICOS ============
     
     // Determinar si es actualización o registro inicial
     const esActualizacion = paciente.status === 'completo';
@@ -941,19 +1219,65 @@ async function renderPacientesList() {
   if (!tableBody) return;
   
   try {
+    // Mostrar indicador de carga
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align: center; padding: 40px;">
+          <div style="
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+          "></div>
+          <span style="color: #6b7280;">Cargando pacientes...</span>
+        </td>
+      </tr>
+    `;
+    
     const pacientes = await pacienteModel.getPacientes();
     
     // Actualizar contador de pacientes
     const contadorElement = document.getElementById('contador-pacientes');
     if (contadorElement) {
-      contadorElement.textContent = pacientes.length;
+      const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+      const pendingCount = pacienteModel.getPendingOfflinePatients();
+      
+      let contadorHTML = pacientes.length.toString();
+      
+      // Agregar indicadores de estado
+      if (!isOnline && pacientes.length > 0) {
+        contadorHTML += ` <small style="color: #f59e0b; font-size: 10px;">📱 offline</small>`;
+      }
+      
+      if (pendingCount > 0) {
+        contadorHTML += ` <small style="color: #ef4444; font-size: 10px; margin-left: 4px;" title="Pacientes pendientes de sincronización">⬆️ ${pendingCount}</small>`;
+      }
+      
+      contadorElement.innerHTML = contadorHTML;
     }
     
     if (pacientes.length === 0) {
+      const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+      
       tableBody.innerHTML = `
         <tr>
-          <td colspan="11" style="text-align: center; padding: 40px; color: #666;">
-            No hay pacientes registrados
+          <td colspan="10" style="text-align: center; padding: 40px; color: #666;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 16px;">
+              <i class="fas fa-users" style="font-size: 48px; color: #d1d5db;"></i>
+              <div>
+                <p style="font-size: 18px; margin: 0; color: #374151;">
+                  ${isOnline ? 'No hay pacientes registrados' : 'No hay datos de pacientes disponibles offline'}
+                </p>
+                <p style="font-size: 14px; margin: 8px 0 0 0; color: #6b7280;">
+                  ${isOnline ? 'Registra tu primer paciente usando el formulario de registro.' : 'Los datos se mostrarán cuando se restablezca la conexión a internet.'}
+                </p>
+                ${!isOnline ? '<p style="font-size: 12px; margin: 8px 0 0 0; color: #f59e0b;"><i class="fas fa-wifi" style="margin-right: 4px;"></i>Sin conexión a internet</p>' : ''}
+              </div>
+            </div>
           </td>
         </tr>
       `;
@@ -968,6 +1292,16 @@ async function renderPacientesList() {
         statusBadge = '<span class="status-icon status-pending" title="Sin datos médicos"><i class="fas fa-clock" style="color: #f59e0b;"></i></span>';
       } else {
         statusBadge = '<span class="status-icon status-unknown" title="Estado desconocido"><i class="fas fa-question-circle" style="color: #6b7280;"></i></span>';
+      }
+      
+      // Agregar indicador offline si el paciente fue creado offline
+      let offlineBadge = '';
+      if (paciente._isOffline) {
+        if (paciente._synced) {
+          offlineBadge = '<span class="status-icon status-synced" title="Sincronizado desde offline"><i class="fas fa-sync" style="color: #10b981; font-size: 12px;"></i></span>';
+        } else {
+          offlineBadge = '<span class="status-icon status-offline" title="Pendiente de sincronización"><i class="fas fa-cloud-upload-alt" style="color: #f59e0b; font-size: 12px;"></i></span>';
+        }
       }
       
       const inicial = paciente.nombre ? paciente.nombre.charAt(0).toUpperCase() : 'P';
@@ -988,7 +1322,7 @@ async function renderPacientesList() {
           <td><span class="badge badge-blue">${paciente.grupo}</span></td>
           <td><span class="faculty-badge">${facultadAbrev}</span></td>
           <td class="phone-number"><i class="fas fa-phone" style="color: #10b981;"></i> ${paciente.telefono}</td>
-          <td>${statusBadge}</td>
+          <td>${statusBadge} ${offlineBadge}</td>
           <td class="actions-cell">
             <button class="action-btn view-btn" title="Ver detalles" aria-label="Ver detalles" onclick="verDetallesPaciente('${paciente.id}')">
               <i class="fas fa-eye" style="color: #3b82f6;"></i>
@@ -2814,6 +3148,48 @@ async function handleEditarPacienteSubmit(event) {
     usuarioNombre: usuarioActual.nombre,
     fechaRegistroMedico: new Date().toISOString()
   };
+
+  // ============ MANEJO DE MODO OFFLINE PARA EDICIÓN ============
+  // Verificar si estamos offline
+  if (!navigator.onLine) {
+    try {
+      // Importar servicios offline dinámicamente
+      const { default: offlineSyncService } = await import('../utils/offlineSyncService.js');
+      const { default: offlineNotificationManager } = await import('../utils/offlineNotificationManager.js');
+
+      // Crear objeto para actualización offline
+      const actualizacionOffline = {
+        id: pacienteId,
+        datosPersonales: datosPersonales,
+        datosMedicos: datosMedicos,
+        tieneNuevaImagen: tieneNuevaImagen,
+        eliminarImagenActual: eliminarImagenActual,
+        nuevaImagen: tieneNuevaImagen ? nuevaImagen : null,
+        tipo: 'actualizacion_paciente'
+      };
+
+      // Agregar actualización a cola offline
+      const queueId = await offlineSyncService.addPatientUpdateToQueue(actualizacionOffline);
+      
+      // Mostrar notificación offline
+      offlineNotificationManager.showOfflineActionNotification(
+        'Actualización agregada a cola offline',
+        `Los cambios de ${datosPersonales.nombre} ${datosPersonales.apellidos} serán sincronizados cuando recuperes conexión`
+      );
+
+      // Cerrar modal y actualizar vistas
+      cerrarEditarModal();
+      await renderPacientesList();
+      
+      console.log('📱 Actualización de paciente agregada a cola offline:', queueId);
+      return;
+    } catch (error) {
+      console.error('❌ Error en modo offline para edición:', error);
+      mostrarMensaje('error', '❌ Error Offline', 'No se pudieron guardar los cambios offline. Verifica tu conexión.');
+      return;
+    }
+  }
+  // ============ FIN MANEJO OFFLINE EDICIÓN ============
   
   try {
     // Obtener datos actuales del paciente para comparar

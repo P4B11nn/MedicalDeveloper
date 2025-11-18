@@ -23,6 +23,19 @@ const CITAS_COLLECTION = "citas";
 const HISTORIAL_COLLECTION = "historialMedico";
 const REGISTROS_MEDICOS_COLLECTION = "registros_medicos";
 
+// --- CONSTANTES DE CACHÉ ---
+const CACHE_KEY = 'pacientes_cache';
+const CACHE_TIMESTAMP_KEY = 'pacientes_cache_timestamp';
+const CACHE_EXPIRATION = 24 * 60 * 60 * 1000; // 24 horas en milisegundos
+
+// --- SINGLETON PATTERN PARA PREVENIR CARGAS MÚLTIPLES ---
+let pacientesCache = null; // Caché en memoria de pacientes
+let pacientesPromise = null; // Promesa de carga en progreso
+let isPacientesLoading = false; // Bandera para prevenir cargas simultáneas
+
+// --- PREVENCIÓN DE CARGAS DUPLICADAS DE PACIENTE INDIVIDUAL ---
+const pacienteLoadingMap = new Map(); // Map de promesas de carga por pacienteId
+
 // --- COLECCIONES DE FIRESTORE ---
 const pacientesCollection = collection(db, PACIENTES_COLLECTION);
 const citasCollection = collection(db, CITAS_COLLECTION);
@@ -60,8 +73,48 @@ export const pacienteModel = {
     });
   },
 
-  // Pacientes - FIREBASE VERSION
-  async getPacientes() {
+  // Pacientes - FIREBASE VERSION con CACHÉ MEJORADO
+  async getPacientes(forceRefresh = false) {
+    // Verificar estado de conexión más preciso
+    const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+    
+    // Mostrar notificación de modo offline si es necesario
+    if (!isOnline) {
+      this.showOfflineMessage();
+    }
+    
+    // Si estamos offline, usar caché directamente
+    if (!isOnline) {
+      console.log('📱 Modo offline detectado - cargando desde caché...');
+      const cachedPacientes = this.loadFromCache();
+      if (cachedPacientes && cachedPacientes.length > 0) {
+        console.log(`📱 ${cachedPacientes.length} pacientes cargados desde caché (offline)`);
+        this.showOfflineDataMessage(cachedPacientes.length);
+        return cachedPacientes;
+      }
+      
+      // Si no hay caché válido en modo offline, intentar localStorage legacy
+      console.log('🔄 Caché no disponible, intentando localStorage legacy...');
+      try {
+        const pacientesLocal = read('pacientes') || [];
+        if (pacientesLocal.length > 0) {
+          console.log(`📱 ${pacientesLocal.length} pacientes obtenidos desde localStorage legacy (offline)`);
+          this.showOfflineDataMessage(pacientesLocal.length);
+          // Cachear los datos legacy para uso futuro
+          this.cacheAllPacientes(pacientesLocal);
+          return this._sortByName(pacientesLocal);
+        }
+      } catch (localError) {
+        console.error('❌ Error obteniendo pacientes desde localStorage:', localError);
+      }
+      
+      // Si no hay datos en absoluto offline
+      console.warn('⚠️ No hay datos de pacientes disponibles offline');
+      this.showNoOfflineDataMessage();
+      return [];
+    }
+    
+    // Si estamos online, intentar Firebase
     try {
       console.log('🔄 Obteniendo pacientes desde Firebase...');
       const snapshot = await getDocs(pacientesCollection);
@@ -75,26 +128,77 @@ export const pacienteModel = {
       });
 
       console.log(`✅ ${pacientes.length} pacientes obtenidos desde Firebase`);
+
+      // Actualizar caché con los datos frescos de Firebase
+      this.cacheAllPacientes(pacientes);
+
       return this._sortByName(pacientes);
     } catch (error) {
       console.error('❌ Error obteniendo pacientes desde Firebase:', error);
-      console.log('🔄 Intentando fallback a localStorage...');
 
-      // Fallback a localStorage si Firebase falla
+      // Si falla Firebase, intentar caché
+      console.log('🔄 Intentando cargar desde caché (fallback)...');
+      const cachedPacientes = this.loadFromCache();
+      if (cachedPacientes && cachedPacientes.length > 0) {
+        console.log(`📱 ${cachedPacientes.length} pacientes cargados desde caché (fallback)`);
+        this.showFallbackDataMessage(cachedPacientes.length);
+        return cachedPacientes;
+      }
+
+      // Último recurso: localStorage legacy
+      console.log('🔄 Intentando fallback a localStorage legacy...');
       try {
         const pacientesLocal = read('pacientes') || [];
-        console.log(`📱 ${pacientesLocal.length} pacientes obtenidos desde localStorage`);
-        return this._sortByName(pacientesLocal);
+        if (pacientesLocal.length > 0) {
+          console.log(`📱 ${pacientesLocal.length} pacientes obtenidos desde localStorage legacy`);
+          this.showFallbackDataMessage(pacientesLocal.length);
+          // Cachear los datos legacy para uso futuro
+          this.cacheAllPacientes(pacientesLocal);
+          return this._sortByName(pacientesLocal);
+        }
       } catch (localError) {
         console.error('❌ Error obteniendo pacientes desde localStorage:', localError);
-        return [];
       }
+      
+      // Si no hay datos en absoluto
+      console.warn('⚠️ No hay datos de pacientes disponibles');
+      this.showNoDataMessage();
+      return [];
     }
+  },
+
+  // Función para invalidar el caché en memoria (útil después de crear/actualizar/eliminar)
+  invalidateCache() {
+    console.log('🔄 Invalidando caché de pacientes en memoria...');
+    pacientesCache = null;
+    isPacientesLoading = false;
+    pacientesPromise = null;
   },
 
   async getPaciente(id) {
     if (!id) return null;
 
+    // ✅ PREVENIR EJECUCIÓN DUPLICADA: Si ya hay una carga en progreso para este ID, esperar esa promesa
+    if (pacienteLoadingMap.has(id)) {
+      console.log(`⏭️ Carga de paciente ${id} ya en progreso, esperando...`);
+      return pacienteLoadingMap.get(id);
+    }
+
+    // Crear la promesa de carga y guardarla en el Map
+    const loadPromise = this._fetchPaciente(id);
+    pacienteLoadingMap.set(id, loadPromise);
+
+    try {
+      const paciente = await loadPromise;
+      return paciente;
+    } finally {
+      // Limpiar la promesa del Map después de completar
+      pacienteLoadingMap.delete(id);
+    }
+  },
+
+  // Función interna para realizar la carga real de un paciente
+  async _fetchPaciente(id) {
     try {
       console.log(`🔄 Buscando paciente ${id} en Firebase...`);
       const pacienteDoc = await getDoc(doc(pacientesCollection, id));
@@ -137,13 +241,62 @@ export const pacienteModel = {
   async addPaciente(paciente) {
     if (!paciente) return null;
 
+    // ============ DEBUG DETALLADO DE CAMPOS CRÍTICOS ============
+    console.log('📝 addPaciente llamado con paciente completo:', JSON.stringify(paciente, null, 2));
+    console.log('🔍 DEBUG - Análisis de campos críticos:');
+    console.log(`  • grado: "${paciente.grado}" (tipo: ${typeof paciente.grado})`);
+    console.log(`  • grupo: "${paciente.grupo}" (tipo: ${typeof paciente.grupo})`);
+    console.log(`  • semestre: "${paciente.semestre}" (tipo: ${typeof paciente.semestre})`);
+    console.log(`  • antecedentes: "${paciente.antecedentes}" (tipo: ${typeof paciente.antecedentes})`);
+    
+    // Verificar campos vacíos o undefined CRÍTICOS
+    const camposProblematicos = [];
+    if (!paciente.grado || paciente.grado === '' || paciente.grado === 'undefined') {
+      camposProblematicos.push(`grado: "${paciente.grado}"`);
+      console.error('🚨 GRADO CRÍTICO FALTANTE:', paciente.grado);
+    }
+    if (!paciente.grupo || paciente.grupo === '' || paciente.grupo === 'undefined') {
+      camposProblematicos.push(`grupo: "${paciente.grupo}"`);
+      console.error('🚨 GRUPO CRÍTICO FALTANTE:', paciente.grupo);
+    }
+    
+    if (camposProblematicos.length > 0) {
+      console.error('❌ CAMPOS CRÍTICOS FALTANTES - REGISTRO BLOQUEADO:', camposProblematicos);
+      throw new Error(`Campos críticos faltantes: ${camposProblematicos.join(', ')}. No se puede proceder con el registro.`);
+    } else {
+      console.log('✅ Todos los campos críticos tienen valores válidos');
+    }
+
+    // ============ VALIDACIÓN ESPECÍFICA DE IMAGEN ============
+    if (paciente._imagenFile) {
+      console.log('🖼️ PROCESANDO IMAGEN:', {
+        archivo: paciente._imagenFile.name,
+        tamaño: paciente._imagenFile.size,
+        tipo: paciente._imagenFile.type,
+        esOffline: !navigator.onLine
+      });
+    } else {
+      console.log('📷 No hay archivo de imagen para procesar');
+    }
+
+    // Verificar estado de conexión
+    const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+    
+    if (!isOnline) {
+      // Modo offline: guardar en cola de sincronización
+      console.log('📱 Modo offline detectado - Guardando paciente localmente...');
+      return this.addPacienteOffline(paciente);
+    }
+
     try {
       console.log('🔄 Agregando paciente a Firebase...');
 
       // No asignar ID manualmente, Firebase lo hace automáticamente
-      // Remover cualquier ID existente para evitar conflictos
+      // Remover cualquier ID existente y campos temporales para evitar conflictos
       const pacienteParaGuardar = { ...paciente };
       delete pacienteParaGuardar.id;
+      delete pacienteParaGuardar._imagenFile;
+      delete pacienteParaGuardar._hasOfflineImage;
 
       pacienteParaGuardar.fechaRegistro = pacienteParaGuardar.fechaRegistro || new Date().toISOString();
 
@@ -173,6 +326,44 @@ export const pacienteModel = {
       const docRef = await addDoc(pacientesCollection, pacienteParaGuardar);
 
       console.log('✅ Paciente agregado a Firebase con ID:', docRef.id);
+      
+      // ============ PROCESAR IMAGEN SI EXISTE ============
+      if (paciente._imagenFile) {
+        console.log('🖼️ Procesando imagen para el paciente recién creado...');
+        try {
+          // Crear metadata para la imagen
+          const imageMetadata = {
+            pacienteId: docRef.id,
+            fechaSubida: new Date().toISOString(),
+            usuarioId: this.getCurrentUserId() || 'unknown',
+            usuarioNombre: this.getCurrentUserName() || 'Usuario'
+          };
+
+          // Subir imagen usando el sistema de almacenamiento
+          const imagenSubida = await imageStorageModel.subirFotoPerfil(
+            paciente._imagenFile,
+            docRef.id, 
+            imageMetadata
+          );
+
+          console.log('✅ Imagen subida exitosamente:', imagenSubida.imageId);
+
+          // Actualizar el paciente con el ID de la imagen
+          const pacienteRef = doc(pacientesCollection, docRef.id);
+          await updateDoc(pacienteRef, {
+            fotoPerfilId: imagenSubida.imageId,
+            updatedAt: serverTimestamp()
+          });
+
+          console.log('✅ fotoPerfilId actualizado en el paciente:', imagenSubida.imageId);
+
+        } catch (imagenError) {
+          console.error('⚠️ Error procesando imagen, pero paciente ya creado:', imagenError);
+          // El paciente se creó exitosamente, solo falló la imagen
+        }
+      }
+
+      this.showNotification('✅ Paciente registrado exitosamente en el servidor', 'success');
 
       return {
         id: docRef.id,
@@ -180,39 +371,10 @@ export const pacienteModel = {
       };
     } catch (error) {
       console.error('❌ Error agregando paciente a Firebase:', error);
-      console.log('🔄 Intentando fallback a localStorage...');
-
-      // Fallback a localStorage
-      try {
-        const lista = read('pacientes') || [];
-
-        // Asegurar id único para localStorage
-        if (!paciente.id) paciente.id = 'P' + Date.now().toString().slice(-8);
-        paciente.fechaRegistro = paciente.fechaRegistro || new Date().toISOString();
-
-        // Inicializar campos médicos
-        paciente.datosMedicos = {
-          temperatura: null,
-          presion: null,
-          peso: null,
-          talla: null,
-          frecuenciaRespiratoria: null,
-          examenVista: null,
-          examenOido: null,
-          fechaRegistroMedico: null
-        };
-
-        paciente.status = 'sin_datos_medicos';
-
-        lista.push(paciente);
-        write('pacientes', lista);
-
-        console.log('📱 Paciente guardado en localStorage como fallback');
-        return paciente;
-      } catch (localError) {
-        console.error('❌ Error guardando paciente en localStorage:', localError);
-        throw new Error('No se pudo guardar el paciente: ' + error.message);
-      }
+      console.log('🔄 Sin conexión - Guardando paciente localmente...');
+      
+      // Si falla Firebase, usar modo offline
+      return this.addPacienteOffline(paciente);
     }
   },
 
@@ -1005,12 +1167,39 @@ export const pacienteModel = {
       };
 
       console.log('📝 Actualizando paciente con nueva foto de perfil...');
-      await this.updatePaciente(pacienteId, updateData);
+      
+      // Actualizar directamente en Firebase para mayor seguridad
+      try {
+        const pacienteRef = doc(pacientesCollection, pacienteId);
+        await updateDoc(pacienteRef, {
+          fotoPerfilId: imagenSubida.imageId,
+          updatedAt: serverTimestamp()
+        });
+        console.log(`✅ Campo fotoPerfilId actualizado directamente en Firebase: ${imagenSubida.imageId}`);
+      } catch (updateError) {
+        console.warn('⚠️ Error actualizando directamente, usando método fallback:', updateError);
+        // Fallback al método original
+        await this.updatePaciente(pacienteId, updateData);
+      }
 
       console.log('✅ Foto de perfil actualizada exitosamente');
+      
+      // Verificar que la actualización fue exitosa leyendo el documento
+      try {
+        const verificacion = await getDoc(doc(pacientesCollection, pacienteId));
+        if (verificacion.exists() && verificacion.data().fotoPerfilId) {
+          console.log(`✅ Verificación exitosa - fotoPerfilId en Firebase: ${verificacion.data().fotoPerfilId}`);
+        } else {
+          console.warn(`⚠️ Verificación fallida - fotoPerfilId no encontrado en Firebase`);
+        }
+      } catch (errorVerif) {
+        console.warn('⚠️ Error verificando actualización:', errorVerif);
+      }
+      
       return {
         success: true,
-        fotoPerfilId: updateData.fotoPerfilId
+        fotoPerfilId: imagenSubida.imageId,
+        imageId: imagenSubida.imageId // Añadir ambos para compatibilidad
       };
 
     } catch (error) {
@@ -1087,6 +1276,669 @@ export const pacienteModel = {
       return currentUser.uid || currentUser.id || 'unknown';
     } catch (error) {
       return 'unknown';
+    }
+  },
+
+  // ==========================================
+  // FUNCIONES DE CACHÉ OFFLINE
+  // ==========================================
+
+  /**
+   * Cachea todos los pacientes en localStorage
+   * @param {Array} pacientes - Lista de pacientes a cachear
+   * @returns {boolean} true si se guardó correctamente
+   */
+  cacheAllPacientes(pacientes) {
+    try {
+      console.log(`💾 Cacheando ${pacientes.length} pacientes...`);
+      
+      // Guardar datos
+      localStorage.setItem(CACHE_KEY, JSON.stringify(pacientes));
+      
+      // Guardar timestamp
+      localStorage.setItem(CACHE_TIMESTAMP_KEY, Date.now().toString());
+      
+      console.log('✅ Caché de pacientes actualizado');
+      return true;
+    } catch (error) {
+      console.error('❌ Error cacheando pacientes:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Carga pacientes desde el caché si es válido
+   * @returns {Array|null} Lista de pacientes o null si no hay caché válido
+   */
+  loadFromCache() {
+    try {
+      // Verificar si el caché es válido
+      if (!this.isCacheValid()) {
+        console.log('⚠️ Caché de pacientes expirado o inválido');
+        return null;
+      }
+
+      // Cargar datos del caché
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      if (!cachedData) {
+        console.log('⚠️ No hay datos en caché');
+        return null;
+      }
+
+      const pacientes = JSON.parse(cachedData);
+      console.log(`📱 ${pacientes.length} pacientes cargados desde caché`);
+      
+      return this._sortByName(pacientes);
+    } catch (error) {
+      console.error('❌ Error cargando desde caché:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Verifica si el caché es válido (no expirado)
+   * @returns {boolean} true si el caché es válido
+   */
+  isCacheValid() {
+    try {
+      const timestampStr = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+      if (!timestampStr) {
+        return false;
+      }
+
+      const timestamp = parseInt(timestampStr);
+      const now = Date.now();
+      const age = now - timestamp;
+
+      const isValid = age < CACHE_EXPIRATION;
+      
+      if (!isValid) {
+        console.log(`⏰ Caché expirado: ${Math.round(age / 1000 / 60)} minutos de antigüedad`);
+      } else {
+        console.log(`✅ Caché válido: ${Math.round(age / 1000 / 60)} minutos de antigüedad`);
+      }
+
+      return isValid;
+    } catch (error) {
+      console.error('❌ Error verificando validez del caché:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Limpia el caché de pacientes
+   * @returns {boolean} true si se limpió correctamente
+   */
+  clearCache() {
+    try {
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_TIMESTAMP_KEY);
+      console.log('🗑️ Caché de pacientes limpiado');
+      return true;
+    } catch (error) {
+      console.error('❌ Error limpiando caché:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Obtiene información sobre el caché
+   * @returns {Object} Información del caché
+   */
+  getCacheInfo() {
+    try {
+      const timestampStr = localStorage.getItem(CACHE_TIMESTAMP_KEY);
+      const cachedData = localStorage.getItem(CACHE_KEY);
+      
+      if (!timestampStr || !cachedData) {
+        return {
+          exists: false,
+          count: 0,
+          age: 0,
+          valid: false,
+          size: 0
+        };
+      }
+
+      const timestamp = parseInt(timestampStr);
+      const now = Date.now();
+      const age = now - timestamp;
+      const pacientes = JSON.parse(cachedData);
+      
+      return {
+        exists: true,
+        count: pacientes.length,
+        age: Math.round(age / 1000 / 60), // minutos
+        valid: age < CACHE_EXPIRATION,
+        size: Math.round(cachedData.length / 1024), // KB aproximados
+        timestamp: new Date(timestamp).toLocaleString()
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo info del caché:', error);
+      return {
+        exists: false,
+        count: 0,
+        age: 0,
+        valid: false,
+        size: 0,
+        error: error.message
+      };
+    }
+  },
+
+  // ==========================================
+  // FUNCIONES DE MANEJO OFFLINE
+  // ==========================================
+
+  /**
+   * Agrega un paciente en modo offline
+   * @param {Object} paciente - Datos del paciente
+   * @returns {Object} Paciente guardado con ID temporal
+   */
+  async addPacienteOffline(paciente) {
+    try {
+      // Generar ID temporal único
+      const tempId = 'TEMP_' + Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+      
+      // ============ PROCESAR IMAGEN OFFLINE SI EXISTE ============
+      let fotoPerfilId = null;
+      let hasOfflineImage = false;
+      
+      if (paciente._imagenFile) {
+        try {
+          console.log('📸 Procesando imagen offline para paciente...');
+          
+          // Importar el sistema de almacenamiento local
+          const { imageStorage } = await import('./imageStorageAlternative.js');
+          
+          // Subir imagen al almacenamiento local IndexedDB
+          const resultadoImagen = await imageStorage.uploadImage(tempId, paciente._imagenFile, {
+            tipo: 'perfil',
+            descripcion: 'Foto de perfil (offline)',
+            categoria: 'paciente',
+            usuarioId: paciente.usuarioRegistro || 'offline_user',
+            usuarioNombre: paciente.usuarioRegistro || 'Usuario Offline'
+          });
+          
+          if (resultadoImagen && resultadoImagen.id) {
+            fotoPerfilId = resultadoImagen.id;
+            hasOfflineImage = true;
+            console.log('✅ Imagen offline guardada con ID:', fotoPerfilId);
+          }
+          
+        } catch (errorImagen) {
+          console.error('❌ Error guardando imagen offline:', errorImagen);
+          // No fallar el registro por una imagen, solo advertir
+        }
+      }
+      
+      // ============ DEBUG ESPECÍFICO ANTES DE CONSTRUCCIÓN OFFLINE ============
+      console.log('🔍 DEBUG addPacienteOffline - Valores recibidos:');
+      console.log(`  • grado original: "${paciente.grado}"`);
+      console.log(`  • grupo original: "${paciente.grupo}"`);
+      console.log(`  • semestre original: "${paciente.semestre}"`);
+      
+      // ============ VALIDACIÓN CRÍTICA ANTES DE CONSTRUCCIÓN ============
+      if (!paciente.grado || paciente.grado.trim() === '') {
+        console.error('🚨 GRADO FALTANTE EN addPacienteOffline!');
+        throw new Error('No se puede crear paciente offline sin grado válido');
+      }
+      if (!paciente.grupo || paciente.grupo.trim() === '') {
+        console.error('🚨 GRUPO FALTANTE EN addPacienteOffline!');
+        throw new Error('No se puede crear paciente offline sin grupo válido');
+      }
+
+      // Preparar paciente para almacenamiento offline CON ESTRUCTURA COMPLETA
+      const pacienteOffline = {
+        ...paciente,
+        id: tempId,
+        
+        // ============ ESTRUCTURA IDÉNTICA AL REGISTRO ONLINE ============
+        fechaRegistro: paciente.fechaRegistro || new Date().toISOString(),
+        usuarioRegistro: paciente.usuarioRegistro || 'Usuario Offline',
+        status: 'sin_datos_medicos',
+        
+        // ============ CAMPOS CRÍTICOS VALIDADOS ============
+        grado: paciente.grado, // NO usar fallback - debe venir con valor válido
+        grupo: paciente.grupo, // NO usar fallback - debe venir con valor válido
+        
+        // Campos opcionales
+        antecedentes: paciente.antecedentes || '',
+        semestre: paciente.semestre || '',
+        
+        // Campo legacy para compatibilidad
+        fotoPerfil: null,
+        
+        // Datos médicos iniciales
+        datosMedicos: {
+          temperatura: null,
+          presion: null,
+          peso: null,
+          talla: null,
+          frecuenciaRespiratoria: null,
+          examenVista: null,
+          examenOido: null,
+          fechaRegistroMedico: null
+        },
+        
+        // ============ ID DE IMAGEN (CRÍTICO) ============
+        fotoPerfilId: fotoPerfilId,
+        
+        // ============ METADATOS OFFLINE ============
+        _isOffline: true,
+        _tempId: tempId,
+        _createdOffline: new Date().toISOString(),
+        _hasOfflineImage: hasOfflineImage
+      };
+      
+      console.log('🏗️ DEBUG addPacienteOffline - Objeto final construido:');
+      console.log(`  • grado final: "${pacienteOffline.grado}"`);
+      console.log(`  • grupo final: "${pacienteOffline.grupo}"`);
+      console.log(`  • semestre final: "${pacienteOffline.semestre}"`);
+      console.log(`  • fotoPerfilId: "${pacienteOffline.fotoPerfilId}"`);
+      
+      // Verificación final crítica
+      if (!pacienteOffline.grado || !pacienteOffline.grupo) {
+        console.error('🚨 OBJETO FINAL CORRUPTO - GRADO O GRUPO PERDIDO!');
+        console.error('Objeto completo:', pacienteOffline);
+        throw new Error('Error crítico: Se perdieron campos obligatorios durante la construcción');
+      }
+      
+      // Limpiar campo temporal de imagen
+      delete pacienteOffline._imagenFile;
+
+      // Guardar en localStorage legacy para compatibilidad
+      const lista = read('pacientes') || [];
+      lista.push(pacienteOffline);
+      write('pacientes', lista);
+
+      // Agregar a cola de sincronización offline si existe
+      if (window.offlineSyncService && typeof window.offlineSyncService.addPatientToQueue === 'function') {
+        window.offlineSyncService.addPatientToQueue(pacienteOffline);
+      }
+
+      console.log('📱 Paciente guardado offline con ID temporal:', tempId);
+      
+      // Mostrar notificación de guardado offline
+      this.showNotification('📱 Paciente guardado localmente - Se sincronizará cuando se restablezca la conexión', 'info', 6000);
+      
+      return pacienteOffline;
+    } catch (error) {
+      console.error('❌ Error guardando paciente offline:', error);
+      this.showNotification('❌ Error al guardar paciente localmente', 'error');
+      throw error;
+    }
+  },
+
+  /**
+   * Sincroniza pacientes offline con Firebase
+   * @returns {Object} Resultado de la sincronización
+   */
+  async syncOfflinePatients() {
+    try {
+      const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+      
+      if (!isOnline) {
+        console.log('⚠️ Sin conexión - No se puede sincronizar');
+        return { synced: 0, failed: 0, message: 'Sin conexión' };
+      }
+
+      // Obtener pacientes offline
+      const lista = read('pacientes') || [];
+      const pacientesOffline = lista.filter(p => p._isOffline && !p._synced);
+      
+      if (pacientesOffline.length === 0) {
+        console.log('✅ No hay pacientes offline pendientes de sincronización');
+        return { synced: 0, failed: 0, message: 'No hay pacientes pendientes' };
+      }
+
+      console.log(`🔄 Sincronizando ${pacientesOffline.length} pacientes offline...`);
+      this.showNotification(`🔄 Sincronizando ${pacientesOffline.length} pacientes guardados localmente...`, 'info');
+      
+      let synced = 0;
+      let failed = 0;
+      const updatedLista = [...lista];
+
+      for (const pacienteOffline of pacientesOffline) {
+        try {
+          // Preparar paciente para Firebase (remover campos offline)
+          const pacienteParaFirebase = { ...pacienteOffline };
+          delete pacienteParaFirebase.id;
+          delete pacienteParaFirebase._isOffline;
+          delete pacienteParaFirebase._tempId;
+          delete pacienteParaFirebase._createdOffline;
+          delete pacienteParaFirebase._synced;
+          delete pacienteParaFirebase._firebaseId;
+          delete pacienteParaFirebase._syncedAt;
+          delete pacienteParaFirebase._imagenFile;
+          delete pacienteParaFirebase._hasOfflineImage;
+          
+          // ============ ASEGURAR ESTRUCTURA COMPLETA COMO REGISTRO ONLINE ============
+          
+          // Campos básicos requeridos
+          if (!pacienteParaFirebase.grado || pacienteParaFirebase.grado === 'undefined' || pacienteParaFirebase.grado === '') {
+            pacienteParaFirebase.grado = '1er Semestre';
+            console.warn(`⚠️ Corrigiendo grado undefined para paciente ${pacienteParaFirebase.matricula}`);
+          }
+          if (!pacienteParaFirebase.grupo || pacienteParaFirebase.grupo === 'undefined' || pacienteParaFirebase.grupo === '') {
+            pacienteParaFirebase.grupo = 'A';
+            console.warn(`⚠️ Corrigiendo grupo undefined para paciente ${pacienteParaFirebase.matricula}`);
+          }
+          
+          // Asegurar campos de string vacíos en lugar de undefined
+          pacienteParaFirebase.email = pacienteParaFirebase.email || '';
+          pacienteParaFirebase.genero = pacienteParaFirebase.genero || '';
+          pacienteParaFirebase.antecedentes = pacienteParaFirebase.antecedentes || '';
+          
+          // ============ CAMPOS FALTANTES CRÍTICOS ============
+          
+          // Usuario que registra (CRÍTICO para auditoría)
+          if (!pacienteParaFirebase.usuarioRegistro) {
+            pacienteParaFirebase.usuarioRegistro = pacienteOffline.usuarioRegistro || 'Usuario Offline';
+          }
+          
+          // Fecha de registro original (CRÍTICO para historial)  
+          if (!pacienteParaFirebase.fechaRegistro) {
+            pacienteParaFirebase.fechaRegistro = pacienteOffline.fechaRegistro || pacienteOffline._createdOffline || new Date().toISOString();
+          }
+          
+          // Campo fotoPerfil legacy (mantener consistencia)
+          if (!pacienteParaFirebase.hasOwnProperty('fotoPerfil')) {
+            pacienteParaFirebase.fotoPerfil = null;
+          }
+          
+          // Preservar fotoPerfilId si existe (CRÍTICO para imágenes)
+          if (pacienteOffline.fotoPerfilId && !pacienteParaFirebase.fotoPerfilId) {
+            pacienteParaFirebase.fotoPerfilId = pacienteOffline.fotoPerfilId;
+            console.log(`✅ Preservando fotoPerfilId offline: ${pacienteOffline.fotoPerfilId}`);
+          }
+          
+          // Asegurar estructura de datos médicos
+          if (!pacienteParaFirebase.datosMedicos) {
+            pacienteParaFirebase.datosMedicos = {
+              temperatura: null,
+              presion: null,
+              peso: null,
+              talla: null,
+              frecuenciaRespiratoria: null,
+              examenVista: null,
+              examenOido: null,
+              fechaRegistroMedico: null
+            };
+          }
+          
+          // Asegurar status por defecto
+          if (!pacienteParaFirebase.status) {
+            pacienteParaFirebase.status = 'sin_datos_medicos';
+          }
+          
+          // Agregar timestamps de Firebase
+          pacienteParaFirebase.createdAt = serverTimestamp();
+          pacienteParaFirebase.updatedAt = serverTimestamp();
+
+          // Verificar si ya existe por matrícula para evitar duplicados
+          if (pacienteParaFirebase.matricula) {
+            const q = query(pacientesCollection, where('matricula', '==', pacienteParaFirebase.matricula));
+            const snapshot = await getDocs(q);
+            
+            if (!snapshot.empty) {
+              console.log(`⏭️ Paciente con matrícula ${pacienteParaFirebase.matricula} ya existe, marcando como sincronizado`);
+              
+              // Marcar como sincronizado en localStorage
+              const index = updatedLista.findIndex(p => p._tempId === pacienteOffline._tempId);
+              if (index !== -1) {
+                updatedLista[index]._synced = true;
+                updatedLista[index]._syncedAt = new Date().toISOString();
+              }
+              
+              synced++;
+              continue;
+            }
+          }
+
+          // Subir a Firebase
+          const docRef = await addDoc(pacientesCollection, pacienteParaFirebase);
+          console.log(`✅ Paciente offline sincronizado con ID Firebase: ${docRef.id}`);
+          
+          // ============ SINCRONIZAR IMAGEN OFFLINE SI EXISTE ============
+          if (pacienteOffline.fotoPerfilId && pacienteOffline._hasOfflineImage) {
+            try {
+              console.log(`📸 Sincronizando imagen offline del paciente ${docRef.id}...`);
+              
+              // Importar el sistema de almacenamiento
+              const { imageStorage } = await import('./imageStorageAlternative.js');
+              
+              // Obtener la imagen del almacenamiento local
+              const imagenLocal = await imageStorage.getImageById(pacienteOffline.fotoPerfilId);
+              
+              if (imagenLocal && imagenLocal.blob) {
+                // Crear un File objeto desde el blob para subirlo a Firebase
+                const file = new File([imagenLocal.blob], imagenLocal.filename || 'photo.jpg', {
+                  type: imagenLocal.blob.type || 'image/jpeg'
+                });
+                
+                console.log(`📤 Subiendo imagen offline a Firebase Storage...`);
+                
+                // Subir imagen a Firebase usando el nuevo ID del paciente
+                const resultadoImagenFirebase = await this.actualizarFotoPerfil(docRef.id, file, {
+                  usuarioId: pacienteOffline.usuarioRegistro || 'offline_user',
+                  usuarioNombre: pacienteOffline.usuarioRegistro || 'Usuario Offline',
+                  sincronizadaDesdeOffline: true
+                });
+                
+                console.log(`✅ Imagen offline sincronizada para paciente ${docRef.id}:`, resultadoImagenFirebase);
+                
+                // ============ VERIFICAR QUE EL CAMPO SE ACTUALIZÓ EN FIREBASE ============
+                if (resultadoImagenFirebase && resultadoImagenFirebase.fotoPerfilId) {
+                  // Verificar que el documento de Firebase tiene el fotoPerfilId correcto
+                  const pacienteActualizado = await getDoc(doc(pacientesCollection, docRef.id));
+                  if (pacienteActualizado.exists()) {
+                    const data = pacienteActualizado.data();
+                    if (data.fotoPerfilId) {
+                      console.log(`✅ Campo fotoPerfilId confirmado en Firebase: ${data.fotoPerfilId}`);
+                    } else {
+                      console.warn(`⚠️ Campo fotoPerfilId no encontrado en Firebase, actualizando manualmente...`);
+                      
+                      // Actualizar manualmente el campo fotoPerfilId
+                      await updateDoc(doc(pacientesCollection, docRef.id), {
+                        fotoPerfilId: resultadoImagenFirebase.fotoPerfilId,
+                        updatedAt: serverTimestamp()
+                      });
+                      
+                      console.log(`✅ Campo fotoPerfilId actualizado manualmente: ${resultadoImagenFirebase.fotoPerfilId}`);
+                    }
+                  }
+                } else {
+                  console.warn(`⚠️ No se recibió fotoPerfilId del resultado de actualizarFotoPerfil`);
+                }
+                
+              } else {
+                console.warn(`⚠️ Imagen offline no encontrada para paciente ${docRef.id}: ${pacienteOffline.fotoPerfilId}`);
+              }
+              
+            } catch (errorImagen) {
+              console.error(`❌ Error sincronizando imagen del paciente ${docRef.id}:`, errorImagen);
+              // No fallar toda la sincronización por una imagen, solo advertir
+            }
+          }
+          
+          // Marcar como sincronizado en localStorage
+          const index = updatedLista.findIndex(p => p._tempId === pacienteOffline._tempId);
+          if (index !== -1) {
+            updatedLista[index]._synced = true;
+            updatedLista[index]._firebaseId = docRef.id;
+            updatedLista[index]._syncedAt = new Date().toISOString();
+          }
+          
+          synced++;
+          
+        } catch (error) {
+          console.error(`❌ Error sincronizando paciente ${pacienteOffline._tempId}:`, error);
+          failed++;
+        }
+      }
+
+      // Actualizar localStorage
+      write('pacientes', updatedLista);
+      
+      // Mostrar resultado
+      if (synced > 0) {
+        this.showNotification(`✅ ${synced} pacientes sincronizados exitosamente`, 'success');
+      }
+      if (failed > 0) {
+        this.showNotification(`⚠️ ${failed} pacientes no pudieron sincronizarse`, 'warning');
+      }
+
+      return { synced, failed, message: `${synced} sincronizados, ${failed} fallos` };
+      
+    } catch (error) {
+      console.error('❌ Error en sincronización de pacientes offline:', error);
+      this.showNotification('❌ Error en sincronización de pacientes', 'error');
+      return { synced: 0, failed: 0, error: error.message };
+    }
+  },
+
+  /**
+   * Obtiene el número de pacientes offline pendientes de sincronización
+   * @returns {number} Número de pacientes pendientes
+   */
+  getPendingOfflinePatients() {
+    try {
+      const lista = read('pacientes') || [];
+      const pending = lista.filter(p => p._isOffline && !p._synced);
+      return pending.length;
+    } catch (error) {
+      console.error('❌ Error obteniendo pacientes offline pendientes:', error);
+      return 0;
+    }
+  },
+
+  // ==========================================
+  // FUNCIONES DE NOTIFICACIÓN OFFLINE
+  // ==========================================
+
+  /**
+   * Muestra mensaje de modo offline
+   */
+  showOfflineMessage() {
+    this.showNotification('📱 Modo offline - Mostrando datos guardados localmente', 'info');
+  },
+
+  /**
+   * Muestra mensaje con datos offline
+   * @param {number} count - Número de pacientes cargados
+   */
+  showOfflineDataMessage(count) {
+    this.showNotification(`📱 ${count} pacientes cargados desde datos offline`, 'success');
+  },
+
+  /**
+   * Muestra mensaje de datos fallback
+   * @param {number} count - Número de pacientes cargados
+   */
+  showFallbackDataMessage(count) {
+    this.showNotification(`⚠️ ${count} pacientes cargados desde caché (sin conexión a servidor)`, 'warning');
+  },
+
+  /**
+   * Muestra mensaje de sin datos offline
+   */
+  showNoOfflineDataMessage() {
+    this.showNotification('⚠️ Sin datos offline disponibles. Los datos se mostrarán cuando se restablezca la conexión.', 'warning');
+  },
+
+  /**
+   * Muestra mensaje de sin datos
+   */
+  showNoDataMessage() {
+    this.showNotification('❌ No se pudieron cargar los datos de pacientes', 'error');
+  },
+
+  /**
+   * Actualiza un paciente en localStorage (para uso offline)
+   * @param {string} pacienteId - ID del paciente
+   * @param {Object} datos - Datos a actualizar
+   * @returns {Promise<boolean>} Éxito de la operación
+   */
+  async updatePacienteLocal(pacienteId, datos) {
+    try {
+      const lista = read('pacientes') || [];
+      const index = lista.findIndex(p => p.id === pacienteId || p._tempId === pacienteId);
+      
+      if (index === -1) {
+        console.warn(`⚠️ Paciente no encontrado en localStorage: ${pacienteId}`);
+        return false;
+      }
+      
+      // Actualizar datos
+      lista[index] = { ...lista[index], ...datos };
+      write('pacientes', lista);
+      
+      console.log(`✅ Paciente actualizado en localStorage:`, { id: pacienteId, datos });
+      return true;
+    } catch (error) {
+      console.error('❌ Error actualizando paciente en localStorage:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Función helper para mostrar notificaciones
+   * @param {string} message - Mensaje a mostrar
+   * @param {string} type - Tipo de notificación
+   * @param {number} duration - Duración en milisegundos (opcional)
+   */
+  showNotification(message, type = 'info', duration = 4000) {
+    try {
+      // Usar el sistema de notificaciones del app si está disponible
+      if (window.firebaseSyncManager && typeof window.firebaseSyncManager.showSyncMessage === 'function') {
+        window.firebaseSyncManager.showSyncMessage(message, type, '', duration);
+      } 
+      // Fallback al sistema de notificaciones offline si existe
+      else if (window.offlineNotificationManager && typeof window.offlineNotificationManager.showNotification === 'function') {
+        window.offlineNotificationManager.showNotification(message, type);
+      }
+      // Fallback básico a console
+      else {
+        const prefix = type === 'error' ? '❌' : type === 'warning' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+        console.log(`${prefix} ${message}`);
+        
+        // Intentar mostrar en el DOM si hay un contenedor
+        const messageContainer = document.querySelector('.message-container') || 
+                                 document.querySelector('#notifications') || 
+                                 document.body;
+        
+        if (messageContainer) {
+          const notification = document.createElement('div');
+          notification.className = `notification ${type}`;
+          notification.innerHTML = `
+            <span style="
+              display: inline-block;
+              padding: 8px 12px;
+              background: ${type === 'error' ? '#fee2e2' : type === 'warning' ? '#fef3c7' : type === 'success' ? '#d1fae5' : '#e0f2fe'};
+              color: ${type === 'error' ? '#991b1b' : type === 'warning' ? '#92400e' : type === 'success' ? '#065f46' : '#0e7490'};
+              border-radius: 6px;
+              border: 1px solid ${type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : type === 'success' ? '#10b981' : '#0891b2'};
+              font-size: 14px;
+              margin: 5px 0;
+            ">
+              ${message}
+            </span>
+          `;
+          
+          messageContainer.appendChild(notification);
+          
+          // Auto-remover después del tiempo especificado
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.parentNode.removeChild(notification);
+            }
+          }, duration);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error mostrando notificación:', error);
+      console.log(`💬 [${type.toUpperCase()}] ${message}`);
     }
   }
 };

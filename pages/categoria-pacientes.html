@@ -1472,6 +1472,42 @@
       }
     }
 
+    /* Estilos para indicador de sincronización */
+    .sync-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px;
+      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+      border: 1px solid #3b82f6;
+      border-radius: 20px;
+      font-size: 12px;
+      color: #1e40af;
+      margin-left: 12px;
+      animation: syncPulse 2s infinite;
+    }
+
+    .sync-status.success {
+      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+      border-color: #10b981;
+      color: #065f46;
+    }
+
+    .sync-status.error {
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      border-color: #ef4444;
+      color: #991b1b;
+    }
+
+    .sync-status i {
+      font-size: 12px;
+    }
+
+    @keyframes syncPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
     /* Estilos para textos de ayuda en formularios */
     .form-text {
       font-size: 0.775em;
@@ -1818,6 +1854,10 @@
             <h2>Pacientes Registrados <span id="contador-pacientes" class="badge badge-info">0</span></h2>
             <div class="search-container">
               <input type="text" class="search-input" placeholder="Buscar paciente..." id="buscarPaciente">
+              <div id="sync-status" class="sync-status" style="display: none;">
+                <i class="fas fa-sync fa-spin"></i>
+                <span id="sync-message">Sincronizando...</span>
+              </div>
             </div>
           </div>
           
@@ -2703,6 +2743,7 @@
     import { initPacienteController } from '../js/controllers/pacienteController.js';
     import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
     import { FirebaseSyncManager } from '../js/utils/firebaseSyncManager.js';
+    import OfflineSyncService from '../js/utils/offlineSyncService.js';
     // HeaderComponent eliminado, ahora usamos header individual
     import '../js/utils/eventBusManager.js';      // Event Bus monitoring
     import '../js/utils/performanceMonitor.js';   // Performance monitoring
@@ -2710,9 +2751,11 @@
     // Nuevo sistema de imágenes
     import '../js/models/imageStorageAlternative.js';
     import { imageStorageModel } from '../js/models/imageStorageModelNew.js';
+    import { pacienteModel } from '../js/models/pacienteModel.js';
     
-    // Hacer imageStorageModel disponible para verificación (temporal)
+    // Hacer modelos disponibles globalmente para sincronización
     window._imageStorageModelTest = imageStorageModel;
+    window.pacienteModel = pacienteModel;
     
     // "Mini-Modelo" para facultades y carreras (igual que en pacienteView.js)
     const facultadesYCarreras = {
@@ -2756,6 +2799,17 @@
           initPacienteController();
           ConnectionIndicator.init();
           FirebaseSyncManager.init();
+          
+          // Inicializar gestor global de sincronización offline
+          if (window.initGlobalOfflineSync) {
+            console.log('🌍 Inicializando GlobalOfflineManager en página de pacientes...');
+            window.initGlobalOfflineSync();
+          } else {
+            // Fallback: inicialización local
+            console.log('📱 Fallback: inicialización local de OfflineSyncService...');
+            window.offlineSyncService = new OfflineSyncService();
+            window.offlineSyncService.init();
+          }
           
           // Configurar mensajes de sincronización específicos para pacientes
           if (window.firebaseSyncManager) {
@@ -3700,5 +3754,8 @@
       }
     }
   </script>
+  
+  <!-- 🌍 GLOBAL: Gestor de sincronización offline para todas las páginas -->
+  <script type="module" src="../js/utils/globalOfflineManager.js"></script>
 </body>
 </html>

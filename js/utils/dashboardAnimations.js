@@ -465,62 +465,252 @@ class DashboardAnimations {
   animateNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
+    
+    // Estilos especiales para estadísticas actualizadas
+    const isStatsUpdate = message.includes('Estadísticas actualizadas');
+    
     notification.innerHTML = `
-      <i class="fas fa-${this.getNotificationIcon(type)}"></i>
-      <span>${message}</span>
+      <div class="notification-icon ${isStatsUpdate ? 'stats-icon' : type + '-icon'}">
+        <i class="fas fa-${this.getNotificationIcon(type, message)}"></i>
+        ${isStatsUpdate ? '<div class="icon-pulse"></div>' : '<div class="icon-glow"></div>'}
+      </div>
+      <div class="notification-content">
+        <span class="notification-text">${message}</span>
+        ${isStatsUpdate ? '<small class="notification-subtitle">📊 Datos actualizados en tiempo real</small>' : ''}
+      </div>
       <button class="close-btn"><i class="fas fa-times"></i></button>
     `;
     
-    // Estilos inline para la notificación
+    // Estilos premium para la notificación
     notification.style.cssText = `
       position: fixed;
       top: 20px;
       right: 20px;
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      background: ${isStatsUpdate 
+        ? 'linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)' 
+        : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)'};
+      color: ${isStatsUpdate ? 'white' : '#374151'};
+      border: ${isStatsUpdate 
+        ? '2px solid rgba(255, 255, 255, 0.3)' 
+        : '1px solid #e2e8f0'};
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: ${isStatsUpdate 
+        ? '0 25px 50px rgba(16, 185, 129, 0.4), 0 8px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)' 
+        : '0 20px 40px rgba(0, 0, 0, 0.1)'};
       z-index: 10000;
       display: flex;
       align-items: center;
-      gap: 12px;
-      min-width: 300px;
+      gap: 16px;
+      min-width: 360px;
+      max-width: 420px;
       transform: translateX(100%);
-      transition: transform 0.3s ease;
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      backdrop-filter: blur(20px);
+      position: relative;
+      overflow: hidden;
     `;
+    
+    // Agregar efectos visuales premium para todos los tipos
+    const style = document.createElement('style');
+    
+    // Estilos base para todas las notificaciones
+    style.textContent = `
+      .notification {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        position: relative;
+      }
+      .notification.info {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 50%, #1e40af 100%) !important;
+        color: white !important;
+        border: 2px solid rgba(59, 130, 246, 0.3) !important;
+      }
+      .notification.warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%) !important;
+        color: white !important;
+        border: 2px solid rgba(245, 158, 11, 0.3) !important;
+      }
+      .notification.error {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%) !important;
+        color: white !important;
+        border: 2px solid rgba(239, 68, 68, 0.3) !important;
+      }
+    `;
+    
+    // Agregar estilos específicos para success/stats
+    if (isStatsUpdate || type === 'success') {
+      style.textContent += `
+        .notification .stats-icon,
+        .notification .success-icon,
+        .notification .info-icon,
+        .notification .warning-icon,
+        .notification .error-icon {
+          position: relative;
+          overflow: hidden;
+          background: linear-gradient(45deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+          border-radius: 12px;
+          padding: 12px;
+          box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+          min-width: 40px;
+          min-height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .notification .stats-icon i,
+        .notification .success-icon i,
+        .notification .info-icon i,
+        .notification .warning-icon i,
+        .notification .error-icon i {
+          font-size: 18px;
+          z-index: 2;
+          position: relative;
+        }
+      `;
+      document.head.appendChild(style);
+    }
     
     document.body.appendChild(notification);
     
-    // Animar entrada
+    // Animar entrada con efectos dramáticos
     setTimeout(() => {
       notification.style.transform = 'translateX(0)';
+      if (isStatsUpdate) {
+        notification.style.boxShadow = '0 30px 60px rgba(16, 185, 129, 0.3), 0 12px 24px rgba(0, 0, 0, 0.15)';
+        
+        // Efecto de aparición con destello
+        setTimeout(() => {
+          const flash = document.createElement('div');
+          flash.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.6), transparent);
+            pointer-events: none;
+            animation: flash-appear 0.6s ease-out;
+          `;
+          
+          const flashStyle = document.createElement('style');
+          flashStyle.textContent = `
+            @keyframes flash-appear {
+              0% { opacity: 0; transform: scale(0.8) rotate(-10deg); }
+              50% { opacity: 1; transform: scale(1.05) rotate(0deg); }
+              100% { opacity: 0; transform: scale(1) rotate(10deg); }
+            }
+          `;
+          document.head.appendChild(flashStyle);
+          
+          notification.appendChild(flash);
+          setTimeout(() => flash.remove(), 600);
+        }, 100);
+      }
     }, 10);
     
-    // Auto-remove después de 5 segundos
+    // Auto-remove después de 6 segundos con efectos de salida
     setTimeout(() => {
-      notification.style.transform = 'translateX(100%)';
-      setTimeout(() => notification.remove(), 300);
-    }, 5000);
+      // Efecto de desvanecimiento progresivo
+      notification.style.transform = 'translateX(100%) scale(0.95)';
+      notification.style.opacity = '0';
+      
+      if (isStatsUpdate) {
+        // Efecto de partículas para estadísticas
+        const particles = document.createElement('div');
+        particles.style.cssText = `
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 20px;
+          height: 20px;
+          background: radial-gradient(circle, #10b981, transparent);
+          border-radius: 50%;
+          animation: particle-explode 0.8s ease-out;
+          pointer-events: none;
+        `;
+        
+        const particleStyle = document.createElement('style');
+        particleStyle.textContent = `
+          @keyframes particle-explode {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(3); opacity: 0.7; }
+            100% { transform: translate(-50%, -50%) scale(6); opacity: 0; }
+          }
+        `;
+        document.head.appendChild(particleStyle);
+        
+        notification.appendChild(particles);
+      }
+      
+      setTimeout(() => notification.remove(), 400);
+    }, 6000);
     
-    // Botón de cerrar
-    notification.querySelector('.close-btn').addEventListener('click', () => {
-      notification.style.transform = 'translateX(100%)';
-      setTimeout(() => notification.remove(), 300);
+    // Botón de cerrar con efectos mejorados
+    notification.querySelector('.close-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      
+      // Efecto de click
+      notification.style.transform = 'translateX(100%) scale(0.9) rotateY(15deg)';
+      notification.style.opacity = '0';
+      
+      // Efecto de ondas al cerrar
+      const ripple = document.createElement('div');
+      ripple.style.cssText = `
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 10px;
+        height: 10px;
+        background: rgba(255,255,255,0.5);
+        border-radius: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        animation: ripple-close 0.5s ease-out;
+        pointer-events: none;
+      `;
+      
+      const rippleStyle = document.createElement('style');
+      rippleStyle.textContent = `
+        @keyframes ripple-close {
+          0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+          100% { transform: translate(-50%, -50%) scale(20); opacity: 0; }
+        }
+      `;
+      document.head.appendChild(rippleStyle);
+      
+      notification.appendChild(ripple);
+      setTimeout(() => notification.remove(), 400);
     });
   }
 
   /**
-   * Obtiene el icono apropiado para el tipo de notificación
+   * Obtiene el icono apropiado para el tipo de notificación con iconos premium
    */
-  getNotificationIcon(type) {
+  getNotificationIcon(type, message = '') {
+    // Iconos especiales para mensajes específicos
+    if (message.includes('Estadísticas actualizadas')) {
+      return 'chart-line';
+    }
+    if (message.includes('Paciente guardado') || message.includes('sincronizará')) {
+      return 'user-plus';
+    }
+    if (message.includes('Conexión') || message.includes('online') || message.includes('offline')) {
+      return 'wifi';
+    }
+    if (message.includes('Datos cargados') || message.includes('actualizado')) {
+      return 'sync-alt';
+    }
+    if (message.includes('minimizada') || message.includes('expandida')) {
+      return 'expand-arrows-alt';
+    }
+    
+    // Iconos por tipo con mejores opciones
     const icons = {
       'info': 'info-circle',
       'success': 'check-circle',
       'warning': 'exclamation-triangle',
       'error': 'times-circle'
     };
-    return icons[type] || icons.info;
+    return icons[type] || 'bell';
   }
 
   /**
@@ -534,151 +724,6 @@ class DashboardAnimations {
     this.animationQueues.clear();
   }
 }
-
-// Agregar estilos CSS para las animaciones via JavaScript
-const animationStyles = `
-  <style id="dashboard-animations-styles">
-    /* Animaciones base */
-    @keyframes slideInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes fadeInScale {
-      from {
-        opacity: 0;
-        transform: scale(0.9);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    @keyframes slideInLeft {
-      from {
-        opacity: 0;
-        transform: translateX(-30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    @keyframes slideInRight {
-      from {
-        opacity: 0;
-        transform: translateX(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
-
-    @keyframes bounceIn {
-      0% {
-        opacity: 0;
-        transform: scale(0.3);
-      }
-      50% {
-        opacity: 1;
-        transform: scale(1.05);
-      }
-      70% {
-        transform: scale(0.9);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    @keyframes pulse {
-      0%, 100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.05);
-      }
-    }
-
-    @keyframes ripple {
-      to {
-        transform: scale(4);
-        opacity: 0;
-      }
-    }
-
-    /* Clases de animación */
-    .animated {
-      animation-duration: 0.6s;
-      animation-fill-mode: both;
-    }
-
-    .slideInUp {
-      animation-name: slideInUp;
-    }
-
-    .fadeInScale {
-      animation-name: fadeInScale;
-    }
-
-    .slideInLeft {
-      animation-name: slideInLeft;
-    }
-
-    .slideInRight {
-      animation-name: slideInRight;
-    }
-
-    .bounceIn {
-      animation-name: bounceIn;
-      animation-duration: 0.8s;
-    }
-
-    .pulse {
-      animation-name: pulse;
-      animation-duration: 1s;
-    }
-
-    /* Estados de transición */
-    .state-changing {
-      transition: all 0.3s ease;
-      opacity: 0.7;
-      transform: scale(0.98);
-    }
-
-    /* Mejoras responsivas */
-    @media (max-width: 768px) {
-      .animated {
-        animation-duration: 0.4s;
-      }
-    }
-
-    /* Preferencias de movimiento reducido */
-    @media (prefers-reduced-motion: reduce) {
-      .animated {
-        animation-duration: 0.1s;
-      }
-      
-      .dashboard-card:hover {
-        transform: none;
-      }
-    }
-  </style>
-`;
-
-// Insertar estilos en el head
-document.head.insertAdjacentHTML('beforeend', animationStyles);
-
 // Exportar la clase
 window.DashboardAnimations = DashboardAnimations;
 

@@ -2,6 +2,7 @@ import { authModel } from '../models/storageModel.js';
 import { AuthGuard } from '../middleware/authGuard.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
 import { setupEventLogging } from '../utils/eventLogger.js';
+import globalOfflineSync from '../utils/globalOfflineSync.js';
 
 /**
  * Inicializa la lógica global común para todas las páginas (excepto login)
@@ -36,6 +37,9 @@ export function initGlobalController() {
   
   // Configurar navegación con botón de regreso
   setupBackButton();
+  
+  // Inicializar sistema global de sincronización offline
+  initGlobalOfflineSync();
   
   console.log('GlobalController: Inicialización completada');
 }
@@ -348,6 +352,22 @@ function showPermissionDeniedMessage(data) {
       notification.parentNode.removeChild(notification);
     }
   }, 5000);
+}
+
+/**
+ * Inicializa el sistema global de sincronización offline
+ */
+async function initGlobalOfflineSync() {
+  try {
+    console.log('GlobalController: Inicializando sistema global de sincronización offline...');
+    
+    // Inicializar el servicio global de sincronización
+    await globalOfflineSync.init();
+    
+    console.log('✅ Sistema global de sincronización offline inicializado');
+  } catch (error) {
+    console.error('❌ Error inicializando sistema global offline:', error);
+  }
 }
 
 /**

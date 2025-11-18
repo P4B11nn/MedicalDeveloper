@@ -1,0 +1,72 @@
+{
+  "routes": [
+    {
+      "route": "/",
+      "serve": "/index.html",
+      "statusCode": 200
+    },
+    {
+      "route": "/menuInicio.html",
+      "serve": "/menuInicio.html", 
+      "statusCode": 200
+    },
+    {
+      "route": "/pages/*",
+      "serve": "/pages/",
+      "statusCode": 200
+    },
+    {
+      "route": "/js/*",
+      "serve": "/js/",
+      "statusCode": 200
+    },
+    {
+      "route": "/css/*",
+      "serve": "/css/",
+      "statusCode": 200
+    },
+    {
+      "route": "/img/*",
+      "serve": "/img/",
+      "statusCode": 200
+    },
+    {
+      "route": "/*",
+      "serve": "/index.html",
+      "statusCode": 200
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/img/*", "/css/*", "/js/*", "/*.{js,css,png,jpg,jpeg,gif,ico,svg,woff,woff2,ttf,eot}", "/sw.js", "/manifest.json"]
+  },
+  "mimeTypes": {
+    ".json": "application/json",
+    ".js": "text/javascript",
+    ".css": "text/css",
+    ".html": "text/html",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".ico": "image/x-icon",
+    ".svg": "image/svg+xml",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+    ".ttf": "font/ttf",
+    ".eot": "font/eot"
+  },
+  "globalHeaders": {
+    "Cache-Control": "public, max-age=31536000, immutable",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "X-XSS-Protection": "1; mode=block",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/index.html",
+      "statusCode": 200
+    }
+  }
+}
