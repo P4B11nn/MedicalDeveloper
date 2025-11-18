@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Medical Developer</title>
-  <link rel="icon" type="image/png" href="img/logo-medical-developer.jpg">
   <style>
     * {
       margin: 0;
@@ -209,11 +208,14 @@
     <!-- No es necesario cargar templates vía router -->
   </div>
   
-  <!-- Firebase deshabilitado - usando modo offline por restricciones CSP -->
-
-  <!-- Modo offline - Firebase mock services -->
+  <!-- Firebase SDKs -->
   <script type="module">
-    // Firebase config local sin CDN
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+    import { getStorage } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
+
+    // Configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyA-ZU02eVn2FiwkgpjveymB8VRUUeGSH3Y",
       authDomain: "medicalweboffline.firebaseapp.com",
@@ -222,95 +224,90 @@
       messagingSenderId: "1038201454133",
       appId: "1:1038201454133:web:f6ee7c6215f6b4d4febb7c"
     };
-    
-    // Crear servicios mock para evitar errores
-    console.log('🔧 Inicializando servicios Firebase mock para modo offline...');
-    
-    // Firebase services mock
-    window.firebase = {
-      initializeApp: () => ({ options: firebaseConfig }),
-      firestore: () => ({
-        collection: (name) => ({
-          doc: (id) => ({
-            get: () => Promise.resolve({ exists: false, data: () => ({}) }),
-            set: () => Promise.resolve(),
-            update: () => Promise.resolve(),
-            delete: () => Promise.resolve()
-          }),
-          add: () => Promise.resolve({ id: 'mock-id' }),
-          where: () => ({ get: () => Promise.resolve({ docs: [] }) })
-        }),
-        doc: (path) => ({
-          get: () => Promise.resolve({ exists: false, data: () => ({}) }),
-          set: () => Promise.resolve(),
-          update: () => Promise.resolve(),
-          delete: () => Promise.resolve()
-        })
-      }),
-      auth: () => ({
+
+    try {
+      console.log('🔥 Inicializando Firebase...');
+      
+      // Inicializar Firebase
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const firestore = getFirestore(app);
+      const storage = getStorage(app);
+      
+      // Hacer Firebase disponible globalmente
+      window.firebaseApp = app;
+      window.firebaseAuth = auth;
+      window.firebaseFirestore = firestore;
+      window.firebaseStorage = storage;
+      
+      // También crear compatibilidad con el objeto firebase global
+      window.firebase = {
+        initializeApp: () => app,
+        auth: () => auth,
+        firestore: () => firestore,
+        storage: () => storage
+      };
+      
+      console.log('✅ Firebase inicializado correctamente');
+      
+      // Dispatch evento para notificar que Firebase está listo
+      window.dispatchEvent(new CustomEvent('firebaseReady', {
+        detail: { services: 'real', isLoaded: true }
+      }));
+      
+    } catch (error) {
+      console.error('❌ Error inicializando Firebase:', error);
+      
+      // Crear servicios mock como fallback
+      console.log('🔧 Creando servicios Firebase mock...');
+      
+      window.firebaseAuth = {
         currentUser: null,
-        signInWithEmailAndPassword: () => Promise.reject(new Error('Modo offline - autenticación no disponible')),
+        signInWithEmailAndPassword: () => Promise.reject(new Error('Firebase no disponible')),
         signOut: () => Promise.resolve(),
         onAuthStateChanged: (callback) => {
           callback(null);
           return () => {};
         }
-      }),
-      storage: () => ({
-        ref: (path) => ({
-          put: () => Promise.resolve({
-            ref: { getDownloadURL: () => Promise.resolve('mock-url') }
-          }),
-          getDownloadURL: () => Promise.resolve('mock-url')
+      };
+      
+      window.firebaseFirestore = {
+        collection: () => ({
+          doc: () => ({
+            get: () => Promise.resolve({ exists: false, data: () => ({}) }),
+            set: () => Promise.resolve(),
+            update: () => Promise.resolve(),
+            delete: () => Promise.resolve()
+          })
         })
-      })
-    };
-    
-    console.log('✅ Servicios Firebase mock configurados');
-    
-    // Dispatch evento para notificar que Firebase está listo
-    window.dispatchEvent(new CustomEvent('firebaseReady', {
-      detail: { services: 'mock', isLoaded: false }
-    }));
-    
-    console.log('🎉 Firebase mock services ready');
+      };
+      
+      window.firebaseStorage = {
+        ref: () => ({
+          put: () => Promise.resolve({ ref: { getDownloadURL: () => Promise.resolve('') } })
+        })
+      };
+      
+      window.firebase = {
+        auth: () => window.firebaseAuth,
+        firestore: () => window.firebaseFirestore,
+        storage: () => window.firebaseStorage
+      };
+      
+      // Dispatch evento para servicios mock
+      window.dispatchEvent(new CustomEvent('firebaseReady', {
+        detail: { services: 'mock', isLoaded: false }
+      }));
+    }
   </script>
   
   <script type="module">
     import { initAuthController } from "./js/controllers/authController.js";
     import { authModel } from "./js/models/storageModel.js";
 
-    // Esperar a que Firebase esté listo antes de inicializar
-    function initializeApp() {
+    document.addEventListener("DOMContentLoaded", () => {
       console.log("Inicializando controlador de autenticación");
-      
-      try {
-        initAuthController();
-        console.log('✅ Auth controller initialized');
-      } catch (error) {
-        console.error('❌ Error initializing auth controller:', error);
-        
-        // Mostrar notificación de error
-        setTimeout(() => {
-          const notification = document.createElement('div');
-          notification.style.cssText = `
-            position: fixed; top: 70px; right: 20px; background: #f44336; color: white;
-            padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            z-index: 10000; max-width: 350px; font-family: Arial, sans-serif; font-size: 14px;
-          `;
-          notification.innerHTML = `
-            <div style="font-weight: bold; margin-bottom: 5px;">⚠️ Error de Inicialización</div>
-            <div>Hubo un problema inicializando la autenticación. Intenta recargar la página.</div>
-          `;
-          document.body.appendChild(notification);
-          
-          setTimeout(() => {
-            if (notification.parentNode) {
-              notification.parentNode.removeChild(notification);
-            }
-          }, 8000);
-        }, 1000);
-      }
+      initAuthController();
 
       // Mostrar comandos disponibles en consola después de un momento
       setTimeout(() => {
@@ -322,30 +319,8 @@
           console.log('✅ authModel disponible globalmente en la consola');
         }
       }, 3000);
-    }
-
-    // Escuchar cuando Firebase esté listo
-    window.addEventListener('firebaseReady', (event) => {
-      console.log('🔥 Firebase ready event received:', event.detail);
-      initializeApp();
     });
-
-    // También inicializar cuando el DOM esté listo (fallback)
-    document.addEventListener("DOMContentLoaded", () => {
-      // Si Firebase ya está listo, inicializar inmediatamente
-      if (window.firebaseServices) {
-        initializeApp();
-      } else {
-        // Si no, esperar un poco más
-        setTimeout(() => {
-          console.log('🕐 Fallback initialization after DOM ready');
-          initializeApp();
-        }, 2000);
-      }
-    });
+    
   </script>
-  
-  <!-- 🌍 GLOBAL: Gestor de sincronización offline para todas las páginas -->
-  <script type="module" src="js/utils/globalOfflineManager.js"></script>
 </body>
 </html>

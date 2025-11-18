@@ -1,113 +1,214 @@
-/**
- * Medical Developer v4.2.0 - Express Server
- * Servidor de desarrollo local con capacidades de producción
- */
-
+// server.js - Servidor Express con configuración CORS básica
 const express = require('express');
-const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware de seguridad
+// ===========================================
+// CONFIGURACIÓN CORS BÁSICA
+// ===========================================
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // En desarrollo, permitir todos los orígenes de localhost
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // En producción, permitir orígenes específicos
+    const allowedOrigins = [
+      'https://medicalweboffline.firebaseapp.com',
+      'https://medicalweboffline.web.app'
+    ];
+    
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('No permitido por política CORS'), false);
+  },
+  
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+  credentials: true,
+  maxAge: 86400
+};
+
+// ===========================================
+// MIDDLEWARES
+// ===========================================
+
+// Logging personalizado con timestamp
+app.use(morgan(':date[iso] :status :method :url :res[content-length] :response-time ms'));
+
+// Seguridad con Helmet (configuración relajada para Firebase)
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "blob:", "https:"],
-      connectSrc: ["'self'", "https:", "wss:"],
-      workerSrc: ["'self'", "blob:"]
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// Aplicar CORS
+app.use(cors(corsOptions));
+
+// Parse JSON
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Middleware de logging básico
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    console.log(`🔍 [CORS] Preflight request para: ${req.url}`);
+  }
+  next();
+});
+
+// ===========================================
+// ARCHIVOS ESTÁTICOS
+// ===========================================
+
+// Configuración de archivos estáticos
+const staticOptions = {
+  index: ['index.html'],
+  extensions: ['html'],
+  setHeaders: (res, filePath) => {
+    const ext = path.extname(filePath).toLowerCase();
+    
+    // Cache headers
+    if (['.js', '.css'].includes(ext)) {
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    } else if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico'].includes(ext)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    } else if (ext === '.html') {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+    
+    // Content-Type para módulos JS
+    if (ext === '.js') {
+      res.setHeader('Content-Type', 'text/javascript; charset=utf-8');
     }
   }
-}));
+};
 
-// CORS configurado para desarrollo y producción
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? 
-    ['https://tu-dominio.azurestaticapps.net'] : 
-    ['http://localhost:3001', 'http://127.0.0.1:3001'],
-  credentials: true
-}));
+app.use(express.static(process.cwd(), staticOptions));
 
-// Logging
+// ===========================================
+// RUTAS
+// ===========================================
+
+// Ruta principal
+app.get('/', (req, res) => {
+  console.log('📍 Serving index.html');
+  res.sendFile(path.join(process.cwd(), 'index.html'));
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
+  });
+});
+
+// CORS info (solo desarrollo)
 if (process.env.NODE_ENV !== 'production') {
-  app.use(morgan('dev'));
+  app.get('/cors-info', (req, res) => {
+    res.json({
+      corsEnabled: true,
+      environment: process.env.NODE_ENV || 'development',
+      allowedMethods: corsOptions.methods,
+      allowedHeaders: corsOptions.allowedHeaders.slice(0, 10), // Solo mostrar algunos
+      credentials: corsOptions.credentials
+    });
+  });
 }
 
-// Parsing de JSON y URL encoded
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// ===========================================
+// MANEJO DE ERRORES
+// ===========================================
 
-// Servir archivos estáticos
-app.use(express.static(path.join(__dirname), {
-  maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0'
-}));
-
-// Ruta de health check
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    version: '4.2.0',
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
-// Rutas específicas para SPA
-const spaRoutes = [
-  '/',
-  '/index.html',
-  '/menuInicio.html',
-  '/pages/'
-];
-
-// Manejar rutas SPA - devolver index.html para navegación client-side
-app.get(spaRoutes, (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Middleware de manejo de errores
-app.use((err, req, res, next) => {
-  console.error('Error:', err.message);
-  res.status(500).json({
-    error: process.env.NODE_ENV === 'production' ? 
-      'Internal Server Error' : 
-      err.message
-  });
-});
-
-// Middleware 404
+// 404 handler - debe ir después de todas las rutas
 app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, 'index.html'));
+  console.log(`❌ [404] ${req.method} ${req.originalUrl}`);
+  
+  if (req.originalUrl.startsWith('/api/')) {
+    res.status(404).json({
+      error: 'Endpoint no encontrado',
+      path: req.originalUrl,
+      timestamp: new Date().toISOString()
+    });
+  } else {
+    // Para SPA, servir index.html en rutas no encontradas
+    res.sendFile(path.join(process.cwd(), 'index.html'));
+  }
 });
 
-// Iniciar servidor
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Medical Developer Server v4.2.0`);
-  console.log(`📡 Running on: http://localhost:${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`⏰ Started at: ${new Date().toLocaleString()}`);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('🛑 SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('✅ Process terminated');
+// Error handler global
+app.use((err, req, res, next) => {
+  console.error(`💥 [Error] ${err.message}`);
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.error(err.stack);
+  }
+  
+  res.status(err.status || 500).json({
+    error: 'Error interno del servidor',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Error interno',
+    timestamp: new Date().toISOString()
   });
 });
+
+// ===========================================
+// INICIAR SERVIDOR
+// ===========================================
+
+const server = app.listen(PORT, () => {
+  console.log('');
+  console.log('🎉 ===============================================');
+  console.log('🚀 SERVIDOR EXPRESS INICIADO CORRECTAMENTE');
+  console.log('🎉 ===============================================');
+  console.log('');
+  console.log(`📍 URL: http://localhost:${PORT}`);
+  console.log(`📁 Directorio: ${process.cwd()}`);
+  console.log(`🔧 Entorno: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 CORS: Configuración básica activa`);
+  console.log(`🛡️  Seguridad: Helmet activado`);
+  console.log(`📊 Logging: Morgan activado`);
+  console.log('');
+  console.log('🔗 Endpoints disponibles:');
+  console.log(`   🏠 Aplicación: http://localhost:${PORT}/`);
+  console.log(`   ❤️  Health: http://localhost:${PORT}/health`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`   🔍 CORS Info: http://localhost:${PORT}/cors-info`);
+  }
+  console.log('');
+  console.log('⏹️  Para detener: Ctrl + C');
+  console.log('');
+});
+
+// ===========================================
+// GRACEFUL SHUTDOWN
+// ===========================================
 
 process.on('SIGINT', () => {
-  console.log('🛑 SIGINT received, shutting down gracefully');
+  console.log('\n🛑 Cerrando servidor...');
   server.close(() => {
-    console.log('✅ Process terminated');
+    console.log('✅ Servidor cerrado correctamente');
+    process.exit(0);
   });
 });
 
-module.exports = app;
+process.on('SIGTERM', () => {
+  console.log('🛑 SIGTERM recibido...');
+  server.close(() => {
+    console.log('✅ Servidor cerrado correctamente');
+    process.exit(0);
+  });
+});

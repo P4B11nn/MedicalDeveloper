@@ -1,5 +1,8 @@
-// Firebase configuration - offline mode only due to CSP restrictions
-console.log('🔧 Firebase Config: Usando modo offline por restricciones CSP');
+// Firebase imports - wrapped in try-catch to handle CSP issues
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { initializeFirestore, CACHE_SIZE_UNLIMITED, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
 
 // Configuración de Firebase
 const firebaseConfig = {
@@ -11,53 +14,46 @@ const firebaseConfig = {
     appId: "1:1038201454133:web:f6ee7c6215f6b4d4febb7c"
 };
 
-// Initialize Firebase services in offline mode
+// Initialize Firebase services
 let app, db, auth, storage;
 
-console.log('⚠️ Firebase no disponible debido a restricciones CSP - usando servicios mock');
+try {
+  // Inicialización de Firebase
+  app = initializeApp(firebaseConfig);
+  console.log('✅ Firebase app initialized');
 
-// Create mock services for offline mode
-console.log('🔧 Creando servicios Firebase mock...');
-app = { options: firebaseConfig };
-db = { 
-  collection: (name) => ({
-    doc: (id) => ({
-      get: () => Promise.resolve({ exists: false, data: () => ({}) }),
-      set: () => Promise.resolve(),
-      update: () => Promise.resolve(),
-      delete: () => Promise.resolve()
-    }),
-    add: () => Promise.resolve({ id: 'mock-id' }),
-    where: () => ({ get: () => Promise.resolve({ docs: [] }) })
-  }),
-  doc: (path) => ({
-    get: () => Promise.resolve({ exists: false, data: () => ({}) }),
-    set: () => Promise.resolve(),
-    update: () => Promise.resolve(),
-    delete: () => Promise.resolve()
-  })
-};
-auth = { 
-  currentUser: null,
-  signInWithEmailAndPassword: (email, password) => {
-    console.log('⚠️ Intento de login en modo offline:', email);
-    return Promise.reject(new Error('Autenticación no disponible en modo offline. Verifique la conexión a internet.'));
-  },
-  signOut: () => Promise.resolve(),
-  onAuthStateChanged: (callback) => {
-    callback(null);
-    return () => {};
-  }
-};
-storage = {
-  ref: (path) => ({
-    put: () => Promise.resolve({
-      ref: { getDownloadURL: () => Promise.resolve('mock-url') }
-    }),
-    getDownloadURL: () => Promise.resolve('mock-url')
-  })
-};
-console.log('🔧 Servicios Firebase mock configurados');
+  // Nueva inicializacion de Firestore
+  db = initializeFirestore(app, {
+    cacheSizeBytes: CACHE_SIZE_UNLIMITED
+  });
+  console.log('✅ Firestore initialized');
+
+  // Inicialización de Firebase Auth
+  auth = getAuth(app);
+  console.log('✅ Firebase Auth initialized');
+
+  // Inicialización de Firebase Storage
+  storage = getStorage(app);
+  console.log('✅ Firebase Storage initialized');
+
+} catch (error) {
+  console.error('❌ Error initializing Firebase services:', error);
+  
+  // Create mock services
+  app = { options: firebaseConfig };
+  db = { 
+    collection: () => ({}),
+    doc: () => ({})
+  };
+  auth = { 
+    currentUser: null,
+    signInWithEmailAndPassword: () => Promise.reject(new Error('Auth not available')),
+    signOut: () => Promise.resolve()
+  };
+  storage = {
+    ref: () => ({})
+  };
+}
 
 // Exportar las instancias necesarias
 export { db, auth, storage };
