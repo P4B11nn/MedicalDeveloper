@@ -64,7 +64,7 @@ const spaRoutes = [
   '/',
   '/index.html',
   '/menuInicio.html',
-  '/pages/*'
+  '/pages/'
 ];
 
 // Manejar rutas SPA - devolver index.html para navegación client-side
