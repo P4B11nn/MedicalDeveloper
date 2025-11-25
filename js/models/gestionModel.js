@@ -3,7 +3,7 @@ import { db } from './firebaseConfig.js';
 import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, query, where, GeoPoint } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
 import { authModel } from './storageModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
-import globalOfflineSync from '../utils/globalOfflineSync.js';
+// import globalOfflineSync - ELIMINADO: Solo funcionalidad offline de pacientes
 
 // Colecciones de Firebase
 const MODULOS_COLLECTION = 'modulos';
@@ -105,7 +105,7 @@ export const gestionModel = {
             } else {
                 // Modo offline: usar el servicio global de sincronización
                 console.log('📱 Sin conexión - Guardando grupo offline');
-                const offlineGrupo = await globalOfflineSync.saveOfflineData('gestion', grupoData);
+                // const offlineGrupo = await globalOfflineSync.saveOfflineData('gestion', grupoData); // ELIMINADO
                 
                 // Emitir evento de grupo creado
                 eventBus.emit(EVENT_NAMES.GROUP_CREATED, { group: offlineGrupo });
@@ -127,7 +127,7 @@ export const gestionModel = {
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString()
                     };
-                    return await globalOfflineSync.saveOfflineData('gestion', grupoData);
+                    throw error; // Sin funcionalidad offline para gestión
                 } catch (offlineError) {
                     console.error('❌ Error guardando grupo offline como respaldo:', offlineError);
                 }
@@ -476,7 +476,7 @@ export const gestionModel = {
             } else {
                 // Modo offline: usar el servicio global de sincronización
                 console.log('📱 Sin conexión - Guardando módulo offline');
-                const offlineModulo = await globalOfflineSync.saveOfflineData('gestion', moduloData);
+                // const offlineModulo = await globalOfflineSync.saveOfflineData('gestion', moduloData); // ELIMINADO
                 
                 // Emitir evento de módulo creado
                 eventBus.emit(EVENT_NAMES.MODULE_CREATED, { module: offlineModulo });
@@ -490,7 +490,7 @@ export const gestionModel = {
             if (navigator.onLine) {
                 console.log('🔄 Error online - Intentando guardar módulo offline como respaldo');
                 try {
-                    return await globalOfflineSync.saveOfflineData('gestion', moduloData);
+                    throw error; // Sin funcionalidad offline para gestión
                 } catch (offlineError) {
                     console.error('❌ Error guardando módulo offline como respaldo:', offlineError);
                 }

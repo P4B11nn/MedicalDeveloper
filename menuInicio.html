@@ -3,19 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0f5671">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
-  <title>Menú de Inicio - v4.2.0</title>
-  
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="/manifest.json?v=4.2.0">
-  
-  <!-- Favicons para PWA -->
-  <link rel="icon" type="image/png" sizes="32x32" href="/img/icon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/img/icon-16x16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/img/icon-180x180.png">
+  <title>Menú de Inicio</title>
   <style>
     :root{
       --header-h: 80px;
@@ -787,16 +775,45 @@
   @media (max-width:1000px){ .charts-grid{ grid-template-columns: 1fr; } }
   .chart-card canvas{ width:100% !important; height:180px !important; display:block }
 
-  /* Dashboard Content Styles */
+  /* Dashboard Content Styles - FORZADO MÁXIMO */
   .dashboard-main-content {
     padding: 16px;
-    min-height: 500px;
+    min-height: 500px !important;
+    height: auto !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  
+  #dashboard-content {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 500px !important;
   }
 
+  /* 🔒 SISTEMA DE EXCLUSIVIDAD MUTUA - SOLO UN DASHBOARD VISIBLE */
   .role-dashboard {
     max-width: 1400px;
     margin: 0 auto;
+    display: none;
   }
+
+  /* Dashboard activo - simplificado */
+  #admin-dashboard {
+    display: none;
+  }
+
+  #practitioner-dashboard {
+    display: none;
+    min-height: 500px;
+    height: auto;
+  }
+
+
 
   .dashboard-header {
     display: flex;
@@ -930,36 +947,144 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 25px;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
   }
 
-  /* Responsive adjustments for practitioner grid */
-  @media (max-width: 1400px) {
-    .practitioner-grid {
-      gap: 20px;
-    }
-  }
-
-  @media (max-width: 1200px) {
-    .practitioner-grid {
+  /* Responsive adjustments for admin grid */
+  @media (max-width: 1600px) {
+    .admin-grid {
+      grid-template-columns: repeat(3, 1fr);
       gap: 18px;
     }
   }
 
-  @media (max-width: 900px) {
-    .practitioner-grid {
-      grid-template-columns: 1fr;
+  @media (max-width: 1200px) {
+    .admin-grid {
+      grid-template-columns: repeat(2, 1fr);
       gap: 20px;
     }
   }
 
-  @media (max-width: 768px) {
-    .practitioner-grid {
+  @media (max-width: 900px) {
+    .admin-grid {
       grid-template-columns: 1fr;
-      gap: 15px;
+      gap: 20px;
     }
+    
+    /* En pantallas pequeñas, las tarjetas ocupan todo el ancho */
+    .admin-grid .dashboard-card:nth-child(3),
+    .admin-grid .dashboard-card:nth-child(4) {
+      grid-column: span 3; /* Hacer que ocupen todo el ancho disponible */
+      min-width: unset;
+    }
+  }
+
+  /* Dashboard Cards */
+  .dashboard-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    border: 1px solid rgba(15, 86, 113, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  }
+
+  /* 🔹 NUEVO DISEÑO DE HEADERS - Azul con texto blanco */
+  .dashboard-card .card-header {
+    background: linear-gradient(135deg, #0f5671 0%, #0891b2 100%);
+    color: white;
+    padding: 16px 60px 16px 20px;
+    border-radius: 15px 15px 0 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 60px;
+    box-sizing: border-box;
+  }
+
+  .dashboard-card.collapsible .card-header {
+    background: linear-gradient(135deg, #0f5671 0%, #0891b2 100%);
+  }
+
+  /* Contenedor principal del header */
+  .dashboard-card .card-header .header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    position: relative;
+  }
+
+  .dashboard-card .card-header .header-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+  }
+
+  .dashboard-card .card-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .collapse-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: white;
+    font-size: 14px;
+    position: static;
+  }
+
+  .collapse-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+  }
+
+  .collapse-btn i {
+    transition: opacity 0.2s ease;
+  }
+
+  .card-content {
+    transition: all 0.4s ease;
+    overflow: hidden;
+  }
+
+  /* Estilos de tarjetas colapsadas - CONSOLIDADOS */
+  .dashboard-card.collapsed {
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+
+  .dashboard-card.collapsed .card-header {
+    border-bottom: none;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #0f5671 0%, #0891b2 100%);
+  }
+
+  .dashboard-card.collapsed .card-content {
+    max-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
   }
 
   /* 🎨 ANIMACIONES AVANZADAS PARA DASHBOARDS */
@@ -1065,64 +1190,6 @@
     animation: fadeInScale 0.6s ease-out;
   }
 
-  /* IMPORTANTE: Asegurar que los dashboards ocultos NO muestren su contenido */
-  #admin-dashboard[style*="display: none"],
-  #admin-dashboard[style*="display:none"],
-  #practitioner-dashboard[style*="display: none"],
-  #practitioner-dashboard[style*="display:none"] {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    position: absolute !important;
-    left: -9999px !important;
-  }
-
-  /* Asegurar que solo el dashboard visible muestre su contenido */
-  #admin-dashboard[style*="display: block"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: relative !important;
-    left: auto !important;
-  }
-
-  #practitioner-dashboard[style*="display: block"] {
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: relative !important;
-    left: auto !important;
-  }
-
-  /* REGLAS DE SEGURIDAD: Forzar ocultamiento de cards del practicante en dashboard admin */
-  #admin-dashboard [data-card-id="modulo-asignado"],
-  #admin-dashboard [data-card-id="grupo-trabajo"],
-  #admin-dashboard [data-card-id="horario-fecha"],
-  #admin-dashboard [data-card-id="checklist-instrumentos"],
-  #admin-dashboard [data-card-id="observaciones-reportes"] {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    position: absolute !important;
-    left: -9999px !important;
-    pointer-events: none !important;
-  }
-
-  /* Forzar ocultamiento de elementos del practicante por clase */
-  #admin-dashboard .practitioner-grid,
-  #admin-dashboard .assignment-details,
-  #admin-dashboard .schedule-info,
-  #admin-dashboard .checklist-content,
-  #admin-dashboard .observations-content {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    position: absolute !important;
-    left: -9999px !important;
-    pointer-events: none !important;
-  }
-
   .dashboard-header {
     animation: slideInUp 0.8s ease-out;
   }
@@ -1161,30 +1228,155 @@
     animation: pulse 2s infinite;
   }
 
-  .card-header {
-    position: relative;
-    overflow: hidden;
+  /* Texto y elementos del header */
+  .dashboard-card .card-header h3 {
+    color: white !important;
+    font-weight: 600;
+    font-size: 16px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
-  .card-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -200%;
-    width: 200%;
-    height: 100%;
-    background: linear-gradient(90deg, 
-      transparent, 
-      rgba(255, 255, 255, 0.2), 
-      transparent
-    );
-    animation: shimmer 3s infinite;
+  .dashboard-card .card-header h3 i {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 16px;
   }
 
-  /* Efectos hover mejorados */
-  .dashboard-card:hover .card-header h3 {
-    color: #3b82f6;
-    transition: color 0.3s ease;
+  .dashboard-card .card-header .status-indicator {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .dashboard-card .card-header .view-full-link {
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .dashboard-card .card-header .view-full-link:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Elementos adicionales del header */
+  .dashboard-card .card-header .time-indicator {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .dashboard-card .card-header .manage-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .dashboard-card .card-header .manage-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .dashboard-card .card-header .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .dashboard-card .card-header .refresh-btn,
+  .dashboard-card .card-header .filter-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .dashboard-card .card-header .refresh-btn:hover,
+  .dashboard-card .card-header .filter-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  /* Estados de tarjetas colapsadas con nuevo header */
+  /* CSS duplicado eliminado - ahora está consolidado arriba */
+
+  /* 🎮 CONTROLES GLOBALES DE TARJETAS */
+  .global-card-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 0;
+  }
+
+  .global-control-btn {
+    background: linear-gradient(135deg, #0f5671 0%, #0891b2 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(15, 86, 113, 0.3);
+  }
+
+  .global-control-btn:hover {
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(15, 86, 113, 0.4);
+  }
+
+  .global-control-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(15, 86, 113, 0.3);
+  }
+
+  .global-control-btn i {
+    font-size: 16px;
+  }
+
+  /* Responsive para controles globales */
+  @media (max-width: 768px) {
+    .global-card-controls {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .global-control-btn {
+      width: 200px;
+      justify-content: center;
+    }
+  }
+
+  /* Efectos hover para el nuevo header */
+  .dashboard-card:hover .card-header {
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+    transition: all 0.3s ease;
   }
 
   .dashboard-card:hover {
@@ -1267,220 +1459,6 @@
 
   .dashboard-card.admin-only:hover {
     box-shadow: 0 15px 35px rgba(239, 68, 68, 0.2);
-  }
-
-  /* 🔄 ESTILOS PARA CARDS COLAPSABLES - NUEVO COLOR TEAL */
-  .collapsible-card .card-header {
-    background: linear-gradient(135deg, #0f5671 0%, #1a7a9e 100%) !important;
-    color: white !important;
-    cursor: pointer;
-    user-select: none;
-    position: relative;
-    transition: all 0.3s ease;
-    padding: 15px 20px;
-    border-radius: 12px 12px 0 0;
-  }
-
-  .collapsible-card .card-header:hover {
-    background: linear-gradient(135deg, #0d4c5f 0%, #16708a 100%) !important;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(15, 86, 113, 0.3);
-  }
-
-  .collapsible-card .card-header h3 {
-    color: white !important;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .collapsible-card .card-header h3 i {
-    color: rgba(255, 255, 255, 0.9);
-  }
-
-  .header-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .collapse-btn {
-    background: rgba(255, 255, 255, 0.2) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    color: white !important;
-    font-size: 14px !important;
-    cursor: pointer !important;
-    padding: 8px 10px !important;
-    border-radius: 6px !important;
-    transition: all 0.3s ease !important;
-    margin-left: auto !important;
-    min-width: 36px !important;
-    height: 36px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-
-  .collapse-btn:hover {
-    background: rgba(255, 255, 255, 0.3) !important;
-    transform: scale(1.1) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-  }
-
-  .collapse-btn:active {
-    transform: scale(0.95) !important;
-  }
-
-  .collapse-btn i {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .collapsible-card.collapsed .collapse-btn i {
-    transform: rotate(180deg);
-  }
-
-  .card-content {
-    overflow: hidden;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    max-height: 1000px;
-    opacity: 1;
-  }
-
-  .collapsible-card.collapsed .card-content {
-    max-height: 0;
-    opacity: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-
-  .collapsible-card.collapsed {
-    min-height: auto;
-  }
-
-  /* Indicador visual de estado colapsado */
-  .collapsible-card.collapsed .card-header::after {
-    content: '📦 Contenido oculto - Click para expandir';
-    position: absolute;
-    bottom: -25px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-size: 11px;
-    color: #64748b;
-    font-style: italic;
-  }
-
-  /* Animación suave para el header al colapsar */
-  .collapsible-card.collapsed .card-header {
-    border-bottom: 1px solid #e2e8f0;
-    margin-bottom: 20px;
-  }
-
-  /* 🆕 ESTILOS PARA CONTROLES GLOBALES DE COLAPSO */
-  .collapse-global-controls,
-  .collapse-global-controls-fixed {
-    opacity: 1 !important;
-    visibility: visible !important;
-    display: flex !important;
-  }
-
-  .collapse-global-controls {
-    margin: 10px 0;
-    display: flex !important;
-    gap: 8px;
-    justify-content: flex-end;
-  }
-
-  .collapse-global-controls-fixed {
-    position: fixed !important;
-    top: 20px !important;
-    right: 20px !important;
-    z-index: 9999 !important;
-    display: flex !important;
-    gap: 8px;
-    background: white;
-    padding: 12px;
-    border-radius: 10px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-  }
-  
-  .global-collapse-btn {
-    background: linear-gradient(135deg, #0f5671 0%, #1a7a9e 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    color: white !important;
-    padding: 8px 14px !important;
-    border-radius: 8px !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-    box-shadow: 0 2px 4px rgba(15, 86, 113, 0.2) !important;
-  }
-
-  .global-collapse-btn:hover {
-    background: linear-gradient(135deg, #0d4c5f 0%, #16708a 100%) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(15, 86, 113, 0.3) !important;
-  }
-
-  .global-collapse-btn:active {
-    transform: translateY(0) !important;
-  }
-
-  .global-collapse-btn i {
-    font-size: 12px;
-  }
-  /* Contenido de cards collapsibles */
-  .collapsible-card .card-content {
-    padding: 20px !important;
-    background: #fafbfc !important;
-  }
-  
-  .collapsible-card.collapsed .card-content {
-    display: none !important;
-  }
-  
-  .global-controls {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  
-  .global-btn {
-    background: linear-gradient(135deg, #0f5671 0%, #1a7a9e 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    color: white !important;
-    padding: 8px 14px !important;
-    border-radius: 8px !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-    font-family: inherit !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-    box-shadow: 0 2px 4px rgba(15, 86, 113, 0.2) !important;
-  }
-  
-  .global-btn:hover {
-    background: linear-gradient(135deg, #0d4c5f 0%, #16708a 100%) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(15, 86, 113, 0.3) !important;
-  }
-
-  .global-btn:active {
-    transform: translateY(0) !important;
-    box-shadow: 0 2px 4px rgba(15, 86, 113, 0.2) !important;
-  }
-  
-  .global-btn i {
-    margin-right: 4px !important;
-    font-size: 10px !important;
   }
 
   /* Estados de carga mejorados */
@@ -2563,25 +2541,44 @@
     font-weight: 600;
   }
 
-  /* Card específica de Observaciones y Reportes en dashboard del practicante */
-  .practitioner-grid [data-card-id="observaciones-reportes"] {
-    grid-column: 1 / -1; /* Ocupar toda la fila */
-    width: 100%;
-    max-width: 100%;
+  /* Responsive Design */
+  @media (max-width: 1400px) {
+    .practitioner-grid {
+      gap: 20px;
+    }
   }
 
-  /* Asegurar que las primeras 4 cards estén en 2 columnas */
-  .practitioner-grid .dashboard-card:nth-child(1),
-  .practitioner-grid .dashboard-card:nth-child(2),
-  .practitioner-grid .dashboard-card:nth-child(3),
-  .practitioner-grid .dashboard-card:nth-child(4) {
-    grid-column: span 1; /* Cada una ocupa 1 columna */
+  @media (max-width: 1200px) {
+    .admin-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    
+    .practitioner-grid {
+      gap: 18px;
+    }
   }
 
-  /* En móviles, todas las cards ocupan toda la fila */
   @media (max-width: 900px) {
-    .practitioner-grid [data-card-id="observaciones-reportes"] {
-      grid-column: span 1; /* En móvil ocupa 1 columna como las demás */
+    .practitioner-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .admin-grid, .practitioner-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .dashboard-header {
+      flex-direction: column;
+      gap: 15px;
+      text-align: center;
+    }
+    
+    .header-stats {
+      flex-direction: column;
+      gap: 10px;
     }
   }
 
@@ -3841,70 +3838,6 @@
 </head>
 <body>
 
-  <!-- 🚀 CACHE BUSTER AGRESIVO - FORZAR SIEMPRE VERSIÓN NUEVA -->
-  <script>
-    (function() {
-      // Versión actual de la aplicación
-      const APP_VERSION = '4.2.0-teal-final';
-      const STORED_VERSION = localStorage.getItem('app-version');
-      const RELOAD_FLAG = sessionStorage.getItem('force-reload-done');
-      
-      console.log(`📦 Versión actual: ${APP_VERSION}, Almacenada: ${STORED_VERSION}, Reload flag: ${RELOAD_FLAG}`);
-      
-      // PRIMERO: Desregistrar Service Workers antiguos
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          if (registrations.length > 0) {
-            console.log(`🔧 Desregistrando ${registrations.length} Service Worker(s) antiguos...`);
-            registrations.forEach(reg => {
-              reg.unregister().then(success => {
-                if (success) console.log('✅ Service Worker desregistrado');
-              });
-            });
-          }
-        });
-      }
-      
-      // SEGUNDO: Limpiar TODOS los caches
-      if ('caches' in window) {
-        caches.keys().then(names => {
-          if (names.length > 0) {
-            console.log(`🗑️ Limpiando ${names.length} caches...`);
-            names.forEach(name => caches.delete(name));
-          }
-        });
-      }
-      
-      // Si la versión cambió O no hay flag de reload
-      if (STORED_VERSION !== APP_VERSION || !RELOAD_FLAG) {
-        console.log('🔄 Forzando recarga para aplicar nueva versión...');
-        
-        // Marcar que ya hicimos el reload
-        sessionStorage.setItem('force-reload-done', 'true');
-        localStorage.setItem('app-version', APP_VERSION);
-        
-        // Forzar hard reload
-        if (performance.navigation.type !== 1) { // No es un refresh manual
-          console.log('🔄 Ejecutando hard reload...');
-          window.location.reload(true);
-          
-          // Backup: si reload no funciona, forzar con timestamp
-          setTimeout(() => {
-            const url = new URL(window.location.href);
-            url.searchParams.set('v', APP_VERSION);
-            url.searchParams.set('t', Date.now());
-            window.location.href = url.toString();
-          }, 100);
-        }
-      } else {
-        console.log('✅ Versión correcta cargada');
-      }
-      
-      // Actualizar título con versión
-      document.title = 'Menú de Inicio - v4.2.0';
-    })();
-  </script>
-
   <!-- Header individual estático -->
   <header>
     <div class="nav-container">
@@ -4077,56 +4010,68 @@
         </div>
       </div>
 
-      <!-- Controles Globales de Colapso -->
-      <div class="global-collapse-controls" style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 15px;">
-        <button onclick="toggleAllCards(true)" class="global-collapse-btn" title="Minimizar todas las secciones">
-          <i class="fas fa-compress-alt"></i> Minimizar Todo
+      <!-- Controles Globales de Tarjetas -->
+      <div class="global-card-controls" style="margin: 20px 0;">
+        <button class="global-control-btn expand-all" onclick="expandAllCards()">
+          <i class="fas fa-expand-alt"></i>
+          <span>Expandir Todo</span>
         </button>
-        <button onclick="toggleAllCards(false)" class="global-collapse-btn" title="Expandir todas las secciones">
-          <i class="fas fa-expand-alt"></i> Expandir Todo
+        <button class="global-control-btn minimize-all" onclick="minimizeAllCards()">
+          <i class="fas fa-compress-alt"></i>
+          <span>Minimizar Todo</span>
         </button>
       </div>
 
       <!-- Módulos de Salud - Ancho completo -->
-      <div class="dashboard-card collapsible-card" style="margin-bottom: 25px;" data-card-id="modulos-salud">
-        <div class="card-header" onclick="toggleCardCollapse('modulos-salud')">
-          <h3><i class="fas fa-hospital-alt"></i> Módulos de Salud</h3>
-          <div class="header-controls">
-            <span class="status-indicator active">En línea</span>
-            <button class="collapse-btn" title="Colapsar/Expandir">
-              <i class="fas fa-chevron-up"></i>
-            </button>
+      <div class="dashboard-card collapsible" data-card-id="modulos-salud" style="margin-bottom: 25px;">
+        <div class="card-header">
+          <div class="header-content">
+            <div class="header-left">
+              <h3><i class="fas fa-hospital-alt"></i> Módulos de Salud</h3>
+            </div>
+            <div class="header-right">
+              <span class="status-indicator active">En línea</span>
+              <button class="collapse-btn" onclick="toggleCardCollapse('modulos-salud')">
+                <i class="fas fa-chevron-up"></i>
+              </button>
+            </div>
           </div>
         </div>
-        <div class="card-content" id="content-modulos-salud">
+        <div class="card-content">
           <div class="modules-horizontal-grid" id="dashboard-modulos-list">
-            <!-- Los módulos se cargarán dinámicamente aquí -->
-            <div style="text-align: center; padding: 20px; color: #64748b;">
-              <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
-              Cargando módulos...
-            </div>
+          <!-- Los módulos se cargarán dinámicamente aquí -->
+          <div style="text-align: center; padding: 20px; color: #64748b;">
+            <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+            Cargando módulos...
+          </div>
           </div>
         </div>
       </div>
 
       <!-- Mapa de Módulos Vista Previa -->
-      <div class="dashboard-card module-map-preview-card collapsible-card" data-card-id="mapa-modulos">
-        <div class="card-header" onclick="toggleCardCollapse('mapa-modulos')">
-          <h3><i class="fas fa-map"></i> Mapa de Módulos</h3>
-          <div class="header-controls">
-            <a href="pages/mapa-modulos.html" class="view-full-link" onclick="event.stopPropagation()">
-              <i class="fas fa-external-link-alt"></i> Ver completo
-            </a>
-            <button class="collapse-btn" title="Colapsar/Expandir">
-              <i class="fas fa-chevron-up"></i>
-            </button>
+      <div class="dashboard-card module-map-preview-card collapsible" data-card-id="mapa-modulos">
+        <div class="card-header">
+          <div class="header-content">
+            <div class="header-left">
+              <h3><i class="fas fa-map"></i> Mapa de Módulos</h3>
+            </div>
+            <div class="header-right">
+              <a href="pages/mapa-modulos.html" class="view-full-link">
+                <i class="fas fa-external-link-alt"></i> Ver completo
+              </a>
+              <button class="collapse-btn" onclick="toggleCardCollapse('mapa-modulos')">
+                <i class="fas fa-chevron-up"></i>
+              </button>
+            </div>
           </div>
         </div>
-        <div class="module-map-container" id="moduleMapContainer">
+        <div class="card-content">
+          <div class="module-map-container" id="moduleMapContainer">
           <div id="moduleMapPreview" style="height: 300px; width: 100%; border-radius: 8px;"></div>
           <div class="map-overlay" id="mapOverlay">
             <i class="fas fa-spinner fa-spin"></i>
             <span>Cargando mapa...</span>
+          </div>
           </div>
         </div>
       </div>
@@ -4134,17 +4079,21 @@
       <!-- Grid para Grupos y Actividad -->
       <div class="admin-grid">
         <!-- Actividad en Consulta -->
-        <div class="dashboard-card collapsible-card" data-card-id="actividad-consulta">
-          <div class="card-header" onclick="toggleCardCollapse('actividad-consulta')">
-            <h3><i class="fas fa-stethoscope"></i> Actividad en Consulta</h3>
-            <div class="header-controls">
-              <span class="time-indicator">Tiempo real</span>
-              <button class="collapse-btn" title="Colapsar/Expandir">
-                <i class="fas fa-chevron-up"></i>
-              </button>
+        <div class="dashboard-card collapsible" data-card-id="actividad-consulta">
+          <div class="card-header">
+            <div class="header-content">
+              <div class="header-left">
+                <h3><i class="fas fa-stethoscope"></i> Actividad en Consulta</h3>
+              </div>
+              <div class="header-right">
+                <span class="time-indicator">Tiempo real</span>
+                <button class="collapse-btn" onclick="toggleCardCollapse('actividad-consulta')">
+                  <i class="fas fa-chevron-up"></i>
+                </button>
+              </div>
             </div>
           </div>
-          <div class="card-content" id="content-actividad-consulta">
+          <div class="card-content">
             <div class="consultation-activity">
             <div class="activity-item">
               <div class="activity-info">
@@ -4179,51 +4128,59 @@
                 <span class="time">15:30</span>
               </div>
             </div>
-          </div>
+            </div>
           </div>
         </div>
 
         <!-- Grupos de Trabajo -->
-        <div class="dashboard-card collapsible-card" data-card-id="grupos-trabajo">
-          <div class="card-header" onclick="toggleCardCollapse('grupos-trabajo')">
-            <h3><i class="fas fa-users-cog"></i> Grupos de Trabajo</h3>
-            <div class="header-controls">
-              <button class="manage-btn" id="btn-gestionar-grupos" onclick="event.stopPropagation()">Gestionar</button>
-              <button class="collapse-btn" title="Colapsar/Expandir">
-                <i class="fas fa-chevron-up"></i>
-              </button>
+        <div class="dashboard-card collapsible" data-card-id="grupos-trabajo">
+          <div class="card-header">
+            <div class="header-content">
+              <div class="header-left">
+                <h3><i class="fas fa-users-cog"></i> Grupos de Trabajo</h3>
+              </div>
+              <div class="header-right">
+                <button class="manage-btn" id="btn-gestionar-grupos">Gestionar</button>
+                <button class="collapse-btn" onclick="toggleCardCollapse('grupos-trabajo')">
+                  <i class="fas fa-chevron-up"></i>
+                </button>
+              </div>
             </div>
           </div>
-          <div class="card-content" id="content-grupos-trabajo">
+          <div class="card-content">
             <div class="work-groups" id="dashboard-grupos-list">
-              <!-- Los grupos se cargarán dinámicamente aquí -->
-              <div style="text-align: center; padding: 20px; color: #64748b;">
-                <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
-                Cargando grupos...
-              </div>
+            <!-- Los grupos se cargarán dinámicamente aquí -->
+            <div style="text-align: center; padding: 20px; color: #64748b;">
+              <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
+              Cargando grupos...
+            </div>
             </div>
           </div>
         </div>
 
         <!-- Registro de Instrumentos (Solo Admin) -->
-        <div class="dashboard-card admin-only collapsible-card" data-card-id="registro-instrumentos">
-          <div class="card-header" onclick="toggleCardCollapse('registro-instrumentos')">
-            <h3><i class="fas fa-clipboard-list"></i> Registro de Instrumentos</h3>
-            <div class="header-controls">
-              <div class="header-actions">
-                <button class="refresh-btn" id="refresh-instrumentos" onclick="event.stopPropagation()">
-                  <i class="fas fa-sync-alt"></i>
-                </button>
-                <button class="filter-btn" id="filter-instrumentos" onclick="event.stopPropagation()">
-                  <i class="fas fa-filter"></i>
+        <div class="dashboard-card admin-only collapsible" data-card-id="registro-instrumentos">
+          <div class="card-header">
+            <div class="header-content">
+              <div class="header-left">
+                <h3><i class="fas fa-clipboard-list"></i> Registro de Instrumentos</h3>
+              </div>
+              <div class="header-right">
+                <div class="header-actions">
+                  <button class="refresh-btn" id="refresh-instrumentos">
+                    <i class="fas fa-sync-alt"></i>
+                  </button>
+                  <button class="filter-btn" id="filter-instrumentos">
+                    <i class="fas fa-filter"></i>
+                  </button>
+                </div>
+                <button class="collapse-btn" onclick="toggleCardCollapse('registro-instrumentos')">
+                  <i class="fas fa-chevron-up"></i>
                 </button>
               </div>
-              <button class="collapse-btn" title="Colapsar/Expandir">
-                <i class="fas fa-chevron-up"></i>
-              </button>
             </div>
           </div>
-          <div class="card-content" id="content-registro-instrumentos">
+          <div class="card-content">
             <div class="registros-content">
             <div class="filters-row" id="filtros-instrumentos" style="display: none;">
               <select id="filtro-modulo">
@@ -4275,16 +4232,15 @@
                 <i class="fas fa-chevron-right"></i>
               </button>
             </div>
-          </div>
+            </div>
           </div>
         </div>
 
         <!-- Gestión de Observaciones (Solo Admin) -->
-        <div class="dashboard-card admin-only observaciones-card collapsible-card" data-card-id="gestion-observaciones">
-          <div class="card-header" onclick="toggleCardCollapse('gestion-observaciones')">
+        <div class="dashboard-card admin-only observaciones-card collapsible" data-card-id="gestion-observaciones">
+          <div class="card-header">
             <h3><i class="fas fa-exclamation-circle"></i> Gestión de Observaciones</h3>
-            <div class="header-controls">
-              <div class="header-actions">
+            <div class="header-actions">
               <button class="refresh-btn" id="refresh-observaciones">
                 <i class="fas fa-sync-alt"></i>
               </button>
@@ -4301,13 +4257,12 @@
                 <option value="medium">Media</option>
                 <option value="low">Baja</option>
               </select>
-              </div>
-              <button class="collapse-btn" title="Colapsar/Expandir" onclick="event.stopPropagation()">
-                <i class="fas fa-chevron-up"></i>
-              </button>
             </div>
+            <button class="collapse-btn" onclick="toggleCardCollapse('gestion-observaciones')">
+              <i class="fas fa-chevron-up"></i>
+            </button>
           </div>
-          <div class="card-content" id="content-gestion-observaciones">
+          <div class="card-content">
             <div class="observaciones-admin-content">
             <div class="stats-row">
               <div class="stat-card urgent">
@@ -4343,7 +4298,6 @@
               </button>
             </div>
           </div>
-          </div>
         </div>
       </div>
     </div>
@@ -4374,30 +4328,36 @@
         </div>
       </div>
 
-      <!-- Controles Globales de Colapso -->
-      <div class="global-collapse-controls" style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 15px;">
-        <button onclick="toggleAllCards(true)" class="global-collapse-btn" title="Minimizar todas las secciones">
-          <i class="fas fa-compress-alt"></i> Minimizar Todo
+      <!-- Controles Globales de Tarjetas -->
+      <div class="global-card-controls" style="margin: 20px 0;">
+        <button class="global-control-btn expand-all" onclick="expandAllCards()">
+          <i class="fas fa-expand-alt"></i>
+          <span>Expandir Todo</span>
         </button>
-        <button onclick="toggleAllCards(false)" class="global-collapse-btn" title="Expandir todas las secciones">
-          <i class="fas fa-expand-alt"></i> Expandir Todo
+        <button class="global-control-btn minimize-all" onclick="minimizeAllCards()">
+          <i class="fas fa-compress-alt"></i>
+          <span>Minimizar Todo</span>
         </button>
       </div>
 
       <div class="practitioner-grid">
         <!-- Módulo Asignado -->
-        <div class="dashboard-card collapsible-card" data-card-id="modulo-asignado">
-          <div class="card-header" onclick="toggleCardCollapse('modulo-asignado')">
-            <h3><i class="fas fa-clipboard-check"></i> Mi Módulo Asignado</h3>
-            <div class="header-controls">
-              <span class="status-indicator active">Activo</span>
-              <button class="collapse-btn" title="Colapsar/Expandir">
-                <i class="fas fa-chevron-up"></i>
-              </button>
+        <div class="dashboard-card collapsible" data-card-id="modulo-asignado" style="min-height: 180px;">
+          <div class="card-header">
+            <div class="header-content">
+              <div class="header-left">
+                <h3><i class="fas fa-clipboard-check"></i> Mi Módulo Asignado</h3>
+              </div>
+              <div class="header-right">
+                <span class="status-indicator active">Activo</span>
+                <button class="collapse-btn" onclick="toggleCardCollapse('modulo-asignado')">
+                  <i class="fas fa-chevron-up"></i>
+                </button>
+              </div>
             </div>
           </div>
-          <div class="card-content" id="content-modulo-asignado">
-          <div class="assignment-details" style="padding: 20px;">
+          <div class="card-content">
+            <div class="assignment-details" style="padding: 20px;">
             <div class="assignment-main">
               <div class="module-assigned" style="margin-bottom: 15px;">
                 <span class="module-name" style="font-size: 1.2rem; font-weight: 600; color: #1e40af; display: block; margin-bottom: 10px;">Cargando módulo...</span>
@@ -4411,46 +4371,53 @@
                 <span>Cargando ubicación...</span>
               </div>
             </div>
-          </div>
+            </div>
           </div>
         </div>
 
         <!-- Mi Grupo de Trabajo -->
-        <div class="dashboard-card collapsible-card" data-card-id="grupo-trabajo">
-          <div class="card-header" onclick="toggleCardCollapse('grupo-trabajo')">
-            <h3><i class="fas fa-users"></i> Mi Grupo de Trabajo</h3>
-            <div class="header-controls">
-              <span class="group-status-indicator">Activo</span>
-              <button class="collapse-btn" title="Colapsar/Expandir">
-                <i class="fas fa-chevron-up"></i>
-              </button>
+        <div class="dashboard-card collapsible" data-card-id="grupo-trabajo">
+          <div class="card-header">
+            <div class="header-content">
+              <div class="header-left">
+                <h3><i class="fas fa-users"></i> Mi Grupo de Trabajo</h3>
+              </div>
+              <div class="header-right">
+                <span class="group-status-indicator">Activo</span>
+                <button class="collapse-btn" onclick="toggleCardCollapse('grupo-trabajo')">
+                  <i class="fas fa-chevron-up"></i>
+                </button>
+              </div>
             </div>
           </div>
-          <div class="card-content" id="content-grupo-trabajo">
-          <div class="work-groups" id="practitioner-group-info">
+          <div class="card-content">
+            <div class="work-groups" id="practitioner-group-info">
             <!-- El grupo se cargará dinámicamente aquí -->
             <div style="text-align: center; padding: 20px; color: #64748b;">
               <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>
               Cargando información del grupo...
             </div>
-          </div>
-          </div>
+            </div>
           </div>
         </div>
 
         <!-- Horario y Fecha -->
-        <div class="dashboard-card collapsible-card" data-card-id="horario-fecha">
-          <div class="card-header" onclick="toggleCardCollapse('horario-fecha')">
-            <h3><i class="fas fa-calendar-alt"></i> Mi Horario</h3>
-            <div class="header-controls">
-              <span class="date-today">15 Oct 2025</span>
-              <button class="collapse-btn" title="Colapsar/Expandir">
-                <i class="fas fa-chevron-up"></i>
-              </button>
+        <div class="dashboard-card collapsible" data-card-id="mi-horario">
+          <div class="card-header">
+            <div class="header-content">
+              <div class="header-left">
+                <h3><i class="fas fa-calendar-alt"></i> Mi Horario</h3>
+              </div>
+              <div class="header-right">
+                <span class="date-today">15 Oct 2025</span>
+                <button class="collapse-btn" onclick="toggleCardCollapse('mi-horario')">
+                  <i class="fas fa-chevron-up"></i>
+                </button>
+              </div>
             </div>
           </div>
-          <div class="card-content" id="content-horario-fecha">
-          <div class="schedule-info">
+          <div class="card-content">
+            <div class="schedule-info">
             <div class="schedule-item current">
               <div class="time-slot">08:00 - 12:00</div>
               <div class="activity">Consulta Externa</div>
@@ -4466,24 +4433,26 @@
               <div class="activity">Rondas Médicas</div>
               <div class="status">Programado</div>
             </div>
-          </div>
-          </div>
+            </div>
           </div>
         </div>
 
         <!-- Checklist de Instrumentos -->
-        <div class="dashboard-card collapsible-card" data-card-id="checklist-instrumentos">
-          <div class="card-header" onclick="toggleCardCollapse('checklist-instrumentos')">
-            <h3><i class="fas fa-tasks"></i> Checklist de Instrumentos</h3>
-            <div class="header-controls">
-              <button class="checklist-btn" onclick="event.stopPropagation()">Actualizar</button>
-              <button class="collapse-btn" title="Colapsar/Expandir">
-                <i class="fas fa-chevron-up"></i>
-              </button>
+        <div class="dashboard-card collapsible" data-card-id="checklist-instrumentos">
+          <div class="card-header">
+            <div class="header-content">
+              <div class="header-left">
+                <h3><i class="fas fa-tasks"></i> Checklist de Instrumentos</h3>
+              </div>
+              <div class="header-right">
+                <button class="checklist-btn">Actualizar</button>
+                <button class="collapse-btn" onclick="toggleCardCollapse('checklist-instrumentos')">
+                  <i class="fas fa-chevron-up"></i>
+                </button>
+              </div>
             </div>
           </div>
-          <div class="card-content" id="content-checklist-instrumentos">
-          <div class="checklist-content">
+          <div class="card-content checklist-content">
             <div class="checklist-section">
               <h4>Instrumentos Médicos</h4>
               <div class="checklist-items">
@@ -4661,23 +4630,24 @@
               </div>
             </div>
           </div>
-          </div>
-          </div>
         </div>
 
         <!-- Observaciones y Quejas -->
-        <div class="dashboard-card collapsible-card" data-card-id="observaciones-reportes">
-          <div class="card-header" onclick="toggleCardCollapse('observaciones-reportes')">
-            <h3><i class="fas fa-exclamation-triangle"></i> Observaciones y Reportes</h3>
-            <div class="header-controls">
-              <button class="report-btn" onclick="event.stopPropagation()">Nuevo Reporte</button>
-              <button class="collapse-btn" title="Colapsar/Expandir">
-                <i class="fas fa-chevron-up"></i>
-              </button>
+        <div class="dashboard-card collapsible" data-card-id="observaciones-reportes">
+          <div class="card-header">
+            <div class="header-content">
+              <div class="header-left">
+                <h3><i class="fas fa-exclamation-triangle"></i> Observaciones y Reportes</h3>
+              </div>
+              <div class="header-right">
+                <button class="report-btn">Nuevo Reporte</button>
+                <button class="collapse-btn" onclick="toggleCardCollapse('observaciones-reportes')">
+                  <i class="fas fa-chevron-up"></i>
+                </button>
+              </div>
             </div>
           </div>
-          <div class="card-content" id="content-observaciones-reportes">
-          <div class="observations-content">
+          <div class="card-content observations-content">
             <div class="observation-form">
               <textarea id="new-observation" placeholder="Describe cualquier material faltante, en mal estado, o situación que requiera atención..."></textarea>
               <div class="form-actions">
@@ -4713,7 +4683,6 @@
                 </div>
               </div>
             </div>
-          </div>
           </div>
         </div>
 
@@ -4758,9 +4727,6 @@
     import './js/utils/dashboardHeaderManager.js'; // Dashboard header management
     import { ConnectionIndicator } from './js/utils/connectionIndicator.js';   // Connection status indicator
     import './js/utils/firebaseSyncManager.js';  // Firebase sync messages manager
-    import './js/utils/globalOfflineManager.js';  // 🌍 GLOBAL: Gestor offline para todas las páginas
-    import offlineSyncService from './js/utils/offlineSyncService.js';  // Servicio de sincronización offline
-    import offlineNotificationManager from './js/utils/offlineNotificationManager.js';  // Gestor de notificaciones offline
     import { instrumentosController } from './js/controllers/instrumentosController.js'; // Controlador de instrumentos y observaciones
     import { adminInstrumentosController } from './js/controllers/adminInstrumentosController.js'; // Controlador admin de instrumentos
     import { authModel } from './js/models/storageModel.js'; // Modelo de autenticación
@@ -4906,90 +4872,6 @@
     window.showLogoutConfirmationModal = showLogoutConfirmationModal;
     window.performLogout = performLogout;
 
-    /**
-     * Inicializa los servicios offline
-     * Debe llamarse después de DOMContentLoaded
-     */
-    async function initOfflineServices() {
-      console.log('🔄 Inicializando servicios offline...');
-      
-      try {
-        // 1. Verificar OfflineNotificationManager
-        if (offlineNotificationManager && typeof offlineNotificationManager === 'object') {
-          console.log('✅ OfflineNotificationManager cargado');
-          if (!window.offlineNotificationManager) {
-            window.offlineNotificationManager = offlineNotificationManager;
-          }
-          console.log('✅ OfflineNotificationManager disponible y activo');
-        } else {
-          console.error('❌ OfflineNotificationManager no se pudo cargar');
-        }
-
-        // 2. Verificar GlobalOfflineManager (reemplaza inicialización manual)
-        if (window.globalOfflineManager) {
-          console.log('✅ GlobalOfflineManager disponible - verificando estado...');
-          
-          // Asegurar que esté inicializado
-          if (!window.globalOfflineManager.isReady()) {
-            console.log('🔄 Inicializando GlobalOfflineManager...');
-            await window.globalOfflineManager.init();
-          }
-          
-          console.log('✅ Sistema de sincronización offline completamente activo');
-        } else {
-          console.warn('⚠️ GlobalOfflineManager no encontrado - inicializando fallback...');
-          
-          // Fallback: inicialización manual como antes
-          if (offlineSyncService && typeof offlineSyncService === 'object') {
-            console.log('✅ OfflineSyncService cargado (fallback)');
-            if (!window.offlineSyncService) {
-              window.offlineSyncService = offlineSyncService;
-            }
-            offlineSyncService.init();
-            console.log('✅ OfflineSyncService disponible y activo (fallback)');
-          } else {
-            console.error('❌ OfflineSyncService no se pudo cargar');
-          }
-        }
-
-        // 3. Listener de reconexión para recargar datos
-        window.addEventListener('connectionRestored', async (event) => {
-          console.log('🌐 Conexión restaurada detectada - recargando dashboard...');
-          
-          try {
-            // Recargar datos del dashboard
-            await loadDashboardData();
-            console.log('✅ Dashboard recargado exitosamente');
-          } catch (error) {
-            console.error('❌ Error recargando dashboard:', error);
-          }
-        });
-        
-        // 4. Registrar en window para debug
-        window.debugOfflineServices = () => {
-          console.log('🔍 === DEBUG SERVICIOS OFFLINE ===');
-          console.log('OfflineSyncService:', !!window.offlineSyncService);
-          console.log('OfflineNotificationManager:', !!window.offlineNotificationManager);
-          console.log('ConnectionIndicator:', !!window.connectionIndicator);
-          
-          if (window.offlineSyncService) {
-            const summary = window.offlineSyncService.getPendingSummary();
-            console.log('Resumen de colas pendientes:', summary);
-          }
-          
-          if (window.connectionIndicator) {
-            console.log('Estado de conexión:', window.connectionIndicator.isOnline);
-          }
-        };
-
-        console.log('✅ Servicios offline inicializados correctamente');
-        console.log('💡 Usa debugOfflineServices() en la consola para información de debug');
-
-      } catch (error) {
-        console.error('❌ Error inicializando servicios offline:', error);
-      }
-    }
-
     document.addEventListener('DOMContentLoaded', () => {
       console.log('MenuInicio: Página cargada con herramientas de desarrollo habilitadas');
       
@@ -5009,9 +4891,6 @@
             // Initialize connection indicator
             ConnectionIndicator.init();
             console.log('ConnectionIndicator inicializado para Menú Principal');
-            
-            // Initialize offline services
-            initOfflineServices();
           }, 100);
         }, 50);
         
@@ -5019,25 +4898,6 @@
         console.error('MenuInicio: Sesión inválida');
       }
     });
-    // Registro del Service Worker para navegación offline
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', async () => {
-        try {
-          const registration = await navigator.serviceWorker.register('/sw.js', {
-            scope: '/'
-          });
-          console.log('✅ Service Worker registrado:', registration.scope);
-          
-          registration.addEventListener('updatefound', () => {
-            console.log('🔄 Nueva versión del Service Worker disponible');
-          });
-          
-        } catch (error) {
-          console.error('❌ Error registrando Service Worker:', error);
-        }
-      });
-    }
-
     // Script para togglear sidebar en móvil
     const hamburger = document.getElementById('hamburger');
     const overlay = document.getElementById('overlay');
@@ -5216,14 +5076,9 @@
         // KPIs
         const kpiPacientes = estadisticas.pacientes.totalPacientes || 0;
         // consultasHoy: contar entradas del historial cuya fecha sea hoy
-        let historial = pacienteModel.getHistorialMedico() || [];
-        // Asegurar que historial es un array
-        if (!Array.isArray(historial)) {
-          console.log('⚠️ Historial no es array, convirtiendo...', typeof historial);
-          historial = [];
-        }
+        const historial = pacienteModel.getHistorialMedico() || [];
         const hoyStr = new Date().toISOString().split('T')[0];
-        const consultasHoy = historial.filter(h => h && h.fecha && (new Date(h.fecha).toISOString().split('T')[0]) === hoyStr).length;
+        const consultasHoy = historial.filter(h => (new Date(h.fecha).toISOString().split('T')[0]) === hoyStr).length;
         const pacientesNuevos = estadisticas.pacientes.pacientesNuevos || 0;
         const alertas = estadisticas.pacientes.citasPendientes || 0;
 
@@ -5247,7 +5102,7 @@
         // Ahora preparar datasets para gráficos usando datos reales
         // 1) Distribución por facultad
         const pacientes = pacienteModel.getPacientes() || [];
-        const facultadCounts = Array.isArray(pacientes) ? pacientes.reduce((acc, p) => { const f = p.facultad || 'No especificado'; acc[f] = (acc[f]||0) + 1; return acc; }, {}) : {};
+        const facultadCounts = pacientes.reduce((acc, p) => { const f = p.facultad || 'No especificado'; acc[f] = (acc[f]||0) + 1; return acc; }, {});
         const facultades = Object.keys(facultadCounts);
         const facultadValues = facultades.map(f => facultadCounts[f]);
 
@@ -5338,11 +5193,103 @@
         
         // Marcar como inicializado
         dashboardInitialized = true;
+        
+        // CORRECCIÓN CRÍTICA: Verificar y arreglar estructura del DOM
+        fixDashboardStructure();
+        
+        // Inicializar botones de colapso después de un breve retraso
+        setTimeout(() => {
+          initCollapseButtons();
+        }, 300);
+        
         console.log('✅ Dashboard inicializado exitosamente');
         
       } catch (error) {
         console.error('❌ Error durante la inicialización del dashboard:', error);
       }
+    }
+
+    // Función para corregir la estructura anidada incorrecta
+    function fixDashboardStructure() {
+      console.log('🔧 === CORRIGIENDO ESTRUCTURA DE DASHBOARDS ===');
+      
+      const adminDash = document.getElementById('admin-dashboard');
+      const practDash = document.getElementById('practitioner-dashboard');
+      const dashboardContent = document.getElementById('dashboard-content');
+      
+      if (!adminDash || !practDash || !dashboardContent) {
+        console.error('❌ No se encontraron todos los elementos necesarios');
+        return;
+      }
+      
+      // Verificar si practitioner está anidado dentro de admin
+      if (adminDash.contains(practDash)) {
+        console.log('🚨 PROBLEMA DETECTADO: practitioner-dashboard está dentro de admin-dashboard');
+        
+        // Mover practitioner-dashboard como hermano de admin-dashboard
+        dashboardContent.appendChild(practDash);
+        
+        console.log('✅ practitioner-dashboard movido como hermano de admin-dashboard');
+      } else {
+        console.log('✅ Estructura correcta: dashboards son hermanos');
+      }
+      
+      // Verificar la estructura final
+      console.log('📊 Estructura final:');
+      console.log('  - admin-dashboard padre:', adminDash.parentElement.id);
+      console.log('  - practitioner-dashboard padre:', practDash.parentElement.id);
+      console.log('  - Son hermanos:', adminDash.parentElement === practDash.parentElement);
+    }
+
+    // Función para inicializar botones de colapso
+    function initCollapseButtons() {
+      console.log('🎮 === INICIALIZANDO BOTONES DE COLAPSO ===');
+      
+      // Buscar todos los botones de colapso en tarjetas visibles
+      const visibleDashboard = document.querySelector('#admin-dashboard[style*="display: block"], #practitioner-dashboard[style*="display: block"]');
+      
+      if (!visibleDashboard) {
+        console.warn('⚠️ No hay dashboard visible para inicializar botones');
+        return;
+      }
+      
+      const collapseButtons = visibleDashboard.querySelectorAll('.collapse-btn');
+      console.log(`🔍 Encontrados ${collapseButtons.length} botones de colapso`);
+      
+      collapseButtons.forEach((button, index) => {
+        const card = button.closest('.dashboard-card[data-card-id]');
+        if (card) {
+          const cardId = card.getAttribute('data-card-id');
+          
+          // Limpiar event listeners previos
+          button.onclick = null;
+          
+          // Agregar nuevo event listener con manejo especial
+          button.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log(`🎯 Activando colapso para: ${cardId}`);
+            
+            // Verificar que la tarjeta tenga contenido antes del colapso
+            const content = card.querySelector('.card-content');
+            if (content && content.offsetHeight === 0) {
+              // Si el contenido tiene altura 0, forzar una altura mínima antes del colapso
+              content.style.minHeight = '100px';
+              setTimeout(() => {
+                toggleCardCollapse(cardId);
+              }, 50);
+            } else {
+              toggleCardCollapse(cardId);
+            }
+          };
+          
+          console.log(`✅ Botón ${index + 1} configurado para tarjeta: ${cardId}`);
+        } else {
+          console.warn(`⚠️ Botón ${index + 1} no tiene tarjeta padre con data-card-id`);
+        }
+      });
+      
+      console.log('🎮 === BOTONES DE COLAPSO INICIALIZADOS ===');
     }
 
     function getUserRole() {
@@ -5438,197 +5385,356 @@
 
       console.log('✅ Elementos del dashboard encontrados');
 
-      // Ocultar todos los dashboards primero
+      // Ocultar ambos dashboards
       adminDashboard.style.display = 'none';
       practitionerDashboard.style.display = 'none';
 
-      // Normalizar el rol para comparación
+      // Normalizar el rol
       const normalizedRole = role ? role.toLowerCase().trim() : '';
-      console.log('📝 Comparando rol normalizado:', normalizedRole);
+      console.log('📝 Rol normalizado:', normalizedRole);
 
-      // Lista de roles que deben mostrar el dashboard de administrador
+      // Determinar qué dashboard mostrar
       const adminRoles = ['admin', 'administrador', 'administrator'];
+      const isAdmin = adminRoles.includes(normalizedRole);
 
-      // Mostrar el dashboard correspondiente con mejor detección
-      if (adminRoles.includes(normalizedRole)) {
+      if (isAdmin) {
+        console.log('🔧 MODO: ADMINISTRADOR');
         adminDashboard.style.display = 'block';
-        console.log('🔧 Dashboard de administrador activado para rol:', normalizedRole);
-        
-        // LIMPIAR: Eliminar cualquier card del practicante que pueda haber aparecido
-        cleanupPractitionerCardsFromAdmin();
-        
-        console.log('🔍 Iniciando carga de datos de administrador...');
         loadAdminData();
-        
-        // Para administradores: mostrar todos los botones del sidebar
         showAllSidebarButtons();
-        
-        // Verificación adicional después de cargar datos
-        setTimeout(() => {
-          if (adminDashboard.style.display === 'block') {
-            cleanupPractitionerCardsFromAdmin();
-            console.log('✅ Verificación final de limpieza completada');
-          }
-        }, 2000);
-        
       } else {
-        // Para cualquier otro rol (practicante, usuario, supervisor, etc.)
+        console.log('👨‍⚕️ MODO: PRACTICANTE');
         practitionerDashboard.style.display = 'block';
-        console.log('👨‍⚕️ Dashboard de practicante activado para rol:', normalizedRole);
         loadPractitionerData();
-        
-        // Para practicantes: ocultar el botón de "Usuarios y Personal"
         hideRestrictedButtonsForPractitioners();
       }
 
       console.log('=== FIN DASHBOARD ROLE DETECTION ===');
-    }
-
-    /**
-     * Limpiar cualquier card del practicante que pueda haber aparecido incorrectamente en el admin dashboard
-     */
-    function cleanupPractitionerCardsFromAdmin() {
-      console.log('🧹 Limpiando cards del practicante del dashboard del admin...');
-      
-      const adminDashboard = document.getElementById('admin-dashboard');
-      if (!adminDashboard) return;
-      
-      // Lista de IDs y clases específicas del dashboard del practicante
-      const practitionerCardIds = [
-        'modulo-asignado',
-        'grupo-trabajo', 
-        'horario-fecha',
-        'checklist-instrumentos',
-        'observaciones-reportes'
-      ];
-      
-      const practitionerClasses = [
-        'practitioner-grid',
-        'assignment-details', 
-        'schedule-info',
-        'checklist-content',
-        'observations-content'
-      ];
-      
-      // Eliminar cards por ID
-      practitionerCardIds.forEach(id => {
-        const element = adminDashboard.querySelector(`[data-card-id="${id}"]`);
-        if (element) {
-          console.log(`❌ Eliminando card del practicante: ${id}`);
-          element.remove();
-        }
-      });
-      
-      // Eliminar elementos por clase - SOLO si NO pertenecen a cards legítimas del admin
-      practitionerClasses.forEach(className => {
-        const elements = adminDashboard.querySelectorAll(`.${className}`);
-        elements.forEach(element => {
-          // Verificar si el elemento está dentro de una card del practicante
-          const isInPractitionerCard = practitionerCardIds.some(id => 
-            element.closest(`[data-card-id="${id}"]`)
-          );
-          
-          // Solo eliminar si está en una card del practicante
-          if (isInPractitionerCard) {
-            console.log(`❌ Eliminando elemento del practicante: .${className}`);
-            element.remove();
-          }
-        });
-      });
-      
-      // Eliminar cualquier card que contenga texto específico del practicante
-      const practitionerTexts = [
-        'Mi Módulo Asignado',
-        'Mi Grupo de Trabajo', 
-        'Mi Horario',
-        'Checklist de Instrumentos',
-        'Observaciones y Reportes'
-      ];
-      
-      practitionerTexts.forEach(text => {
-        const elements = adminDashboard.querySelectorAll('h3');
-        elements.forEach(h3 => {
-          if (h3.textContent.includes(text)) {
-            const card = h3.closest('.dashboard-card');
-            if (card) {
-              console.log(`❌ Eliminando card con texto del practicante: "${text}"`);
-              card.remove();
-            }
-          }
-        });
-      });
-      
-      // Verificación adicional: buscar cualquier card que no sea de admin
-      const allCards = adminDashboard.querySelectorAll('.dashboard-card');
-      allCards.forEach(card => {
-        const cardId = card.getAttribute('data-card-id');
-        const isAdminCard = [
-          'modulos-salud',
-          'mapa-modulos', 
-          'actividad-consulta',
-          'grupos-trabajo',
-          'registro-instrumentos',
-          'gestion-observaciones'
-        ].includes(cardId);
-        
-        if (!isAdminCard) {
-          console.log(`❌ Eliminando card no autorizada en admin: ${cardId}`);
-          card.remove();
-        }
-      });
-      
-      console.log('✅ Limpieza completada');
-    }
-
-    // Función para testing desde consola
+    }    // Función para testing desde consola
     window.testDashboard = function(role) {
       console.log('🧪 TESTING: Forzando dashboard para rol:', role);
       showDashboardByRole(role);
     };
 
-    // Función de debug para verificar estado de dashboards
-    window.debugDashboards = function() {
-      console.log('🔍 === DEBUG DASHBOARDS ===');
+    // Función de emergencia para corregir estructura desde consola
+    window.arreglarDashboards = function() {
+      console.log('🆘 === CORRECCIÓN DE EMERGENCIA ===');
       
-      const adminDashboard = document.getElementById('admin-dashboard');
+      const adminDash = document.getElementById('admin-dashboard');
+      const practDash = document.getElementById('practitioner-dashboard');
+      const dashboardContent = document.getElementById('dashboard-content');
+      
+      console.log('🔍 Elementos encontrados:', {
+        admin: !!adminDash,
+        practitioner: !!practDash, 
+        container: !!dashboardContent
+      });
+      
+      if (adminDash && practDash && dashboardContent) {
+        // Si practitioner está dentro de admin, moverlo
+        if (adminDash.contains(practDash)) {
+          console.log('🚨 MOVIENDO: practitioner está dentro de admin');
+          dashboardContent.appendChild(practDash);
+          console.log('✅ MOVIDO: practitioner es ahora hermano de admin');
+        }
+        
+        // Ocultar admin y mostrar practitioner
+        adminDash.style.display = 'none';
+        practDash.style.cssText = `
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          background: white !important;
+          border: 2px solid green !important;
+          padding: 20px !important;
+        `;
+        
+        console.log('✅ Dashboard de practicante FORZADO');
+        return true;
+      }
+      
+      console.error('❌ No se pudieron encontrar los elementos necesarios');
+      return false;
+    };
+
+    // Función para reparar tarjetas específicas que no se colapsan
+    window.repararTarjetas = function() {
+      console.log('🔧 === REPARANDO TARJETAS PROBLEMÁTICAS ===');
+      
+      const tarjetasProblematicas = ['modulo-asignado', 'grupo-trabajo'];
+      
+      tarjetasProblematicas.forEach(cardId => {
+        const card = document.querySelector(`[data-card-id="${cardId}"]`);
+        const content = card?.querySelector('.card-content');
+        const button = card?.querySelector('.collapse-btn');
+        
+        if (card && content && button) {
+          console.log(`🔧 Reparando tarjeta: ${cardId}`);
+          
+          // Asegurar que el contenido tenga altura
+          if (content.offsetHeight === 0) {
+            content.style.minHeight = '150px';
+            content.style.height = 'auto';
+            console.log(`📏 Altura forzada para: ${cardId}`);
+          }
+          
+          // Reinicializar botón
+          button.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log(`🎯 Colapso manual para: ${cardId}`);
+            toggleCardCollapse(cardId);
+          };
+          
+          console.log(`✅ Tarjeta reparada: ${cardId}`);
+        } else {
+          console.warn(`⚠️ No se pudo reparar: ${cardId}`);
+        }
+      });
+      
+      console.log('🔧 === REPARACIÓN COMPLETADA ===');
+    };
+
+    // Función de diagnóstico completa para dashboard de practicante
+    window.diagnosticoPracticante = function() {
+      console.log('🔍 === DIAGNÓSTICO COMPLETO DASHBOARD PRACTICANTE ===');
+      
+      const practDash = document.getElementById('practitioner-dashboard');
+      const adminDash = document.getElementById('admin-dashboard');
+      const dashboardContent = document.getElementById('dashboard-content');
+      
+      // Estado de elementos
+      console.log('📊 Estado de elementos:', {
+        practitionerExists: !!practDash,
+        adminExists: !!adminDash,
+        dashboardContentExists: !!dashboardContent
+      });
+      
+      if (!practDash) {
+        console.error('❌ Elemento practitioner-dashboard NO EXISTE');
+        return;
+      }
+      
+      // Verificar estilos
+      const computedStyle = window.getComputedStyle(practDash);
+      console.log('🎨 Estilos del practitioner-dashboard:', {
+        display: practDash.style.display,
+        computedDisplay: computedStyle.display,
+        visibility: practDash.style.visibility || computedStyle.visibility,
+        position: practDash.style.position || computedStyle.position,
+        zIndex: practDash.style.zIndex || computedStyle.zIndex,
+        opacity: practDash.style.opacity || computedStyle.opacity,
+        height: computedStyle.height,
+        offsetHeight: practDash.offsetHeight,
+        scrollHeight: practDash.scrollHeight,
+        clientHeight: practDash.clientHeight
+      });
+      
+      // Verificar estados de ambos dashboards
+      console.log('🎯 Estado de dashboards:');
+      console.log('  👨‍⚕️ Practitioner:', practDash.style.display, '| Computed:', window.getComputedStyle(practDash).display);
+      console.log('  👨‍💼 Admin:', adminDash.style.display, '| Computed:', window.getComputedStyle(adminDash).display);
+      
+      // Verificar jerarquía de padres
+      let parent = practDash.parentElement;
+      let level = 0;
+      console.log('🌳 Jerarquía de elementos padre:');
+      while (parent && level < 5) {
+        const parentStyle = window.getComputedStyle(parent);
+        console.log(`  ${level + 1}. ${parent.tagName}${parent.id ? '#' + parent.id : ''}${parent.className ? '.' + parent.className.split(' ')[0] : ''}:`, {
+          display: parentStyle.display,
+          visibility: parentStyle.visibility,
+          overflow: parentStyle.overflow,
+          height: parentStyle.height
+        });
+        parent = parent.parentElement;
+        level++;
+      }
+      
+      // Verificar hijos principales
+      const header = practDash.querySelector('.dashboard-header');
+      const grid = practDash.querySelector('.practitioner-grid');
+      const cards = practDash.querySelectorAll('.dashboard-card');
+      
+      console.log('👶 Estado de elementos hijo:', {
+        header: header ? {
+          exists: true,
+          display: window.getComputedStyle(header).display,
+          height: window.getComputedStyle(header).height,
+          offsetHeight: header.offsetHeight
+        } : { exists: false },
+        grid: grid ? {
+          exists: true,
+          display: window.getComputedStyle(grid).display,
+          height: window.getComputedStyle(grid).height,
+          offsetHeight: grid.offsetHeight
+        } : { exists: false },
+        cardsCount: cards.length,
+        firstCardHeight: cards[0] ? cards[0].offsetHeight : 'N/A'
+      });
+      
+      // CORRECCIÓN AGRESIVA
+      console.log('🔧 === INICIANDO CORRECCIÓN TOTAL ===');
+      
+      // 1. Ocultar completamente admin dashboard
+      adminDash.style.cssText = 'display: none !important;';
+      
+      // 2. Forzar practitioner dashboard con máxima especificidad
+      practDash.style.cssText = `
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        height: auto !important;
+        min-height: 600px !important;
+        width: 100% !important;
+        z-index: 10 !important;
+        background: #ffffff !important;
+        padding: 20px !important;
+        margin: 0 !important;
+        border: 2px solid #22c55e !important;
+      `;
+      
+      // 3. Forzar elementos hijo
+      if (header) {
+        header.style.cssText = `
+          display: flex !important;
+          visibility: visible !important;
+          height: auto !important;
+          min-height: 120px !important;
+          background: #f8fafc !important;
+          border: 1px solid #e2e8f0 !important;
+        `;
+      }
+      
+      if (grid) {
+        grid.style.cssText = `
+          display: grid !important;
+          visibility: visible !important;
+          height: auto !important;
+          min-height: 400px !important;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+          gap: 20px !important;
+          background: #f1f5f9 !important;
+        `;
+      }
+      
+      // 4. Forzar tarjetas
+      cards.forEach((card, i) => {
+        card.style.cssText = `
+          display: block !important;
+          visibility: visible !important;
+          height: auto !important;
+          min-height: 250px !important;
+          background: white !important;
+          border: 1px solid #d1d5db !important;
+          padding: 15px !important;
+          border-radius: 8px !important;
+        `;
+      });
+      
+      // 5. Forzar recálculo
+      practDash.offsetHeight;
+      
+      console.log('✅ CORRECCIÓN TOTAL APLICADA');
+      console.log('📏 Nuevo offsetHeight:', practDash.offsetHeight);
+      console.log('📏 Nueva altura calculada:', window.getComputedStyle(practDash).height);
+      console.log('🔍 === FIN DIAGNÓSTICO ===');
+    };
+    
+    // Función de debug específica para dashboard de practicante
+    window.debugPractitionerDashboard = function() {
+      console.log('🔧 DEBUG: Forzando visualización de dashboard del practicante');
       const practitionerDashboard = document.getElementById('practitioner-dashboard');
+      const adminDashboard = document.getElementById('admin-dashboard');
       
-      console.log('Admin Dashboard:');
-      console.log('  - Display:', adminDashboard.style.display);
-      console.log('  - Visibility:', adminDashboard.style.visibility);
-      console.log('  - Cards total:', adminDashboard.querySelectorAll('.dashboard-card').length);
+      if (adminDashboard) {
+        adminDashboard.style.display = 'none';
+        console.log('✅ Dashboard admin ocultado');
+      }
       
-      const adminCards = adminDashboard.querySelectorAll('.dashboard-card');
+      if (practitionerDashboard) {
+        practitionerDashboard.style.display = 'block';
+        practitionerDashboard.style.visibility = 'visible';
+        practitionerDashboard.style.opacity = '1';
+        practitionerDashboard.style.minHeight = '500px';
+        practitionerDashboard.style.position = 'relative';
+        practitionerDashboard.style.zIndex = '1';
+        practitionerDashboard.style.height = 'auto';
+        
+        // CORREGIR ELEMENTOS HIJOS CON ALTURA 0
+        const dashboardHeader = practitionerDashboard.querySelector('.dashboard-header');
+        const controlsSection = practitionerDashboard.querySelector('.global-card-controls');
+        const practitionerGrid = practitionerDashboard.querySelector('.practitioner-grid');
+        
+        if (dashboardHeader) {
+          dashboardHeader.style.height = 'auto';
+          dashboardHeader.style.minHeight = '120px';
+          dashboardHeader.style.display = 'flex';
+          dashboardHeader.classList.remove('animated', 'slideInUp');
+        }
+        
+        if (controlsSection) {
+          controlsSection.style.height = 'auto';
+          controlsSection.style.minHeight = '80px';
+          controlsSection.style.display = 'flex';
+        }
+        
+        if (practitionerGrid) {
+          practitionerGrid.style.height = 'auto';
+          practitionerGrid.style.minHeight = '300px';
+          practitionerGrid.style.display = 'grid';
+        }
+        
+        console.log('✅ Dashboard practicante forzado a visible');
+        console.log('🔍 Estado:', {
+          display: practitionerDashboard.style.display,
+          visibility: practitionerDashboard.style.visibility,
+          opacity: practitionerDashboard.style.opacity,
+          minHeight: practitionerDashboard.style.minHeight,
+          offsetHeight: practitionerDashboard.offsetHeight,
+          scrollHeight: practitionerDashboard.scrollHeight
+        });
+        
+        // Verificar si tiene contenido
+        const children = practitionerDashboard.children;
+        console.log('📋 Elementos hijos del dashboard:', children.length);
+        for (let i = 0; i < children.length; i++) {
+          const child = children[i];
+          console.log(`   - ${i + 1}: ${child.tagName}.${child.className} (height: ${child.offsetHeight})`);
+        }
+        
+        // Cargar datos
+        loadPractitionerData();
+      } else {
+        console.error('❌ Dashboard de practicante no encontrado');
+      }
+    };
+
+    // Función de debug para tarjetas de admin
+    window.debugAdminCards = function() {
+      console.log('🔍 DEBUG: Estado de tarjetas de administrador');
+      const adminCards = document.querySelectorAll('.admin-only');
+      console.log('📊 Total tarjetas encontradas:', adminCards.length);
+      
       adminCards.forEach((card, index) => {
-        const cardId = card.getAttribute('data-card-id');
         const title = card.querySelector('h3')?.textContent || 'Sin título';
-        console.log(`    ${index + 1}. ${cardId}: ${title}`);
+        const isVisible = card.classList.contains('show');
+        const displayStyle = window.getComputedStyle(card).display;
+        
+        console.log(`📱 Tarjeta ${index + 1}:`);
+        console.log(`   - Título: ${title}`);
+        console.log(`   - Clase 'show': ${isVisible}`);
+        console.log(`   - Display CSS: ${displayStyle}`);
+        console.log(`   - Elemento:`, card);
       });
       
-      console.log('Practitioner Dashboard:');
-      console.log('  - Display:', practitionerDashboard.style.display);
-      console.log('  - Visibility:', practitionerDashboard.style.visibility);
-      console.log('  - Cards total:', practitionerDashboard.querySelectorAll('.dashboard-card').length);
-      
-      const practitionerCards = practitionerDashboard.querySelectorAll('.dashboard-card');
-      practitionerCards.forEach((card, index) => {
-        const cardId = card.getAttribute('data-card-id');
-        const title = card.querySelector('h3')?.textContent || 'Sin título';
-        console.log(`    ${index + 1}. ${cardId}: ${title}`);
-      });
-      
-      // Verificar cards cruzadas
-      const practitionerCardsInAdmin = adminDashboard.querySelectorAll('[data-card-id="modulo-asignado"], [data-card-id="grupo-trabajo"], [data-card-id="horario-fecha"], [data-card-id="checklist-instrumentos"], [data-card-id="observaciones-reportes"]');
-      console.log('Cards del practicante en admin:', practitionerCardsInAdmin.length);
-      
-      const adminCardsInPractitioner = practitionerDashboard.querySelectorAll('[data-card-id="registro-instrumentos"], [data-card-id="gestion-observaciones"]');
-      console.log('Cards del admin en practicante:', adminCardsInPractitioner.length);
+      // Verificar si adminInstrumentosController está disponible
+      console.log('🔧 adminInstrumentosController disponible:', !!window.adminInstrumentosController);
       
       // Verificar rol actual
       const currentUser = authModel.getCurrentUser() || {};
-      console.log('Usuario actual:', currentUser.rol);
-      
-      console.log('=== FIN DEBUG ===');
+      console.log('👤 Usuario actual:', currentUser.rol);
     };
 
     function loadAdminData() {
@@ -5662,51 +5768,6 @@
           console.log(`📱 Tarjeta ${index + 1} mostrada:`, card.querySelector('h3')?.textContent);
         });
         
-        // Verificación final: asegurar que no hay cards del practicante
-        setTimeout(() => {
-          const adminDashboard = document.getElementById('admin-dashboard');
-          if (adminDashboard && adminDashboard.style.display === 'block') {
-            const allCards = adminDashboard.querySelectorAll('.dashboard-card');
-            const practitionerCards = adminDashboard.querySelectorAll('[data-card-id="modulo-asignado"], [data-card-id="grupo-trabajo"], [data-card-id="horario-fecha"], [data-card-id="checklist-instrumentos"], [data-card-id="observaciones-reportes"]');
-            
-            if (practitionerCards.length > 0) {
-              console.warn(`🚨 DETECTADAS ${practitionerCards.length} cards del practicante en dashboard admin - eliminando...`);
-              practitionerCards.forEach(card => card.remove());
-            }
-            
-            // Verificar que solo quedan cards de admin
-            const remainingCards = adminDashboard.querySelectorAll('.dashboard-card');
-            const validAdminCards = Array.from(remainingCards).filter(card => {
-              const cardId = card.getAttribute('data-card-id');
-              return [
-                'modulos-salud',
-                'mapa-modulos', 
-                'actividad-consulta',
-                'grupos-trabajo',
-                'registro-instrumentos',
-                'gestion-observaciones'
-              ].includes(cardId);
-            });
-            
-            if (remainingCards.length !== validAdminCards.length) {
-              console.warn(`🚨 ${remainingCards.length - validAdminCards.length} cards inválidas encontradas - limpiando...`);
-              remainingCards.forEach(card => {
-                const cardId = card.getAttribute('data-card-id');
-                if (![
-                  'modulos-salud',
-                  'mapa-modulos', 
-                  'actividad-consulta',
-                  'grupos-trabajo',
-                  'registro-instrumentos',
-                  'gestion-observaciones'
-                ].includes(cardId)) {
-                  card.remove();
-                }
-              });
-            }
-          }
-        }, 1000);
-        
         console.log('✅ Datos del administrador cargados exitosamente');
       } catch (error) {
         console.error('❌ Error cargando datos del administrador:', error);
@@ -5715,6 +5776,18 @@
 
     async function loadPractitionerData() {
       console.log('📊 Cargando datos del practicante...');
+      console.log('✅ Dashboard del practicante visible correctamente');
+      
+      // VERIFICAR QUE EL DASHBOARD SE ESTÉ MOSTRANDO
+      const practitionerDashboard = document.getElementById('practitioner-dashboard');
+      if (practitionerDashboard) {
+        console.log('✅ Elemento practitioner-dashboard encontrado');
+        console.log('🔍 Display style:', practitionerDashboard.style.display);
+        console.log('🔍 Computed display:', window.getComputedStyle(practitionerDashboard).display);
+      } else {
+        console.error('❌ ERROR: practitioner-dashboard NO ENCONTRADO');
+      }
+      
       try {
         // Cargar datos de asignación (módulo y grupo)
         await updatePractitionerAssignment();
@@ -5741,6 +5814,13 @@
         }, 60000); // 1 minuto
         
         console.log('✅ Datos del practicante cargados exitosamente');
+        
+        // Reinicializar botones de colapso después de cargar contenido dinámico
+        setTimeout(() => {
+          console.log('🔄 Reinicializando botones de colapso después de carga de datos...');
+          initCollapseButtons();
+        }, 1000);
+        
       } catch (error) {
         console.error('❌ Error cargando datos del practicante:', error);
       }
@@ -5748,13 +5828,6 @@
 
     async function updateModuleStatus() {
       console.log('📍 Actualizando estado de módulos de salud...');
-      
-      // Verificar que el dashboard del admin esté activo
-      const adminDashboard = document.getElementById('admin-dashboard');
-      if (!adminDashboard || adminDashboard.style.display !== 'block') {
-        console.log('⏭️ Dashboard del admin no activo, saltando actualización de módulos');
-        return;
-      }
       
       try {
         // Mostrar indicador de carga
@@ -6060,13 +6133,6 @@
 
     async function updateWorkGroups() {
       console.log('👥 Actualizando grupos de trabajo...');
-      
-      // Verificar que el dashboard del admin esté activo
-      const adminDashboard = document.getElementById('admin-dashboard');
-      if (!adminDashboard || adminDashboard.style.display !== 'block') {
-        console.log('⏭️ Dashboard del admin no activo, saltando actualización de grupos');
-        return;
-      }
       
       // Mostrar indicador de carga
       const gruposContainer = document.getElementById('dashboard-grupos-list');
@@ -7148,18 +7214,11 @@
     function loadChecklist() {
       console.log('📋 Cargando estado del checklist...');
       try {
-        // SOLO buscar en el dashboard del practicante
-        const practitionerDashboard = document.getElementById('practitioner-dashboard');
-        if (!practitionerDashboard || practitionerDashboard.style.display === 'none') {
-          console.log('⏭️ Dashboard de practicante no visible, omitiendo carga de checklist');
-          return;
-        }
-        
         // Cargar estado guardado del checklist
         const checklistData = JSON.parse(localStorage.getItem('checklistData') || '{}');
         
-        // Aplicar estados guardados a los elementos del checklist - SOLO en dashboard practicante
-        const checklistItems = practitionerDashboard.querySelectorAll('.checklist-item');
+        // Aplicar estados guardados a los elementos del checklist
+        const checklistItems = document.querySelectorAll('.checklist-item');
         
         checklistItems.forEach(item => {
           const checkbox = item.querySelector('input[type="checkbox"]');
@@ -7186,12 +7245,8 @@
     }
 
     function updateChecklistStats() {
-      const practitionerDashboard = document.getElementById('practitioner-dashboard');
-      if (!practitionerDashboard || practitionerDashboard.style.display === 'none') {
-        return;
-      }
-      const totalItems = practitionerDashboard.querySelectorAll('.checklist-item').length;
-      const checkedItems = practitionerDashboard.querySelectorAll('.checklist-item input[type="checkbox"]:checked').length;
+      const totalItems = document.querySelectorAll('.checklist-item').length;
+      const checkedItems = document.querySelectorAll('.checklist-item input[type="checkbox"]:checked').length;
       const percentage = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0;
       
       // Actualizar o crear indicador de progreso
@@ -7228,22 +7283,15 @@
     function loadRecentObservations() {
       console.log('📝 Cargando observaciones recientes...');
       try {
-        // SOLO ejecutar si el dashboard del practicante está visible
-        const practitionerDashboard = document.getElementById('practitioner-dashboard');
-        if (!practitionerDashboard || practitionerDashboard.style.display === 'none') {
-          console.log('⏭️ Dashboard de practicante no visible, omitiendo carga de observaciones');
-          return;
-        }
-        
         // Cargar observaciones guardadas
         const observations = JSON.parse(localStorage.getItem('practitionerObservations') || '[]');
         
-        // Buscar o crear sección de observaciones - SOLO en dashboard practicante
-        let observationsSection = practitionerDashboard.querySelector('.recent-observations');
+        // Buscar o crear sección de observaciones
+        let observationsSection = document.querySelector('.recent-observations');
         
         if (!observationsSection && observations.length > 0) {
-          // Crear sección de observaciones si hay datos - SOLO en dashboard de practicante
-          const practitionerGrid = document.querySelector('#practitioner-dashboard .practitioner-grid');
+          // Crear sección de observaciones si hay datos
+          const practitionerGrid = document.querySelector('.practitioner-grid');
           if (practitionerGrid) {
             const observationsHTML = `
               <div class="dashboard-card recent-observations">
@@ -7887,635 +7935,240 @@
         }
       });
     })();
-  </script>
 
-  <!-- 🔄 SCRIPT PARA FUNCIONALIDAD DE COLAPSO DE CARDS -->
-  <script>
-    // Estado de colapso de las cards (persistente en localStorage)
-    const cardCollapseStates = JSON.parse(localStorage.getItem('dashboardCardStates') || '{}');
-
-    /**
-     * Alternar el estado de colapso de una card
-     * @param {string} cardId - ID de la card
-     */
-    function toggleCardCollapse(cardId) {
+    // 🔹 FUNCIONALIDAD DE COLAPSO DE TARJETAS
+    window.toggleCardCollapse = function(cardId) {
       const card = document.querySelector(`[data-card-id="${cardId}"]`);
-      if (!card) return;
+      if (!card) {
+        console.warn(`Tarjeta con ID "${cardId}" no encontrada`);
+        return;
+      }
 
-      const content = document.getElementById(`content-${cardId}`);
-      const collapseBtn = card.querySelector('.collapse-btn i');
+      // Buscar contenido - ahora todas las tarjetas usan .card-content
+      const content = card.querySelector('.card-content');
       
-      if (!content || !collapseBtn) return;
+      const icon = card.querySelector('.collapse-btn i');
+      
+      if (!content || !icon) {
+        console.warn(`Elementos de colapso no encontrados para tarjeta "${cardId}"`);
+        console.log('Contenido encontrado:', !!content, 'Icono encontrado:', !!icon);
+        return;
+      }
 
-      // Alternar clase de collapso
-      card.classList.toggle('collapsed');
+      // Toggle collapsed state
       const isCollapsed = card.classList.contains('collapsed');
-
-      // Guardar estado en localStorage
-      cardCollapseStates[cardId] = isCollapsed;
-      localStorage.setItem('dashboardCardStates', JSON.stringify(cardCollapseStates));
-
-      // Animación suave del icono
-      collapseBtn.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
-
-      // Efecto visual opcional al colapsar
+      
       if (isCollapsed) {
-        // Agregar efecto de minimización
-        card.style.transform = 'scale(0.98)';
+        // Expandir
+        card.classList.remove('collapsed');
+        content.style.maxHeight = content.scrollHeight + 'px';
+        icon.className = 'fas fa-chevron-up';
+        
+        // Después de la animación, remover altura fija para permitir contenido dinámico
         setTimeout(() => {
-          card.style.transform = '';
-        }, 200);
-      } else {
-        // Efecto de expansión
-        content.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-          content.style.transform = '';
-        }, 100);
-      }
-
-      // Notificar el cambio de estado
-      if (window.showAnimatedNotification) {
-        const action = isCollapsed ? 'minimizada' : 'expandida';
-        const cardTitle = card.querySelector('.card-header h3').textContent.trim();
-        window.showAnimatedNotification(`📋 Sección "${cardTitle}" ${action}`, 'info');
-      }
-    }
-
-    /**
-     * Restaurar estados de colapso desde localStorage
-     */
-    function restoreCardStates() {
-      console.log('🔄 Restaurando estados de cards:', cardCollapseStates);
-      
-      // Primero intentar inmediatamente
-      let restoredCount = 0;
-      Object.entries(cardCollapseStates).forEach(([cardId, isCollapsed]) => {
-        if (isCollapsed) {
-          const card = document.querySelector(`[data-card-id="${cardId}"]`);
-          if (card) {
-            card.classList.add('collapsed');
-            const collapseBtn = card.querySelector('.collapse-btn i');
-            if (collapseBtn) {
-              collapseBtn.style.transform = 'rotate(180deg)';
-            }
-            restoredCount++;
-            console.log(`✅ Card "${cardId}" restaurada como collapsed`);
-          } else {
-            console.log(`⚠️ Card "${cardId}" no encontrada en DOM`);
+          if (!card.classList.contains('collapsed')) {
+            content.style.maxHeight = 'none';
           }
-        }
-      });
-      
-      console.log(`📊 Estados restaurados: ${restoredCount} de ${Object.keys(cardCollapseStates).length}`);
-      
-      // Si no se pudieron restaurar todas, intentar de nuevo después de un delay
-      if (restoredCount < Object.values(cardCollapseStates).filter(v => v).length) {
-        setTimeout(() => {
-          console.log('🔄 Reintentando restauración de estados...');
-          Object.entries(cardCollapseStates).forEach(([cardId, isCollapsed]) => {
-            if (isCollapsed) {
-              const card = document.querySelector(`[data-card-id="${cardId}"]`);
-              if (card && !card.classList.contains('collapsed')) {
-                card.classList.add('collapsed');
-                const collapseBtn = card.querySelector('.collapse-btn i');
-                if (collapseBtn) {
-                  collapseBtn.style.transform = 'rotate(180deg)';
-                }
-                console.log(`✅ Card "${cardId}" restaurada en segundo intento`);
-              }
-            }
-          });
-        }, 200);
+        }, 400);
+      } else {
+        // Colapsar
+        content.style.maxHeight = content.scrollHeight + 'px';
+        
+        // Forzar reflow
+        content.offsetHeight;
+        
+        card.classList.add('collapsed');
+        content.style.maxHeight = '0px';
+        icon.className = 'fas fa-chevron-down';
       }
-    }
-
-    /**
-     * Colapsar/expandir todas las cards
-     */
-    function toggleAllCards(collapse = true) {
-      const collapsibleCards = document.querySelectorAll('.collapsible-card');
-      const action = collapse ? 'add' : 'remove';
       
-      collapsibleCards.forEach(card => {
+      // Guardar estado en localStorage
+      saveCardStates();
+    };
+
+    // Guardar estados de las tarjetas
+    function saveCardStates() {
+      const cardStates = {};
+      document.querySelectorAll('.dashboard-card.collapsible').forEach(card => {
         const cardId = card.getAttribute('data-card-id');
-        if (cardId) {
-          card.classList[action]('collapsed');
-          cardCollapseStates[cardId] = collapse;
-          
-          const collapseBtn = card.querySelector('.collapse-btn i');
-          if (collapseBtn) {
-            collapseBtn.style.transform = collapse ? 'rotate(180deg)' : 'rotate(0deg)';
-          }
-        }
-      });
-      
-      localStorage.setItem('dashboardCardStates', JSON.stringify(cardCollapseStates));
-      
-      if (window.showAnimatedNotification) {
-        const message = collapse ? '📦 Todas las secciones minimizadas' : '📋 Todas las secciones expandidas';
-        window.showAnimatedNotification(message, 'success');
-      }
-    }
-
-    /**
-     * Los controles globales están en HTML estático
-     * Esta función ya no es necesaria pero se mantiene por compatibilidad
-     */
-    function addGlobalCollapseControls() {
-      console.log('ℹ️ Los controles globales están en HTML estático');
-      return true;
-    }
-
-    // Inicializar funcionalidad al cargar la página
-    /**
-     * Agregar event listeners a botones individuales de colapso
-     */
-    function initializeCollapseButtons() {
-      const collapseButtons = document.querySelectorAll('.collapse-btn');
-      console.log(`🔘 Inicializando ${collapseButtons.length} botones de colapso`);
-      
-      collapseButtons.forEach((button, index) => {
-        // Verificar si ya tiene el listener
-        if (!button.hasAttribute('data-collapse-initialized')) {
-          button.setAttribute('data-collapse-initialized', 'true');
-          
-          button.addEventListener('click', function(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            
-            const card = this.closest('.collapsible-card');
-            if (card) {
-              const cardId = card.getAttribute('data-card-id');
-              if (cardId) {
-                toggleCardCollapse(cardId);
-              }
-            }
-          });
-        }
-      });
-      
-      console.log('✅ Event listeners de botones de colapso inicializados');
-    }
-
-    /**
-     * Sistema de observación del DOM para detectar elementos dinámicos
-     */
-    function setupDOMObserver() {
-      const observer = new MutationObserver(function(mutations) {
-        let shouldReinitialize = false;
-        
-        mutations.forEach(function(mutation) {
-          mutation.addedNodes.forEach(function(node) {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              // Verificar si se agregaron cards o botones
-              if (node.classList && (node.classList.contains('collapsible-card') || 
-                  node.classList.contains('dashboard-card') || 
-                  node.classList.contains('dashboard-header'))) {
-                shouldReinitialize = true;
-              }
-              
-              // Verificar elementos internos
-              if (node.querySelector && (node.querySelector('.collapsible-card') || 
-                  node.querySelector('.dashboard-header') || 
-                  node.querySelector('.collapse-btn'))) {
-                shouldReinitialize = true;
-              }
-            }
-          });
-        });
-        
-        if (shouldReinitialize) {
-          console.log('🔄 DOM modificado, reinicializando sistema de colapso...');
-          setTimeout(initializeCollapseSystem, 100);
-        }
-      });
-      
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-      
-      console.log('👁️ Observer DOM configurado');
-    }
-
-    // Función para inicializar el sistema de colapso
-    function initializeCollapseSystem() {
-      console.log('🔍 Iniciando sistema de colapso...');
-      
-      // Inicializar botones de colapso individuales
-      initializeCollapseButtons();
-      
-      // Restaurar estados guardados
-      restoreCardStates();
-      
-      // Intentar agregar controles globales con retry
-      let attempts = 0;
-      const maxAttempts = 15; // Aumentado para más intentos
-      
-      function tryAddControls() {
-        attempts++;
-        console.log(`🔄 Intento ${attempts} de agregar controles globales`);
-        
-        if (addGlobalCollapseControls()) {
-          console.log('✅ Controles globales agregados exitosamente');
-          return true;
-        } else if (attempts < maxAttempts) {
-          console.log(`⏳ Reintentando en 200ms... (intento ${attempts}/${maxAttempts})`);
-          setTimeout(tryAddControls, 200); // Aumentado el delay
-          return false;
-        } else {
-          console.log('ℹ️ Los controles globales están en HTML estático, no es necesario agregarlos dinámicamente');
-          return true;
-        }
-      }
-      
-      tryAddControls();
-      
-      // Agregar atajos de teclado (estos siempre funcionan)
-      if (!document.body.hasAttribute('data-keyboard-initialized')) {
-        document.body.setAttribute('data-keyboard-initialized', 'true');
-        document.addEventListener('keydown', function(e) {
-          // Ctrl + Shift + M = Minimizar todo
-          if (e.ctrlKey && e.shiftKey && e.key === 'M') {
-            e.preventDefault();
-            toggleAllCards(true);
-          }
-          // Ctrl + Shift + E = Expandir todo
-          if (e.ctrlKey && e.shiftKey && e.key === 'E') {
-            e.preventDefault();
-            toggleAllCards(false);
-          }
-        });
-      }
-
-      console.log('🔄 Funcionalidad de colapso de cards inicializada');
-    }
-
-    // Múltiples estrategias de inicialización para mayor robustez
-    console.log('🚀 Estado del DOM al cargar script:', document.readyState);
-
-    // Estrategia 1: DOM Content Loaded
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function() {
-        console.log('📄 DOMContentLoaded disparado');
-        initializeCollapseSystem();
-        setupDOMObserver();
-      });
-    } else {
-      // El DOM ya está cargado
-      console.log('📄 DOM ya está cargado, inicializando inmediatamente');
-      initializeCollapseSystem();
-      setupDOMObserver();
-    }
-
-    // Estrategia 2: Window Load (backup)
-    window.addEventListener('load', function() {
-      console.log('🌐 Window Load disparado');
-      setTimeout(function() {
-        console.log('🔄 Verificación adicional en window.load...');
-        const controls = document.querySelector('.global-collapse-controls');
-        if (!controls) {
-          console.log('⚠️ Controles no encontrados, reintentando...');
-          initializeCollapseSystem();
-        } else {
-          console.log('✅ Controles encontrados:', controls);
-          
-          // Debug de visibilidad
-          const rect = controls.getBoundingClientRect();
-          const computedStyle = window.getComputedStyle(controls);
-          console.log('🔍 Debug de visibilidad:', {
-            elemento: 'global-collapse-controls',
-            rect: {
-              width: rect.width,
-              height: rect.height,
-              top: rect.top,
-              left: rect.left,
-              visible: rect.width > 0 && rect.height > 0
-            },
-            estilos: {
-              display: computedStyle.display,
-              visibility: computedStyle.visibility,
-              opacity: computedStyle.opacity,
-              position: computedStyle.position,
-              zIndex: computedStyle.zIndex
-            }
-          });
-          
-          // Verificar botones individuales
-          const buttons = controls.querySelectorAll('.global-btn');
-          console.log(`🔘 Botones encontrados: ${buttons.length}`);
-          buttons.forEach((btn, i) => {
-            const btnRect = btn.getBoundingClientRect();
-            const btnStyle = window.getComputedStyle(btn);
-            console.log(`🔘 Botón ${i + 1}:`, {
-              texto: btn.textContent.trim(),
-              visible: btnRect.width > 0 && btnRect.height > 0,
-              rect: btnRect,
-              display: btnStyle.display,
-              visibility: btnStyle.visibility,
-              opacity: btnStyle.opacity
-            });
-          });
-        }
-      }, 300);
-    });
-
-    // Estrategia 3: Solo una verificación adicional si es necesaria
-    if (!document.querySelector('.global-collapse-controls')) {
-      setTimeout(function() {
-        console.log('⏰ Verificación de emergencia por timeout');
-        if (!document.querySelector('.global-collapse-controls')) {
-          console.log('🔄 Ejecutando inicialización de emergencia');
-          initializeCollapseSystem();
-        }
-      }, 500);
-    }
-
-    // 🆕 NUEVO SISTEMA DE COLAPSO - SIMPLE Y EFECTIVO
-    class SimpleCollapseSystem {
-      constructor() {
-        this.states = JSON.parse(localStorage.getItem('collapseStates') || '{}');
-        console.log('🚀 SimpleCollapseSystem inicializado');
-      }
-
-      init() {
-        // Los estilos ya están en el CSS estático, no necesitamos inyectarlos
-        this.setupGlobalButtons();
-        this.setupIndividualButtons();
-        this.restoreStates();
-        this.setupKeyboardShortcuts();
-        console.log('✅ Sistema de colapso inicializado completamente (estilos estáticos)');
-      }
-
-      setupGlobalButtons() {
-        // Intentar múltiples ubicaciones
-        let header = document.querySelector('.dashboard-header');
-        
-        if (!header) {
-          // Buscar cualquier header en la página
-          const headers = document.querySelectorAll('h1, h2, .header, [class*="header"]');
-          header = headers[0];
-        }
-
-        if (header) {
-          const controlsHtml = `
-            <div class="collapse-global-controls" style="
-              display: flex !important;
-              gap: 8px;
-              margin: 10px 0;
-              justify-content: flex-end;
-              opacity: 1 !important;
-              visibility: visible !important;
-            ">
-              <button class="global-collapse-btn" onclick="window.collapseSystem.toggleAll(true)">
-                <i class="fas fa-compress-alt"></i> Minimizar Todo
-              </button>
-              <button class="global-collapse-btn" onclick="window.collapseSystem.toggleAll(false)">
-                <i class="fas fa-expand-alt"></i> Expandir Todo
-              </button>
-            </div>
-          `;
-          
-          header.insertAdjacentHTML('afterend', controlsHtml);
-          console.log('✅ Botones globales agregados después del header');
-        } else {
-          // Si no hay header, usar posición fija
-          this.addGlobalButtonsFixed();
-        }
-      }
-
-      addGlobalButtonsFixed() {
-        const controlsHtml = `
-          <div class="collapse-global-controls-fixed" style="
-            position: fixed !important;
-            top: 20px !important;
-            right: 20px !important;
-            z-index: 9999 !important;
-            display: flex !important;
-            gap: 8px;
-            background: white;
-            padding: 12px;
-            border-radius: 10px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-            opacity: 1 !important;
-            visibility: visible !important;
-          ">
-            <button class="global-collapse-btn" onclick="window.collapseSystem.toggleAll(true)">
-              <i class="fas fa-compress-alt"></i> Min
-            </button>
-            <button class="global-collapse-btn" onclick="window.collapseSystem.toggleAll(false)">
-              <i class="fas fa-expand-alt"></i> Max
-            </button>
-          </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', controlsHtml);
-        console.log('✅ Botones globales agregados en posición fija');
-      }
-
-      setupIndividualButtons() {
-        const buttons = document.querySelectorAll('.collapse-btn');
-        console.log(`🔘 Configurando ${buttons.length} botones individuales`);
-        
-        buttons.forEach((btn, index) => {
-          // Limpiar listeners previos
-          const newBtn = btn.cloneNode(true);
-          btn.parentNode.replaceChild(newBtn, btn);
-          
-          newBtn.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const card = newBtn.closest('.collapsible-card');
-            if (card) {
-              const cardId = card.getAttribute('data-card-id');
-              if (cardId) {
-                this.toggleCard(cardId);
-              }
-            }
-          };
-        });
-        
-        console.log('✅ Botones individuales configurados');
-      }
-
-      toggleCard(cardId) {
-        const card = document.querySelector(`[data-card-id="${cardId}"]`);
-        if (!card) {
-          console.log(`❌ Card no encontrada: ${cardId}`);
-          return;
-        }
-
         const isCollapsed = card.classList.contains('collapsed');
-        const newState = !isCollapsed;
-
-        if (newState) {
-          card.classList.add('collapsed');
-        } else {
-          card.classList.remove('collapsed');
+        if (cardId) {
+          cardStates[cardId] = isCollapsed;
         }
-
-        // Animar ícono
-        const icon = card.querySelector('.collapse-btn i');
-        if (icon) {
-          icon.style.transform = newState ? 'rotate(180deg)' : 'rotate(0deg)';
-        }
-
-        // Guardar estado
-        this.states[cardId] = newState;
-        localStorage.setItem('collapseStates', JSON.stringify(this.states));
-
-        // Mostrar notificación
-        const title = card.querySelector('.card-header h3')?.textContent?.trim() || cardId;
-        const action = newState ? 'minimizada' : 'expandida';
-        this.showNotification(`📋 "${title}" ${action}`, 'info');
-
-        console.log(`🔄 Card ${cardId} ${action}`);
-      }
-
-      toggleAll(collapse) {
-        const cards = document.querySelectorAll('.collapsible-card');
-        console.log(`🔄 ${collapse ? 'Minimizando' : 'Expandiendo'} ${cards.length} cards`);
-        
-        cards.forEach(card => {
-          const cardId = card.getAttribute('data-card-id');
-          if (cardId) {
-            if (collapse) {
-              card.classList.add('collapsed');
-            } else {
-              card.classList.remove('collapsed');
-            }
-
-            const icon = card.querySelector('.collapse-btn i');
-            if (icon) {
-              icon.style.transform = collapse ? 'rotate(180deg)' : 'rotate(0deg)';
-            }
-
-            this.states[cardId] = collapse;
-          }
-        });
-
-        localStorage.setItem('collapseStates', JSON.stringify(this.states));
-        const action = collapse ? 'minimizadas' : 'expandidas';
-        this.showNotification(`📦 Todas las secciones ${action}`, 'success');
-      }
-
-      restoreStates() {
-        let restoredCount = 0;
-        Object.entries(this.states).forEach(([cardId, isCollapsed]) => {
-          const card = document.querySelector(`[data-card-id="${cardId}"]`);
-          if (card && isCollapsed) {
-            card.classList.add('collapsed');
-            const icon = card.querySelector('.collapse-btn i');
-            if (icon) {
-              icon.style.transform = 'rotate(180deg)';
-            }
-            restoredCount++;
-          }
-        });
-        console.log(`✅ Estados restaurados: ${restoredCount} cards colapsadas`);
-      }
-
-      setupKeyboardShortcuts() {
-        document.addEventListener('keydown', (e) => {
-          if (e.ctrlKey && e.shiftKey) {
-            if (e.key === 'M' || e.key === 'm') {
-              e.preventDefault();
-              this.toggleAll(true);
-            } else if (e.key === 'E' || e.key === 'e') {
-              e.preventDefault();
-              this.toggleAll(false);
-            }
-          }
-        });
-        console.log('✅ Atajos configurados: Ctrl+Shift+M (minimizar) / Ctrl+Shift+E (expandir)');
-      }
-
-      showNotification(message, type) {
-        if (window.showAnimatedNotification) {
-          window.showAnimatedNotification(message, type);
-        } else {
-          console.log(`📢 ${message}`);
-        }
-      }
+      });
+      localStorage.setItem('dashboardCardStates', JSON.stringify(cardStates));
     }
 
-    // Inicializar sistema cuando el DOM esté listo
-    function initNewCollapseSystem() {
-      if (window.collapseSystem) {
-        console.log('⏭️ Sistema de colapso ya inicializado, saltando...');
-        return; // Evitar reinicialización
-      }
+    // 🎮 FUNCIONES DE CONTROL GLOBAL
+    window.expandAllCards = function() {
+      console.log('🔄 === EXPANDIENDO TODAS LAS TARJETAS ===');
       
-      window.collapseSystem = new SimpleCollapseSystem();
-      window.collapseSystem.init();
+      // Buscar el dashboard actualmente visible (admin o practicante)
+      const activeSection = document.querySelector('#admin-dashboard[style*="display: block"], #practitioner-dashboard[style*="display: block"]') ||
+                           document.querySelector('#admin-dashboard:not([style*="display: none"]), #practitioner-dashboard:not([style*="display: none"])');
       
-      // Funciones globales para compatibilidad
-      window.toggleCardCollapse = (cardId) => window.collapseSystem.toggleCard(cardId);
-      window.toggleAllCards = (collapse) => window.collapseSystem.toggleAll(collapse);
-    }
-
-    // Inicialización con múltiples estrategias
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initNewCollapseSystem);
-    } else {
-      initNewCollapseSystem();
-    }
-    
-    // 🧪 Función de test para verificar funcionamiento
-    window.testCollapseSystem = function() {
-      console.log('🧪 Iniciando test del sistema de colapso...');
-      
-      // Test 1: Verificar que el sistema existe
-      if (window.collapseSystem) {
-        console.log('✅ Sistema de colapso encontrado');
-      } else {
-        console.log('❌ Sistema de colapso NO encontrado');
+      if (!activeSection) {
+        console.warn('⚠️ No se encontró dashboard activo para expandir tarjetas');
         return;
       }
       
-      // Test 2: Verificar botones globales
-      const globalBtns = document.querySelectorAll('.global-collapse-btn');
-      console.log(`🔘 Botones globales encontrados: ${globalBtns.length}`);
+      console.log('🎯 Dashboard activo encontrado:', activeSection.id);
       
-      // Test 3: Verificar cards collapsibles
-      const cards = document.querySelectorAll('.collapsible-card');
-      console.log(`📦 Cards collapsibles encontradas: ${cards.length}`);
+      const collapsedCards = activeSection.querySelectorAll('.dashboard-card.collapsible.collapsed');
+      console.log(`📋 Expandiendo ${collapsedCards.length} tarjetas colapsadas`);
       
-      // Test 4: Verificar botones individuales
-      const individualBtns = document.querySelectorAll('.collapse-btn');
-      console.log(`🔘 Botones individuales encontrados: ${individualBtns.length}`);
+      collapsedCards.forEach(card => {
+        const cardId = card.getAttribute('data-card-id');
+        if (cardId) {
+          console.log(`📤 Expandiendo: ${cardId}`);
+          toggleCardCollapse(cardId);
+        }
+      });
       
-      // Test 5: Test de notificaciones
-      if (window.showAnimatedNotification) {
-        window.showAnimatedNotification('🧪 Sistema de colapso funcionando correctamente', 'success');
-        console.log('✅ Notificaciones funcionando');
-      } else {
-        console.log('⚠️ Sistema de notificaciones no disponible');
-      }
-      
-      // Test 6: Test de colapso automático
-      setTimeout(() => {
-        console.log('🔄 Probando colapso automático...');
-        window.collapseSystem.toggleAll(true);
-        
-        setTimeout(() => {
-          console.log('🔄 Probando expansión automática...');
-          window.collapseSystem.toggleAll(false);
-          console.log('✅ Test completado exitosamente');
-        }, 2000);
-      }, 1000);
+      console.log('✅ Todas las tarjetas expandidas');
     };
-    
-    // Auto-test después de 3 segundos
-    setTimeout(() => {
-      if (document.querySelector('.collapsible-card')) {
-        console.log('🚀 Ejecutando auto-test...');
-        window.testCollapseSystem();
+
+    window.minimizeAllCards = function() {
+      console.log('🔄 === MINIMIZANDO TODAS LAS TARJETAS ===');
+      
+      // Buscar el dashboard actualmente visible (admin o practicante)
+      const activeSection = document.querySelector('#admin-dashboard[style*="display: block"], #practitioner-dashboard[style*="display: block"]') ||
+                           document.querySelector('#admin-dashboard:not([style*="display: none"]), #practitioner-dashboard:not([style*="display: none"])');
+      
+      if (!activeSection) {
+        console.warn('⚠️ No se encontró dashboard activo para minimizar tarjetas');
+        return;
       }
-    }, 3000);
-    
-    console.log('🎯 Sistema de colapso nuevo cargado');
+      
+      console.log('🎯 Dashboard activo encontrado:', activeSection.id);
+      
+      const expandedCards = activeSection.querySelectorAll('.dashboard-card.collapsible:not(.collapsed)');
+      console.log(`📋 Minimizando ${expandedCards.length} tarjetas expandidas`);
+      
+      expandedCards.forEach(card => {
+        const cardId = card.getAttribute('data-card-id');
+        if (cardId) {
+          console.log(`📥 Minimizando: ${cardId}`);
+          toggleCardCollapse(cardId);
+        }
+      });
+      
+      console.log('✅ Todas las tarjetas minimizadas');
+    };
+
+    // Restaurar estados de las tarjetas al cargar
+    function restoreCardStates() {
+      try {
+        const savedStates = localStorage.getItem('dashboardCardStates');
+        if (!savedStates) return;
+        
+        const cardStates = JSON.parse(savedStates);
+        
+        Object.keys(cardStates).forEach(cardId => {
+          const isCollapsed = cardStates[cardId];
+          if (isCollapsed) {
+            const card = document.querySelector(`[data-card-id="${cardId}"]`);
+            if (card) {
+              const content = card.querySelector('.card-content');
+              const icon = card.querySelector('.collapse-btn i');
+              
+              if (content && icon) {
+                card.classList.add('collapsed');
+                content.style.maxHeight = '0px';
+                icon.className = 'fas fa-chevron-down';
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.warn('Error restaurando estados de tarjetas:', error);
+      }
+    }
+
+    // Funciones globales para colapso masivo
+    window.collapseAllCards = function() {
+      console.log('🔄 === COLAPSANDO TODAS LAS TARJETAS ===');
+      
+      // Buscar el dashboard actualmente visible (admin o practicante)
+      const activeSection = document.querySelector('#admin-dashboard[style*="display: block"], #practitioner-dashboard[style*="display: block"]') ||
+                           document.querySelector('#admin-dashboard:not([style*="display: none"]), #practitioner-dashboard:not([style*="display: none"])');
+      
+      if (!activeSection) {
+        console.warn('⚠️ No se encontró dashboard activo para colapsar tarjetas');
+        return;
+      }
+      
+      console.log('🎯 Dashboard activo encontrado:', activeSection.id);
+      
+      const expandedCards = activeSection.querySelectorAll('.dashboard-card.collapsible:not(.collapsed)');
+      console.log(`📋 Colapsando ${expandedCards.length} tarjetas expandidas`);
+      
+      expandedCards.forEach(card => {
+        const cardId = card.getAttribute('data-card-id');
+        if (cardId) {
+          console.log(`📥 Colapsando: ${cardId}`);
+          toggleCardCollapse(cardId);
+        }
+      });
+      
+      console.log('✅ Todas las tarjetas colapsadas');
+    };
+
+    // Restaurar estados al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+      // Restaurar después de un pequeño delay para asegurar que el DOM esté listo
+      setTimeout(restoreCardStates, 100);
+    });
+
+    // También restaurar cuando se cambie de rol (solo para admin)
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+          const target = mutation.target;
+          // Solo restaurar estados para el dashboard de admin
+          if (target.id === 'admin-dashboard') {
+            if (target.style.display !== 'none') {
+              setTimeout(restoreCardStates, 100);
+            }
+          }
+        }
+      });
+    });
+
+    observer.observe(document.body, {
+      attributes: true,
+      subtree: true,
+      attributeFilter: ['style']
+    });
+
+    // DEBUG: Verificar dashboards después de carga completa
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(() => {
+        console.log('🔍 DEBUG: Verificando dashboards');
+        const adminDash = document.getElementById('admin-dashboard');
+        const practDash = document.getElementById('practitioner-dashboard');
+        
+        const adminDisplayed = adminDash && adminDash.style.display === 'block';
+        const practDisplayed = practDash && practDash.style.display === 'block';
+        
+        if (adminDisplayed && practDisplayed) {
+          console.error('🚨 ERROR: AMBOS DASHBOARDS VISIBLES');
+          const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+          const userRole = (currentUser.rol || '').toLowerCase();
+          const adminRoles = ['admin', 'administrador', 'administrator'];
+          
+          if (adminRoles.includes(userRole)) {
+            practDash.style.display = 'none';
+          } else {
+            adminDash.style.display = 'none';
+          }
+        } else if (adminDisplayed) {
+          console.log('✅ Dashboard de admin visible');
+        } else if (practDisplayed) {
+          console.log('✅ Dashboard de practicante visible');
+        }
+      }, 1000);
+    });
   </script>
 </body>
 </html>

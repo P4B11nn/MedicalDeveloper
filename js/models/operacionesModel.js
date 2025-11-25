@@ -4,7 +4,7 @@ import { db } from './firebaseConfig.js';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, limit, Timestamp } from 'https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js';
 import { authModel } from './storageModel.js';
 import { gestionModel } from './gestionModel.js';
-import globalOfflineSync from '../utils/globalOfflineSync.js';
+// import globalOfflineSync - ELIMINADO: Solo funcionalidad offline de pacientes
 
 export function getRegistroEntradasSalidas() {
   console.warn('getRegistroEntradasSalidas: Función obsoleta, use getAsistencias() para Firebase');
@@ -362,7 +362,7 @@ export async function registrarAsistencia(asistencia) {
     } else {
       // Modo offline: usar el servicio global de sincronización
       console.log('📱 Sin conexión - Guardando asistencia offline');
-      const offlineAsistencia = await globalOfflineSync.saveOfflineData('operaciones', asistenciaData);
+      // const offlineAsistencia = await globalOfflineSync.saveOfflineData('operaciones', asistenciaData); // ELIMINADO
       console.log('✅ Asistencia guardada offline:', offlineAsistencia.id);
       return offlineAsistencia;
     }
@@ -387,7 +387,7 @@ export async function registrarAsistencia(asistencia) {
           registradoPor: asistencia.registradoPor,
           fechaCreacion: new Date().toISOString()
         };
-        return await globalOfflineSync.saveOfflineData('operaciones', asistenciaData);
+        throw error; // Sin funcionalidad offline para operaciones
       } catch (offlineError) {
         console.error('❌ Error guardando offline como respaldo:', offlineError);
         return null;

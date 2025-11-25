@@ -213,92 +213,13 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
     import { getAuth } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
-    import { getStorage } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-storage.js";
 
-    // Configuración de Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyA-ZU02eVn2FiwkgpjveymB8VRUUeGSH3Y",
-      authDomain: "medicalweboffline.firebaseapp.com",
-      projectId: "medicalweboffline",
-      storageBucket: "medicalweboffline.firebasestorage.app",
-      messagingSenderId: "1038201454133",
-      appId: "1:1038201454133:web:f6ee7c6215f6b4d4febb7c"
+    // Hacer Firebase disponible globalmente para compatibilidad
+    window.firebase = {
+      initializeApp,
+      auth: { getAuth },
+      firestore: { getFirestore }
     };
-
-    try {
-      console.log('🔥 Inicializando Firebase...');
-      
-      // Inicializar Firebase
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const firestore = getFirestore(app);
-      const storage = getStorage(app);
-      
-      // Hacer Firebase disponible globalmente
-      window.firebaseApp = app;
-      window.firebaseAuth = auth;
-      window.firebaseFirestore = firestore;
-      window.firebaseStorage = storage;
-      
-      // También crear compatibilidad con el objeto firebase global
-      window.firebase = {
-        initializeApp: () => app,
-        auth: () => auth,
-        firestore: () => firestore,
-        storage: () => storage
-      };
-      
-      console.log('✅ Firebase inicializado correctamente');
-      
-      // Dispatch evento para notificar que Firebase está listo
-      window.dispatchEvent(new CustomEvent('firebaseReady', {
-        detail: { services: 'real', isLoaded: true }
-      }));
-      
-    } catch (error) {
-      console.error('❌ Error inicializando Firebase:', error);
-      
-      // Crear servicios mock como fallback
-      console.log('🔧 Creando servicios Firebase mock...');
-      
-      window.firebaseAuth = {
-        currentUser: null,
-        signInWithEmailAndPassword: () => Promise.reject(new Error('Firebase no disponible')),
-        signOut: () => Promise.resolve(),
-        onAuthStateChanged: (callback) => {
-          callback(null);
-          return () => {};
-        }
-      };
-      
-      window.firebaseFirestore = {
-        collection: () => ({
-          doc: () => ({
-            get: () => Promise.resolve({ exists: false, data: () => ({}) }),
-            set: () => Promise.resolve(),
-            update: () => Promise.resolve(),
-            delete: () => Promise.resolve()
-          })
-        })
-      };
-      
-      window.firebaseStorage = {
-        ref: () => ({
-          put: () => Promise.resolve({ ref: { getDownloadURL: () => Promise.resolve('') } })
-        })
-      };
-      
-      window.firebase = {
-        auth: () => window.firebaseAuth,
-        firestore: () => window.firebaseFirestore,
-        storage: () => window.firebaseStorage
-      };
-      
-      // Dispatch evento para servicios mock
-      window.dispatchEvent(new CustomEvent('firebaseReady', {
-        detail: { services: 'mock', isLoaded: false }
-      }));
-    }
   </script>
   
   <script type="module">
