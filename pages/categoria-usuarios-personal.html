@@ -875,7 +875,7 @@
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initUsersController } from '../js/controllers/usersController.js';
-    import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
+    // ConnectionIndicator reemplazado por AdvancedOfflineIndicator
     import { FirebaseSyncManager } from '../js/utils/firebaseSyncManager.js';
     // HeaderComponent eliminado, ahora usamos header individual
     
@@ -890,7 +890,7 @@
         setTimeout(() => {
           initGlobalController();
           initUsersController();
-          ConnectionIndicator.init();
+          // ConnectionIndicator.init(); // Reemplazado por AdvancedOfflineIndicator
           FirebaseSyncManager.init();
           
           // Configurar mensajes de sincronización específicos para usuarios

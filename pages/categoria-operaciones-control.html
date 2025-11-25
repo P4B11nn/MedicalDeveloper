@@ -648,7 +648,7 @@
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initOperationsController } from '../js/controllers/operacionesController.js';
-    import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
+    // ConnectionIndicator reemplazado por AdvancedOfflineIndicator
     // HeaderComponent eliminado, ahora usamos header individual
     import '../js/utils/eventBusManager.js';      // Event Bus monitoring
     import '../js/utils/performanceMonitor.js';   // Performance monitoring
@@ -679,7 +679,7 @@
         setTimeout(() => {
           initGlobalController();
           initOperationsController();
-          ConnectionIndicator.init();
+          // ConnectionIndicator.init(); // Reemplazado por AdvancedOfflineIndicator
           console.log('✅ Operaciones: Página cargada exitosamente');
           console.log('🔧 Debug: EventBusDebug, PerformanceDebug, ArchitectureDebug, TestSuite');
         }, 100);

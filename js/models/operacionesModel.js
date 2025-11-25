@@ -325,7 +325,7 @@ export async function registrarAsistencia(asistencia) {
     console.log('OperacionesModel: Registrando nueva asistencia:', asistencia);
     
     // Verificar conexión
-    const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+    const isOnline = navigator.onLine;
     
     const asistenciaData = {
       usuarioId: asistencia.usuarioId,

@@ -749,7 +749,7 @@
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initReporteController } from '../js/controllers/reporteController.js';
-    import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
+    // ConnectionIndicator reemplazado por AdvancedOfflineIndicator
     // HeaderComponent eliminado, ahora usamos header individual
     
     document.addEventListener('DOMContentLoaded', () => {
@@ -764,9 +764,9 @@
           initGlobalController();
           initReporteController();
           
-          // TERCERO: Inicializar ConnectionIndicator
-          ConnectionIndicator.init();
-          console.log('ConnectionIndicator inicializado para Reportes');
+          // TERCERO: AdvancedOfflineIndicator se inicializa automáticamente
+          // ConnectionIndicator.init(); // Reemplazado por AdvancedOfflineIndicator
+          console.log('AdvancedOfflineIndicator activo para Reportes');
         }, 100);
       }
     });

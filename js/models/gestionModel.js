@@ -83,7 +83,7 @@ export const gestionModel = {
             };
 
             // Verificar conexión
-            const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+            const isOnline = navigator.onLine;
 
             if (isOnline) {
                 // Modo online: guardar en Firebase
@@ -450,7 +450,7 @@ export const gestionModel = {
             };
 
             // Verificar conexión
-            const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+            const isOnline = navigator.onLine;
 
             if (isOnline) {
                 // Modo online: convertir ubicación a GeoPoint y guardar en Firebase

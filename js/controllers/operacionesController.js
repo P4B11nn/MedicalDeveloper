@@ -130,8 +130,9 @@ export function initOperationsController() {
 
   // Registrar callback para refrescar datos cuando se restaure la conexión
   setTimeout(() => {
-    if (window.connectionIndicator) {
-      window.connectionIndicator.onConnectionRestored(async () => {
+    if (window.advancedOfflineIndicator) {
+      // AdvancedOfflineIndicator maneja automáticamente la reconexión
+      window.addEventListener('online', async () => {
         console.log('🔄 Refrescando datos de operaciones tras restaurar conexión...');
         try {
           // Refrescar la sección activa actualmente

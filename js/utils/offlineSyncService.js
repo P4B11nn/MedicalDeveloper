@@ -464,6 +464,7 @@ class OfflineSyncService {
     let skipped = 0;
     const remaining = {};
 
+    const { db, collection, addDoc, serverTimestamp } = getFirebaseServices();
     const pacientesCol = collection(db, 'pacientes');
 
     for (const key of patientIds) {
@@ -563,6 +564,7 @@ class OfflineSyncService {
     let postponed = 0;
     const remaining = {};
 
+    const { db, collection, addDoc, updateDoc, doc, query, where, limit, getDocs, serverTimestamp, Timestamp } = getFirebaseServices();
     const registrosMedicosCol = collection(db, 'registros_medicos');
     const pacientesCol = collection(db, 'pacientes');
 
@@ -679,6 +681,7 @@ class OfflineSyncService {
     let skipped = 0;
     const remaining = [];
 
+    const { db, collection, addDoc, serverTimestamp } = getFirebaseServices();
     const registroInstrumentosCol = collection(db, 'registro_instrumentos');
 
     for (const checklist of checklists) {
@@ -768,6 +771,7 @@ class OfflineSyncService {
     let skipped = 0;
     const remaining = [];
 
+    const { db, collection, addDoc, serverTimestamp } = getFirebaseServices();
     const observacionesCol = collection(db, 'observaciones_reportes');
 
     for (const obs of observaciones) {
@@ -1538,6 +1542,20 @@ class OfflineSyncService {
 
 // Crear instancia singleton
 const offlineSyncService = new OfflineSyncService();
+
+// Inicializar automáticamente cuando el DOM esté listo
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    offlineSyncService.init();
+    console.log('🔄 OfflineSyncService auto-inicializado en DOMContentLoaded');
+  });
+} else {
+  // DOM ya está listo
+  setTimeout(() => {
+    offlineSyncService.init();
+    console.log('🔄 OfflineSyncService auto-inicializado inmediatamente');
+  }, 100);
+}
 
 // Exportar el singleton
 export default offlineSyncService;

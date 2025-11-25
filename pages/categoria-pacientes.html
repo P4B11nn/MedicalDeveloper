@@ -2741,7 +2741,7 @@
     import { AuthGuard } from '../js/middleware/authGuard.js';
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initPacienteController } from '../js/controllers/pacienteController.js';
-    import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
+    // ConnectionIndicator reemplazado por AdvancedOfflineIndicator
     import { FirebaseSyncManager } from '../js/utils/firebaseSyncManager.js';
     import OfflineSyncService from '../js/utils/offlineSyncService.js';
     // HeaderComponent eliminado, ahora usamos header individual
@@ -2797,7 +2797,7 @@
         setTimeout(() => {
           initGlobalController();
           initPacienteController();
-          ConnectionIndicator.init();
+          // ConnectionIndicator.init(); // Reemplazado por AdvancedOfflineIndicator
           FirebaseSyncManager.init();
           
           // Inicializar gestor global de sincronización offline

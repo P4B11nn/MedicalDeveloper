@@ -1,4 +1,4 @@
-Ôªø// js/views/userView.js - Vista para gestion de usuarios (CON DELEGACI√ìN DE EVENTOS)
+// js/views/userView.js - Vista para gestion de usuarios (CON DELEGACI”N DE EVENTOS)
 import { authModel } from '../models/storageModel.js';
 import { gestionModel } from '../models/gestionModel.js';
 import eventBus, { EVENT_NAMES } from '../utils/eventBus.js';
@@ -7,8 +7,8 @@ import { mostrarCredencialesUsuario } from '../utils/credentialsModal.js';
 let contenedorUsuarios = null;
 
 /**
- * Se ejecuta UNA SOLA VEZ al cargar la p√°gina.
- * Aqu√≠ es donde configuramos los "escuchadores" de eventos permanentes.
+ * Se ejecuta UNA SOLA VEZ al cargar la p·gina.
+ * AquÌ es donde configuramos los "escuchadores" de eventos permanentes.
  */
 export function init() {
     contenedorUsuarios = document.getElementById('personalLista');
@@ -17,11 +17,11 @@ export function init() {
         return;
     }
     
-    // SOLUCI√ìN: El "escuchador" de eventos se a√±ade UNA SOLA VEZ al contenedor principal.
-    // Usar√° la delegaci√≥n de eventos para saber en qu√© bot√≥n se hizo clic.
+    // SOLUCI”N: El "escuchador" de eventos se aÒade UNA SOLA VEZ al contenedor principal.
+    // Usar· la delegaciÛn de eventos para saber en quÈ botÛn se hizo clic.
     configurarOyenteDeEventosPrincipal();
 
-    // Escucha eventos del sistema para saber cu√°ndo redibujar la lista.
+    // Escucha eventos del sistema para saber cu·ndo redibujar la lista.
     eventBus.on('usuarios-updated', mostrarUsuarios);
 
     // Dibuja la lista inicial.
@@ -54,13 +54,13 @@ export async function mostrarUsuarios() {
             const iconoRol = usuario.rol === 'admin' ? '<i class="fas fa-user-shield"></i>' : '<i class="fas fa-user-graduate"></i>';
             const badgeRol = usuario.rol === 'admin' ? '<span class="badge-admin">ADMIN</span>' : '<span class="badge-practicante">PRACTICANTE</span>';
             
-            // Obtener informaci√≥n del grupo
+            // Obtener informaciÛn del grupo
             const grupoUsuario = grupos.find(g => g.id === usuario.grupoId);
             const nombreGrupo = grupoUsuario ? `${grupoUsuario.nombre} (${grupoUsuario.turno})` : 'Sin Grupo Asignado';
 
-            // Solo mostrar bot√≥n de reset password si el usuario actual es admin y no es el mismo usuario
+            // Solo mostrar botÛn de reset password si el usuario actual es admin y no es el mismo usuario
             const resetPasswordBtn = (isAdmin && usuario.uid !== currentUser.uid) 
-                ? `<button class="btn-reset-password" data-user-index="${index}" title="Resetear contrase√±a"><i class="fas fa-key"></i></button>`
+                ? `<button class="btn-reset-password" data-user-index="${index}" title="Resetear contraseÒa"><i class="fas fa-key"></i></button>`
                 : '';
 
             return `
@@ -69,7 +69,7 @@ export async function mostrarUsuarios() {
                         <div class="user-icon">${iconoRol}</div>
                         <div>
                             <h4>${usuario.nombre} ${usuario.apellidos || ''}</h4>
-                            <p><strong>Matr√≠cula:</strong> ${usuario.matricula} | <strong>Grupo:</strong> ${nombreGrupo}</p>
+                            <p><strong>MatrÌcula:</strong> ${usuario.matricula} | <strong>Grupo:</strong> ${nombreGrupo}</p>
                             <div class="badge-container">${badgeRol}</div>
                         </div>
                     </div>
@@ -111,14 +111,14 @@ export async function mostrarUsuarios() {
 }
 
 /**
- * Configura un √∫nico manejador de eventos en el contenedor de la lista.
+ * Configura un ˙nico manejador de eventos en el contenedor de la lista.
  */
 function configurarOyenteDeEventosPrincipal() {
     contenedorUsuarios.addEventListener('click', (e) => {
         const editButton = e.target.closest('.btn-edit-user');
         if (editButton) {
             abrirModalEdicion(parseInt(editButton.dataset.userIndex));
-            return; // Detenemos la ejecuci√≥n para no procesar otros clics
+            return; // Detenemos la ejecuciÛn para no procesar otros clics
         }
 
         const deleteButton = e.target.closest('.btn-delete-user');
@@ -135,7 +135,7 @@ function configurarOyenteDeEventosPrincipal() {
 }
 
 /**
- * Muestra opciones de reset de contrase√±a al administrador
+ * Muestra opciones de reset de contraseÒa al administrador
  */
 async function mostrarOpcionesReset(userIndex) {
     try {
@@ -149,12 +149,12 @@ async function mostrarOpcionesReset(userIndex) {
 
         const currentUser = authModel.getCurrentUser();
         if (!currentUser || currentUser.rol !== 'admin') {
-            showMiniModal('Solo los administradores pueden resetear contrase√±as', 'error');
+            showMiniModal('Solo los administradores pueden resetear contraseÒas', 'error');
             return;
         }
 
         if (currentUser.uid === usuario.uid) {
-            showMiniModal('Para cambiar tu propia contrase√±a, usa el bot√≥n amarillo (üîë)', 'warning');
+            showMiniModal('Para cambiar tu propia contraseÒa, usa el botÛn amarillo (??)', 'warning');
             return;
         }
 
@@ -184,14 +184,14 @@ async function mostrarOpcionesReset(userIndex) {
                 box-shadow: 0 20px 40px rgba(0,0,0,0.3);
                 text-align: center;
             ">
-                <h2 style="color: #1f2937; margin-bottom: 10px;">üîÑ Resetear Contrase√±a</h2>
+                <h2 style="color: #1f2937; margin-bottom: 10px;">?? Resetear ContraseÒa</h2>
                 <p style="color: #6b7280; margin-bottom: 25px;">
                     <strong>${usuario.nombre}</strong><br>
                     ${usuario.correo}
                 </p>
                 
                 <div style="text-align: left; margin-bottom: 25px;">
-                    <h4 style="color: #374151; margin-bottom: 15px;">Selecciona el m√©todo de reset:</h4>
+                    <h4 style="color: #374151; margin-bottom: 15px;">Selecciona el mÈtodo de reset:</h4>
                     
                     <button id="reset-email-btn" style="
                         width: 100%;
@@ -205,8 +205,8 @@ async function mostrarOpcionesReset(userIndex) {
                         margin-bottom: 15px;
                         transition: transform 0.2s;
                     " onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                        üìß Enviar Email de Restablecimiento
-                        <br><small style="opacity: 0.8;">El usuario recibir√° un enlace por correo para crear una nueva contrase√±a</small>
+                        ?? Enviar Email de Restablecimiento
+                        <br><small style="opacity: 0.8;">El usuario recibir· un enlace por correo para crear una nueva contraseÒa</small>
                     </button>
                     
                     <button id="reset-temporal-btn" style="
@@ -221,8 +221,8 @@ async function mostrarOpcionesReset(userIndex) {
                         margin-bottom: 15px;
                         transition: transform 0.2s;
                     " onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                        üîë Generar Contrase√±a Temporal
-                        <br><small style="opacity: 0.8;">Crear una contrase√±a temporal que deber√°s compartir con el usuario</small>
+                        ?? Generar ContraseÒa Temporal
+                        <br><small style="opacity: 0.8;">Crear una contraseÒa temporal que deber·s compartir con el usuario</small>
                     </button>
                 </div>
                 
@@ -275,8 +275,8 @@ async function ejecutarResetEmail(userIndex, usuario) {
         const result = await authModel.resetUserPassword(usuario.uid, 'email');
         
         mostrarMensajeReset(
-            'üìß Email de Restablecimiento Enviado',
-            `Se ha enviado un email de restablecimiento a ${result.email}.\n\nEl usuario debe:\n1. Revisar su correo electr√≥nico\n2. Hacer clic en el enlace recibido\n3. Crear una nueva contrase√±a\n4. Iniciar sesi√≥n normalmente con la nueva contrase√±a`,
+            '?? Email de Restablecimiento Enviado',
+            `Se ha enviado un email de restablecimiento a ${result.email}.\n\nEl usuario debe:\n1. Revisar su correo electrÛnico\n2. Hacer clic en el enlace recibido\n3. Crear una nueva contraseÒa\n4. Iniciar sesiÛn normalmente con la nueva contraseÒa`,
             'success'
         );
         
@@ -285,7 +285,7 @@ async function ejecutarResetEmail(userIndex, usuario) {
     } catch (error) {
         console.error('Error en reset por email:', error);
         mostrarMensajeReset(
-            '‚ùå Error en Reset por Email',
+            '? Error en Reset por Email',
             `No se pudo enviar el email de restablecimiento a ${usuario.nombre}:\n\n${error.message}`,
             'error'
         );
@@ -293,17 +293,17 @@ async function ejecutarResetEmail(userIndex, usuario) {
 }
 
 /**
- * Ejecuta reset con contrase√±a temporal forzada
+ * Ejecuta reset con contraseÒa temporal forzada
  */
 async function ejecutarResetTemporal(userIndex, usuario) {
     try {
-        // Forzar uso de contrase√±a temporal
+        // Forzar uso de contraseÒa temporal
         const result = await authModel.resetUserPasswordTemporal(usuario.uid);
         
         mostrarCredencialesUsuario(result, true);
         mostrarMensajeReset(
-            'üîë Contrase√±a Temporal Generada',
-            `Se ha generado una contrase√±a temporal para ${result.nombre}.\n\nEl usuario debe:\n1. Usar esta contrase√±a para iniciar sesi√≥n\n2. Cambiar la contrase√±a en el primer login\n3. Completar el proceso de login`,
+            '?? ContraseÒa Temporal Generada',
+            `Se ha generado una contraseÒa temporal para ${result.nombre}.\n\nEl usuario debe:\n1. Usar esta contraseÒa para iniciar sesiÛn\n2. Cambiar la contraseÒa en el primer login\n3. Completar el proceso de login`,
             'success'
         );
         
@@ -312,15 +312,15 @@ async function ejecutarResetTemporal(userIndex, usuario) {
     } catch (error) {
         console.error('Error en reset temporal:', error);
         mostrarMensajeReset(
-            '‚ùå Error en Reset Temporal',
-            `No se pudo generar contrase√±a temporal para ${usuario.nombre}:\n\n${error.message}`,
+            '? Error en Reset Temporal',
+            `No se pudo generar contraseÒa temporal para ${usuario.nombre}:\n\n${error.message}`,
             'error'
         );
     }
 }
 
 /**
- * Muestra un modal personalizado para confirmar la eliminaci√≥n.
+ * Muestra un modal personalizado para confirmar la eliminaciÛn.
  */
 async function confirmarEliminacion(userIndex) {
     try {
@@ -332,7 +332,7 @@ async function confirmarEliminacion(userIndex) {
             return;
         }
 
-        // Emitir evento de solicitud de eliminaci√≥n
+        // Emitir evento de solicitud de eliminaciÛn
         eventBus.emit(EVENT_NAMES.USER_DELETE_REQUESTED, { 
             user: usuario,
             timestamp: new Date().toISOString()
@@ -343,8 +343,8 @@ async function confirmarEliminacion(userIndex) {
         modalOverlay.className = 'modal-overlay';
         modalOverlay.innerHTML = `
             <div class="modal-content-confirm">
-                <h3>¬øEliminar Usuario?</h3>
-                <p>Est√°s a punto de eliminar a <strong>${usuario.nombre} ${usuario.apellidos || ''}</strong>. Esta acci√≥n no se puede deshacer.</p>
+                <h3>øEliminar Usuario?</h3>
+                <p>Est·s a punto de eliminar a <strong>${usuario.nombre} ${usuario.apellidos || ''}</strong>. Esta acciÛn no se puede deshacer.</p>
                 <div class="confirm-actions">
                     <button class="btn-cancel">Cancelar</button>
                     <button class="btn-confirm-delete">Eliminar</button>
@@ -373,7 +373,7 @@ async function ejecutarEliminacion(userIndex, usuario) {
         const success = await authModel.deleteUser(usuario.uid);
         
         if (success) {
-            // Registrar actividad de eliminaci√≥n de usuario
+            // Registrar actividad de eliminaciÛn de usuario
             try {
                 const { default: ActivityLogger } = await import('../utils/activityLogger.js');
                 await ActivityLogger.deleteUserActivity(
@@ -382,7 +382,7 @@ async function ejecutarEliminacion(userIndex, usuario) {
                     usuario.rol
                 );
             } catch (error) {
-                console.warn('Error registrando actividad de eliminaci√≥n de usuario:', error);
+                console.warn('Error registrando actividad de eliminaciÛn de usuario:', error);
             }
 
             showMiniModal('Usuario eliminado correctamente', 'success');
@@ -410,7 +410,7 @@ async function ejecutarEliminacion(userIndex, usuario) {
 
 
 /**
- * Abre modal de edici√≥n para un usuario
+ * Abre modal de ediciÛn para un usuario
  */
 async function abrirModalEdicion(userIndex) {
     try {
@@ -423,11 +423,11 @@ async function abrirModalEdicion(userIndex) {
         const usuario = usuarios[userIndex];
         
         if (!usuario) {
-            showMiniModal('Error: No se pudo cargar la informaci√≥n del usuario.', 'error');
+            showMiniModal('Error: No se pudo cargar la informaciÛn del usuario.', 'error');
             return;
         }
 
-        // Emitir evento de solicitud de edici√≥n
+        // Emitir evento de solicitud de ediciÛn
         eventBus.emit(EVENT_NAMES.USER_EDIT_REQUESTED, { 
             user: usuario,
             userId: usuario.uid,
@@ -565,7 +565,7 @@ async function abrirModalEdicion(userIndex) {
                                 font-weight: 600;
                                 font-size: 1rem;
                                 color: #1f2937;
-                            ">Matr√≠cula:</label>
+                            ">MatrÌcula:</label>
                             <input type="text" id="edit-matricula" value="${usuario.matricula || ''}" required style="
                                 width: 100%;
                                 padding: 12px 16px;
@@ -606,8 +606,8 @@ async function abrirModalEdicion(userIndex) {
                                 ${grupos.map(g => {
                                     const modulosAsignados = modulos.filter(m => m.grupoAsignadoId === g.id);
                                     const infoModulos = modulosAsignados.length > 0 
-                                        ? ` ‚Üí ${modulosAsignados.map(m => m.nombre).join(', ')}`
-                                        : ' ‚Üí Sin m√≥dulo asignado';
+                                        ? ` ? ${modulosAsignados.map(m => m.nombre).join(', ')}`
+                                        : ' ? Sin mÛdulo asignado';
                                     return `<option value="${g.id}" ${usuario.grupoId === g.id ? 'selected' : ''}>${g.nombre} (${g.turno})${infoModulos}</option>`;
                                 }).join('')}
                             </select>
@@ -695,19 +695,19 @@ async function abrirModalEdicion(userIndex) {
 
     } catch (error) {
         console.error('Error en abrirModalEdicion:', error);
-        showMiniModal('Error al cargar el formulario de edici√≥n', 'error');
+        showMiniModal('Error al cargar el formulario de ediciÛn', 'error');
     }
 }
 
 /**
- * Ejecuta la edici√≥n de un usuario
+ * Ejecuta la ediciÛn de un usuario
  */
 async function ejecutarEdicion(userIndex, usuario, datosActualizados) {
     try {
         const success = await authModel.updateUser(usuario.uid, datosActualizados);
         
         if (success) {
-            // Registrar actividad de actualizaci√≥n de usuario
+            // Registrar actividad de actualizaciÛn de usuario
             try {
                 const { default: ActivityLogger } = await import('../utils/activityLogger.js');
                 await ActivityLogger.updateUserActivity(
@@ -717,7 +717,7 @@ async function ejecutarEdicion(userIndex, usuario, datosActualizados) {
                     Object.keys(datosActualizados)
                 );
             } catch (error) {
-                console.warn('Error registrando actividad de actualizaci√≥n de usuario:', error);
+                console.warn('Error registrando actividad de actualizaciÛn de usuario:', error);
             }
 
             showMiniModal('Usuario actualizado correctamente', 'success');
@@ -754,7 +754,7 @@ function showMiniModal(mensaje, tipo) {
     const notificacion = document.createElement('div');
     notificacion.id = 'mini-notification';
     let backgroundColor = tipo === 'success' ? '#10b981' : '#ef4444';
-    let icon = tipo === 'success' ? '‚úì' : '‚úï';
+    let icon = tipo === 'success' ? '?' : '?';
     notificacion.style.cssText = `position: fixed; top: 20px; right: 20px; background: ${backgroundColor}; color: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10001; font-size: 1rem;`;
     notificacion.innerHTML = `<span>${icon}</span> ${mensaje}`;
     document.body.appendChild(notificacion);
@@ -762,7 +762,7 @@ function showMiniModal(mensaje, tipo) {
 }
 
 /**
- * Muestra un modal personalizado para confirmar el reset de contrase√±a.
+ * Muestra un modal personalizado para confirmar el reset de contraseÒa.
  */
 async function confirmarResetPassword(userIndex) {
     try {
@@ -777,13 +777,13 @@ async function confirmarResetPassword(userIndex) {
         // Verificar que el usuario actual sea admin
         const currentUser = authModel.getCurrentUser();
         if (!currentUser || currentUser.rol !== 'admin') {
-            showMiniModal('No tienes permisos para realizar esta acci√≥n', 'error');
+            showMiniModal('No tienes permisos para realizar esta acciÛn', 'error');
             return;
         }
 
-        // No permitir reset de contrase√±a del propio usuario
+        // No permitir reset de contraseÒa del propio usuario
         if (usuario.uid === currentUser.uid) {
-            showMiniModal('No puedes resetear tu propia contrase√±a', 'error');
+            showMiniModal('No puedes resetear tu propia contraseÒa', 'error');
             return;
         }
 
@@ -792,11 +792,11 @@ async function confirmarResetPassword(userIndex) {
         modalOverlay.className = 'modal-overlay';
         modalOverlay.innerHTML = `
             <div class="modal-content-confirm">
-                <h3>¬øResetear Contrase√±a?</h3>
-                <p>Est√°s a punto de resetear la contrase√±a de <strong>${usuario.nombre} ${usuario.apellidos || ''}</strong>. Se generar√° una nueva contrase√±a temporal que deber√°s compartir con el usuario.</p>
+                <h3>øResetear ContraseÒa?</h3>
+                <p>Est·s a punto de resetear la contraseÒa de <strong>${usuario.nombre} ${usuario.apellidos || ''}</strong>. Se generar· una nueva contraseÒa temporal que deber·s compartir con el usuario.</p>
                 <div class="confirm-actions">
                     <button class="btn-cancel">Cancelar</button>
-                    <button class="btn-confirm-reset">Resetear Contrase√±a</button>
+                    <button class="btn-confirm-reset">Resetear ContraseÒa</button>
                 </div>
             </div>`;
 
@@ -817,42 +817,42 @@ async function confirmarResetPassword(userIndex) {
 }
 
 /**
- * Ejecuta el reset de contrase√±a de un usuario
+ * Ejecuta el reset de contraseÒa de un usuario
  */
 async function ejecutarResetPassword(userIndex, usuario) {
     try {
-        // Llamar a la funci√≥n del modelo para resetear contrase√±a
+        // Llamar a la funciÛn del modelo para resetear contraseÒa
         const result = await authModel.resetUserPassword(usuario.uid);
         
         if (result) {
-            // Manejar diferentes m√©todos de reset
+            // Manejar diferentes mÈtodos de reset
             switch (result.resetMethod) {
                 case 'email':
                     // Reset por email
                     mostrarMensajeReset(
-                        'üìß Email de Restablecimiento Enviado',
-                        `Se ha enviado un email de restablecimiento de contrase√±a a ${result.email}.\n\nEl usuario debe revisar su correo electr√≥nico y seguir las instrucciones para crear una nueva contrase√±a.`,
+                        '?? Email de Restablecimiento Enviado',
+                        `Se ha enviado un email de restablecimiento de contraseÒa a ${result.email}.\n\nEl usuario debe revisar su correo electrÛnico y seguir las instrucciones para crear una nueva contraseÒa.`,
                         'info'
                     );
                     break;
                     
                 case 'account_recreated':
-                    // Cuenta recreada con nueva contrase√±a
+                    // Cuenta recreada con nueva contraseÒa
                     mostrarCredencialesUsuario(result, true);
                     mostrarMensajeReset(
-                        '‚úÖ Cuenta Recreada',
-                        `La cuenta de ${result.nombre} ha sido recreada con una nueva contrase√±a.\n\n‚ö†Ô∏è Nota: Es posible que necesites volver a autenticarte como administrador.`,
+                        '? Cuenta Recreada',
+                        `La cuenta de ${result.nombre} ha sido recreada con una nueva contraseÒa.\n\n?? Nota: Es posible que necesites volver a autenticarte como administrador.`,
                         'success'
                     );
                     break;
                     
                 case 'temporal':
                 default:
-                    // Contrase√±a temporal
+                    // ContraseÒa temporal
                     mostrarCredencialesUsuario(result, true);
                     mostrarMensajeReset(
-                        'üîë Contrase√±a Temporal Generada',
-                        `Se ha generado una contrase√±a temporal para ${result.nombre}.\n\nEl usuario debe usar esta contrase√±a para iniciar sesi√≥n y luego cambiarla por una nueva.`,
+                        '?? ContraseÒa Temporal Generada',
+                        `Se ha generado una contraseÒa temporal para ${result.nombre}.\n\nEl usuario debe usar esta contraseÒa para iniciar sesiÛn y luego cambiarla por una nueva.`,
                         'warning'
                     );
                     break;
@@ -870,10 +870,10 @@ async function ejecutarResetPassword(userIndex, usuario) {
             await mostrarUsuarios();
         }
     } catch (error) {
-        console.error('Error ejecutando reset de contrase√±a:', error);
+        console.error('Error ejecutando reset de contraseÒa:', error);
         mostrarMensajeReset(
-            '‚ùå Error en el Reset',
-            `No se pudo resetear la contrase√±a de ${usuario.nombre}:\n\n${error.message}`,
+            '? Error en el Reset',
+            `No se pudo resetear la contraseÒa de ${usuario.nombre}:\n\n${error.message}`,
             'error'
         );
         
@@ -888,7 +888,7 @@ async function ejecutarResetPassword(userIndex, usuario) {
 }
 
 /**
- * Muestra mensajes espec√≠ficos para el reset de contrase√±a
+ * Muestra mensajes especÌficos para el reset de contraseÒa
  */
 function mostrarMensajeReset(titulo, mensaje, tipo = 'info') {
     // Crear container si no existe
@@ -919,10 +919,10 @@ function mostrarMensajeReset(titulo, mensaje, tipo = 'info') {
     };
     
     const iconos = {
-        success: '‚úÖ',
-        error: '‚ùå', 
-        warning: '‚ö†Ô∏è',
-        info: 'üìß'
+        success: '?',
+        error: '?', 
+        warning: '??',
+        info: '??'
     };
 
     messageEl.style.cssText = `
@@ -956,11 +956,11 @@ function mostrarMensajeReset(titulo, mensaje, tipo = 'info') {
             " 
             onclick="this.parentElement.parentElement.remove()"
             onmouseover="this.style.backgroundColor='rgba(255,255,255,0.2)'"
-            onmouseout="this.style.backgroundColor='transparent'">√ó</button>
+            onmouseout="this.style.backgroundColor='transparent'">◊</button>
         </div>
     `;
 
-    // A√±adir estilos de animaci√≥n si no existen
+    // AÒadir estilos de animaciÛn si no existen
     if (!document.getElementById('reset-message-styles')) {
         const style = document.createElement('style');
         style.id = 'reset-message-styles';
@@ -975,7 +975,7 @@ function mostrarMensajeReset(titulo, mensaje, tipo = 'info') {
 
     container.appendChild(messageEl);
 
-    // Auto-cerrar despu√©s de 8 segundos
+    // Auto-cerrar despuÈs de 8 segundos
     setTimeout(() => {
         if (messageEl.parentNode) {
             messageEl.style.animation = 'resetMessageSlideIn 0.4s ease-in reverse';
@@ -989,7 +989,7 @@ function mostrarMensajeReset(titulo, mensaje, tipo = 'info') {
 }
 
 /**
- * Muestra un modal con la nueva contrase√±a temporal del usuario
+ * Muestra un modal con la nueva contraseÒa temporal del usuario
  */
 function mostrarNuevaContrasenaUsuario(usuario, nuevaContrasena) {
     const modal = document.createElement('div');
@@ -1020,12 +1020,12 @@ function mostrarNuevaContrasenaUsuario(usuario, nuevaContrasena) {
             <div class="modal-header" style="
                 margin-bottom: 20px;
             ">
-                <h2 style="margin: 0; color: #1f2937; font-size: 20px;">Nueva Contrase√±a Generada</h2>
+                <h2 style="margin: 0; color: #1f2937; font-size: 20px;">Nueva ContraseÒa Generada</h2>
             </div>
             
             <div class="password-info" style="margin-bottom: 24px;">
                 <p style="margin-bottom: 16px; color: #374151;">
-                    Se ha generado una nueva contrase√±a temporal para <strong>${usuario.nombre} ${usuario.apellidos || ''}</strong>
+                    Se ha generado una nueva contraseÒa temporal para <strong>${usuario.nombre} ${usuario.apellidos || ''}</strong>
                 </p>
                 
                 <div class="password-display" style="
@@ -1044,8 +1044,8 @@ function mostrarNuevaContrasenaUsuario(usuario, nuevaContrasena) {
                 </div>
                 
                 <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px;">
-                    ‚ö†Ô∏è <strong>Importante:</strong> Esta contrase√±a temporal se aplicar√° autom√°ticamente cuando el usuario inicie sesi√≥n. 
-                    El usuario deber√° cambiar su contrase√±a inmediatamente despu√©s de iniciar sesi√≥n por primera vez con esta contrase√±a temporal.
+                    ?? <strong>Importante:</strong> Esta contraseÒa temporal se aplicar· autom·ticamente cuando el usuario inicie sesiÛn. 
+                    El usuario deber· cambiar su contraseÒa inmediatamente despuÈs de iniciar sesiÛn por primera vez con esta contraseÒa temporal.
                 </p>
             </div>
             
@@ -1103,15 +1103,15 @@ function mostrarNuevaContrasenaUsuario(usuario, nuevaContrasena) {
     copyBtn.addEventListener('click', async () => {
         try {
             await navigator.clipboard.writeText(nuevaContrasena);
-            copyBtn.innerHTML = '<i class="fas fa-check"></i> ¬°Copiado!';
+            copyBtn.innerHTML = '<i class="fas fa-check"></i> °Copiado!';
             copyBtn.style.background = '#10b981';
             setTimeout(() => {
                 copyBtn.innerHTML = '<i class="fas fa-copy"></i> Copiar';
                 copyBtn.style.background = '#3b82f6';
             }, 2000);
         } catch (error) {
-            console.error('Error copiando contrase√±a:', error);
-            alert('Error al copiar la contrase√±a');
+            console.error('Error copiando contraseÒa:', error);
+            alert('Error al copiar la contraseÒa');
         }
     });
 
@@ -1147,11 +1147,11 @@ function mostrarNuevaContrasenaUsuario(usuario, nuevaContrasena) {
                     <div class="credentials">
                         <h2>${usuario.nombre} ${usuario.apellidos || ''}</h2>
                         <p><strong>Email:</strong> ${usuario.email}</p>
-                        <p><strong>Contrase√±a Temporal:</strong></p>
+                        <p><strong>ContraseÒa Temporal:</strong></p>
                         <div class="password">${nuevaContrasena}</div>
-                        <p class="warning">‚ö†Ô∏è Importante: Cambia esta contrase√±a en tu primer inicio de sesi√≥n</p>
+                        <p class="warning">?? Importante: Cambia esta contraseÒa en tu primer inicio de sesiÛn</p>
                     </div>
-                    <p>Fecha de generaci√≥n: ${new Date().toLocaleString()}</p>
+                    <p>Fecha de generaciÛn: ${new Date().toLocaleString()}</p>
                 </body>
             </html>
         `);

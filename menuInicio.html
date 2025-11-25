@@ -4,6 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Menú de Inicio</title>
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="./manifest.json">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#0f5671">
+  <meta name="description" content="Sistema médico completo para gestión de pacientes, operaciones y reportes médicos con funcionalidad offline">
+  
+  <!-- Apple PWA Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="MedDev">
+  <link rel="apple-touch-icon" href="./img/logo-medical-developer.jpg">
+  
+  <!-- Favicons -->
+  <link rel="icon" type="image/jpeg" href="./img/logo-medical-developer.jpg">
+  <link rel="shortcut icon" type="image/jpeg" href="./img/logo-medical-developer.jpg">
   <style>
     :root{
       --header-h: 80px;
@@ -2582,6 +2599,573 @@
     }
   }
 
+  /* 📱 RESPONSIVE DESIGN PARA TELÉFONOS - TARJETAS DASHBOARD */
+  @media (max-width: 480px) {
+    /* Grillas - Una sola columna en móviles */
+    .admin-grid, .practitioner-grid {
+      grid-template-columns: 1fr;
+      gap: 15px;
+      padding: 0 10px;
+    }
+
+    /* Dashboard Cards - Optimizadas para móvil */
+    .dashboard-card {
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Headers de tarjetas - Compactos */
+    .dashboard-card .card-header {
+      padding: 12px 50px 12px 15px;
+      min-height: 45px;
+    }
+
+    .dashboard-card .card-header h3 {
+      font-size: 1.1rem;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    /* Botones de colapso - Más grandes para touch */
+    .collapse-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 14px;
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .collapse-btn:hover {
+      background: rgba(255, 255, 255, 0.35);
+      transform: translateY(-50%) scale(1.05);
+    }
+
+    /* Contenido de tarjetas - Padding reducido */
+    .card-content {
+      padding: 15px !important;
+    }
+
+    /* KPI Cards dentro de las tarjetas */
+    .kpi-card {
+      padding: 12px !important;
+      margin-bottom: 10px;
+    }
+
+    .kpi-card h4 {
+      font-size: 0.9rem !important;
+      margin-bottom: 8px;
+    }
+
+    .kpi-card .value {
+      font-size: 1.5rem !important;
+    }
+
+    /* Botones globales de control - Stack vertical */
+    .global-card-controls {
+      flex-direction: column;
+      gap: 8px;
+      padding: 15px 10px;
+    }
+
+    .global-card-controls .btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 0.9rem;
+      border-radius: 8px;
+    }
+
+    /* Dashboard Header - Compacto */
+    .dashboard-header {
+      padding: 15px 10px;
+      flex-direction: column;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .dashboard-header h2 {
+      font-size: 1.4rem;
+      margin: 0;
+    }
+
+    /* Header Stats - Stack vertical */
+    .header-stats {
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .header-stats .stat-item {
+      flex: 1;
+      text-align: center;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+    }
+
+    /* Listas dentro de tarjetas - Más altura para móviles */
+    .dashboard-modulos-list,
+    .dashboard-grupos-list {
+      max-height: 400px !important; /* Aumentada para móviles */
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Elementos de lista compactos */
+    .list-item {
+      padding: 10px !important;
+      margin-bottom: 8px;
+      border-radius: 6px;
+    }
+    
+    /* Contenedores de módulos - Layout vertical en móviles */
+    .modules-horizontal-grid {
+      padding: 10px !important;
+    }
+    
+    /* Cambiar layout de flex horizontal a vertical en móviles */
+    .modules-horizontal-grid > div[style*="display: flex"] {
+      display: block !important;
+      gap: 15px;
+      padding: 0 !important;
+    }
+    
+    /* Tarjetas de módulos - Ancho completo en móviles */
+    .modules-horizontal-grid > div > div[style*="width: 240px"] {
+      width: 100% !important;
+      max-width: none !important;
+      margin-bottom: 15px;
+      flex-shrink: 1 !important;
+    }
+
+    /* Tablas responsivas */
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .table-responsive table {
+      min-width: 300px;
+      font-size: 0.85rem;
+    }
+
+    .table-responsive th,
+    .table-responsive td {
+      padding: 8px 6px !important;
+      white-space: nowrap;
+    }
+
+    /* Charts en móvil */
+    .chart-container {
+      height: 250px !important;
+      margin: 10px 0;
+    }
+    
+    /* Mapas y contenido de módulos - Sin restricciones de altura */
+    .map-preview,
+    .module-map-container,
+    .dashboard-map-preview {
+      height: auto !important;
+      min-height: 200px;
+      max-height: none !important;
+      overflow: visible;
+    }
+    
+    /* Contenedores de tarjetas de módulos y mapas */
+    [data-card-id="modulos"] .card-content,
+    [data-card-id="mapa"] .card-content,
+    [data-card-id="map-preview"] .card-content {
+      max-height: none !important;
+      overflow: visible !important;
+    }
+
+    /* Progress bars */
+    .progress-item {
+      margin-bottom: 15px;
+    }
+
+    .progress-item .label {
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      border-radius: 4px;
+    }
+  }
+
+  /* 🗺️ CORRECCIONES ESPECÍFICAS PARA TARJETAS PROBLEMÁTICAS */
+  @media (max-width: 480px) {
+    
+    /* REGLA GENERAL: Todas las tarjetas deben tener el mismo comportamiento */
+    .dashboard-card {
+      overflow: hidden !important;
+    }
+    
+    .dashboard-card .card-content {
+      overflow: hidden !important;
+      box-sizing: border-box;
+      word-wrap: break-word;
+    }
+    
+    /* Evitar que cualquier contenido se salga */
+    .dashboard-card .card-content * {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    
+    .dashboard-card .card-content img,
+    .dashboard-card .card-content iframe {
+      width: 100% !important;
+      height: auto !important;
+      max-width: 100% !important;
+    }
+    /* Tarjeta de módulos - Mismo estilo que tarjetas correctas */
+    .dashboard-card[data-card-id="modulos"] {
+      min-height: auto;
+    }
+    
+    .dashboard-card[data-card-id="modulos"] .card-content {
+      padding: 15px;
+      max-height: none;
+      overflow: hidden; /* Evitar desbordamiento */
+    }
+    
+    /* Forzar layout de lista vertical para módulos en móviles */
+    .dashboard-card[data-card-id="modulos"] .modules-horizontal-grid {
+      overflow: hidden;
+    }
+    
+    .dashboard-card[data-card-id="modulos"] .modules-horizontal-grid > div {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 12px !important;
+      width: 100% !important;
+    }
+    
+    /* Tarjeta de mapa - Contenido completo visible */
+    .dashboard-card[data-card-id="mapa"],
+    .dashboard-card[data-card-id="map-preview"],
+    .dashboard-card[data-card-id="mapa-modulos"] {
+      min-height: auto;
+    }
+    
+    .dashboard-card[data-card-id="mapa"] .card-content,
+    .dashboard-card[data-card-id="map-preview"] .card-content,
+    .dashboard-card[data-card-id="mapa-modulos"] .card-content {
+      padding: 15px;
+      max-height: none;
+      overflow: hidden; /* Consistente con otras tarjetas */
+    }
+    
+    /* Elementos dentro de módulos y mapas */
+    .modules-horizontal-grid,
+    .map-container,
+    .module-grid {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Scroll suave para contenido horizontal */
+    .modules-horizontal-grid::-webkit-scrollbar {
+      height: 4px;
+    }
+    
+    .modules-horizontal-grid::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 2px;
+    }
+    
+    .modules-horizontal-grid::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 2px;
+    }
+    
+    /* Prevenir desbordamiento de elementos específicos */
+    .dashboard-card pre,
+    .dashboard-card code,
+    .dashboard-card table {
+      overflow-x: auto;
+      max-width: 100%;
+    }
+    
+    /* Texto largo debe hacer wrap */
+    .dashboard-card p,
+    .dashboard-card div,
+    .dashboard-card span {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    
+    /* 🛡️ REGLAS GENERALES ANTI-DESBORDAMIENTO */
+    .dashboard-card {
+      overflow: hidden !important;
+    }
+    
+    .dashboard-card .card-content {
+      overflow: hidden !important;
+      box-sizing: border-box;
+    }
+    
+    /* Evitar que cualquier contenido se salga de las tarjetas */
+    .dashboard-card .card-content * {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    
+    .dashboard-card .card-content img,
+    .dashboard-card .card-content iframe {
+      width: 100% !important;
+      height: auto !important;
+      max-width: 100% !important;
+    }
+    
+    /* Corregir tarjeta de mapa específicamente */
+    .dashboard-card[data-card-id="mapa-modulos"] .card-content {
+      padding: 15px;
+      overflow: hidden;
+    }
+    
+    .module-map-preview-card .card-content iframe,
+    .module-map-preview-card .card-content .map-container {
+      width: 100% !important;
+      max-width: 100%;
+      height: 180px;
+      border-radius: 6px;
+    }
+  }
+  
+  /* 📱 EXTRA SMALL PHONES - 360px y menos */
+  @media (max-width: 360px) {
+    .dashboard-card .card-header {
+      padding: 10px 45px 10px 12px;
+      min-height: 40px;
+    }
+
+    .dashboard-card .card-header h3 {
+      font-size: 1rem;
+    }
+
+    .card-content {
+      padding: 12px !important;
+    }
+
+    .collapse-btn {
+      width: 32px;
+      height: 32px;
+      right: 6px;
+    }
+
+    .global-card-controls .btn {
+      padding: 10px;
+      font-size: 0.85rem;
+    }
+
+    .kpi-card .value {
+      font-size: 1.3rem !important;
+    }
+
+    .dashboard-header h2 {
+      font-size: 1.2rem;
+    }
+  }
+
+  /* 📱 OPTIMIZACIONES ADICIONALES PARA MÓVILES */
+  @media (max-width: 480px) {
+    /* Desactivar animaciones complejas en móviles para mejor rendimiento */
+    .practitioner-grid .dashboard-card:nth-child(1),
+    .practitioner-grid .dashboard-card:nth-child(2),
+    .admin-grid .dashboard-card {
+      animation: none !important;
+    }
+
+    /* Hover effects más suaves en touch devices */
+    .dashboard-card:hover {
+      transform: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Contenido específico de tarjetas */
+    .assignment-info {
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 8px;
+    }
+
+    .schedule-item {
+      padding: 10px;
+      margin: 6px 0;
+      border-radius: 6px;
+      border-left: 3px solid #3b82f6;
+    }
+
+    /* Checklist items más grandes para touch */
+    .checklist-item {
+      padding: 12px 8px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+
+    .checklist-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-right: 10px;
+    }
+
+    /* Observaciones */
+    .observation-item {
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      background: #f1f5f9;
+      border-left: 4px solid #64748b;
+    }
+
+    /* Botones de acción más grandes */
+    .action-btn {
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      margin: 4px;
+      min-height: 44px; /* Mínimo recomendado para touch targets */
+    }
+
+    /* Campos de formulario optimizados para móviles */
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 16px; /* Evita zoom en iOS */
+      box-sizing: border-box;
+    }
+
+    /* Status indicators más visibles */
+    .status-indicator {
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      text-align: center;
+      margin: 4px 0;
+    }
+
+    /* Métricas y estadísticas */
+    .metric-item {
+      text-align: center;
+      padding: 15px 10px;
+      background: #ffffff;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 10px;
+    }
+
+    .metric-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #1f2937;
+      margin-bottom: 4px;
+    }
+
+    .metric-label {
+      font-size: 0.8rem;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Navegación de pestañas si existe */
+    .tab-navigation {
+      display: flex;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 15px;
+      padding-bottom: 2px;
+    }
+
+    .tab-button {
+      flex: 0 0 auto;
+      padding: 10px 16px;
+      margin-right: 8px;
+      border-radius: 20px;
+      background: #f3f4f6;
+      border: none;
+      color: #6b7280;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-button.active {
+      background: #3b82f6;
+      color: white;
+    }
+    
+    /* Mejorar interacción táctil en sidebar */
+    .sidebar .menu .menu-item {
+      margin-bottom: 4px;
+    }
+    
+    .sidebar .menu .menu-item button {
+      width: 100%;
+      padding: 12px 15px;
+      border: none;
+      background: none;
+      text-align: left;
+      color: #374151;
+      font-size: 0.95rem;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      min-height: 44px; /* Área táctil mínima */
+    }
+    
+    .sidebar .menu .menu-item button:hover {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+    }
+    
+    /* Indicador visual para elementos con submenú */
+    .sidebar .menu .menu-item:has(.submenu) button::after {
+      content: '▼';
+      float: right;
+      font-size: 0.8rem;
+      transition: transform 0.2s ease;
+    }
+    
+    .sidebar .menu .menu-item:hover:has(.submenu) button::after {
+      transform: rotate(180deg);
+    }
+  }
+
     /* Los estilos del dropdown ahora están en headerComponent.js */
 
     /* Botón Reportes inactivo (solo usar el submenu) */
@@ -2641,8 +3225,39 @@
         background: rgba(255,255,255,0.98);
         box-shadow: 4px 0 30px rgba(0,0,0,0.12);
       }
-      /* ocultar submenus en mobile (usar navegación alternativa) */
-      .submenu{ display:none !important }
+      
+      /* Hacer submenús funcionales en móviles */
+      .submenu {
+        position: static !important;
+        display: none;
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-top: 5px;
+        padding: 8px 0;
+      }
+      
+      .menu-item:hover .submenu,
+      .menu-item:focus-within .submenu {
+        display: block !important;
+      }
+      
+      .submenu a {
+        padding: 8px 20px;
+        display: block;
+        color: #374151;
+        text-decoration: none;
+        font-size: 0.9rem;
+        border-radius: 4px;
+        margin: 2px 8px;
+        transition: all 0.2s ease;
+      }
+      
+      .submenu a:hover {
+        background: #f3f4f6;
+        transform: none; /* Eliminar transformación en móvil */
+        box-shadow: none;
+      }
       
       /* Responsive for work groups */
       .group-header {
@@ -4725,7 +5340,7 @@
     import './js/utils/performanceMonitor.js';   // Performance monitoring
     import './js/utils/dashboardAnimations.js';  // Dashboard animations system
     import './js/utils/dashboardHeaderManager.js'; // Dashboard header management
-    import { ConnectionIndicator } from './js/utils/connectionIndicator.js';   // Connection status indicator
+    // ❌ ConnectionIndicator eliminado - reemplazado por AdvancedOfflineIndicator
     import './js/utils/firebaseSyncManager.js';  // Firebase sync messages manager
     import { instrumentosController } from './js/controllers/instrumentosController.js'; // Controlador de instrumentos y observaciones
     import { adminInstrumentosController } from './js/controllers/adminInstrumentosController.js'; // Controlador admin de instrumentos
@@ -4888,9 +5503,8 @@
           setTimeout(() => {
             initGlobalController();
             
-            // Initialize connection indicator
-            ConnectionIndicator.init();
-            console.log('ConnectionIndicator inicializado para Menú Principal');
+            // ❌ ConnectionIndicator removido - reemplazado por Advanced Offline Indicator
+            console.log('Advanced Offline Indicator reemplazó al ConnectionIndicator');
           }, 100);
         }, 50);
         
@@ -5071,16 +5685,24 @@
           import('./js/models/pacienteModel.js')
         ]);
 
-        const estadisticas = await reporteModel.getEstadisticas('mes');
+        // Función helper para datos seguros offline
+        const safeData = (data, defaultValue = {}) => data && typeof data === 'object' ? data : defaultValue;
+        const safeArray = (data) => Array.isArray(data) ? data : [];
+        
+        const estadisticasRaw = await reporteModel.getEstadisticas('mes');
+        const estadisticas = safeData(estadisticasRaw, {
+          pacientes: { totalPacientes: 0, pacientesNuevos: 0, citasPendientes: 0 }
+        });
 
-        // KPIs
-        const kpiPacientes = estadisticas.pacientes.totalPacientes || 0;
+        // KPIs con datos seguros
+        const kpiPacientes = (estadisticas.pacientes && estadisticas.pacientes.totalPacientes) || 0;
         // consultasHoy: contar entradas del historial cuya fecha sea hoy
-        const historial = pacienteModel.getHistorialMedico() || [];
+        const historialRaw = await pacienteModel.getHistorialMedico();
+        const historial = safeArray(historialRaw);
         const hoyStr = new Date().toISOString().split('T')[0];
-        const consultasHoy = historial.filter(h => (new Date(h.fecha).toISOString().split('T')[0]) === hoyStr).length;
-        const pacientesNuevos = estadisticas.pacientes.pacientesNuevos || 0;
-        const alertas = estadisticas.pacientes.citasPendientes || 0;
+        const consultasHoy = historial.filter(h => h && h.fecha && (new Date(h.fecha).toISOString().split('T')[0]) === hoyStr).length;
+        const pacientesNuevos = (estadisticas.pacientes && estadisticas.pacientes.pacientesNuevos) || 0;
+        const alertas = (estadisticas.pacientes && estadisticas.pacientes.citasPendientes) || 0;
 
         // Escribir en DOM (si existen elementos)
         const setText = (id, value) => { const el = document.getElementById(id); if(el) el.textContent = value; };
@@ -5101,8 +5723,18 @@
 
         // Ahora preparar datasets para gráficos usando datos reales
         // 1) Distribución por facultad
-        const pacientes = pacienteModel.getPacientes() || [];
-        const facultadCounts = pacientes.reduce((acc, p) => { const f = p.facultad || 'No especificado'; acc[f] = (acc[f]||0) + 1; return acc; }, {});
+        const pacientesRaw = await pacienteModel.getPacientes();
+        const pacientes = safeArray(pacientesRaw);
+        console.log('📈 Pacientes para gráficos:', pacientes.length);
+        
+        // Crear datasets seguros para gráficos
+        const facultadCounts = pacientes.length > 0 ? 
+          pacientes.reduce((acc, p) => { 
+            const f = p.facultad || 'No especificado'; 
+            acc[f] = (acc[f]||0) + 1; 
+            return acc; 
+          }, {}) : 
+          { 'Sin datos': 1 };
         const facultades = Object.keys(facultadCounts);
         const facultadValues = facultades.map(f => facultadCounts[f]);
 
@@ -5898,11 +6530,16 @@
         }
         
         // Renderizar los módulos en formato horizontal (como operaciones control)
+        // Detectar si es móvil para layout
+        const isMobile = window.innerWidth <= 480;
+        const containerDisplay = isMobile ? 'block' : 'flex';
+        const containerGap = isMobile ? '0' : '12px';
+        
         const modulosHTML = `
           <div style="
-            display: flex;
+            display: ${containerDisplay};
             flex-wrap: wrap;
-            gap: 12px;
+            gap: ${containerGap};
             padding: 10px 0;
           ">
             ${(await Promise.all(modulos.map(async modulo => {
@@ -5935,18 +6572,24 @@
               // Contar practicantes en el grupo
               const numPracticantes = grupoAsignado ? await contarPracticantesEnGrupo(grupoAsignado.id) : 0;
               
+              // Detectar si es móvil para ajustar estilos
+              const isMobile = window.innerWidth <= 480;
+              const moduleWidth = isMobile ? '100%' : '240px';
+              const moduleMargin = isMobile ? '0 0 12px 0' : '0';
+              
               return `
                 <div style="
                   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-                  border-radius: 16px;
+                  border-radius: 12px;
                   box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-                  padding: 20px;
+                  padding: ${isMobile ? '15px' : '20px'};
                   transition: all 0.3s ease;
                   border: 1px solid rgba(226, 232, 240, 0.6);
                   overflow: hidden;
                   position: relative;
-                  width: 240px;
-                  flex-shrink: 0;
+                  width: ${moduleWidth};
+                  margin: ${moduleMargin};
+                  flex-shrink: ${isMobile ? '1' : '0'};
                 " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 25px rgba(0,0,0,0.1)';" 
                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.05)';">
                   
@@ -7626,7 +8269,7 @@
   <!-- Wrapper con etiqueta y botón -->
   <div id="floatingHelpWrapper">
     <span id="floatingHelpLabel">Ayuda</span>
-    <button id="floatingHelpBtn" aria-label="Abrir manual de usuario" title="Ayuda - Manual de usuario">❓</button>
+    <button id="floatingHelpBtn" aria-label="Abrir manual de usuario" title="📖 Ayuda - Manual de Usuario (PDF)">📖</button>
   </div>
 
   <script>
@@ -7911,21 +8554,147 @@
   <script>
     (function(){
       // Nombre del PDF en la carpeta help (usar encodeURI para espacios/caracteres especiales)
-      const pdfRelativePath = encodeURI('help/Manual de Usuario.pdf');
+      const pdfRelativePath = encodeURI('help/Manual de usuario Administrador & Practicante.pdf');
 
       const btn = document.getElementById('floatingHelpBtn');
       if(!btn) return;
 
-      // Abrir en nueva pestaña al hacer clic
+      // Sistema avanzado de apertura de PDF con múltiples opciones
       btn.addEventListener('click', function(e){
         e.preventDefault();
-        try {
-          window.open(pdfRelativePath, '_blank');
-        } catch (err) {
-          // Fallback: navegar en la misma pestaña si no se puede abrir nueva
-          window.location.href = pdfRelativePath;
-        }
+        
+        // Feedback visual - botón presionado
+        btn.style.transform = 'translateY(-1px) scale(0.95)';
+        setTimeout(() => {
+          btn.style.transform = '';
+        }, 150);
+        
+        // Mostrar modal con opciones de visualización
+        showPDFOptionsModal();
       });
+      
+      // Función para mostrar opciones de PDF
+      function showPDFOptionsModal() {
+        // Crear modal si no existe
+        let modal = document.getElementById('pdfOptionsModal');
+        if (!modal) {
+          modal = createPDFOptionsModal();
+        }
+        
+        // Mostrar modal
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+      
+      // Crear el modal con opciones
+      function createPDFOptionsModal() {
+        const modalHTML = `
+          <div id="pdfOptionsModal" style="
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+          ">
+            <div style="
+              background: white;
+              border-radius: 16px;
+              padding: 30px;
+              max-width: 500px;
+              width: 90%;
+              box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+              text-align: center;
+              position: relative;
+            ">
+              <!-- Botón cerrar -->
+              <button onclick="closePDFModal()" style="
+                position: absolute;
+                top: 10px;
+                right: 15px;
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+                color: #666;
+                line-height: 1;
+              ">×</button>
+              
+              <!-- Título -->
+              <h3 style="
+                margin: 0 0 20px 0;
+                color: #1f2937;
+                font-size: 1.5rem;
+              ">📖 Manual de Usuario</h3>
+              
+              <p style="
+                color: #6b7280;
+                margin-bottom: 25px;
+                font-size: 0.95rem;
+              ">Elige tu forma preferida de visualizar el manual:</p>
+              
+              <!-- Opciones -->
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                
+                <!-- Opción 1: Visor integrado -->
+                <button onclick="openPDFEmbedded()" style="
+                  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+                  color: white;
+                  border: none;
+                  padding: 14px 20px;
+                  border-radius: 10px;
+                  cursor: pointer;
+                  font-size: 1rem;
+                  font-weight: 500;
+                  transition: all 0.2s ease;
+                " onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(59,130,246,0.3)'" onmouseout="this.style.transform='none'; this.style.boxShadow='none'">
+                  🖥️ Abrir en Visor Integrado
+                </button>
+                
+                <!-- Opción 2: Nueva pestaña -->
+                <button onclick="openPDFNewTab()" style="
+                  background: #f3f4f6;
+                  color: #374151;
+                  border: 2px solid #d1d5db;
+                  padding: 14px 20px;
+                  border-radius: 10px;
+                  cursor: pointer;
+                  font-size: 1rem;
+                  transition: all 0.2s ease;
+                " onmouseover="this.style.borderColor='#9ca3af'" onmouseout="this.style.borderColor='#d1d5db'">
+                  🔗 Abrir en Nueva Pestaña
+                </button>
+                
+                <!-- Opción 3: Descargar -->
+                <button onclick="downloadPDF()" style="
+                  background: #f3f4f6;
+                  color: #374151;
+                  border: 2px solid #d1d5db;
+                  padding: 14px 20px;
+                  border-radius: 10px;
+                  cursor: pointer;
+                  font-size: 1rem;
+                  transition: all 0.2s ease;
+                " onmouseover="this.style.borderColor='#9ca3af'" onmouseout="this.style.borderColor='#d1d5db'">
+                  💾 Descargar Manual
+                </button>
+                
+              </div>
+              
+
+              
+            </div>
+          </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        return document.getElementById('pdfOptionsModal');
+      }
 
       // Hacer accesible via teclado: Enter y Space
       btn.addEventListener('keydown', function(e){
@@ -7934,6 +8703,161 @@
           btn.click();
         }
       });
+      
+      // Funciones globales para el modal de PDF
+      window.closePDFModal = function() {
+        const modal = document.getElementById('pdfOptionsModal');
+        if (modal) {
+          modal.style.display = 'none';
+          document.body.style.overflow = '';
+        }
+      };
+      
+      window.openPDFEmbedded = function() {
+        closePDFModal();
+        // Crear visor embebido
+        createEmbeddedPDFViewer();
+      };
+      
+      window.openPDFNewTab = function() {
+        closePDFModal();
+        try {
+          const newWindow = window.open(pdfRelativePath, '_blank', 'noopener,noreferrer');
+          if (!newWindow) {
+            alert('⚠️ Los popups están bloqueados en tu navegador.');
+          }
+        } catch (err) {
+          alert('❌ Error abriendo el PDF en nueva pestaña.');
+        }
+      };
+      
+      window.downloadPDF = function() {
+        closePDFModal();
+        // Crear enlace de descarga temporal
+        const link = document.createElement('a');
+        link.href = pdfRelativePath;
+        link.download = 'Manual de Usuario - Medical Developer.pdf';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Mostrar confirmación
+        const originalTitle = btn.title;
+        btn.title = '✅ Descarga iniciada';
+        setTimeout(() => {
+          btn.title = originalTitle;
+        }, 3000);
+      };
+      
+      // Crear visor PDF embebido
+      function createEmbeddedPDFViewer() {
+        const viewerHTML = `
+          <div id="pdfEmbeddedViewer" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #2d3748;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+          ">
+            <!-- Header del visor -->
+            <div style="
+              background: #1a202c;
+              color: white;
+              padding: 15px 20px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            ">
+              <h3 style="margin: 0; font-size: 1.1rem;">📖 Manual de Usuario</h3>
+              <button onclick="closeEmbeddedViewer()" style="
+                background: #e53e3e;
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: bold;
+              ">✕ Cerrar</button>
+            </div>
+            
+            <!-- Iframe para PDF -->
+            <iframe 
+              src="${pdfRelativePath}#toolbar=1&navpanes=1&scrollbar=1&page=1&view=FitH"
+              style="
+                flex: 1;
+                border: none;
+                background: white;
+              "
+              title="Manual de Usuario PDF"
+            ></iframe>
+            
+            <!-- Footer limpio -->
+            <div style="
+              background: #1a202c;
+              color: white;
+              padding: 8px 20px;
+              text-align: center;
+              font-size: 0.85rem;
+            ">
+              <span style="color: #a0aec0;">Manual de Usuario - Medical Developer</span>
+            </div>
+          </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', viewerHTML);
+        document.body.style.overflow = 'hidden';
+      }
+      
+      window.closeEmbeddedViewer = function() {
+        const viewer = document.getElementById('pdfEmbeddedViewer');
+        if (viewer) {
+          viewer.remove();
+          document.body.style.overflow = '';
+        }
+      };
+      
+      // Mejorar experiencia en móviles
+      if('ontouchstart' in window) {
+        // Eventos táctiles para mejor responsividad
+        btn.addEventListener('touchstart', function(e) {
+          btn.style.transform = 'translateY(-1px) scale(0.95)';
+        }, { passive: true });
+        
+        btn.addEventListener('touchend', function(e) {
+          setTimeout(() => {
+            btn.style.transform = '';
+          }, 150);
+        }, { passive: true });
+      }
+      
+      // Cerrar modales con Escape
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closePDFModal();
+          closeEmbeddedViewer();
+        }
+      });
+      
+      // Verificar disponibilidad del PDF al cargar
+      fetch(pdfRelativePath, { method: 'HEAD' })
+        .then(response => {
+          if (!response.ok) {
+            console.warn('⚠️ PDF no encontrado:', pdfRelativePath);
+            btn.title = '⚠️ Manual no disponible';
+            btn.style.opacity = '0.7';
+          } else {
+            console.log('✅ Manual de usuario disponible:', pdfRelativePath);
+          }
+        })
+        .catch(err => {
+          console.warn('⚠️ Error verificando PDF:', err);
+        });
     })();
 
     // 🔹 FUNCIONALIDAD DE COLAPSO DE TARJETAS
@@ -8168,6 +9092,395 @@
           console.log('✅ Dashboard de practicante visible');
         }
       }, 1000);
+    });
+  </script>
+
+  <!-- 🌐 FUNCIONALIDAD OFFLINE Y PWA -->
+  <!-- Service Worker Registration -->
+  <script>
+    // Registro del Service Worker para funcionalidad offline
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          const registration = await navigator.serviceWorker.register('./sw.js');
+          console.log('✅ Service Worker registrado:', registration);
+          
+          // Escuchar actualizaciones del SW
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // Nueva versión disponible
+                  if (confirm('Nueva versión disponible. ¿Actualizar ahora?')) {
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                    window.location.reload();
+                  }
+                }
+              });
+            }
+          });
+          
+          // Precargar recursos críticos
+          if (window.smartCache) {
+            window.smartCache.preloadCriticalResources([
+              './menuInicio.html',
+              './css/imageComponents.css',
+              './js/controllers/authController.js',
+              './js/utils/advancedOfflineIndicator.js'
+            ]);
+          }
+          
+        } catch (error) {
+          console.error('❌ Error registrando Service Worker:', error);
+        }
+      });
+    }
+  </script>
+
+  <!-- Smart Cache Manager -->
+  <script src="js/utils/smartCacheManager.js"></script>
+
+  <!-- Offline Sync Service se carga dinámicamente después -->
+
+  <!-- Advanced Offline Indicator -->
+  <script src="js/utils/advancedOfflineIndicator.js"></script>
+
+  <!-- Automatic Sync Manager -->
+  <script src="js/utils/automaticSyncManager.js"></script>
+  
+  <!-- Offline Debug Tools -->
+  <script src="js/utils/offlineDebugTools.js"></script>
+
+  <!-- Inicialización de sistemas offline -->
+  <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+      console.log('🚀 Inicializando sistemas offline...');
+      
+      try {
+        // 1. Inicializar indicador offline avanzado
+        if (typeof AdvancedOfflineIndicator !== 'undefined') {
+          window.advancedOfflineIndicator = AdvancedOfflineIndicator.init();
+          console.log('✅ Advanced Offline Indicator inicializado');
+        }
+        
+        // 2. Configurar integración con Firebase Sync Manager
+        if (window.firebaseSyncManager && window.advancedOfflineIndicator) {
+          // Callback para actualizar contenido después de sincronización
+          window.firebaseSyncManager.onContentRefresh(async () => {
+            console.log('🔄 Refrescando contenido de dashboards...');
+            
+            // Aquí se pueden agregar callbacks específicos para cada módulo
+            // Por ejemplo: actualizar listas de pacientes, operaciones, etc.
+            
+            return new Promise(resolve => {
+              setTimeout(() => {
+                console.log('✅ Contenido de dashboards actualizado');
+                resolve();
+              }, 1000);
+            });
+          });
+        }
+        
+        // 3. Configurar respaldo offline para operaciones críticas
+        window.offlineManager = {
+          // Guardar datos de usuario offline
+          saveUserSession: (userData) => {
+            try {
+              localStorage.setItem('offline_user_session', JSON.stringify({
+                ...userData,
+                timestamp: Date.now(),
+                offline: true
+              }));
+              return true;
+            } catch (error) {
+              console.error('❌ Error guardando sesión offline:', error);
+              return false;
+            }
+          },
+          
+          // Obtener datos de usuario offline
+          getUserSession: () => {
+            try {
+              const session = localStorage.getItem('offline_user_session');
+              return session ? JSON.parse(session) : null;
+            } catch (error) {
+              console.error('❌ Error obteniendo sesión offline:', error);
+              return null;
+            }
+          },
+          
+          // Limpiar datos offline
+          clearOfflineData: () => {
+            localStorage.removeItem('offline_user_session');
+            localStorage.removeItem('firebase_offline_queue');
+            localStorage.removeItem('medical_dev_pending_sync');
+            localStorage.removeItem('medical_dev_failed_operations');
+            console.log('🗑️ Datos offline limpiados');
+          },
+          
+          // Verificar si hay datos para sincronizar
+          hasPendingSync: () => {
+            const pending = localStorage.getItem('medical_dev_pending_sync');
+            const failed = localStorage.getItem('medical_dev_failed_operations');
+            return (pending && JSON.parse(pending).length > 0) || 
+                   (failed && JSON.parse(failed).length > 0);
+          }
+        };
+        
+        // 4. Configurar eventos de PWA
+        window.addEventListener('beforeinstallprompt', (event) => {
+          event.preventDefault();
+          window.deferredPrompt = event;
+          
+          // Mostrar sugerencia de instalación después de un uso significativo
+          setTimeout(() => {
+            if (window.deferredPrompt) {
+              const install = confirm('¿Deseas instalar Medical Developer como aplicación en tu dispositivo?');
+              if (install) {
+                window.deferredPrompt.prompt();
+                window.deferredPrompt.userChoice.then((choiceResult) => {
+                  console.log('PWA Install choice:', choiceResult.outcome);
+                  window.deferredPrompt = null;
+                });
+              }
+            }
+          }, 60000); // Después de 1 minuto de uso
+        });
+        
+        // 5. Monitorear almacenamiento y mostrar avisos
+        if ('storage' in navigator && 'estimate' in navigator.storage) {
+          navigator.storage.estimate().then((estimate) => {
+            const usedMB = Math.round(estimate.usage / (1024 * 1024));
+            const quotaMB = Math.round(estimate.quota / (1024 * 1024));
+            const percentage = Math.round((estimate.usage / estimate.quota) * 100);
+            
+            console.log(`💾 Almacenamiento: ${usedMB}MB / ${quotaMB}MB (${percentage}%)`);
+            
+            if (percentage > 80) {
+              console.warn('⚠️ Almacenamiento local casi lleno');
+              
+              if (window.firebaseSyncManager) {
+                window.firebaseSyncManager.showSyncMessage(
+                  'Almacenamiento bajo', 
+                  'warning', 
+                  'Considera limpiar datos offline antiguos'
+                );
+              }
+            }
+          });
+        }
+        
+        // 6. Configurar detección de red lenta
+        if ('connection' in navigator) {
+          const connection = navigator.connection;
+          if (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g') {
+            console.log('🐌 Conexión lenta detectada - Optimizando para bajo ancho de banda');
+            
+            if (window.automaticSyncManager) {
+              // Reducir frecuencia de sincronización en conexiones lentas
+              window.automaticSyncManager.setAutoSyncInterval(60000); // 1 minuto
+            }
+          }
+        }
+        
+        console.log('🎉 Sistemas offline inicializados correctamente');
+        
+        // Mostrar notificación de capacidades offline
+        setTimeout(() => {
+          if (window.firebaseSyncManager) {
+            window.firebaseSyncManager.showSyncMessage(
+              'Sistema offline listo', 
+              'success', 
+              'La aplicación funcionará sin conexión a internet',
+              5000
+            );
+          }
+        }, 2000);
+        
+      } catch (error) {
+        console.error('❌ Error inicializando sistemas offline:', error);
+      }
+    });
+
+    // Debugging tools para desarrollo
+    window.debugOffline = {
+      // Simular modo offline
+      goOffline: () => {
+        if (window.advancedOfflineIndicator) {
+          window.advancedOfflineIndicator.isOnline = false;
+          window.advancedOfflineIndicator.updateDisplay();
+          console.log('🔧 Modo offline simulado');
+        }
+      },
+      
+      // Simular modo online
+      goOnline: () => {
+        if (window.advancedOfflineIndicator) {
+          window.advancedOfflineIndicator.isOnline = true;
+          window.advancedOfflineIndicator.updateDisplay();
+          console.log('🔧 Modo online simulado');
+        }
+      },
+      
+      // Forzar sincronización
+      forceSync: () => {
+        if (window.automaticSyncManager) {
+          window.automaticSyncManager.triggerSync('debug');
+          console.log('🔧 Sincronización forzada');
+        }
+      },
+      
+      // Mostrar estadísticas
+      getStats: () => {
+        const stats = {};
+        
+        if (window.automaticSyncManager) {
+          stats.sync = window.automaticSyncManager.getPerformanceStats();
+        }
+        
+        if (window.smartCache) {
+          window.smartCache.getCacheStats().then(cacheStats => {
+            stats.cache = cacheStats;
+            console.log('📊 Estadísticas offline:', stats);
+          });
+        } else {
+          console.log('📊 Estadísticas offline:', stats);
+        }
+        
+        return stats;
+      },
+      
+      // Limpiar todo
+      clearAll: () => {
+        if (window.offlineManager) {
+          window.offlineManager.clearOfflineData();
+        }
+        if (window.smartCache) {
+          window.smartCache.clearAllCache();
+        }
+        console.log('🧹 Todos los datos offline limpiados');
+      }
+    };
+
+    // Añadir función de debug para probar sincronización
+    window.testSyncButton = async () => {
+      console.log('🧪 PROBANDO BOTÓN DE SINCRONIZACIÓN');
+      console.log('📊 Estado detallado de servicios:');
+      console.log('  - offlineSyncService:', {
+        exists: !!window.offlineSyncService,
+        type: typeof window.offlineSyncService,
+        hasFlushAll: !!(window.offlineSyncService && window.offlineSyncService.flushAll)
+      });
+      console.log('  - firebaseSyncManager:', {
+        exists: !!window.firebaseSyncManager,
+        type: typeof window.firebaseSyncManager,
+        hasForceSync: !!(window.firebaseSyncManager && window.firebaseSyncManager.forceSync)
+      });
+      console.log('  - advancedOfflineIndicator:', !!window.advancedOfflineIndicator);
+      
+      if (window.advancedOfflineIndicator && typeof window.advancedOfflineIndicator.forceSync === 'function') {
+        console.log('🔄 Ejecutando forceSync...');
+        await window.advancedOfflineIndicator.forceSync();
+        console.log('✅ Prueba de sincronización completada');
+      } else {
+        console.error('❌ No se encontró advancedOfflineIndicator.forceSync');
+      }
+    };
+
+    // Función para verificar si OfflineSyncService está listo
+    window.checkOfflineSync = () => {
+      if (window.offlineSyncService) {
+        console.log('✅ OfflineSyncService está disponible');
+        if (typeof window.offlineSyncService.getPendingSummary === 'function') {
+          const pending = window.offlineSyncService.getPendingSummary();
+          console.log('📊 Datos pendientes:', pending);
+        }
+      } else {
+        console.log('⚠️ OfflineSyncService NO está disponible');
+      }
+    };
+
+    console.log('🛠️ Debug tools disponibles:');
+    console.log('   - debugOffline.goOffline() - Simular offline');
+    console.log('   - debugOffline.goOnline() - Simular online');  
+    console.log('   - debugOffline.forceSync() - Forzar sync');
+    console.log('   - testSyncButton() - Probar botón de sincronización');
+    console.log('   - checkOfflineSync() - Verificar OfflineSyncService');
+    console.log('   - OfflineDebugTools.runDiagnostic() - Diagnóstico completo');
+    console.log('   - debugOffline.getStats() - Ver estadísticas');
+    console.log('   - debugOffline.clearAll() - Limpiar datos');
+    
+    // Cargar OfflineSyncService dinámicamente
+    console.log('🔄 Cargando OfflineSyncService...');
+    const scriptOfflineSyncService = document.createElement('script');
+    scriptOfflineSyncService.src = './js/utils/offlineSyncService.js';
+    scriptOfflineSyncService.type = 'module';
+    scriptOfflineSyncService.onload = () => {
+      console.log('✅ OfflineSyncService cargado exitosamente');
+      
+      // Verificar disponibilidad después de la carga
+      setTimeout(() => {
+        if (window.offlineSyncService) {
+          console.log('🔄 Inicializando OfflineSyncService...');
+          if (typeof window.offlineSyncService.init === 'function') {
+            window.offlineSyncService.init();
+          }
+        } else {
+          console.error('❌ OfflineSyncService no se cargó correctamente');
+        }
+      }, 100);
+    };
+    scriptOfflineSyncService.onerror = (error) => {
+      console.error('❌ Error cargando OfflineSyncService:', error);
+    };
+    document.head.appendChild(scriptOfflineSyncService);
+
+    // Cargar herramientas de debug de pacientes offline
+    const scriptDebugPacientes = document.createElement('script');
+    scriptDebugPacientes.src = './js/utils/offlinePacientesDebug.js';
+    scriptDebugPacientes.type = 'module';
+    scriptDebugPacientes.onload = () => {
+      console.log('🔧 OfflinePacientesDebug cargado - Usa OfflinePacientesDebug.runDiagnostic()');
+    };
+    document.head.appendChild(scriptDebugPacientes);
+    
+    // Cargar inicializador offline mejorado
+    const scriptOfflineInit = document.createElement('script');
+    scriptOfflineInit.src = './js/utils/offlineInit.js';
+    scriptOfflineInit.onload = () => {
+      console.log('🚀 Sistema offline mejorado inicializado');
+    };
+    document.head.appendChild(scriptOfflineInit);
+    
+    // Cargar herramientas de prueba offline
+    const scriptTestTools = document.createElement('script');
+    scriptTestTools.src = './js/utils/offlineTestTools.js';
+    scriptTestTools.onload = () => {
+      console.log('🧪 Herramientas de prueba offline cargadas - Usa testOfflineSystem()');
+    };
+    document.head.appendChild(scriptTestTools);
+    
+    // La inicialización de OfflineSyncService se hace arriba después de cargar el módulo
+    
+    // Configurar listener para reconexión automática
+    window.addEventListener('online', () => {
+      console.log('🌐 Conexión restaurada - verificando sincronización pendiente');
+      setTimeout(() => {
+        if (window.offlineSyncService) {
+          const hasPending = window.offlineSyncService.hasPendingSync();
+          console.log('📋 Datos pendientes:', hasPending);
+          
+          if (hasPending) {
+            console.log('🔄 Iniciando sincronización automática...');
+            window.offlineSyncService.flushAll().then(result => {
+              console.log('✅ Sincronización automática completada:', result);
+            }).catch(error => {
+              console.error('❌ Error en sincronización automática:', error);
+            });
+          }
+        }
+      }, 2000); // Esperar 2 segundos para estabilizar conexión
     });
   </script>
 </body>

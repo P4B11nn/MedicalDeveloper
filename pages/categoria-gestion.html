@@ -728,7 +728,7 @@
     import { initGlobalController } from '../js/controllers/globalController.js';
     import { initGestionController } from '../js/controllers/gestionController.js';
     import { init as initGestionView } from '../js/views/gestionView.js';
-    import { ConnectionIndicator } from '../js/utils/connectionIndicator.js';
+    // ConnectionIndicator reemplazado por AdvancedOfflineIndicator
     // HeaderComponent eliminado, ahora usamos header individual
     import '../js/utils/eventBusManager.js';
     
@@ -765,7 +765,7 @@
           // Luego inicializar controlador
           initGestionController();
           
-          ConnectionIndicator.init();
+          // ConnectionIndicator.init(); // Reemplazado por AdvancedOfflineIndicator
         }, 100);        
       }
     });

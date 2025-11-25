@@ -76,7 +76,7 @@ export const pacienteModel = {
   // Pacientes - FIREBASE VERSION con CACHÉ MEJORADO
   async getPacientes(forceRefresh = false) {
     // Verificar estado de conexión más preciso
-    const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+    const isOnline = navigator.onLine;
     
     // Mostrar notificación de modo offline si es necesario
     if (!isOnline) {
@@ -111,6 +111,7 @@ export const pacienteModel = {
       // Si no hay datos en absoluto offline
       console.warn('⚠️ No hay datos de pacientes disponibles offline');
       this.showNoOfflineDataMessage();
+      // Siempre devolver un array vacío válido
       return [];
     }
     
@@ -280,7 +281,7 @@ export const pacienteModel = {
     }
 
     // Verificar estado de conexión
-    const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+    const isOnline = navigator.onLine;
     
     if (!isOnline) {
       // Modo offline: guardar en cola de sincronización
@@ -1576,7 +1577,7 @@ export const pacienteModel = {
    */
   async syncOfflinePatients() {
     try {
-      const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+      const isOnline = navigator.onLine;
       
       if (!isOnline) {
         console.log('⚠️ Sin conexión - No se puede sincronizar');
@@ -1890,55 +1891,145 @@ export const pacienteModel = {
    */
   showNotification(message, type = 'info', duration = 4000) {
     try {
-      // Usar el sistema de notificaciones del app si está disponible
+      console.log(`📢 NOTIFICACIÓN: ${message} (${type})`);
+      
+      let notificationShown = false;
+      
+      // 1. Usar el sistema de notificaciones del app si está disponible
       if (window.firebaseSyncManager && typeof window.firebaseSyncManager.showSyncMessage === 'function') {
         window.firebaseSyncManager.showSyncMessage(message, type, '', duration);
-      } 
-      // Fallback al sistema de notificaciones offline si existe
-      else if (window.offlineNotificationManager && typeof window.offlineNotificationManager.showNotification === 'function') {
-        window.offlineNotificationManager.showNotification(message, type);
+        notificationShown = true;
       }
-      // Fallback básico a console
-      else {
-        const prefix = type === 'error' ? '❌' : type === 'warning' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
-        console.log(`${prefix} ${message}`);
-        
-        // Intentar mostrar en el DOM si hay un contenedor
-        const messageContainer = document.querySelector('.message-container') || 
-                                 document.querySelector('#notifications') || 
-                                 document.body;
-        
-        if (messageContainer) {
-          const notification = document.createElement('div');
-          notification.className = `notification ${type}`;
-          notification.innerHTML = `
-            <span style="
-              display: inline-block;
-              padding: 8px 12px;
-              background: ${type === 'error' ? '#fee2e2' : type === 'warning' ? '#fef3c7' : type === 'success' ? '#d1fae5' : '#e0f2fe'};
-              color: ${type === 'error' ? '#991b1b' : type === 'warning' ? '#92400e' : type === 'success' ? '#065f46' : '#0e7490'};
-              border-radius: 6px;
-              border: 1px solid ${type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : type === 'success' ? '#10b981' : '#0891b2'};
-              font-size: 14px;
-              margin: 5px 0;
-            ">
-              ${message}
-            </span>
-          `;
-          
-          messageContainer.appendChild(notification);
-          
-          // Auto-remover después del tiempo especificado
+      
+      // 2. Usar advancedOfflineIndicator si está disponible
+      if (!notificationShown && window.advancedOfflineIndicator && typeof window.advancedOfflineIndicator.showMessage === 'function') {
+        window.advancedOfflineIndicator.showMessage(message, type, duration);
+        notificationShown = true;
+      }
+      
+      // 3. Fallback al sistema de notificaciones offline si existe
+      if (!notificationShown && window.offlineNotificationManager && typeof window.offlineNotificationManager.showNotification === 'function') {
+        window.offlineNotificationManager.showNotification(message, type);
+        notificationShown = true;
+      }
+      
+      // 4. SIEMPRE crear notificación visual directa en el DOM como backup
+      this.createVisualNotification(message, type, duration);
+      
+      // 5. Si no se mostró ninguna notificación, intentar de nuevo en 100ms
+      if (!notificationShown) {
+        setTimeout(() => {
+          this.createVisualNotification(message, type, duration);
+        }, 100);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error mostrando notificación:', error);
+      // Fallback básico a console y DOM
+      const prefix = type === 'error' ? '❌' : type === 'warning' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+      console.log(`${prefix} ${message}`);
+      
+      // Forzar notificación DOM en caso de error
+      try {
+        this.createVisualNotification(message, type, duration);
+      } catch (domError) {
+        console.error('❌ Error crítico en notificación DOM:', domError);
+      }
+    }
+  },
+  
+  /**
+   * Crear notificación visual directa en el DOM
+   * @param {string} message - Mensaje a mostrar
+   * @param {string} type - Tipo de notificación
+   * @param {number} duration - Duración en milisegundos
+   */
+  createVisualNotification(message, type = 'info', duration = 4000) {
+    // Crear o encontrar contenedor de notificaciones
+    let container = document.getElementById('offline-notifications-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'offline-notifications-container';
+      container.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 350px;
+      `;
+      document.body.appendChild(container);
+    }
+    
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    const bgColor = type === 'error' ? '#ef4444' : 
+                   type === 'warning' ? '#f59e0b' : 
+                   type === 'success' ? '#10b981' : '#3b82f6';
+    
+    notification.style.cssText = `
+      background: ${bgColor};
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      animation: slideIn 0.3s ease-out;
+      cursor: pointer;
+    `;
+    
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 16px;">
+          ${type === 'error' ? '❌' : type === 'warning' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️'}
+        </span>
+        <span>${message}</span>
+        <span style="margin-left: auto; font-size: 18px; opacity: 0.7;">×</span>
+      </div>
+    `;
+    
+    // Agregar estilos de animación si no existen
+    if (!document.getElementById('notification-styles')) {
+      const styles = document.createElement('style');
+      styles.id = 'notification-styles';
+      styles.textContent = `
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(100%); opacity: 0; }
+        }
+      `;
+      document.head.appendChild(styles);
+    }
+    
+    // Manejar click para cerrar
+    notification.addEventListener('click', () => {
+      notification.style.animation = 'slideOut 0.3s ease-in';
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 300);
+    });
+    
+    // Agregar al contenedor
+    container.appendChild(notification);
+    
+    // Auto-cerrar después de la duración especificada
+    if (duration > 0) {
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.style.animation = 'slideOut 0.3s ease-in';
           setTimeout(() => {
             if (notification.parentNode) {
               notification.parentNode.removeChild(notification);
             }
-          }, duration);
+          }, 300);
         }
-      }
-    } catch (error) {
-      console.error('❌ Error mostrando notificación:', error);
-      console.log(`💬 [${type.toUpperCase()}] ${message}`);
+      }, duration);
     }
   }
 };

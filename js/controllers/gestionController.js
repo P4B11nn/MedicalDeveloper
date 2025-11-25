@@ -15,8 +15,9 @@ export async function initGestionController() {
     // Registrar callback para refrescar datos cuando se restaure la conexión
     // Usar un timeout para asegurar que ConnectionIndicator esté inicializado
     setTimeout(() => {
-      if (window.connectionIndicator) {
-        window.connectionIndicator.onConnectionRestored(async () => {
+      if (window.advancedOfflineIndicator) {
+        // AdvancedOfflineIndicator maneja automáticamente la reconexión
+        window.addEventListener('online', async () => {
           console.log('🔄 Refrescando datos de gestión tras restaurar conexión...');
           try {
             // Mostrar mensaje de carga

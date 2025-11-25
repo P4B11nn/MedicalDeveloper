@@ -1,19 +1,55 @@
 {
   "name": "Medical Developer - Sistema Médico",
-  "short_name": "MedicalDev",
-  "description": "Sistema de gestión médica",
-  "start_url": "/",
-  "display": "browser",
+  "short_name": "MedDev",
+  "description": "Sistema médico completo para gestión de pacientes, operaciones y reportes médicos con funcionalidad offline",
+  "start_url": "./menuInicio.html",
+  "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0f5671",
+  "orientation": "portrait-primary",
+  "lang": "es-ES",
+  "scope": "./",
+  "prefer_related_applications": false,
+  "categories": ["medical", "healthcare", "productivity"],
+  "dir": "ltr",
   "icons": [
     {
       "src": "./img/logo-medical-developer.jpg",
       "sizes": "192x192",
       "type": "image/jpeg",
       "purpose": "any"
+    },
+    {
+      "src": "./img/logo-medical-developer.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "./img/logo-medical-developer.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["medical", "healthcare", "productivity"],
-  "lang": "es"
+  "shortcuts": [
+    {
+      "name": "Pacientes",
+      "short_name": "Pacientes",
+      "description": "Acceso rápido a gestión de pacientes",
+      "url": "./pages/categoria-pacientes.html"
+    },
+    {
+      "name": "Operaciones",
+      "short_name": "Operaciones", 
+      "description": "Control y seguimiento de operaciones",
+      "url": "./pages/categoria-operaciones-control.html"
+    },
+    {
+      "name": "Reportes",
+      "short_name": "Reportes",
+      "description": "Generación y consulta de reportes médicos",
+      "url": "./pages/categoria-reportes.html"
+    }
+  ]
 }

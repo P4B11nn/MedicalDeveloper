@@ -384,7 +384,7 @@ export async function initPacienteController() {
   }
   
   // Verificar estado de conexión inicial
-  const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+  const isOnline = navigator.onLine;
   console.log(`🌐 Estado inicial de conexión: ${isOnline ? 'Online' : 'Offline'}`);
   
   // Configurar eventos para todas las secciones
@@ -416,8 +416,9 @@ export async function initPacienteController() {
   // Registrar callback para refrescar datos cuando se restaure la conexión
   // Usar un timeout para asegurar que ConnectionIndicator esté inicializado
   setTimeout(() => {
-    if (window.connectionIndicator) {
-      window.connectionIndicator.onConnectionRestored(async () => {
+    if (window.advancedOfflineIndicator) {
+      // AdvancedOfflineIndicator maneja automáticamente la reconexión
+      window.addEventListener('online', async () => {
         console.log('🔄 Refrescando datos de pacientes tras restaurar conexión...');
         try {
           // Verificar si hay pacientes offline pendientes
@@ -684,7 +685,7 @@ export async function handlePacienteSubmit(event) {
   const formData = new FormData(event.target);
   
   // Verificar estado de conexión
-  const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+  const isOnline = navigator.onLine;
   
   // Validación básica del formulario (campos requeridos y formato)
   const validation = validateForm('paciente', formData);
@@ -902,7 +903,7 @@ export async function handlePacienteSubmit(event) {
       // Actualizar lista de pacientes pendientes en datos médicos
       await renderDatosMedicosForm();
     } else {
-      const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+      const isOnline = navigator.onLine;
       const errorMsg = isOnline 
         ? 'No se pudo registrar el paciente en el servidor. Intenta nuevamente.'
         : 'No se pudo guardar el paciente localmente. Verifica los datos e intenta nuevamente.';
@@ -911,7 +912,7 @@ export async function handlePacienteSubmit(event) {
   } catch (error) {
     console.error('Error al registrar paciente:', error);
     
-    const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+    const isOnline = navigator.onLine;
     let errorMessage;
     
     if (!isOnline) {
@@ -1243,7 +1244,7 @@ async function renderPacientesList() {
     // Actualizar contador de pacientes
     const contadorElement = document.getElementById('contador-pacientes');
     if (contadorElement) {
-      const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+      const isOnline = navigator.onLine;
       const pendingCount = pacienteModel.getPendingOfflinePatients();
       
       let contadorHTML = pacientes.length.toString();
@@ -1261,7 +1262,7 @@ async function renderPacientesList() {
     }
     
     if (pacientes.length === 0) {
-      const isOnline = navigator.onLine && (!window.connectionIndicator || window.connectionIndicator.isOnline !== false);
+      const isOnline = navigator.onLine;
       
       tableBody.innerHTML = `
         <tr>
